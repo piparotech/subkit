@@ -1,0 +1,22 @@
+packages:
+  - '.'
+  - '/Users/patwoz/dev/piparo.tech/piparo-platform/packages/cn-web'
+  - '/Users/patwoz/dev/piparo.tech/piparo-platform/packages/tokens'
+  - '/Users/patwoz/dev/piparo.tech/piparo-platform/packages/tsconfig'
+  - '/Users/patwoz/dev/piparo.tech/piparo-platform/packages/utils'
+
+catalog:
+  '@eslint/js': ^9
+  '@types/react': ^19.2.14
+  '@types/react-dom': ^19.2.3
+  eslint: ^9
+  globals: 17.6.0
+  react: 19.2.3
+  react-dom: 19.2.3
+  typescript: ~6.0.3
+  typescript-eslint: 8.61.1
+
+overrides:
+  react: 19.2.3
+  react-dom: 19.2.3
+  typescript: ~6.0.3
