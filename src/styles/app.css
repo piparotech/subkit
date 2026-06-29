@@ -1,0 +1,328 @@
+@import '@piparo/cn-web/src/index.css';
+
+@source '../features/subscription-console/**/*.{ts,tsx}';
+
+
+
+
+
+@theme inline {
+  --font-sans: 'Hanken Grotesk', var(--font-family-sans);
+  --font-mono: 'JetBrains Mono', var(--font-family-mono);
+}
+
+:root {
+  color-scheme: light;
+
+  /* Keep this prototype light even when the user's OS/browser prefers dark mode.
+     @piparo/cn-web exposes dark-aware CSS variables; the subscription console
+     mirrors the provided light prototype, so we pin the tokens it consumes. */
+  --color-action-primary-background: #e5eafc;
+  --color-action-primary-foreground: #27304d;
+  --color-action-primary-hover: #d7defb;
+  --color-action-primary-muted: #e5eafc;
+  --color-action-secondary-background: #f0f0f1;
+  --color-action-secondary-foreground: #090a0b;
+  --color-action-secondary-hover: #dfe0e2;
+  --color-background-card: #ffffff;
+  --color-background-default: #ffffff;
+  --color-background-muted: #f0f0f1;
+  --color-background-subtle: #f5f5f6;
+  --color-border-default: #e4e5e6;
+  --color-border-muted: #dfe0e2;
+  --color-border-strong: #d3d4d6;
+  --color-foreground-brand: #4764c6;
+  --color-foreground-default: #090a0b;
+  --color-foreground-muted: #717378;
+  --color-foreground-subtle: #505256;
+  --color-intent-success-background: #2e7d32;
+  --color-intent-warning-background: #f5a524;
+  --color-intent-danger-background: #e5484d;
+
+  --component-button-primary-background: var(--color-action-primary-background);
+  --component-button-primary-foreground: var(--color-action-primary-foreground);
+  --component-button-primary-hover: var(--color-action-primary-hover);
+  --component-button-secondary-background: var(--color-action-secondary-background);
+  --component-button-secondary-foreground: var(--color-action-secondary-foreground);
+  --component-button-secondary-hover: var(--color-action-secondary-hover);
+  --component-card-background: var(--color-background-card);
+  --component-card-border-color: var(--color-border-default);
+  --component-card-foreground: var(--color-foreground-default);
+
+  --subs-bg: oklch(0.985 0.0025 264);
+  --subs-panel: #ffffff;
+  --subs-panel-2: oklch(0.978 0.003 264);
+  --subs-border: oklch(0.925 0.005 264);
+  --subs-border-2: oklch(0.885 0.006 264);
+  --subs-text: oklch(0.27 0.012 264);
+  --subs-dim: oklch(0.52 0.012 264);
+  --subs-faint: oklch(0.66 0.01 264);
+  --subs-accent: #4764c6;
+  --subs-accent-d: #4f46e5;
+  --subs-accent-soft: #e5eafc;
+  --subs-accent-line: #c7d2fe;
+  --subs-green: #2e7d32;
+  --subs-red: #e5484d;
+  --subs-amber: #f5a524;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  overflow: hidden;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 8px;
+  background: oklch(0.88 0.006 264);
+  background-clip: padding-box;
+}
+
+.subs-login-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 25% 18%, rgb(71 100 198 / 0.16), transparent 32rem),
+    radial-gradient(circle at 82% 78%, rgb(46 125 50 / 0.14), transparent 30rem),
+    linear-gradient(135deg, #fbfcff, #f4f7f2);
+  padding: 24px;
+}
+
+.subs-login-card {
+  position: relative;
+  width: min(560px, 100%);
+  overflow: hidden;
+  border: 1px solid var(--subs-border);
+  border-radius: 24px;
+  background: rgb(255 255 255 / 0.82);
+  box-shadow: 0 24px 80px -36px rgb(35 38 60 / 0.42);
+  padding: 34px;
+}
+
+.subs-login-orb {
+  position: absolute;
+  top: -70px;
+  right: -70px;
+  width: 180px;
+  height: 180px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--subs-accent), var(--subs-green));
+  opacity: 0.16;
+}
+
+.subs-login-kicker {
+  color: var(--subs-accent-d);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.subs-login-card h1 {
+  max-width: 430px;
+  margin: 12px 0 0;
+  color: var(--subs-text);
+  font-size: clamp(30px, 5vw, 46px);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.96;
+}
+
+.subs-login-copy {
+  max-width: 470px;
+  margin: 16px 0 0;
+  color: var(--subs-dim);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.subs-login-notice {
+  margin: 18px 0 0;
+  border: 1px solid var(--subs-accent-line);
+  border-radius: 12px;
+  background: var(--subs-accent-soft);
+  color: var(--subs-accent-d);
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.subs-login-actions {
+  display: grid;
+  gap: 12px;
+  margin-top: 26px;
+}
+
+.subs-login-option {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--subs-border);
+  border-radius: 16px;
+  background: var(--subs-panel);
+  color: var(--subs-text);
+  padding: 14px;
+  text-decoration: none;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.subs-login-option:hover {
+  border-color: var(--subs-border-2);
+  box-shadow: 0 16px 40px -28px rgb(35 38 60 / 0.5);
+  transform: translateY(-1px);
+}
+
+.subs-login-mark {
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 13px;
+  background: var(--subs-accent-soft);
+  color: var(--subs-accent-d);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.subs-login-mark.microsoft {
+  background: #eaf3ff;
+  color: #185abd;
+}
+
+.subs-login-option strong,
+.subs-login-email label {
+  display: block;
+  color: var(--subs-text);
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.subs-login-option small,
+.subs-login-email p {
+  display: block;
+  margin: 3px 0 0;
+  color: var(--subs-faint);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.subs-login-email {
+  border: 1px solid var(--subs-border);
+  border-radius: 16px;
+  background: rgb(246 248 251 / 0.72);
+  padding: 14px;
+}
+
+.subs-login-email-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.subs-login-email input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--subs-border-2);
+  border-radius: 11px;
+  background: white;
+  color: var(--subs-text);
+  font: inherit;
+  padding: 10px 12px;
+  outline: none;
+}
+
+.subs-login-email input:focus {
+  border-color: var(--subs-accent);
+}
+
+.subs-login-email button {
+  border: 0;
+  border-radius: 11px;
+  background: var(--subs-text);
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 750;
+  padding: 10px 14px;
+}
+
+@media (max-width: 560px) {
+  .subs-login-email-row {
+    flex-direction: column;
+  }
+}
+
+@keyframes subs-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes subs-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes subs-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes subs-drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0ms !important;
+  }
+}
