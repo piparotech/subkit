@@ -1,20 +1,22 @@
 import { PUICard, PUIText, cn } from '@piparo/cn-web'
+import { Link } from '@tanstack/react-router'
 import { Circle } from 'lucide-react'
 
+import { appRouteParams } from './store'
 import { AppAvatar, MetricCard, RowChevron, SoftTag, StatusLabel, ToneDot, ViewTitle, toneBgClass, toneTextClass } from './ui'
 import type {
   ActivityEvent,
   AppTenant,
+  AppUser,
   ConsoleStats,
   Entitlement,
   Metric,
   Offering,
   RevenueBar,
-  Subscriber,
   SubscriptionProduct,
 } from './types'
 
-export function AppsView({ apps, onSelectApp }: { apps: AppTenant[]; onSelectApp: (id: string) => void }) {
+export function AppsView({ apps }: { apps: AppTenant[] }) {
   return (
     <section className="animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
       <div className="max-w-[1200px]">
@@ -31,17 +33,18 @@ export function AppsView({ apps, onSelectApp }: { apps: AppTenant[]; onSelectApp
 
         <div className="my-[22px] mb-[24px] flex gap-[14px] max-md:flex-col">
           <MetricCard label="Total MRR" value={sumCurrency(apps.map((app) => app.mrr))} />
-          <MetricCard label="Active subscribers" value={sumNumberText(apps.map((app) => app.activeSubs))} />
+          <MetricCard label="Active App Users" value={sumNumberText(apps.map((app) => app.activeAppUsers))} />
           <MetricCard label="Apps" value={String(apps.length)} />
         </div>
 
         <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-[16px]">
           {apps.map((app) => (
-            <button
+            <Link
               className="cursor-pointer rounded-[14px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] p-[18px] text-left transition-[box-shadow,border-color,transform] duration-fast hover:-translate-y-[2px] hover:border-[var(--subkit-border-2)] hover:shadow-[0_10px_28px_-12px_rgba(30,30,70,0.22)] motion-reduce:transform-none"
               key={app.id}
-              onClick={() => onSelectApp(app.id)}
-              type="button"
+              params={appRouteParams(app)}
+              preload="intent"
+              to="/$tenantSlug/$appSlug"
             >
               <div className="flex items-center gap-[12px]">
                 <AppAvatar app={app} />
@@ -68,12 +71,12 @@ export function AppsView({ apps, onSelectApp }: { apps: AppTenant[]; onSelectApp
               </div>
               <div className="flex border-t border-[var(--subkit-border)] pt-[13px]">
                 <AppCardMetric label="MRR" value={app.mrr} />
-                <AppCardMetric label="Active subs" value={app.activeSubs} />
+                <AppCardMetric label="Active users" value={app.activeAppUsers} />
                 <div className="flex items-center text-[var(--subkit-faint)]">
                   <RowChevron />
                 </div>
               </div>
-            </button>
+            </Link>
           ))}
         </div>
       </div>
@@ -120,7 +123,7 @@ export function DashboardView({
           DB products {dbStats.products}
         </span>
         <span className="rounded-[6px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[8px] py-[4px]">
-          DB subscribers {dbStats.subscribers}
+          DB App Users {dbStats.appUsers}
         </span>
       </div>
 
@@ -186,7 +189,7 @@ export function SubscriptionsView({
             <div>App Store ID</div>
             <div>Price</div>
             <div>Entitlement</div>
-            <div className="text-right">Active</div>
+            <div className="text-right">Active Users</div>
           </div>
           {subscriptions.map((subscription) => (
             <button
@@ -206,7 +209,7 @@ export function SubscriptionsView({
               <div>
                 <SoftTag tone="success">{subscription.entitlement}</SoftTag>
               </div>
-              <div className="text-right font-mono text-[13.5px] font-semibold">{subscription.activeSubs}</div>
+              <div className="text-right font-mono text-[13.5px] font-semibold">{subscription.activeAppUsers}</div>
             </button>
           ))}
         </div>
@@ -281,38 +284,40 @@ export function OfferingsView({ offerings }: { offerings: Offering[] }) {
   )
 }
 
-export function SubscribersView({ onOpenSubscriber, subscribers }: { onOpenSubscriber: (subscriber: Subscriber) => void; subscribers: Subscriber[] }) {
+export function AppUsersView({ appUsers, onOpenAppUser }: { appUsers: AppUser[]; onOpenAppUser: (appUser: AppUser) => void }) {
   return (
     <section className="animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
-      <ViewTitle description="End users of this app, identified by App User ID and resolved through SubKit entitlements." title="App Users" />
+      <ViewTitle description="End users of this app, identified by App User ID and resolved through SubKit entitlement grants." title="App Users" />
       <div className="mt-[20px] overflow-hidden rounded-[14px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] max-lg:overflow-x-auto">
-        <div className="min-w-[900px]">
-          <div className="grid grid-cols-[1.5fr_1.3fr_1.2fr_1fr_0.9fr_0.8fr] gap-[14px] border-b border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[18px] py-[12px] text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--subkit-faint)]">
+        <div className="min-w-[980px]">
+          <div className="grid grid-cols-[1.5fr_1.2fr_1.25fr_1fr_1fr_0.8fr] gap-[14px] border-b border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[18px] py-[12px] text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--subkit-faint)]">
             <div>App User ID</div>
             <div>Country</div>
-            <div>Plan</div>
+            <div>Primary Entitlement</div>
             <div>Status</div>
-            <div>Since</div>
+            <div>Source</div>
             <div className="text-right">LTV</div>
           </div>
-          {subscribers.map((subscriber) => (
+          {appUsers.map((appUser) => (
             <button
-              className="grid w-full cursor-pointer grid-cols-[1.5fr_1.3fr_1.2fr_1fr_0.9fr_0.8fr] items-center gap-[14px] border-b border-[var(--subkit-border)] px-[18px] py-[14px] text-left last:border-b-0 hover:bg-[var(--subkit-panel-2)]"
-              key={subscriber.userId}
-              onClick={() => onOpenSubscriber(subscriber)}
+              className="grid w-full cursor-pointer grid-cols-[1.5fr_1.2fr_1.25fr_1fr_1fr_0.8fr] items-center gap-[14px] border-b border-[var(--subkit-border)] px-[18px] py-[14px] text-left last:border-b-0 hover:bg-[var(--subkit-panel-2)]"
+              key={appUser.appUserId}
+              onClick={() => onOpenAppUser(appUser)}
               type="button"
             >
-              <div className="truncate font-mono text-[12.5px] text-[var(--subkit-text)]">{subscriber.userId}</div>
+              <div className="truncate font-mono text-[12.5px] text-[var(--subkit-text)]">{appUser.appUserId}</div>
               <div className="flex items-center gap-[8px] text-[13px]">
                 <span className="rounded-[4px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[5px] py-[1px] text-[10px] font-bold text-[var(--subkit-dim)]">
-                  {subscriber.countryCode}
+                  {appUser.countryCode}
                 </span>
-                {subscriber.country}
+                {appUser.country}
               </div>
-              <div className="text-[13px]">{subscriber.plan}</div>
-              <StatusLabel label={subscriber.status} tone={subscriber.statusTone} />
-              <div className="text-[13px] text-[var(--subkit-dim)]">{subscriber.since}</div>
-              <div className="text-right font-mono text-[13px] font-semibold">{subscriber.ltv}</div>
+              <div>
+                <SoftTag tone={appUser.primaryEntitlement === '—' ? 'muted' : 'success'}>{appUser.primaryEntitlement}</SoftTag>
+              </div>
+              <StatusLabel label={appUser.status} tone={appUser.statusTone} />
+              <div className="text-[13px] text-[var(--subkit-dim)]">{appUser.primarySource}</div>
+              <div className="text-right font-mono text-[13px] font-semibold">{appUser.ltv}</div>
             </button>
           ))}
         </div>

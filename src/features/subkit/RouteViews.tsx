@@ -4,7 +4,7 @@ import { appMatchesRouteParams } from './store'
 import { SubKitConsole } from './SubKitConsole'
 import type { View } from './types'
 
-type AppRouteViewName = Extract<View, 'dashboard' | 'subscriptions' | 'entitlements' | 'offerings' | 'subscribers' | 'settings'>
+type AppRouteViewName = Extract<View, 'dashboard' | 'subscriptions' | 'entitlements' | 'offerings' | 'appUsers' | 'settings'>
 
 export function AppRouteView({ view }: { view: AppRouteViewName }) {
   const consoleData = useLoaderData({ from: '/_console' })

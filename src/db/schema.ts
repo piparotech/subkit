@@ -86,7 +86,7 @@ export const apps = sqliteTable('apps', {
   androidPackageName: text('android_package_name'),
   status: text('status', { enum: ['setup', 'live', 'beta', 'inactive'] }).notNull().default('setup'),
   monthlyRevenueCents: integer('monthly_revenue_cents').notNull().default(0),
-  activeSubscriberCount: integer('active_subscriber_count').notNull().default(0),
+  activeAppUserCount: integer('active_app_user_count').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
 })
 
@@ -179,7 +179,7 @@ export const products = sqliteTable('products', {
   playStoreId: text('play_store_id').notNull(),
   duration: text('duration').notNull(),
   priceCents: integer('price_cents').notNull(),
-  activeSubscriberCount: integer('active_subscriber_count').notNull().default(0),
+  activeAppUserCount: integer('active_app_user_count').notNull().default(0),
   entitlementId: text('entitlement_id')
     .notNull()
     .references(() => entitlements.id, { onDelete: 'restrict' }),
@@ -210,43 +210,54 @@ export const offeringPackages = sqliteTable('offering_packages', {
   sortOrder: integer('sort_order').notNull().default(0),
 })
 
-export const subscribers = sqliteTable('subscribers', {
+export const appUsers = sqliteTable(
+  'app_users',
+  {
+    id: text('id').primaryKey(),
+    appId: text('app_id')
+      .notNull()
+      .references(() => apps.id, { onDelete: 'cascade' }),
+    appUserId: text('app_user_id').notNull(),
+    countryCode: text('country_code').notNull().default('XX'),
+    country: text('country').notNull().default('Unknown'),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    lastSeenAt: integer('last_seen_at', { mode: 'timestamp_ms' }),
+  },
+  (table) => [uniqueIndex('app_users_app_user_id_unique').on(table.appId, table.appUserId)],
+)
+
+export const entitlementGrants = sqliteTable('entitlement_grants', {
   id: text('id').primaryKey(),
   appId: text('app_id')
     .notNull()
     .references(() => apps.id, { onDelete: 'cascade' }),
-  appUserId: text('app_user_id').notNull(),
-  countryCode: text('country_code').notNull(),
-  country: text('country').notNull(),
-  plan: text('plan').notNull(),
-  status: text('status', { enum: ['active', 'trial', 'billing_retry', 'expired'] }).notNull(),
-  subscriberSince: text('subscriber_since').notNull(),
-  lifetimeValueCents: integer('lifetime_value_cents').notNull().default(0),
-  entitlementId: text('entitlement_id').references(() => entitlements.id, { onDelete: 'set null' }),
+  appUserId: text('app_user_id')
+    .notNull()
+    .references(() => appUsers.id, { onDelete: 'cascade' }),
+  entitlementId: text('entitlement_id')
+    .notNull()
+    .references(() => entitlements.id, { onDelete: 'cascade' }),
+  productId: text('product_id').references(() => products.id, { onDelete: 'set null' }),
+  source: text('source', { enum: ['apple', 'google', 'voucher', 'promo', 'manual', 'lifetime', 'migration'] }).notNull(),
+  status: text('status', { enum: ['active', 'trialing', 'billing_retry', 'expired', 'revoked'] }).notNull(),
+  startsAt: text('starts_at').notNull(),
+  expiresAt: text('expires_at'),
+  revokedAt: integer('revoked_at', { mode: 'timestamp_ms' }),
+  note: text('note'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
 })
 
 export const purchaseEvents = sqliteTable('purchase_events', {
   id: text('id').primaryKey(),
-  subscriberId: text('subscriber_id')
+  appUserId: text('app_user_id')
     .notNull()
-    .references(() => subscribers.id, { onDelete: 'cascade' }),
+    .references(() => appUsers.id, { onDelete: 'cascade' }),
+  entitlementGrantId: text('entitlement_grant_id').references(() => entitlementGrants.id, { onDelete: 'set null' }),
   type: text('type').notNull(),
   occurredOn: text('occurred_on').notNull(),
   store: text('store', { enum: ['App Store', 'Play Store'] }).notNull(),
   amountCents: integer('amount_cents'),
 })
 
-export const runtimeSyncEvents = sqliteTable('runtime_sync_events', {
-  id: text('id').primaryKey(),
-  appId: text('app_id')
-    .notNull()
-    .references(() => apps.id, { onDelete: 'cascade' }),
-  source: text('source').notNull(),
-  status: text('status', { enum: ['imported', 'failed'] }).notNull(),
-  received: integer('received').notNull().default(0),
-  created: integer('created').notNull().default(0),
-  updated: integer('updated').notNull().default(0),
-  failed: integer('failed').notNull().default(0),
-  detail: text('detail').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
-})
+
+

@@ -325,7 +325,7 @@ async function applyProductPreview(appId: string, preview: readonly AppStoreConn
     await db
       .insert(products)
       .values({
-        activeSubscriberCount: 0,
+        activeAppUserCount: 0,
         appId,
         appStoreId: item.appleProductId,
         displayName: item.appleName,

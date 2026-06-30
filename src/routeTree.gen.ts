@@ -16,16 +16,16 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthStartRouteImport } from './routes/auth.start'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ConsoleSettingsRouteImport } from './routes/_console.settings'
+import { Route as ConsoleMembersRouteImport } from './routes/_console.members'
 import { Route as ConsoleAppsRouteImport } from './routes/_console.apps'
 import { Route as ConsoleAppsIndexRouteImport } from './routes/_console.apps.index'
-import { Route as ApiRuntimeSubscribersRouteImport } from './routes/api.runtime.subscribers'
 import { Route as ConsoleTenantSlugAppSlugRouteImport } from './routes/_console.$tenantSlug.$appSlug'
 import { Route as ConsoleTenantSlugAppSlugIndexRouteImport } from './routes/_console.$tenantSlug.$appSlug.index'
 import { Route as ConsoleTenantSlugAppSlugSubscriptionsRouteImport } from './routes/_console.$tenantSlug.$appSlug.subscriptions'
-import { Route as ConsoleTenantSlugAppSlugSubscribersRouteImport } from './routes/_console.$tenantSlug.$appSlug.subscribers'
 import { Route as ConsoleTenantSlugAppSlugSettingsRouteImport } from './routes/_console.$tenantSlug.$appSlug.settings'
 import { Route as ConsoleTenantSlugAppSlugOfferingsRouteImport } from './routes/_console.$tenantSlug.$appSlug.offerings'
 import { Route as ConsoleTenantSlugAppSlugEntitlementsRouteImport } from './routes/_console.$tenantSlug.$appSlug.entitlements'
+import { Route as ConsoleTenantSlugAppSlugAppUsersRouteImport } from './routes/_console.$tenantSlug.$appSlug.app-users'
 
 const LogoutRoute = LogoutRouteImport.update({
   id: '/logout',
@@ -61,6 +61,11 @@ const ConsoleSettingsRoute = ConsoleSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => ConsoleRoute,
 } as any)
+const ConsoleMembersRoute = ConsoleMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => ConsoleRoute,
+} as any)
 const ConsoleAppsRoute = ConsoleAppsRouteImport.update({
   id: '/apps',
   path: '/apps',
@@ -70,11 +75,6 @@ const ConsoleAppsIndexRoute = ConsoleAppsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ConsoleAppsRoute,
-} as any)
-const ApiRuntimeSubscribersRoute = ApiRuntimeSubscribersRouteImport.update({
-  id: '/api/runtime/subscribers',
-  path: '/api/runtime/subscribers',
-  getParentRoute: () => rootRouteImport,
 } as any)
 const ConsoleTenantSlugAppSlugRoute =
   ConsoleTenantSlugAppSlugRouteImport.update({
@@ -92,12 +92,6 @@ const ConsoleTenantSlugAppSlugSubscriptionsRoute =
   ConsoleTenantSlugAppSlugSubscriptionsRouteImport.update({
     id: '/subscriptions',
     path: '/subscriptions',
-    getParentRoute: () => ConsoleTenantSlugAppSlugRoute,
-  } as any)
-const ConsoleTenantSlugAppSlugSubscribersRoute =
-  ConsoleTenantSlugAppSlugSubscribersRouteImport.update({
-    id: '/subscribers',
-    path: '/subscribers',
     getParentRoute: () => ConsoleTenantSlugAppSlugRoute,
   } as any)
 const ConsoleTenantSlugAppSlugSettingsRoute =
@@ -118,22 +112,28 @@ const ConsoleTenantSlugAppSlugEntitlementsRoute =
     path: '/entitlements',
     getParentRoute: () => ConsoleTenantSlugAppSlugRoute,
   } as any)
+const ConsoleTenantSlugAppSlugAppUsersRoute =
+  ConsoleTenantSlugAppSlugAppUsersRouteImport.update({
+    id: '/app-users',
+    path: '/app-users',
+    getParentRoute: () => ConsoleTenantSlugAppSlugRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
   '/apps': typeof ConsoleAppsRouteWithChildren
+  '/members': typeof ConsoleMembersRoute
   '/settings': typeof ConsoleSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/start': typeof AuthStartRoute
   '/$tenantSlug/$appSlug': typeof ConsoleTenantSlugAppSlugRouteWithChildren
-  '/api/runtime/subscribers': typeof ApiRuntimeSubscribersRoute
   '/apps/': typeof ConsoleAppsIndexRoute
+  '/$tenantSlug/$appSlug/app-users': typeof ConsoleTenantSlugAppSlugAppUsersRoute
   '/$tenantSlug/$appSlug/entitlements': typeof ConsoleTenantSlugAppSlugEntitlementsRoute
   '/$tenantSlug/$appSlug/offerings': typeof ConsoleTenantSlugAppSlugOfferingsRoute
   '/$tenantSlug/$appSlug/settings': typeof ConsoleTenantSlugAppSlugSettingsRoute
-  '/$tenantSlug/$appSlug/subscribers': typeof ConsoleTenantSlugAppSlugSubscribersRoute
   '/$tenantSlug/$appSlug/subscriptions': typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
   '/$tenantSlug/$appSlug/': typeof ConsoleTenantSlugAppSlugIndexRoute
 }
@@ -141,15 +141,15 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
+  '/members': typeof ConsoleMembersRoute
   '/settings': typeof ConsoleSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/start': typeof AuthStartRoute
-  '/api/runtime/subscribers': typeof ApiRuntimeSubscribersRoute
   '/apps': typeof ConsoleAppsIndexRoute
+  '/$tenantSlug/$appSlug/app-users': typeof ConsoleTenantSlugAppSlugAppUsersRoute
   '/$tenantSlug/$appSlug/entitlements': typeof ConsoleTenantSlugAppSlugEntitlementsRoute
   '/$tenantSlug/$appSlug/offerings': typeof ConsoleTenantSlugAppSlugOfferingsRoute
   '/$tenantSlug/$appSlug/settings': typeof ConsoleTenantSlugAppSlugSettingsRoute
-  '/$tenantSlug/$appSlug/subscribers': typeof ConsoleTenantSlugAppSlugSubscribersRoute
   '/$tenantSlug/$appSlug/subscriptions': typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
   '/$tenantSlug/$appSlug': typeof ConsoleTenantSlugAppSlugIndexRoute
 }
@@ -160,16 +160,16 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
   '/_console/apps': typeof ConsoleAppsRouteWithChildren
+  '/_console/members': typeof ConsoleMembersRoute
   '/_console/settings': typeof ConsoleSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/start': typeof AuthStartRoute
   '/_console/$tenantSlug/$appSlug': typeof ConsoleTenantSlugAppSlugRouteWithChildren
-  '/api/runtime/subscribers': typeof ApiRuntimeSubscribersRoute
   '/_console/apps/': typeof ConsoleAppsIndexRoute
+  '/_console/$tenantSlug/$appSlug/app-users': typeof ConsoleTenantSlugAppSlugAppUsersRoute
   '/_console/$tenantSlug/$appSlug/entitlements': typeof ConsoleTenantSlugAppSlugEntitlementsRoute
   '/_console/$tenantSlug/$appSlug/offerings': typeof ConsoleTenantSlugAppSlugOfferingsRoute
   '/_console/$tenantSlug/$appSlug/settings': typeof ConsoleTenantSlugAppSlugSettingsRoute
-  '/_console/$tenantSlug/$appSlug/subscribers': typeof ConsoleTenantSlugAppSlugSubscribersRoute
   '/_console/$tenantSlug/$appSlug/subscriptions': typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
   '/_console/$tenantSlug/$appSlug/': typeof ConsoleTenantSlugAppSlugIndexRoute
 }
@@ -180,16 +180,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/logout'
     | '/apps'
+    | '/members'
     | '/settings'
     | '/auth/callback'
     | '/auth/start'
     | '/$tenantSlug/$appSlug'
-    | '/api/runtime/subscribers'
     | '/apps/'
+    | '/$tenantSlug/$appSlug/app-users'
     | '/$tenantSlug/$appSlug/entitlements'
     | '/$tenantSlug/$appSlug/offerings'
     | '/$tenantSlug/$appSlug/settings'
-    | '/$tenantSlug/$appSlug/subscribers'
     | '/$tenantSlug/$appSlug/subscriptions'
     | '/$tenantSlug/$appSlug/'
   fileRoutesByTo: FileRoutesByTo
@@ -197,15 +197,15 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/logout'
+    | '/members'
     | '/settings'
     | '/auth/callback'
     | '/auth/start'
-    | '/api/runtime/subscribers'
     | '/apps'
+    | '/$tenantSlug/$appSlug/app-users'
     | '/$tenantSlug/$appSlug/entitlements'
     | '/$tenantSlug/$appSlug/offerings'
     | '/$tenantSlug/$appSlug/settings'
-    | '/$tenantSlug/$appSlug/subscribers'
     | '/$tenantSlug/$appSlug/subscriptions'
     | '/$tenantSlug/$appSlug'
   id:
@@ -215,16 +215,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/logout'
     | '/_console/apps'
+    | '/_console/members'
     | '/_console/settings'
     | '/auth/callback'
     | '/auth/start'
     | '/_console/$tenantSlug/$appSlug'
-    | '/api/runtime/subscribers'
     | '/_console/apps/'
+    | '/_console/$tenantSlug/$appSlug/app-users'
     | '/_console/$tenantSlug/$appSlug/entitlements'
     | '/_console/$tenantSlug/$appSlug/offerings'
     | '/_console/$tenantSlug/$appSlug/settings'
-    | '/_console/$tenantSlug/$appSlug/subscribers'
     | '/_console/$tenantSlug/$appSlug/subscriptions'
     | '/_console/$tenantSlug/$appSlug/'
   fileRoutesById: FileRoutesById
@@ -236,7 +236,6 @@ export interface RootRouteChildren {
   LogoutRoute: typeof LogoutRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthStartRoute: typeof AuthStartRoute
-  ApiRuntimeSubscribersRoute: typeof ApiRuntimeSubscribersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -290,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsoleSettingsRouteImport
       parentRoute: typeof ConsoleRoute
     }
+    '/_console/members': {
+      id: '/_console/members'
+      path: '/members'
+      fullPath: '/members'
+      preLoaderRoute: typeof ConsoleMembersRouteImport
+      parentRoute: typeof ConsoleRoute
+    }
     '/_console/apps': {
       id: '/_console/apps'
       path: '/apps'
@@ -303,13 +309,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/apps/'
       preLoaderRoute: typeof ConsoleAppsIndexRouteImport
       parentRoute: typeof ConsoleAppsRoute
-    }
-    '/api/runtime/subscribers': {
-      id: '/api/runtime/subscribers'
-      path: '/api/runtime/subscribers'
-      fullPath: '/api/runtime/subscribers'
-      preLoaderRoute: typeof ApiRuntimeSubscribersRouteImport
-      parentRoute: typeof rootRouteImport
     }
     '/_console/$tenantSlug/$appSlug': {
       id: '/_console/$tenantSlug/$appSlug'
@@ -330,13 +329,6 @@ declare module '@tanstack/react-router' {
       path: '/subscriptions'
       fullPath: '/$tenantSlug/$appSlug/subscriptions'
       preLoaderRoute: typeof ConsoleTenantSlugAppSlugSubscriptionsRouteImport
-      parentRoute: typeof ConsoleTenantSlugAppSlugRoute
-    }
-    '/_console/$tenantSlug/$appSlug/subscribers': {
-      id: '/_console/$tenantSlug/$appSlug/subscribers'
-      path: '/subscribers'
-      fullPath: '/$tenantSlug/$appSlug/subscribers'
-      preLoaderRoute: typeof ConsoleTenantSlugAppSlugSubscribersRouteImport
       parentRoute: typeof ConsoleTenantSlugAppSlugRoute
     }
     '/_console/$tenantSlug/$appSlug/settings': {
@@ -360,6 +352,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsoleTenantSlugAppSlugEntitlementsRouteImport
       parentRoute: typeof ConsoleTenantSlugAppSlugRoute
     }
+    '/_console/$tenantSlug/$appSlug/app-users': {
+      id: '/_console/$tenantSlug/$appSlug/app-users'
+      path: '/app-users'
+      fullPath: '/$tenantSlug/$appSlug/app-users'
+      preLoaderRoute: typeof ConsoleTenantSlugAppSlugAppUsersRouteImport
+      parentRoute: typeof ConsoleTenantSlugAppSlugRoute
+    }
   }
 }
 
@@ -376,24 +375,24 @@ const ConsoleAppsRouteWithChildren = ConsoleAppsRoute._addFileChildren(
 )
 
 interface ConsoleTenantSlugAppSlugRouteChildren {
+  ConsoleTenantSlugAppSlugAppUsersRoute: typeof ConsoleTenantSlugAppSlugAppUsersRoute
   ConsoleTenantSlugAppSlugEntitlementsRoute: typeof ConsoleTenantSlugAppSlugEntitlementsRoute
   ConsoleTenantSlugAppSlugOfferingsRoute: typeof ConsoleTenantSlugAppSlugOfferingsRoute
   ConsoleTenantSlugAppSlugSettingsRoute: typeof ConsoleTenantSlugAppSlugSettingsRoute
-  ConsoleTenantSlugAppSlugSubscribersRoute: typeof ConsoleTenantSlugAppSlugSubscribersRoute
   ConsoleTenantSlugAppSlugSubscriptionsRoute: typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
   ConsoleTenantSlugAppSlugIndexRoute: typeof ConsoleTenantSlugAppSlugIndexRoute
 }
 
 const ConsoleTenantSlugAppSlugRouteChildren: ConsoleTenantSlugAppSlugRouteChildren =
   {
+    ConsoleTenantSlugAppSlugAppUsersRoute:
+      ConsoleTenantSlugAppSlugAppUsersRoute,
     ConsoleTenantSlugAppSlugEntitlementsRoute:
       ConsoleTenantSlugAppSlugEntitlementsRoute,
     ConsoleTenantSlugAppSlugOfferingsRoute:
       ConsoleTenantSlugAppSlugOfferingsRoute,
     ConsoleTenantSlugAppSlugSettingsRoute:
       ConsoleTenantSlugAppSlugSettingsRoute,
-    ConsoleTenantSlugAppSlugSubscribersRoute:
-      ConsoleTenantSlugAppSlugSubscribersRoute,
     ConsoleTenantSlugAppSlugSubscriptionsRoute:
       ConsoleTenantSlugAppSlugSubscriptionsRoute,
     ConsoleTenantSlugAppSlugIndexRoute: ConsoleTenantSlugAppSlugIndexRoute,
@@ -406,12 +405,14 @@ const ConsoleTenantSlugAppSlugRouteWithChildren =
 
 interface ConsoleRouteChildren {
   ConsoleAppsRoute: typeof ConsoleAppsRouteWithChildren
+  ConsoleMembersRoute: typeof ConsoleMembersRoute
   ConsoleSettingsRoute: typeof ConsoleSettingsRoute
   ConsoleTenantSlugAppSlugRoute: typeof ConsoleTenantSlugAppSlugRouteWithChildren
 }
 
 const ConsoleRouteChildren: ConsoleRouteChildren = {
   ConsoleAppsRoute: ConsoleAppsRouteWithChildren,
+  ConsoleMembersRoute: ConsoleMembersRoute,
   ConsoleSettingsRoute: ConsoleSettingsRoute,
   ConsoleTenantSlugAppSlugRoute: ConsoleTenantSlugAppSlugRouteWithChildren,
 }
@@ -426,7 +427,6 @@ const rootRouteChildren: RootRouteChildren = {
   LogoutRoute: LogoutRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthStartRoute: AuthStartRoute,
-  ApiRuntimeSubscribersRoute: ApiRuntimeSubscribersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

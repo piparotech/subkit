@@ -24,7 +24,6 @@ import type {
   AppStoreConnectProductPreview,
   AppStoreConnectProductSyncAction,
   AppTenant,
-  RuntimeSyncEventSummary,
   StatusTone,
   WorkspaceTenant,
 } from './types'
@@ -101,7 +100,6 @@ export function WorkspaceSettingsView({
     })
   }
 
-
   return (
     <section className="max-w-[1080px] animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
       <ViewTitle
@@ -149,13 +147,11 @@ export function AppSettingsView({
   connection,
   onAppDeleted,
   onRefreshConsoleData,
-  runtimeSyncEvents,
 }: {
   app: AppTenant
   connection: AppStoreConnectConnection | null
   onAppDeleted: (id: string) => void
   onRefreshConsoleData: () => void
-  runtimeSyncEvents: RuntimeSyncEventSummary[]
 }) {
   const [busy, setBusy] = React.useState<string | null>(null)
   const [feedback, setFeedback] = React.useState<string | null>(null)
@@ -279,11 +275,10 @@ export function AppSettingsView({
         {monitoring == null ? <EmptySettingsText>No monitoring snapshot yet. This is read-only App Store Connect inspection.</EmptySettingsText> : <MonitoringSnapshot snapshot={monitoring} />}
       </SettingsCard>
 
-      <SettingsCard description="Receive subscriber state from your app backend through the runtime API. This updates local SubKit subscribers and derived app counters only." title="Runtime subscriber sync">
+      <SettingsCard description="Runtime APIs answer entitlement checks from SubKit state. App backends read authorization answers; they do not authoritatively sync App User state." title="Runtime Entitlement API">
         <EmptySettingsText>
-          POST subscriber snapshots to <span className="font-mono">/api/runtime/subscribers</span> with the runtime bearer token. Expected fields: <span className="font-mono">appId</span>, <span className="font-mono">source</span>, and <span className="font-mono">subscribers[]</span>.
+          App backends should query <span className="font-mono">/api/runtime/entitlements/check</span> with <span className="font-mono">appId</span>, <span className="font-mono">appUserId</span>, and <span className="font-mono">entitlement</span>. SubKit answers from local App User entitlement grants.
         </EmptySettingsText>
-        <RuntimeSyncHistory appId={app.id} events={runtimeSyncEvents} />
       </SettingsCard>
 
       <SettingsCard
@@ -292,7 +287,7 @@ export function AppSettingsView({
         tone="danger"
       >
         <div className="rounded-[11px] border border-[color-mix(in_oklch,var(--subkit-red)_24%,var(--subkit-border))] bg-[color-mix(in_oklch,var(--subkit-red)_5%,white)] px-[12px] py-[10px] text-[12.5px] leading-[1.45] text-[var(--subkit-dim)]">
-          This removes local products, entitlements, offerings, subscribers, imported reports, and app-scoped audit entries for <strong className="text-[var(--subkit-text)]">{app.name}</strong>.
+          This removes local products, entitlements, offerings, App Users, imported reports, and app-scoped audit entries for <strong className="text-[var(--subkit-text)]">{app.name}</strong>.
         </div>
         <div className="flex flex-col gap-[7px]">
           <label className="text-[12.5px] font-semibold text-[var(--subkit-text)]" htmlFor="delete-app-confirmation">
@@ -455,28 +450,6 @@ function SalesReportHistory({ connection }: { connection: AppStoreConnectConnect
           <StatusLabel label={report.status} tone={report.status === 'imported' ? 'success' : 'destructive'} />
           <span className="font-mono text-[var(--subkit-dim)]">{report.rowCount} rows</span>
           <span className="truncate text-[var(--subkit-faint)]">{report.errorDetail ?? report.createdAt}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function RuntimeSyncHistory({ appId, events }: { appId: string; events: RuntimeSyncEventSummary[] }) {
-  const appEvents = events.filter((event) => event.appId === appId)
-  if (appEvents.length === 0) {
-    return <EmptySettingsText>No runtime subscriber sync has been received for this app yet.</EmptySettingsText>
-  }
-
-  return (
-    <div className="rounded-[11px] border border-[var(--subkit-border)]">
-      {appEvents.map((event) => (
-        <div className="grid grid-cols-[0.85fr_0.8fr_0.8fr_1.4fr] gap-[10px] border-b border-[var(--subkit-border)] px-[12px] py-[10px] text-[12px] last:border-b-0 max-md:grid-cols-1" key={event.id}>
-          <span className="font-mono text-[var(--subkit-faint)]">{event.createdAt}</span>
-          <StatusLabel label={event.status} tone={event.status === 'imported' ? 'success' : 'destructive'} />
-          <span className="font-mono text-[var(--subkit-dim)]">
-            {event.created} new · {event.updated} updated
-          </span>
-          <span className="truncate text-[var(--subkit-dim)]">{event.detail}</span>
         </div>
       ))}
     </div>

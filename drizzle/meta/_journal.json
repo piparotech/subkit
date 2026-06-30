@@ -36,6 +36,13 @@
       "when": 1782864000000,
       "tag": "0004_tenant_rbac",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1782865000000,
+      "tag": "0005_seed_piparo_tenant",
+      "breakpoints": true
     }
   ]
 }

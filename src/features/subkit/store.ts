@@ -1,4 +1,4 @@
-import type { AppDraft, AppStatusValue, AppTenant, StatusTone, Subscriber, SubscriptionProduct } from './types'
+import type { AppDraft, AppStatusValue, AppTenant, AppUser, StatusTone, SubscriptionProduct } from './types'
 
 export interface AppRouteParams {
   appSlug: string
@@ -80,7 +80,7 @@ export function createAppFromDraft(draft: AppDraft, existingCount: number, tenan
     androidPackageName: null,
     platforms: ['iOS'],
     mrr: '$0',
-    activeSubs: '0',
+    activeAppUsers: '0',
     status: formatAppStatus(status),
     statusTone: appStatusTone(status),
   }
@@ -133,15 +133,15 @@ export function filterSubscriptions(items: readonly SubscriptionProduct[], query
   )
 }
 
-export function filterSubscribers(items: readonly Subscriber[], query: string): Subscriber[] {
-  return items.filter((subscriber) =>
+export function filterAppUsers(items: readonly AppUser[], query: string): AppUser[] {
+  return items.filter((appUser) =>
     matchesQuery(query, [
-      subscriber.userId,
-      subscriber.country,
-      subscriber.countryCode,
-      subscriber.plan,
-      subscriber.status,
-      subscriber.entitlement,
+      appUser.appUserId,
+      appUser.country,
+      appUser.countryCode,
+      appUser.primaryEntitlement,
+      appUser.primarySource,
+      appUser.status,
     ]),
   )
 }

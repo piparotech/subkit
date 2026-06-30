@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { db } from '~/db/client'
@@ -17,25 +17,29 @@ import {
   apps,
   appStoreConnectAuditEvents,
   appStoreConnectSalesReports,
+  appUsers,
+  entitlementGrants,
   entitlements,
   offeringPackages,
   offerings,
   products,
   purchaseEvents,
-  runtimeSyncEvents,
-  subscribers,
   tenants,
   userTenants,
+  users,
 } from '~/db/schema'
 import { readAppStoreConnectConnectionForTenant } from './app-store-connect-read'
 import type {
   ActivityEvent,
   AppTenant,
+  AppUser,
   ConsoleData,
-  ConsoleUser,
   ConsoleStats,
+  ConsoleUser,
   DashboardSummary,
   Entitlement,
+  EntitlementGrantStatus,
+  EntitlementGrantSummary,
   Metric,
   Offering,
   OfferingPackage,
@@ -43,9 +47,9 @@ import type {
   PurchaseHistoryEvent,
   RevenueBar,
   StatusTone,
-  RuntimeSyncEventSummary,
-  Subscriber,
   SubscriptionProduct,
+  TenantMemberSummary,
+  TenantRole,
   WorkspaceTenant,
 } from './types'
 
@@ -81,6 +85,23 @@ const tenantInputSchema = z.object({
   id: z.string().min(1),
   initials: z.string().min(1),
   name: z.string().min(1),
+})
+
+const tenantMemberInputSchema = z.object({
+  email: z.string().email(),
+  role: z.enum(['admin', 'developer']),
+  tenantId: z.string().min(1),
+})
+
+const tenantMemberUpdateInputSchema = z.object({
+  role: z.enum(['admin', 'developer']),
+  tenantId: z.string().min(1),
+  userId: z.string().min(1),
+})
+
+const tenantMemberDeleteInputSchema = z.object({
+  tenantId: z.string().min(1),
+  userId: z.string().min(1),
 })
 
 function parsePriceCents(price: string): number {
@@ -126,17 +147,30 @@ function appStatus(status: 'setup' | 'live' | 'beta' | 'inactive'): { label: str
   return { label: 'Inactive', tone: 'muted' }
 }
 
-function subscriberStatus(status: 'active' | 'trial' | 'billing_retry' | 'expired'): { label: string; tone: StatusTone } {
+function grantStatus(status: EntitlementGrantStatus): { label: string; tone: StatusTone } {
   switch (status) {
     case 'active':
       return { label: 'Active', tone: 'success' }
-    case 'trial':
-      return { label: 'Trial', tone: 'warning' }
+    case 'trialing':
+      return { label: 'Trialing', tone: 'warning' }
     case 'billing_retry':
       return { label: 'Billing retry', tone: 'destructive' }
     case 'expired':
       return { label: 'Expired', tone: 'muted' }
+    case 'revoked':
+      return { label: 'Revoked', tone: 'destructive' }
   }
+}
+
+function sourceLabel(source: string): string {
+  if (source === 'apple') return 'Apple'
+  if (source === 'google') return 'Google'
+  if (source === 'voucher') return 'Voucher'
+  if (source === 'promo') return 'Promo'
+  if (source === 'manual') return 'Manual'
+  if (source === 'lifetime') return 'Lifetime'
+  if (source === 'migration') return 'Migration'
+  return source
 }
 
 function amountTone(cents: number | null): StatusTone {
@@ -146,13 +180,28 @@ function amountTone(cents: number | null): StatusTone {
 
 function shortUserId(userId: string): string {
   const [firstPart] = userId.split('-')
-  if (!firstPart) throw new Error('Subscriber user id is required')
+  if (!firstPart) throw new Error('App User id is required')
   return firstPart
 }
 
-function readSubscriberPlan(subscriber: typeof subscribers.$inferSelect | undefined): string {
-  if (subscriber == null) throw new Error('Purchase event references a missing subscriber')
-  return subscriber.plan
+function isAccessGrant(status: EntitlementGrantStatus): boolean {
+  return status === 'active' || status === 'trialing' || status === 'billing_retry'
+}
+
+function grantPriority(status: EntitlementGrantStatus): number {
+  if (status === 'active') return 0
+  if (status === 'trialing') return 1
+  if (status === 'billing_retry') return 2
+  if (status === 'expired') return 3
+  return 4
+}
+
+function sortGrantsByRelevance<T extends { createdAt: Date; status: EntitlementGrantStatus }>(items: readonly T[]): T[] {
+  return [...items].sort((left, right) => {
+    const priorityDelta = grantPriority(left.status) - grantPriority(right.status)
+    if (priorityDelta !== 0) return priorityDelta
+    return right.createdAt.getTime() - left.createdAt.getTime()
+  })
 }
 
 function revenueBarsForEvents(events: readonly typeof purchaseEvents.$inferSelect[]): RevenueBar[] {
@@ -225,6 +274,37 @@ function canCreateTenants(user: AuthUser, roleByTenantId: ReadonlyMap<string, Wo
   return isSuperAdmin(user) || [...roleByTenantId.values()].some((role) => role === 'admin')
 }
 
+function toTenantMemberSummary(row: { createdAt: Date; role: TenantRole; tenantId: string; user: typeof users.$inferSelect }): TenantMemberSummary {
+  return {
+    createdAt: formatDateTime(row.createdAt),
+    email: row.user.email,
+    globalRole: row.user.globalRole,
+    initials: row.user.initials,
+    name: row.user.name,
+    organization: row.user.organization,
+    role: row.role,
+    tenantId: row.tenantId,
+    userId: row.user.id,
+  }
+}
+
+function normalizeEmail(value: string): string {
+  return value.trim().toLowerCase()
+}
+
+function canRemoveTenantMember(currentUser: AuthUser, userId: string): boolean {
+  return currentUser.id !== userId || isSuperAdmin(currentUser)
+}
+
+async function assertTenantKeepsAdmin(tenantId: string, excludedUserId: string): Promise<void> {
+  const adminRows = await db
+    .select({ userId: userTenants.userId })
+    .from(userTenants)
+    .where(and(eq(userTenants.tenantId, tenantId), eq(userTenants.role, 'admin')))
+  const remainingAdmins = adminRows.filter((member) => member.userId !== excludedUserId)
+  if (remainingAdmins.length === 0) throw new Error('Tenant needs at least one admin')
+}
+
 function toConsoleUser(user: AuthUser, canCreateNewTenants: boolean): ConsoleUser {
   return {
     canCreateTenants: canCreateNewTenants,
@@ -278,20 +358,31 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
     entitlementRowsAll,
     offeringRowsAll,
     packageRows,
-    subscriberRowsAll,
+    appUserRowsAll,
+    entitlementGrantRowsAll,
     eventRowsAll,
     appStoreConnectConnections,
-    runtimeSyncEventRowsAll,
+    tenantMemberRowsAll,
   ] = await Promise.all([
     db.select().from(apps),
     db.select().from(products),
     db.select().from(entitlements),
     db.select().from(offerings),
     db.select().from(offeringPackages),
-    db.select().from(subscribers),
+    db.select().from(appUsers),
+    db.select().from(entitlementGrants),
     db.select().from(purchaseEvents),
     Promise.all(accessibleTenantRows.map((tenant) => readAppStoreConnectConnectionForTenant(tenant.id))),
-    db.select().from(runtimeSyncEvents),
+    db
+      .select({
+        createdAt: userTenants.createdAt,
+        role: userTenants.role,
+        tenantId: userTenants.tenantId,
+        user: users,
+      })
+      .from(userTenants)
+      .innerJoin(users, eq(userTenants.userId, users.id))
+      .where(isNull(users.disabledAt)),
   ])
 
   const activeTenant = accessibleTenantRows[0]
@@ -300,18 +391,19 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
   const productRows = productRowsAll.filter((product) => isOwnedApp(product.appId, ownedAppIds))
   const entitlementRows = entitlementRowsAll.filter((entitlement) => isOwnedApp(entitlement.appId, ownedAppIds))
   const offeringRows = offeringRowsAll.filter((offering) => isOwnedApp(offering.appId, ownedAppIds))
-  const subscriberRows = subscriberRowsAll.filter((subscriber) => isOwnedApp(subscriber.appId, ownedAppIds))
-  const ownedSubscriberIds = new Set(subscriberRows.map((subscriber) => subscriber.id))
-  const eventRows = eventRowsAll.filter((event) => ownedSubscriberIds.has(event.subscriberId))
-  const runtimeSyncEventRows = runtimeSyncEventRowsAll.filter((event) => isOwnedApp(event.appId, ownedAppIds))
+  const appUserRows = appUserRowsAll.filter((appUser) => isOwnedApp(appUser.appId, ownedAppIds))
+  const ownedAppUserIds = new Set(appUserRows.map((appUser) => appUser.id))
+  const entitlementGrantRows = entitlementGrantRowsAll.filter((grant) => isOwnedApp(grant.appId, ownedAppIds) && ownedAppUserIds.has(grant.appUserId))
+  const eventRows = eventRowsAll.filter((event) => ownedAppUserIds.has(event.appUserId))
+  const tenantMemberRows = tenantMemberRowsAll.filter((member) => accessibleTenantIds.has(member.tenantId))
 
   const stats: ConsoleStats = {
-    tenants: accessibleTenantRows.length,
+    appUsers: appUserRows.length,
     apps: appRows.length,
     products: productRows.length,
     entitlements: entitlementRows.length,
-    subscribers: subscriberRows.length,
     purchaseEvents: eventRows.length,
+    tenants: accessibleTenantRows.length,
   }
 
   const tenant: WorkspaceTenant = activeTenant == null
@@ -320,13 +412,54 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
   const accessibleTenants = accessibleTenantRows.map((tenantRow) => toWorkspaceTenant(tenantRow, roleForTenant(roleByTenantId, tenantRow.id)))
   const appStoreConnectConnectionsFiltered = appStoreConnectConnections.filter((connection) => connection != null)
   const appStoreConnectConnection = appStoreConnectConnectionsFiltered[0] ?? null
+  const tenantMembers = tenantMemberRows.map(toTenantMemberSummary)
 
+  const appUserById = new Map(appUserRows.map((appUser) => [appUser.id, appUser]))
   const entitlementById = new Map(entitlementRows.map((row) => [row.id, row]))
+  const productById = new Map(productRows.map((row) => [row.id, row]))
+  const grantById = new Map(entitlementGrantRows.map((row) => [row.id, row]))
+
   const productsByEntitlement = new Map<string, string[]>()
   for (const product of productRows) {
     const current = productsByEntitlement.get(product.entitlementId) ?? []
     current.push(product.identifier)
     productsByEntitlement.set(product.entitlementId, current)
+  }
+
+  const grantsByAppUser = new Map<string, Array<typeof entitlementGrants.$inferSelect>>()
+  const activeAppUserIdsByApp = new Map<string, Set<string>>()
+  const activeAppUserIdsByProduct = new Map<string, Set<string>>()
+  for (const grant of entitlementGrantRows) {
+    const current = grantsByAppUser.get(grant.appUserId) ?? []
+    current.push(grant)
+    grantsByAppUser.set(grant.appUserId, current)
+
+    if (isAccessGrant(grant.status)) {
+      const appSet = activeAppUserIdsByApp.get(grant.appId) ?? new Set<string>()
+      appSet.add(grant.appUserId)
+      activeAppUserIdsByApp.set(grant.appId, appSet)
+
+      if (grant.productId != null) {
+        const productSet = activeAppUserIdsByProduct.get(grant.productId) ?? new Set<string>()
+        productSet.add(grant.appUserId)
+        activeAppUserIdsByProduct.set(grant.productId, productSet)
+      }
+    }
+  }
+
+  const eventsByAppUser = new Map<string, PurchaseHistoryEvent[]>()
+  const ltvByAppUser = new Map<string, number>()
+  for (const event of eventRows) {
+    const current = eventsByAppUser.get(event.appUserId) ?? []
+    current.push({
+      type: event.type,
+      date: event.occurredOn,
+      store: event.store,
+      amount: formatSignedCurrency(event.amountCents),
+      amountTone: amountTone(event.amountCents),
+    })
+    eventsByAppUser.set(event.appUserId, current)
+    ltvByAppUser.set(event.appUserId, (ltvByAppUser.get(event.appUserId) ?? 0) + Math.max(event.amountCents ?? 0, 0))
   }
 
   const appItems: AppTenant[] = appRows.map((app) => {
@@ -343,7 +476,7 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
       androidPackageName: app.androidPackageName,
       platforms: appPlatforms(app.appleAppId, app.iosBundleId, app.bundleId, app.androidPackageName),
       mrr: formatCurrency(app.monthlyRevenueCents),
-      activeSubs: formatInteger(app.activeSubscriberCount),
+      activeAppUsers: formatInteger(activeAppUserIdsByApp.get(app.id)?.size ?? 0),
       status: status.label,
       statusTone: status.tone,
     }
@@ -359,7 +492,7 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
       androidId: product.playStoreId,
       duration: product.duration,
       price: formatCurrency(product.priceCents),
-      activeSubs: formatInteger(product.activeSubscriberCount),
+      activeAppUsers: formatInteger(activeAppUserIdsByProduct.get(product.id)?.size ?? 0),
       entitlement: entitlement?.key ?? product.entitlementId,
       trial: product.trialEnabled ? '7-day free trial' : 'No trial',
       trialOn: product.trialEnabled,
@@ -400,78 +533,72 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
     packages: packagesByOffering.get(offering.id) ?? [],
   }))
 
-  const eventsBySubscriber = new Map<string, PurchaseHistoryEvent[]>()
-  for (const event of eventRows) {
-    const current = eventsBySubscriber.get(event.subscriberId) ?? []
-    current.push({
-      type: event.type,
-      date: event.occurredOn,
-      store: event.store,
-      amount: formatSignedCurrency(event.amountCents),
-      amountTone: amountTone(event.amountCents),
+  const consoleAppUsers: AppUser[] = appUserRows.map((appUser) => {
+    const relevantGrants = sortGrantsByRelevance(grantsByAppUser.get(appUser.id) ?? [])
+    const primaryGrant = relevantGrants[0]
+    const primaryStatus: { label: string; tone: StatusTone } = primaryGrant == null ? { label: 'No entitlement', tone: 'muted' } : grantStatus(primaryGrant.status)
+    const grantSummaries: EntitlementGrantSummary[] = relevantGrants.map((grant) => {
+      const status = grantStatus(grant.status)
+      const entitlement = entitlementById.get(grant.entitlementId)
+      const product = grant.productId == null ? null : productById.get(grant.productId)
+      return {
+        entitlement: entitlement?.key ?? grant.entitlementId,
+        expiresAt: grant.expiresAt ?? '—',
+        id: grant.id,
+        product: product?.identifier ?? '—',
+        source: sourceLabel(grant.source),
+        startsAt: grant.startsAt,
+        status: status.label,
+        statusTone: status.tone,
+      }
     })
-    eventsBySubscriber.set(event.subscriberId, current)
-  }
+    const primaryEntitlement = primaryGrant == null ? '—' : entitlementById.get(primaryGrant.entitlementId)?.key ?? primaryGrant.entitlementId
 
-  const consoleSubscribers: Subscriber[] = subscriberRows.map((subscriber) => {
-    const status = subscriberStatus(subscriber.status)
-    const entitlement = subscriber.entitlementId != null ? entitlementById.get(subscriber.entitlementId) : null
     return {
-      appId: subscriber.appId,
-      userId: subscriber.appUserId,
-      countryCode: subscriber.countryCode,
-      country: subscriber.country,
-      plan: subscriber.plan,
-      status: status.label,
-      statusTone: status.tone,
-      since: subscriber.subscriberSince,
-      ltv: formatCurrency(subscriber.lifetimeValueCents),
-      entitlement: entitlement?.key ?? '—',
-      history: eventsBySubscriber.get(subscriber.id) ?? [],
+      appId: appUser.appId,
+      appUserId: appUser.appUserId,
+      countryCode: appUser.countryCode,
+      country: appUser.country,
+      createdAt: formatDateTime(appUser.createdAt),
+      grants: grantSummaries,
+      history: eventsByAppUser.get(appUser.id) ?? [],
+      lastSeenAt: appUser.lastSeenAt == null ? '—' : formatDateTime(appUser.lastSeenAt),
+      ltv: formatCurrency(ltvByAppUser.get(appUser.id) ?? 0),
+      primaryEntitlement,
+      primarySource: primaryGrant == null ? '—' : sourceLabel(primaryGrant.source),
+      status: primaryStatus.label,
+      statusTone: primaryStatus.tone,
     }
   })
 
-  const subscriberById = new Map(subscriberRows.map((subscriber) => [subscriber.id, subscriber]))
-  const runtimeSyncEventItems: RuntimeSyncEventSummary[] = runtimeSyncEventRows
-    .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
-    .slice(0, 8)
-    .map((event) => ({
-      appId: event.appId,
-      created: event.created,
-      createdAt: formatDateTime(event.createdAt),
-      detail: event.detail,
-      failed: event.failed,
-      id: event.id,
-      received: event.received,
-      source: event.source,
-      status: event.status,
-      updated: event.updated,
-    }))
-
   const dashboards: DashboardSummary[] = appRows.map((app) => {
-    const appSubscribers = subscriberRows.filter((subscriber) => subscriber.appId === app.id)
-    const activeSubscriptions = app.activeSubscriberCount
-    const activeTrials = appSubscribers.filter((subscriber) => subscriber.status === 'trial').length
-    const expiredSubscribers = appSubscribers.filter((subscriber) => subscriber.status === 'expired').length
-    const appEvents = eventRows.filter((event) => subscriberById.get(event.subscriberId)?.appId === app.id)
+    const appUsersForApp = appUserRows.filter((appUser) => appUser.appId === app.id)
+    const appGrants = entitlementGrantRows.filter((grant) => grant.appId === app.id)
+    const activeUserIds = activeAppUserIdsByApp.get(app.id) ?? new Set<string>()
+    const trialUserIds = new Set(appGrants.filter((grant) => grant.status === 'trialing').map((grant) => grant.appUserId))
+    const expiredUserIds = new Set(appGrants.filter((grant) => grant.status === 'expired').map((grant) => grant.appUserId))
+    const appEvents = eventRows.filter((event) => appUserById.get(event.appUserId)?.appId === app.id)
     const revenue30dCents = appEvents.reduce((total, event) => total + Math.max(event.amountCents ?? 0, 0), 0)
-    const trialConversionBase = activeSubscriptions + activeTrials
-    const trialConversion = trialConversionBase > 0 ? Math.round((activeSubscriptions / trialConversionBase) * 1000) / 10 : 0
-    const churnRate = appSubscribers.length > 0 ? Math.round((expiredSubscribers / appSubscribers.length) * 1000) / 10 : 0
+    const trialConversionBase = activeUserIds.size + trialUserIds.size
+    const trialConversion = trialConversionBase > 0 ? Math.round((activeUserIds.size / trialConversionBase) * 1000) / 10 : 0
+    const churnRate = appUsersForApp.length > 0 ? Math.round((expiredUserIds.size / appUsersForApp.length) * 1000) / 10 : 0
     const metrics: Metric[] = [
       { label: 'Monthly Recurring Revenue', value: formatCurrency(app.monthlyRevenueCents) },
-      { label: 'Active Subscriptions', value: formatInteger(activeSubscriptions) },
-      { label: 'Active Trials', value: formatInteger(activeTrials) },
+      { label: 'Active App Users', value: formatInteger(activeUserIds.size) },
+      { label: 'Trialing Grants', value: formatInteger(trialUserIds.size) },
       { label: 'Trial Conversion', value: `${trialConversion}%` },
-      { label: 'Churn Rate', value: `${churnRate}%` },
+      { label: 'Expired Grants', value: `${churnRate}%` },
       { label: 'Revenue (30d)', value: formatCurrency(revenue30dCents) },
     ]
     const activity: ActivityEvent[] = appEvents.slice(0, 6).map((event) => {
-      const subscriber = subscriberById.get(event.subscriberId)
+      const appUser = appUserById.get(event.appUserId)
+      const grant = event.entitlementGrantId == null ? null : grantById.get(event.entitlementGrantId)
+      const entitlement = grant == null ? null : entitlementById.get(grant.entitlementId)
+      const product = grant?.productId == null ? null : productById.get(grant.productId)
       return {
         type: event.type,
-        user: subscriber != null ? shortUserId(subscriber.appUserId) : event.subscriberId,
-        product: readSubscriberPlan(subscriber),
+        user: appUser != null ? shortUserId(appUser.appUserId) : event.appUserId,
+        product: product?.identifier ?? entitlement?.key ?? '—',
         amount: formatSignedCurrency(event.amountCents),
         amountTone: amountTone(event.amountCents),
         time: event.occurredOn,
@@ -485,16 +612,16 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
     accessibleTenants,
     appStoreConnect: appStoreConnectConnection,
     appStoreConnectConnections: appStoreConnectConnectionsFiltered,
+    appUsers: consoleAppUsers,
     apps: appItems,
     currentUser: toConsoleUser(currentUser, canCreateTenants(currentUser, roleByTenantId)),
     dashboards,
     subscriptions: subscriptionProducts,
     entitlements: consoleEntitlements,
     offerings: consoleOfferings,
-    runtimeSyncEvents: runtimeSyncEventItems,
-    subscribers: consoleSubscribers,
     stats,
     tenant,
+    tenantMembers,
   }
 })
 
@@ -530,6 +657,66 @@ export const createTenantRecord = createServerFn({ method: 'POST' })
     return { id: tenantId, ok: true }
   })
 
+export const inviteTenantMember = createServerFn({ method: 'POST' })
+  .validator((input: unknown) => tenantMemberInputSchema.parse(input))
+  .handler(async ({ data }) => {
+    await ensureDatabaseReady()
+    const currentUser = await getCurrentConsoleUser()
+    await requireTenantRole(currentUser, data.tenantId, ['admin'])
+    const email = normalizeEmail(data.email)
+    const [user] = await db.select().from(users).where(and(eq(users.email, email), isNull(users.disabledAt))).limit(1)
+    if (user == null) throw new Error('User must sign in once before they can be invited')
+    const now = new Date()
+
+    await db
+      .insert(userTenants)
+      .values({
+        createdAt: now,
+        invitedByUserId: currentUser.id,
+        role: data.role,
+        tenantId: data.tenantId,
+        userId: user.id,
+      })
+      .onConflictDoUpdate({
+        set: {
+          invitedByUserId: currentUser.id,
+          role: data.role,
+        },
+        target: [userTenants.userId, userTenants.tenantId],
+      })
+
+    return { ok: true }
+  })
+
+export const updateTenantMemberRole = createServerFn({ method: 'POST' })
+  .validator((input: unknown) => tenantMemberUpdateInputSchema.parse(input))
+  .handler(async ({ data }) => {
+    await ensureDatabaseReady()
+    const currentUser = await getCurrentConsoleUser()
+    await requireTenantRole(currentUser, data.tenantId, ['admin'])
+    if (data.role === 'developer') await assertTenantKeepsAdmin(data.tenantId, data.userId)
+
+    await db
+      .update(userTenants)
+      .set({ role: data.role })
+      .where(and(eq(userTenants.tenantId, data.tenantId), eq(userTenants.userId, data.userId)))
+
+    return { ok: true }
+  })
+
+export const removeTenantMember = createServerFn({ method: 'POST' })
+  .validator((input: unknown) => tenantMemberDeleteInputSchema.parse(input))
+  .handler(async ({ data }) => {
+    await ensureDatabaseReady()
+    const currentUser = await getCurrentConsoleUser()
+    await requireTenantRole(currentUser, data.tenantId, ['admin'])
+    if (!canRemoveTenantMember(currentUser, data.userId)) throw new Error('Admins cannot remove their own tenant access')
+    await assertTenantKeepsAdmin(data.tenantId, data.userId)
+
+    await db.delete(userTenants).where(and(eq(userTenants.tenantId, data.tenantId), eq(userTenants.userId, data.userId)))
+    return { ok: true }
+  })
+
 export const createAppRecord = createServerFn({ method: 'POST' })
   .validator((input: unknown) => appInputSchema.parse(input))
   .handler(async ({ data }) => {
@@ -543,7 +730,7 @@ export const createAppRecord = createServerFn({ method: 'POST' })
     await db
       .insert(apps)
       .values({
-        activeSubscriberCount: 0,
+        activeAppUserCount: 0,
         androidPackageName: null,
         appleAppId: data.appleAppId,
         bundleId: data.bundleId,
@@ -580,19 +767,19 @@ export const deleteAppRecord = createServerFn({ method: 'POST' })
     await requireTenantRole(currentUser, app.tenantId, ['admin'])
 
     await db.transaction(async (tx) => {
-      const subscriberRows = await tx.select({ id: subscribers.id }).from(subscribers).where(eq(subscribers.appId, data.appId))
+      const appUserRows = await tx.select({ id: appUsers.id }).from(appUsers).where(eq(appUsers.appId, data.appId))
       const offeringRows = await tx.select({ id: offerings.id }).from(offerings).where(eq(offerings.appId, data.appId))
-      const subscriberIds = subscriberRows.map((subscriber) => subscriber.id)
+      const appUserIds = appUserRows.map((appUser) => appUser.id)
       const offeringIds = offeringRows.map((offering) => offering.id)
 
-      if (subscriberIds.length > 0) await tx.delete(purchaseEvents).where(inArray(purchaseEvents.subscriberId, subscriberIds))
+      if (appUserIds.length > 0) await tx.delete(purchaseEvents).where(inArray(purchaseEvents.appUserId, appUserIds))
+      await tx.delete(entitlementGrants).where(eq(entitlementGrants.appId, data.appId))
       if (offeringIds.length > 0) await tx.delete(offeringPackages).where(inArray(offeringPackages.offeringId, offeringIds))
 
       await tx.delete(appStoreConnectSalesReports).where(eq(appStoreConnectSalesReports.appId, data.appId))
       await tx.delete(appStoreConnectAuditEvents).where(eq(appStoreConnectAuditEvents.appId, data.appId))
-      await tx.delete(runtimeSyncEvents).where(eq(runtimeSyncEvents.appId, data.appId))
       await tx.delete(products).where(eq(products.appId, data.appId))
-      await tx.delete(subscribers).where(eq(subscribers.appId, data.appId))
+      await tx.delete(appUsers).where(eq(appUsers.appId, data.appId))
       await tx.delete(offerings).where(eq(offerings.appId, data.appId))
       await tx.delete(entitlements).where(eq(entitlements.appId, data.appId))
       await tx.delete(apps).where(eq(apps.id, data.appId))
@@ -632,7 +819,7 @@ export const upsertSubscriptionRecord = createServerFn({ method: 'POST' })
     await db
       .insert(products)
       .values({
-        activeSubscriberCount: 0,
+        activeAppUserCount: 0,
         appId: data.appId,
         appStoreId: data.iosId,
         displayName: data.name,

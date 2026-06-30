@@ -14,19 +14,37 @@ App-Backends und Apps sollen SubKit-Zustand über Runtime-/Read-APIs konsumieren
 
 Store-Systeme speisen SubKit über verifizierte Quellen, zum Beispiel App-Store-Connect-Katalog-Lesezugriffe, Apple Server Notifications, Google Play RTDN, Receipt Validation, Report-Imports oder bewusste Operator-Aktionen.
 
+Ein App User kann Entitlements nicht nur über Store-Subscriptions erhalten. Gutscheine, Promo-Codes, manuelle Grants, Lifetime Purchases und Migrationen sind ebenfalls gültige Quellen für Zugriff.
+
 ## Fachliches Datenmodell
 
 - Apps: kundenseitige mobile Apps eines Tenants.
 - Products: Store-Produkte und Subscription-Produkte, die in SubKit gemappt sind.
 - Entitlements: Fähigkeiten oder Zugriffsrechte, die ein App User erhält; App-Code soll Entitlements prüfen, nicht rohe Product IDs.
 - Offerings: Paywall-/Package-Darstellung aus Products.
-- App Users: Endnutzer einer mobilen App und ihr aktueller Subscription-/Entitlement-Zustand.
+- App Users: Endnutzer einer mobilen App und ihr aktueller Entitlement-Zustand.
+- Entitlement Grants: konkrete Vergaben eines Entitlements an einen App User, inklusive Quelle, Status, Zeitraum und optionaler Referenz auf Product, Store-Transaktion, Gutschein oder Operator-Aktion.
+- Vouchers / Codes: einlösbare Codes, die einem App User Entitlements geben können; sie sind fachlich keine Store-Subscription, aber eine legitime Zugriffsquelle.
 - Store-Integrationen: externe Store-Zustände lesen, synchronisieren und überwachen; Mutationen nur nach expliziter Vorschau und Operator-Bestätigung.
+
+## Entitlement-Quellen
+
+Ein aktives Entitlement kann entstehen durch:
+
+- Apple Subscription oder Apple In-App Purchase.
+- Google Play Subscription oder In-App Product.
+- Gutschein / Voucher / Promo-Code.
+- Manueller Operator-Grant.
+- Lifetime Purchase.
+- Migration oder Admin-Import.
+
+Deshalb soll App-Code nicht fragen „hat dieser User eine Subscription?“, sondern „hat dieser App User dieses Entitlement?“. Store-Subscriptions sind nur eine mögliche Ursache für ein Entitlement.
 
 ## Begriffe
 
 - „App User“ ist der Produktbegriff in UI, Doku und fachlicher Diskussion.
 - „Subscriber“ darf nur verwendet werden, wenn es um Store-spezifische Konzepte oder interne technische Tabellen/Legacy-Namen geht.
+- „Subscribed“ ist als fachlicher Zustand zu eng; maßgeblich ist, ob ein App User ein aktives Entitlement hat.
 - Console-/Operator-User sind Nutzer der SubKit-Oberfläche und nicht mit App Users zu verwechseln.
 
 ## Runtime-Modell
@@ -34,8 +52,8 @@ Store-Systeme speisen SubKit über verifizierte Quellen, zum Beispiel App-Store-
 Runtime-APIs sollen primär Autorisierungsfragen aus dem SubKit-Zustand beantworten:
 
 - Welche Entitlements hat dieser App User?
-- Ist das Entitlement aktuell active, trialing, expired oder in billing retry?
-- Welches Product oder welcher Store-Datensatz hat diesen Zustand verursacht?
+- Ist das Entitlement aktuell active, trialing, expired, revoked oder in billing retry?
+- Welche Quelle hat diesen Zustand verursacht: Store Product, Voucher, manueller Grant, Lifetime Purchase oder Migration?
 
 Runtime-APIs müssen authentifiziert und gescoped sein. Sie sollen einem App-Backend nicht erlauben, autoritativen App-User-Zustand zu überschreiben, außer die Route ist eindeutig als Import-, Migration- oder Admin-Pfad gedacht.
 
@@ -45,7 +63,7 @@ Runtime-APIs müssen authentifiziert und gescoped sein. Sie sollen einem App-Bac
 - Preview before mutation für Product-, Store- und Catalogue-Änderungen.
 - Store-APIs werden nicht mutiert, außer es wurde explizit angefordert und bestätigt.
 - Secrets bleiben unsichtbar: Private Keys sind One-Way-Uploads, überall sonst redacted und auditiert.
-- Source Snapshots, lokale Records, Raw Imports, Derived Metrics und Operator-Edits müssen unterscheidbar bleiben.
+- Source Snapshots, lokale Records, Raw Imports, Derived Metrics, Vouchers, Grants und Operator-Edits müssen unterscheidbar bleiben.
 - Kompakte, explizite Operator-UI schlägt dekorative Dashboards.
 
 ## Nutzer

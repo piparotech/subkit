@@ -1,19 +1,20 @@
-import { useLoaderData, useNavigate, useRouter } from '@tanstack/react-router'
+import { Link, useLoaderData, useNavigate, useRouter } from '@tanstack/react-router'
 import * as React from 'react'
 
 import { ConsoleShell } from './Shell'
 import {
+  AppUsersView,
   AppsView,
   DashboardView,
   EntitlementsView,
   OfferingsView,
-  SubscribersView,
   SubscriptionsView,
 } from './Views'
 import { AppSettingsView, WorkspaceSettingsView } from './SettingsView'
+import { TenantMembersView } from './TenantMembersView'
 import { newSubscription } from './data'
 import { Panels } from './Panels'
-import { appRouteParams, createAppFromDraft, filterApps, filterSubscribers, filterSubscriptions, idForLabel, initialsForName } from './store'
+import { appRouteParams, createAppFromDraft, filterAppUsers, filterApps, filterSubscriptions, idForLabel, initialsForName } from './store'
 import { listAppStoreConnectApps } from './app-store-connect-apps-server'
 import { createAppRecord, createTenantRecord, upsertSubscriptionRecord } from './server'
 import type {
@@ -22,12 +23,12 @@ import type {
   AppStoreConnectAccessibleApp,
   AppStoreConnectConnection,
   AppTenant,
+  AppUser,
   ConsoleData,
   EditableSubscriptionTextField,
   Entitlement,
   Offering,
   PanelState,
-  Subscriber,
   SubscriptionProduct,
   TenantDraft,
   TenantDraftField,
@@ -46,7 +47,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
   const [subscriptions, setSubscriptions] = React.useState<SubscriptionProduct[]>(consoleData.subscriptions)
   const [entitlements, setEntitlements] = React.useState<Entitlement[]>(consoleData.entitlements)
   const [offerings, setOfferings] = React.useState<Offering[]>(consoleData.offerings)
-  const [subscribers, setSubscribers] = React.useState<Subscriber[]>(consoleData.subscribers)
+  const [appUsers, setAppUsers] = React.useState<AppUser[]>(consoleData.appUsers)
   const [switcherOpen, setSwitcherOpen] = React.useState(false)
   const [selectedTenantId, setSelectedTenantId] = React.useState(consoleData.tenant.id)
   const [searchQuery, setSearchQuery] = React.useState('')
@@ -63,7 +64,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
     setSubscriptions(consoleData.subscriptions)
     setEntitlements(consoleData.entitlements)
     setOfferings(consoleData.offerings)
-    setSubscribers(consoleData.subscribers)
+    setAppUsers(consoleData.appUsers)
   }, [consoleData])
 
   React.useEffect(() => {
@@ -87,9 +88,9 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
     () => (currentApp == null ? offerings : offerings.filter((offering) => offering.appId === currentApp.id)),
     [currentApp, offerings],
   )
-  const currentSubscribers = React.useMemo(
-    () => (currentApp == null ? subscribers : subscribers.filter((subscriber) => subscriber.appId === currentApp.id)),
-    [currentApp, subscribers],
+  const currentAppUsers = React.useMemo(
+    () => (currentApp == null ? appUsers : appUsers.filter((appUser) => appUser.appId === currentApp.id)),
+    [appUsers, currentApp],
   )
 
   const visibleApps = React.useMemo(() => filterApps(apps, searchQuery), [apps, searchQuery])
@@ -97,25 +98,13 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
     () => filterSubscriptions(currentSubscriptions, searchQuery),
     [currentSubscriptions, searchQuery],
   )
-  const visibleSubscribers = React.useMemo(
-    () => filterSubscribers(currentSubscribers, searchQuery),
-    [currentSubscribers, searchQuery],
+  const visibleAppUsers = React.useMemo(
+    () => filterAppUsers(currentAppUsers, searchQuery),
+    [currentAppUsers, searchQuery],
   )
 
   const reportNavigationError = (error: unknown) => {
     console.error('Failed to navigate SubKit', error)
-  }
-
-  const selectApp = (id: string) => {
-    const app = apps.find((item) => item.id === id)
-    if (app == null) return
-    setSwitcherOpen(false)
-    navigate({ params: appRouteParams(app), to: '/$tenantSlug/$appSlug' }).catch(reportNavigationError)
-  }
-
-  const goAllApps = () => {
-    setSwitcherOpen(false)
-    navigate({ to: '/apps' }).catch(reportNavigationError)
   }
 
   const selectTenant = (id: string) => {
@@ -123,44 +112,6 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
     setSwitcherOpen(false)
     if (currentApp != null && currentApp.tenantId !== id) {
       navigate({ to: '/apps' }).catch(reportNavigationError)
-    }
-  }
-
-  const goView = (nextView: View) => {
-    setSwitcherOpen(false)
-
-    if (nextView === 'apps') {
-      navigate({ to: '/apps' }).catch(reportNavigationError)
-      return
-    }
-
-    if (nextView === 'workspaceSettings') {
-      if (currentApp != null) setSelectedTenantId(currentApp.tenantId)
-      navigate({ to: '/settings' }).catch(reportNavigationError)
-      return
-    }
-
-    if (currentApp == null) return
-
-    switch (nextView) {
-      case 'dashboard':
-        navigate({ params: appRouteParams(currentApp), to: '/$tenantSlug/$appSlug' }).catch(reportNavigationError)
-        return
-      case 'subscriptions':
-        navigate({ params: appRouteParams(currentApp), to: '/$tenantSlug/$appSlug/subscriptions' }).catch(reportNavigationError)
-        return
-      case 'entitlements':
-        navigate({ params: appRouteParams(currentApp), to: '/$tenantSlug/$appSlug/entitlements' }).catch(reportNavigationError)
-        return
-      case 'offerings':
-        navigate({ params: appRouteParams(currentApp), to: '/$tenantSlug/$appSlug/offerings' }).catch(reportNavigationError)
-        return
-      case 'subscribers':
-        navigate({ params: appRouteParams(currentApp), to: '/$tenantSlug/$appSlug/subscribers' }).catch(reportNavigationError)
-        return
-      case 'settings':
-        navigate({ params: appRouteParams(currentApp), to: '/$tenantSlug/$appSlug/settings' }).catch(reportNavigationError)
-        return
     }
   }
 
@@ -193,8 +144,8 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
     })
   }
 
-  const openSubscriber = (subscriber: Subscriber) => {
-    setPanel({ kind: 'subscriber', subscriber })
+  const openAppUser = (appUser: AppUser) => {
+    setPanel({ appUser, kind: 'appUser' })
   }
 
   const closePanel = () => setPanel({ kind: 'closed' })
@@ -374,7 +325,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
     setSubscriptions((current) => current.filter((subscription) => subscription.appId !== id))
     setEntitlements((current) => current.filter((entitlement) => entitlement.appId !== id))
     setOfferings((current) => current.filter((offering) => offering.appId !== id))
-    setSubscribers((current) => current.filter((subscriber) => subscriber.appId !== id))
+    setAppUsers((current) => current.filter((appUser) => appUser.appId !== id))
     navigate({ to: '/apps' }).catch(reportNavigationError)
   }
 
@@ -388,12 +339,9 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
         canCreateApps={currentTenant.role === 'admin' || currentTenant.role === 'super_admin'}
         canCreateTenants={currentUser.canCreateTenants}
         tenant={currentTenant}
-        onGoAllApps={goAllApps}
-        onGoView={goView}
         onNewTenant={openTenantCreator}
         onPrimaryAction={primaryAction}
         onSearchQueryChange={setSearchQuery}
-        onSelectApp={selectApp}
         onSelectTenant={selectTenant}
         onToggleSwitcher={() => setSwitcherOpen((open) => !open)}
         searchQuery={searchQuery}
@@ -410,11 +358,10 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
           entitlements={currentEntitlements}
           offerings={currentOfferings}
           onAppDeleted={deleteLocalApp}
-          onOpenSubscriber={openSubscriber}
+          onOpenAppUser={openAppUser}
           onOpenSubscription={openSubscription}
           onRefreshConsoleData={refreshConsoleData}
-          onSelectApp={selectApp}
-          subscribers={visibleSubscribers}
+          appUsers={visibleAppUsers}
           subscriptions={visibleSubscriptions}
           view={view}
         />
@@ -450,11 +397,10 @@ function ActiveView({
   entitlements,
   offerings,
   onAppDeleted,
-  onOpenSubscriber,
+  onOpenAppUser,
   onOpenSubscription,
   onRefreshConsoleData,
-  onSelectApp,
-  subscribers,
+  appUsers,
   subscriptions,
   view,
 }: {
@@ -466,21 +412,24 @@ function ActiveView({
   entitlements: Entitlement[]
   offerings: Offering[]
   onAppDeleted: (id: string) => void
-  onOpenSubscriber: (subscriber: Subscriber) => void
+  onOpenAppUser: (appUser: AppUser) => void
   onOpenSubscription: (subscription: SubscriptionProduct) => void
   onRefreshConsoleData: () => void
-  onSelectApp: (id: string) => void
-  subscribers: Subscriber[]
+  appUsers: AppUser[]
   subscriptions: SubscriptionProduct[]
   view: View
 }) {
+  if (view === 'tenantMembers') {
+    return <TenantMembersView onRefreshConsoleData={onRefreshConsoleData} tenant={tenant} tenantMembers={consoleData.tenantMembers} />
+  }
+
   if (view === 'workspaceSettings') {
     return <WorkspaceSettingsView connection={connection} onRefreshConsoleData={onRefreshConsoleData} tenant={tenant} />
   }
 
-  if (view === 'apps') return <AppsView apps={apps} onSelectApp={onSelectApp} />
+  if (view === 'apps') return <AppsView apps={apps} />
 
-  if (currentApp == null) return <AppRouteNotFound apps={apps} onSelectApp={onSelectApp} />
+  if (currentApp == null) return <AppRouteNotFound apps={apps} />
 
   switch (view) {
     case 'dashboard': {
@@ -502,8 +451,8 @@ function ActiveView({
       return <EntitlementsView entitlements={entitlements} />
     case 'offerings':
       return <OfferingsView offerings={offerings} />
-    case 'subscribers':
-      return <SubscribersView onOpenSubscriber={onOpenSubscriber} subscribers={subscribers} />
+    case 'appUsers':
+      return <AppUsersView appUsers={appUsers} onOpenAppUser={onOpenAppUser} />
     case 'settings':
       return (
         <AppSettingsView
@@ -511,7 +460,6 @@ function ActiveView({
           connection={connection}
           onAppDeleted={onAppDeleted}
           onRefreshConsoleData={onRefreshConsoleData}
-          runtimeSyncEvents={consoleData.runtimeSyncEvents.filter((event) => event.appId === currentApp.id)}
         />
       )
   }
@@ -533,7 +481,7 @@ function safeInitials(value: string): string {
   }
 }
 
-function AppRouteNotFound({ apps, onSelectApp }: { apps: AppTenant[]; onSelectApp: (id: string) => void }) {
+function AppRouteNotFound({ apps }: { apps: AppTenant[] }) {
   return (
     <section className="max-w-[760px] animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
       <div className="rounded-[14px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] p-[22px]">
@@ -542,14 +490,15 @@ function AppRouteNotFound({ apps, onSelectApp }: { apps: AppTenant[]; onSelectAp
         {apps.length > 0 ? (
           <div className="mt-[16px] flex flex-wrap gap-[8px]">
             {apps.map((app) => (
-              <button
+              <Link
                 className="cursor-pointer rounded-[9px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[11px] py-[7px] text-[12.5px] font-semibold text-[var(--subkit-text)] hover:bg-[var(--subkit-accent-soft)]"
                 key={app.id}
-                onClick={() => onSelectApp(app.id)}
-                type="button"
+                params={appRouteParams(app)}
+                preload="intent"
+                to="/$tenantSlug/$appSlug"
               >
                 {app.name}
-              </button>
+              </Link>
             ))}
           </div>
         ) : null}

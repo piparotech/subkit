@@ -8,7 +8,7 @@ export const newSubscription: SubscriptionProduct = {
   androidId: '',
   duration: '',
   price: '',
-  activeSubs: '0',
+  activeAppUsers: '0',
   entitlement: '',
   trial: 'Off',
   trialOn: false,

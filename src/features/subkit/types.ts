@@ -1,11 +1,12 @@
 export type View =
   | 'apps'
+  | 'tenantMembers'
   | 'workspaceSettings'
   | 'dashboard'
   | 'subscriptions'
   | 'entitlements'
   | 'offerings'
-  | 'subscribers'
+  | 'appUsers'
   | 'settings'
 
 export type Platform = 'iOS' | 'Android'
@@ -14,6 +15,8 @@ export type AppStatusValue = 'setup' | 'live' | 'beta' | 'inactive'
 export type Store = 'App Store' | 'Play Store'
 export type GlobalRole = 'user' | 'super_admin'
 export type TenantRole = 'admin' | 'developer'
+export type EntitlementGrantSource = 'apple' | 'google' | 'voucher' | 'promo' | 'manual' | 'lifetime' | 'migration'
+export type EntitlementGrantStatus = 'active' | 'trialing' | 'billing_retry' | 'expired' | 'revoked'
 
 export interface ConsoleUser {
   canCreateTenants: boolean
@@ -32,6 +35,18 @@ export interface WorkspaceTenant {
   initials: string
   name: string
   role: TenantRole | 'super_admin'
+}
+
+export interface TenantMemberSummary {
+  createdAt: string
+  email: string | null
+  globalRole: GlobalRole
+  initials: string
+  name: string
+  organization: string
+  role: TenantRole
+  tenantId: string
+  userId: string
 }
 
 export interface TenantDraft {
@@ -55,7 +70,7 @@ export interface AppTenant {
   androidPackageName: string | null
   platforms: Platform[]
   mrr: string
-  activeSubs: string
+  activeAppUsers: string
   status: string
   statusTone: StatusTone
 }
@@ -68,7 +83,7 @@ export interface SubscriptionProduct {
   androidId: string
   duration: string
   price: string
-  activeSubs: string
+  activeAppUsers: string
   entitlement: string
   trial: string
   trialOn: boolean
@@ -108,18 +123,31 @@ export interface PurchaseHistoryEvent {
   amountTone: StatusTone
 }
 
-export interface Subscriber {
-  appId: string
-  userId: string
-  countryCode: string
-  country: string
-  plan: string
+export interface EntitlementGrantSummary {
+  entitlement: string
+  expiresAt: string
+  id: string
+  product: string
+  source: string
+  startsAt: string
   status: string
   statusTone: StatusTone
-  since: string
-  ltv: string
-  entitlement: string
+}
+
+export interface AppUser {
+  appId: string
+  appUserId: string
+  countryCode: string
+  country: string
+  createdAt: string
+  grants: EntitlementGrantSummary[]
   history: PurchaseHistoryEvent[]
+  lastSeenAt: string
+  ltv: string
+  primaryEntitlement: string
+  primarySource: string
+  status: string
+  statusTone: StatusTone
 }
 
 export interface Metric {
@@ -130,11 +158,11 @@ export interface Metric {
 }
 
 export interface ConsoleStats {
+  appUsers: number
   apps: number
   entitlements: number
   products: number
   purchaseEvents: number
-  subscribers: number
   tenants: number
 }
 
@@ -190,18 +218,6 @@ export interface AppStoreConnectAuditEventSummary {
   id: string
 }
 
-export interface RuntimeSyncEventSummary {
-  appId: string
-  created: number
-  createdAt: string
-  detail: string
-  failed: number
-  id: string
-  received: number
-  source: string
-  status: 'imported' | 'failed'
-  updated: number
-}
 
 export interface AppStoreConnectConnection {
   auditEvents: AppStoreConnectAuditEventSummary[]
@@ -285,16 +301,16 @@ export interface ConsoleData {
   accessibleTenants: WorkspaceTenant[]
   appStoreConnect: AppStoreConnectConnection | null
   appStoreConnectConnections: AppStoreConnectConnection[]
+  appUsers: AppUser[]
   apps: AppTenant[]
   currentUser: ConsoleUser
   dashboards: DashboardSummary[]
   entitlements: Entitlement[]
   offerings: Offering[]
-  runtimeSyncEvents: RuntimeSyncEventSummary[]
   stats: ConsoleStats
-  subscribers: Subscriber[]
   subscriptions: SubscriptionProduct[]
   tenant: WorkspaceTenant
+  tenantMembers: TenantMemberSummary[]
 }
 
 export interface AppDraft {
@@ -321,4 +337,4 @@ export type PanelState =
   | { kind: 'newApp' }
   | { kind: 'newTenant' }
   | { kind: 'subscription'; mode: 'new' | 'edit'; originalIdentifier: string | null; subscription: SubscriptionProduct }
-  | { kind: 'subscriber'; subscriber: Subscriber }
+  | { appUser: AppUser; kind: 'appUser' }

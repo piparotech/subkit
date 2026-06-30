@@ -1,4 +1,5 @@
-import { PUIButton, PUIText, cn } from '@piparo/cn-web'
+import { PUIButton } from '@piparo/cn-web'
+import { Link } from '@tanstack/react-router'
 import { ChevronDown, MoreVertical, Plus, Search } from 'lucide-react'
 import * as React from 'react'
 
@@ -11,35 +12,9 @@ import {
   SubscribersIcon,
   SubscriptionsIcon,
 } from './icons'
+import { appRouteParams } from './store'
 import { AppAvatar, MiniAppAvatar } from './ui'
 import type { AppTenant, ConsoleUser, View, WorkspaceTenant } from './types'
-
-interface NavItem {
-  view: View
-  label: string
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
-  count?: string
-}
-
-const APP_NAV: NavItem[] = [
-  { view: 'dashboard', label: 'Dashboard', icon: DashboardIcon },
-  { view: 'subscriptions', label: 'Subscriptions', icon: SubscriptionsIcon },
-  { view: 'entitlements', label: 'Entitlements', icon: EntitlementsIcon },
-  { view: 'offerings', label: 'Offerings', icon: OfferingsIcon },
-  { view: 'subscribers', label: 'App Users', icon: SubscribersIcon },
-  { view: 'settings', label: 'Settings', icon: SettingsIcon },
-]
-
-const viewLabels: Record<View, string> = {
-  apps: 'All Apps',
-  workspaceSettings: 'Workspace Settings',
-  dashboard: 'Dashboard',
-  subscriptions: 'Subscriptions',
-  entitlements: 'Entitlements',
-  offerings: 'Offerings',
-  subscribers: 'App Users',
-  settings: 'Settings',
-}
 
 interface ShellProps {
   accessibleTenants: WorkspaceTenant[]
@@ -56,10 +31,7 @@ interface ShellProps {
   subscriptionsCount: number
   onSearchQueryChange: (query: string) => void
   onToggleSwitcher: () => void
-  onSelectApp: (id: string) => void
   onSelectTenant: (id: string) => void
-  onGoAllApps: () => void
-  onGoView: (view: View) => void
   onNewTenant: () => void
   onPrimaryAction: () => void
 }
@@ -76,9 +48,6 @@ export function ConsoleShell({
   tenant,
   view,
   onToggleSwitcher,
-  onSelectApp,
-  onGoAllApps,
-  onGoView,
   onNewTenant,
   onPrimaryAction,
   onSearchQueryChange,
@@ -110,53 +79,18 @@ export function ConsoleShell({
               apps={apps}
               canCreateTenants={canCreateTenants}
               onNewTenant={onNewTenant}
-              onSelectApp={onSelectApp}
               onSelectTenant={onSelectTenant}
-              onViewAll={onGoAllApps}
               tenants={accessibleTenants}
             />
           ) : null}
         </div>
 
         <nav className="flex-1 overflow-y-auto px-[12px] pb-[12px] pt-[4px]">
-          <SidebarSection label="Workspace" />
-          <SidebarButton
-            active={view === 'apps'}
-            count={String(apps.length)}
-            icon={AppsIcon}
-            label="All Apps"
-            onPress={onGoAllApps}
-          />
-          <SidebarButton
-            active={view === 'workspaceSettings'}
-            icon={SettingsIcon}
-            label="Workspace Settings"
-            onPress={() => onGoView('workspaceSettings')}
-          />
-
-          {currentApp != null ? (
-            <div>
-              <div className="flex items-center gap-[7px] px-[8px] pb-[6px] pt-[14px] text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--subkit-faint)]">
-                <span
-                  className="inline-flex size-[14px] items-center justify-center rounded-[4px] text-[8px] text-white"
-                  style={{ background: currentApp.color }}
-                >
-                  {currentApp.initials}
-                </span>
-                <span className="truncate">{currentApp.name}</span>
-              </div>
-              {APP_NAV.map((item) => (
-                <SidebarButton
-                  active={view === item.view}
-                  count={item.view === 'subscriptions' ? String(subscriptionsCount) : item.count}
-                  icon={item.icon}
-                  key={item.view}
-                  label={item.label}
-                  onPress={() => onGoView(item.view)}
-                />
-              ))}
-            </div>
-          ) : null}
+          {currentApp == null ? (
+            <GlobalNavigation appsCount={apps.length} />
+          ) : (
+            <AppNavigation app={currentApp} subscriptionsCount={subscriptionsCount} />
+          )}
         </nav>
 
         <div className="flex items-center gap-[10px] border-t border-[var(--subkit-border)] p-[12px]">
@@ -184,7 +118,15 @@ export function ConsoleShell({
               </>
             ) : null}
             <span className="text-[var(--subkit-border-2)]">/</span>
-            <span className="font-semibold text-[var(--subkit-text)]">{viewLabels[view]}</span>
+            {view === 'apps' ? <span className="font-semibold text-[var(--subkit-text)]">All Apps</span> : null}
+            {view === 'tenantMembers' ? <span className="font-semibold text-[var(--subkit-text)]">Tenant Members</span> : null}
+            {view === 'workspaceSettings' ? <span className="font-semibold text-[var(--subkit-text)]">Workspace Settings</span> : null}
+            {view === 'dashboard' ? <span className="font-semibold text-[var(--subkit-text)]">Dashboard</span> : null}
+            {view === 'subscriptions' ? <span className="font-semibold text-[var(--subkit-text)]">Subscriptions</span> : null}
+            {view === 'entitlements' ? <span className="font-semibold text-[var(--subkit-text)]">Entitlements</span> : null}
+            {view === 'offerings' ? <span className="font-semibold text-[var(--subkit-text)]">Offerings</span> : null}
+            {view === 'appUsers' ? <span className="font-semibold text-[var(--subkit-text)]">App Users</span> : null}
+            {view === 'settings' ? <span className="font-semibold text-[var(--subkit-text)]">Settings</span> : null}
           </div>
           <div className="flex-1" />
           <label className="hidden w-[240px] items-center gap-[8px] rounded-[9px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[11px] py-[7px] md:flex">
@@ -214,21 +156,138 @@ export function ConsoleShell({
   )
 }
 
+function GlobalNavigation({ appsCount }: { appsCount: number }) {
+  return (
+    <div>
+      <SidebarSection label="Global" />
+      <Link
+        activeOptions={{ exact: true }}
+        activeProps={{ className: 'bg-[var(--subkit-accent-soft)] font-semibold text-[var(--subkit-accent-d)]' }}
+        className="mt-[2px] flex w-full cursor-pointer select-none items-center gap-[11px] rounded-[9px] px-[10px] py-[8px] text-left text-[13.5px] transition-colors duration-fast motion-reduce:transition-none"
+        inactiveProps={{ className: 'bg-transparent font-medium text-[var(--subkit-dim)] hover:bg-[var(--subkit-panel-2)]' }}
+        preload="intent"
+        to="/apps"
+      >
+        <SidebarLinkContent count={String(appsCount)} icon={AppsIcon}>All Apps</SidebarLinkContent>
+      </Link>
+      <Link
+        activeOptions={{ exact: true }}
+        activeProps={{ className: 'bg-[var(--subkit-accent-soft)] font-semibold text-[var(--subkit-accent-d)]' }}
+        className="mt-[2px] flex w-full cursor-pointer select-none items-center gap-[11px] rounded-[9px] px-[10px] py-[8px] text-left text-[13.5px] transition-colors duration-fast motion-reduce:transition-none"
+        inactiveProps={{ className: 'bg-transparent font-medium text-[var(--subkit-dim)] hover:bg-[var(--subkit-panel-2)]' }}
+        preload="intent"
+        to="/members"
+      >
+        <SidebarLinkContent icon={SubscribersIcon}>Tenant Members</SidebarLinkContent>
+      </Link>
+      <Link
+        activeOptions={{ exact: true }}
+        activeProps={{ className: 'bg-[var(--subkit-accent-soft)] font-semibold text-[var(--subkit-accent-d)]' }}
+        className="mt-[2px] flex w-full cursor-pointer select-none items-center gap-[11px] rounded-[9px] px-[10px] py-[8px] text-left text-[13.5px] transition-colors duration-fast motion-reduce:transition-none"
+        inactiveProps={{ className: 'bg-transparent font-medium text-[var(--subkit-dim)] hover:bg-[var(--subkit-panel-2)]' }}
+        preload="intent"
+        to="/settings"
+      >
+        <SidebarLinkContent icon={SettingsIcon}>Workspace Settings</SidebarLinkContent>
+      </Link>
+    </div>
+  )
+}
+
+function AppNavigation({ app, subscriptionsCount }: { app: AppTenant; subscriptionsCount: number }) {
+  const routeParams = appRouteParams(app)
+  return (
+    <div>
+      <div className="flex items-center gap-[7px] px-[8px] pb-[6px] pt-[14px] text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--subkit-faint)]">
+        <span
+          className="inline-flex size-[14px] items-center justify-center rounded-[4px] text-[8px] text-white"
+          style={{ background: app.color }}
+        >
+          {app.initials}
+        </span>
+        <span className="truncate">{app.name}</span>
+      </div>
+      <Link
+        activeOptions={{ exact: true }}
+        activeProps={{ className: 'bg-[var(--subkit-accent-soft)] font-semibold text-[var(--subkit-accent-d)]' }}
+        className="mt-[2px] flex w-full cursor-pointer select-none items-center gap-[11px] rounded-[9px] px-[10px] py-[8px] text-left text-[13.5px] transition-colors duration-fast motion-reduce:transition-none"
+        inactiveProps={{ className: 'bg-transparent font-medium text-[var(--subkit-dim)] hover:bg-[var(--subkit-panel-2)]' }}
+        params={routeParams}
+        preload="intent"
+        to="/$tenantSlug/$appSlug"
+      >
+        <SidebarLinkContent icon={DashboardIcon}>Dashboard</SidebarLinkContent>
+      </Link>
+      <Link
+        activeOptions={{ exact: true }}
+        activeProps={{ className: 'bg-[var(--subkit-accent-soft)] font-semibold text-[var(--subkit-accent-d)]' }}
+        className="mt-[2px] flex w-full cursor-pointer select-none items-center gap-[11px] rounded-[9px] px-[10px] py-[8px] text-left text-[13.5px] transition-colors duration-fast motion-reduce:transition-none"
+        inactiveProps={{ className: 'bg-transparent font-medium text-[var(--subkit-dim)] hover:bg-[var(--subkit-panel-2)]' }}
+        params={routeParams}
+        preload="intent"
+        to="/$tenantSlug/$appSlug/subscriptions"
+      >
+        <SidebarLinkContent count={String(subscriptionsCount)} icon={SubscriptionsIcon}>Subscriptions</SidebarLinkContent>
+      </Link>
+      <Link
+        activeOptions={{ exact: true }}
+        activeProps={{ className: 'bg-[var(--subkit-accent-soft)] font-semibold text-[var(--subkit-accent-d)]' }}
+        className="mt-[2px] flex w-full cursor-pointer select-none items-center gap-[11px] rounded-[9px] px-[10px] py-[8px] text-left text-[13.5px] transition-colors duration-fast motion-reduce:transition-none"
+        inactiveProps={{ className: 'bg-transparent font-medium text-[var(--subkit-dim)] hover:bg-[var(--subkit-panel-2)]' }}
+        params={routeParams}
+        preload="intent"
+        to="/$tenantSlug/$appSlug/entitlements"
+      >
+        <SidebarLinkContent icon={EntitlementsIcon}>Entitlements</SidebarLinkContent>
+      </Link>
+      <Link
+        activeOptions={{ exact: true }}
+        activeProps={{ className: 'bg-[var(--subkit-accent-soft)] font-semibold text-[var(--subkit-accent-d)]' }}
+        className="mt-[2px] flex w-full cursor-pointer select-none items-center gap-[11px] rounded-[9px] px-[10px] py-[8px] text-left text-[13.5px] transition-colors duration-fast motion-reduce:transition-none"
+        inactiveProps={{ className: 'bg-transparent font-medium text-[var(--subkit-dim)] hover:bg-[var(--subkit-panel-2)]' }}
+        params={routeParams}
+        preload="intent"
+        to="/$tenantSlug/$appSlug/offerings"
+      >
+        <SidebarLinkContent icon={OfferingsIcon}>Offerings</SidebarLinkContent>
+      </Link>
+      <Link
+        activeOptions={{ exact: true }}
+        activeProps={{ className: 'bg-[var(--subkit-accent-soft)] font-semibold text-[var(--subkit-accent-d)]' }}
+        className="mt-[2px] flex w-full cursor-pointer select-none items-center gap-[11px] rounded-[9px] px-[10px] py-[8px] text-left text-[13.5px] transition-colors duration-fast motion-reduce:transition-none"
+        inactiveProps={{ className: 'bg-transparent font-medium text-[var(--subkit-dim)] hover:bg-[var(--subkit-panel-2)]' }}
+        params={routeParams}
+        preload="intent"
+        to="/$tenantSlug/$appSlug/app-users"
+      >
+        <SidebarLinkContent icon={SubscribersIcon}>App Users</SidebarLinkContent>
+      </Link>
+      <Link
+        activeOptions={{ exact: true }}
+        activeProps={{ className: 'bg-[var(--subkit-accent-soft)] font-semibold text-[var(--subkit-accent-d)]' }}
+        className="mt-[2px] flex w-full cursor-pointer select-none items-center gap-[11px] rounded-[9px] px-[10px] py-[8px] text-left text-[13.5px] transition-colors duration-fast motion-reduce:transition-none"
+        inactiveProps={{ className: 'bg-transparent font-medium text-[var(--subkit-dim)] hover:bg-[var(--subkit-panel-2)]' }}
+        params={routeParams}
+        preload="intent"
+        to="/$tenantSlug/$appSlug/settings"
+      >
+        <SidebarLinkContent icon={SettingsIcon}>Settings</SidebarLinkContent>
+      </Link>
+    </div>
+  )
+}
+
 function WorkspaceSwitcher({
   apps,
   canCreateTenants,
   onNewTenant,
-  onSelectApp,
   onSelectTenant,
-  onViewAll,
   tenants,
 }: {
   apps: AppTenant[]
   canCreateTenants: boolean
   onNewTenant: () => void
-  onSelectApp: (id: string) => void
   onSelectTenant: (id: string) => void
-  onViewAll: () => void
   tenants: WorkspaceTenant[]
 }) {
   return (
@@ -255,27 +314,28 @@ function WorkspaceSwitcher({
         Switch app
       </div>
       {apps.slice(0, 8).map((app) => (
-        <button
+        <Link
           className="flex w-full cursor-pointer items-center gap-[9px] rounded-[8px] px-[8px] py-[7px] text-left hover:bg-[var(--subkit-panel-2)]"
           key={app.id}
-          onClick={() => onSelectApp(app.id)}
-          type="button"
+          params={appRouteParams(app)}
+          preload="intent"
+          to="/$tenantSlug/$appSlug"
         >
           <AppAvatar app={app} size="sm" />
           <span className="min-w-0 flex-1 text-[13px] font-medium">
             <span className="block truncate">{app.name}</span>
             <span className="block truncate text-[10.5px] font-normal text-[var(--subkit-faint)]">{app.tenantId}</span>
           </span>
-        </button>
+        </Link>
       ))}
       <div className="mx-[4px] my-[5px] h-px bg-[var(--subkit-border)]" />
-      <button
+      <Link
         className="flex w-full cursor-pointer items-center gap-[9px] rounded-[8px] px-[8px] py-[7px] text-[13px] font-semibold text-[var(--subkit-accent-d)] hover:bg-[var(--subkit-accent-soft)]"
-        onClick={onViewAll}
-        type="button"
+        preload="intent"
+        to="/apps"
       >
         View all apps
-      </button>
+      </Link>
       {canCreateTenants ? (
         <button
           className="mt-[2px] flex w-full cursor-pointer items-center gap-[9px] rounded-[8px] px-[8px] py-[7px] text-[13px] font-semibold text-[var(--subkit-accent-d)] hover:bg-[var(--subkit-accent-soft)]"
@@ -293,33 +353,20 @@ function SidebarSection({ label }: { label: string }) {
   return <div className="px-[8px] pb-[6px] pt-[10px] text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--subkit-faint)]">{label}</div>
 }
 
-function SidebarButton({
-  active,
+function SidebarLinkContent({
+  children,
   count,
   icon: Icon,
-  label,
-  onPress,
 }: {
-  active: boolean
+  children: React.ReactNode
   count?: string
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
-  label: string
-  onPress: () => void
 }) {
   return (
-    <button
-      className={cn(
-        'mt-[2px] flex w-full cursor-pointer select-none items-center gap-[11px] rounded-[9px] px-[10px] py-[8px] text-left text-[13.5px] transition-colors duration-fast motion-reduce:transition-none',
-        active
-          ? 'bg-[var(--subkit-accent-soft)] font-semibold text-[var(--subkit-accent-d)]'
-          : 'bg-transparent font-medium text-[var(--subkit-dim)] hover:bg-[var(--subkit-panel-2)]',
-      )}
-      onClick={onPress}
-      type="button"
-    >
+    <>
       <Icon aria-hidden className="size-[16px]" />
-      <span className="flex-1">{label}</span>
+      <span className="flex-1">{children}</span>
       {count != null ? <span className="font-mono text-[11px] text-[var(--subkit-faint)]">{count}</span> : null}
-    </button>
+    </>
   )
 }
