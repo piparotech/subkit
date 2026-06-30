@@ -130,9 +130,6 @@ export function NewAppForm({
   const needsTenantKey = connection == null || !connection.hasPrivateKey
   return (
     <div className="space-y-[14px]">
-      <div className="rounded-[11px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[12px] py-[10px] text-[12.5px] leading-[1.45] text-[var(--subkit-dim)]">
-        Start iOS-only: apps are synced automatically from the workspace App Store Connect key when this dialog opens.
-      </div>
       {loading ? (
         <div className="rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]">
           Syncing App Store Connect apps…

@@ -9,6 +9,7 @@ import {
   importAppStoreConnectProductPreview,
   previewAppStoreConnectProducts,
   saveAppStoreConnectCredential,
+  syncAppStoreConnectCatalog,
   syncAppStoreConnectSalesReport,
   validateAppStoreConnectCredential,
 } from './app-store-connect-server'
@@ -192,6 +193,14 @@ export function AppSettingsView({
     })
   }
 
+  const syncCatalog = () => {
+    runTask('catalog-sync', async () => {
+      const result = await syncAppStoreConnectCatalog({ data: { appId: app.id } })
+      setPreview(result.preview)
+      return `${result.created} products created, ${result.updated} updated, ${result.unchanged} unchanged, ${result.conflicts} conflicts.`
+    })
+  }
+
   const syncSalesReport = () => {
     runTask('sales-report', async () => {
       const result = await syncAppStoreConnectSalesReport({ data: { appId: app.id, reportDate: reportDate || undefined } })
@@ -232,12 +241,13 @@ export function AppSettingsView({
       {feedback != null ? <div className="mt-[16px] rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]">{feedback}</div> : null}
 
       <div className="grid grid-cols-[1fr_1fr] gap-[16px] max-lg:grid-cols-1">
-        <SettingsCard description="Fetch Apple subscriptions and IAPs, compare them with local products, then import local records after review." title="Subscription product sync">
+        <SettingsCard description="Fetch Apple subscriptions and IAPs, compare them with local products, then create or update local SubKit products. App Store Connect is never mutated." title="Subscription catalogue sync">
           <div className="flex flex-wrap gap-[8px]">
-            <ActionButton disabled={busy != null || connection == null || connection.status === 'deleted'} label="Preview Apple products" onPress={previewProducts} />
-            <ActionButton disabled={busy != null || preview.length === 0} label="Import local changes" onPress={importProducts} tone="primary" />
+            <ActionButton disabled={busy != null || connection == null || connection.status === 'deleted'} label={busy === 'catalog-sync' ? 'Syncing catalogue…' : 'Sync from App Store Connect'} onPress={syncCatalog} tone="primary" />
+            <ActionButton disabled={busy != null || connection == null || connection.status === 'deleted'} label="Preview only" onPress={previewProducts} />
+            <ActionButton disabled={busy != null || preview.length === 0} label="Import preview" onPress={importProducts} />
           </div>
-          {preview.length > 0 ? <ProductPreviewTable preview={preview} /> : <EmptySettingsText>No preview yet. This only reads from Apple and does not mutate App Store Connect.</EmptySettingsText>}
+          {preview.length > 0 ? <ProductPreviewTable preview={preview} /> : <EmptySettingsText>No sync preview yet. Syncing reads Apple catalogue data and updates local SubKit records only.</EmptySettingsText>}
         </SettingsCard>
 
         <SettingsCard description="Download the latest daily Sales & Trends report. Raw imports are kept separate from derived metrics." title="Sales report sync">

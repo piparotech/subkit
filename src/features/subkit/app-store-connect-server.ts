@@ -26,6 +26,7 @@ import { parseServerEnv } from '~/server/env'
 
 import { previewProduct } from './app-store-connect-preview'
 import type {
+  AppStoreConnectCatalogSyncResult,
   AppStoreConnectImportResult,
   AppStoreConnectProductPreview,
   AppStoreConnectReportSyncResult,
@@ -174,9 +175,7 @@ export const previewAppStoreConnectProducts = createServerFn({ method: 'POST' })
     const currentUser = await getRequiredCurrentUser()
     assertOwnedApp(data.appId)
     const { appleAppId, credential, credentials } = await requireActiveAppleCredential(data.appId)
-    const appleProducts = await fetchAppleCatalogProducts(credentials, appleAppId)
-    const localProducts = await db.select().from(products).where(eq(products.appId, data.appId))
-    const preview = appleProducts.map((product) => previewProduct(product, localProducts))
+    const preview = await readAppleProductPreview(data.appId, credentials, appleAppId)
     await recordAudit({
       action: 'products.previewed',
       appId: data.appId,
@@ -194,68 +193,38 @@ export const importAppStoreConnectProductPreview = createServerFn({ method: 'POS
     const currentUser = await getRequiredCurrentUser()
     assertOwnedApp(data.appId)
     const credential = await requireCredential()
-    let created = 0
-    let updated = 0
-    let skipped = 0
-
-    for (const item of data.preview) {
-      if (item.action === 'unchanged' || item.action === 'conflict') {
-        skipped += 1
-        continue
-      }
-      const entitlementId = entitlementRowId(data.appId, item.entitlement)
-      await db
-        .insert(entitlements)
-        .values({
-          appId: data.appId,
-          description: `Imported from App Store Connect ${item.kind.replaceAll('_', ' ')}`,
-          id: entitlementId,
-          key: item.entitlement,
-        })
-        .onConflictDoUpdate({
-          set: { description: `Imported from App Store Connect ${item.kind.replaceAll('_', ' ')}`, key: item.entitlement },
-          target: entitlements.id,
-        })
-
-      const identifier = item.localIdentifier ?? item.appleProductId
-      const productId = productRowId(data.appId, identifier)
-      await db
-        .insert(products)
-        .values({
-          activeSubscriberCount: 0,
-          appId: data.appId,
-          appStoreId: item.appleProductId,
-          displayName: item.appleName,
-          duration: item.duration,
-          entitlementId,
-          id: productId,
-          identifier,
-          playStoreId: '',
-          priceCents: 0,
-          trialEnabled: false,
-        })
-        .onConflictDoUpdate({
-          set: {
-            appStoreId: item.appleProductId,
-            displayName: item.appleName,
-            duration: item.duration,
-            entitlementId,
-          },
-          target: products.id,
-        })
-
-      if (item.action === 'create') created += 1
-      if (item.action === 'update') updated += 1
-    }
+    const result = await applyProductPreview(data.appId, data.preview)
 
     await recordAudit({
       action: 'products.imported',
       appId: data.appId,
       credentialId: credential.id,
-      detail: `${created} created, ${updated} updated, ${skipped} skipped from Apple catalogue preview.`,
+      detail: `${result.created} created, ${result.updated} updated, ${result.skipped} skipped from Apple catalogue preview.`,
       userId: currentUser.id,
     })
-    return { created, skipped, updated }
+    return result
+  })
+
+export const syncAppStoreConnectCatalog = createServerFn({ method: 'POST' })
+  .validator((input: unknown) => appInputSchema.parse(input))
+  .handler(async ({ data }): Promise<AppStoreConnectCatalogSyncResult> => {
+    await ensureDatabaseReady()
+    const currentUser = await getRequiredCurrentUser()
+    assertOwnedApp(data.appId)
+    const { appleAppId, credential, credentials } = await requireActiveAppleCredential(data.appId)
+    const preview = await readAppleProductPreview(data.appId, credentials, appleAppId)
+    const result = await applyProductPreview(data.appId, preview)
+    const unchanged = preview.filter((item) => item.action === 'unchanged').length
+    const conflicts = preview.filter((item) => item.action === 'conflict').length
+
+    await recordAudit({
+      action: 'products.synced',
+      appId: data.appId,
+      credentialId: credential.id,
+      detail: `${result.created} created, ${result.updated} updated, ${unchanged} unchanged, ${conflicts} conflicts from Apple catalogue sync.`,
+      userId: currentUser.id,
+    })
+    return { ...result, conflicts, preview, unchanged }
   })
 
 export const syncAppStoreConnectSalesReport = createServerFn({ method: 'POST' })
@@ -315,6 +284,70 @@ export const syncAppStoreConnectSalesReport = createServerFn({ method: 'POST' })
       return { reportDate, rowCount: 0, status: 'failed' }
     }
   })
+
+async function readAppleProductPreview(appId: string, credentials: AppStoreConnectCredentials, appleAppId: string): Promise<AppStoreConnectProductPreview[]> {
+  const appleProducts = await fetchAppleCatalogProducts(credentials, appleAppId)
+  const localProducts = await db.select().from(products).where(eq(products.appId, appId))
+  return appleProducts.map((product) => previewProduct(product, localProducts))
+}
+
+async function applyProductPreview(appId: string, preview: readonly AppStoreConnectProductPreview[]): Promise<AppStoreConnectImportResult> {
+  let created = 0
+  let updated = 0
+  let skipped = 0
+
+  for (const item of preview) {
+    if (item.action === 'unchanged' || item.action === 'conflict') {
+      skipped += 1
+      continue
+    }
+    const entitlementId = entitlementRowId(appId, item.entitlement)
+    await db
+      .insert(entitlements)
+      .values({
+        appId,
+        description: `Imported from App Store Connect ${item.kind.replaceAll('_', ' ')}`,
+        id: entitlementId,
+        key: item.entitlement,
+      })
+      .onConflictDoUpdate({
+        set: { description: `Imported from App Store Connect ${item.kind.replaceAll('_', ' ')}`, key: item.entitlement },
+        target: entitlements.id,
+      })
+
+    const identifier = item.localIdentifier ?? item.appleProductId
+    const productId = productRowId(appId, identifier)
+    await db
+      .insert(products)
+      .values({
+        activeSubscriberCount: 0,
+        appId,
+        appStoreId: item.appleProductId,
+        displayName: item.appleName,
+        duration: item.duration,
+        entitlementId,
+        id: productId,
+        identifier,
+        playStoreId: '',
+        priceCents: 0,
+        trialEnabled: false,
+      })
+      .onConflictDoUpdate({
+        set: {
+          appStoreId: item.appleProductId,
+          displayName: item.appleName,
+          duration: item.duration,
+          entitlementId,
+        },
+        target: products.id,
+      })
+
+    if (item.action === 'create') created += 1
+    if (item.action === 'update') updated += 1
+  }
+
+  return { created, skipped, updated }
+}
 
 async function validateTenantCredential(userId: string): Promise<void> {
   const credential = await requireCredential()

@@ -225,6 +225,12 @@ export interface AppStoreConnectImportResult {
   updated: number
 }
 
+export interface AppStoreConnectCatalogSyncResult extends AppStoreConnectImportResult {
+  conflicts: number
+  preview: AppStoreConnectProductPreview[]
+  unchanged: number
+}
+
 export interface AppStoreConnectReportSyncResult {
   reportDate: string
   rowCount: number
