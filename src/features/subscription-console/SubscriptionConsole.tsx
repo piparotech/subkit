@@ -7,10 +7,10 @@ import {
   DashboardView,
   EntitlementsView,
   OfferingsView,
-  SettingsView,
   SubscribersView,
   SubscriptionsView,
 } from './Views'
+import { SettingsView } from './SettingsView'
 import { newSubscription } from './data'
 import { Panels } from './Panels'
 import { createAppFromDraft, filterApps, filterSubscribers, filterSubscriptions } from './store'
@@ -270,6 +270,7 @@ export function SubscriptionConsole() {
           offerings={currentOfferings}
           onOpenSubscriber={openSubscriber}
           onOpenSubscription={openSubscription}
+          onRefreshConsoleData={refreshConsoleData}
           onSelectApp={selectApp}
           subscribers={visibleSubscribers}
           subscriptions={visibleSubscriptions}
@@ -308,6 +309,7 @@ function ActiveView({
   offerings,
   onOpenSubscriber,
   onOpenSubscription,
+  onRefreshConsoleData,
   onSelectApp,
   subscribers,
   subscriptions,
@@ -320,6 +322,7 @@ function ActiveView({
   offerings: Offering[]
   onOpenSubscriber: (subscriber: Subscriber) => void
   onOpenSubscription: (subscription: SubscriptionProduct) => void
+  onRefreshConsoleData: () => void
   onSelectApp: (id: string) => void
   subscribers: Subscriber[]
   subscriptions: SubscriptionProduct[]
@@ -350,6 +353,12 @@ function ActiveView({
     case 'subscribers':
       return <SubscribersView onOpenSubscriber={onOpenSubscriber} subscribers={subscribers} />
     case 'settings':
-      return <SettingsView app={currentApp} />
+      return (
+        <SettingsView
+          app={currentApp}
+          connection={consoleData.appStoreConnect.find((item) => item.appId === currentApp.id) ?? null}
+          onRefreshConsoleData={onRefreshConsoleData}
+        />
+      )
   }
 }

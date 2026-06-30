@@ -2,7 +2,7 @@ import { PUIButton, PUIText, cn } from '@piparo/cn-web'
 import { X } from 'lucide-react'
 import * as React from 'react'
 
-import { NewAppForm, ProductFormFields, TrialToggle } from './Views'
+import { NewAppForm, ProductFormFields, TrialToggle } from './Forms'
 import { GhostBox, SoftTag, StatusLabel, ToneDot, toneTextClass } from './ui'
 import type {
   AppDraft,

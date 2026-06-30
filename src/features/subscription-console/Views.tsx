@@ -1,9 +1,18 @@
-import { PUICard, PUIField, PUIInput, PUIText, cn, type PUIFieldRenderProps } from '@piparo/cn-web'
-import { Circle, Layers2 } from 'lucide-react'
-import * as React from 'react'
+import { PUICard, PUIText, cn } from '@piparo/cn-web'
+import { Circle } from 'lucide-react'
 
 import { AppAvatar, MetricCard, RowChevron, SoftTag, StatusLabel, ToneDot, ViewTitle, toneBgClass, toneTextClass } from './ui'
-import type { ActivityEvent, AppDraft, AppDraftField, AppTenant, ConsoleStats, EditableSubscriptionTextField, Entitlement, Metric, Offering, RevenueBar, Subscriber, SubscriptionProduct } from './types'
+import type {
+  ActivityEvent,
+  AppTenant,
+  ConsoleStats,
+  Entitlement,
+  Metric,
+  Offering,
+  RevenueBar,
+  Subscriber,
+  SubscriptionProduct,
+} from './types'
 
 export function AppsView({ apps, onSelectApp }: { apps: AppTenant[]; onSelectApp: (id: string) => void }) {
   return (
@@ -309,23 +318,6 @@ export function SubscribersView({ onOpenSubscriber, subscribers }: { onOpenSubsc
   )
 }
 
-export function SettingsView({ app }: { app: AppTenant }) {
-  return (
-    <section className="max-w-[820px] animate-[subs-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
-      <ViewTitle description={`API keys and store credentials for ${app.name}.`} title="Settings" />
-      <SettingsCard title="API keys">
-        <EmptySettingsText>No API keys are configured in this console yet.</EmptySettingsText>
-      </SettingsCard>
-      <SettingsCard title="Store credentials">
-        <EmptySettingsText>No store credentials are configured in this console yet.</EmptySettingsText>
-      </SettingsCard>
-      <SettingsCard description="Server-to-server purchase events." title="Webhook">
-        <EmptySettingsText>No webhook endpoint is configured in this console yet.</EmptySettingsText>
-      </SettingsCard>
-    </section>
-  )
-}
-
 function AppCardMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex-1">
@@ -346,199 +338,6 @@ function StoreId({ platform, value }: { platform: string; value: string }) {
   )
 }
 
-function SettingsCard({ children, description, title }: { children: React.ReactNode; description?: string; title: string }) {
-  return (
-    <PUICard className="mt-[16px] rounded-[14px] border-[var(--subs-border)] bg-[var(--subs-panel)] p-[20px] first:mt-[20px]">
-      <div className="mb-[14px] text-[14px] font-semibold">{title}</div>
-      {description != null ? <div className="mb-[12px] text-[12.5px] text-[var(--subs-dim)]">{description}</div> : null}
-      <div className="flex flex-col gap-[12px]">{children}</div>
-    </PUICard>
-  )
-}
-
-function EmptySettingsText({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-[10px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subs-dim)]">{children}</div>
-}
-
-export function ProductFormFields({
-  onTextChange,
-  subscription,
-}: {
-  onTextChange: (field: EditableSubscriptionTextField, value: string) => void
-  subscription: SubscriptionProduct
-}) {
-  return (
-    <>
-      <PUIField label="Display name">
-        {(field) => (
-          <PUIInput
-            onChange={(event) => onTextChange('name', event.target.value)}
-            placeholder="Display name"
-            value={subscription.name}
-            {...inputFieldProps(field)}
-          />
-        )}
-      </PUIField>
-      <PUIField hint="Used in your code. Stays the same across stores." label="Subscription identifier">
-        {(field) => (
-          <PUIInput
-            className="font-mono"
-            onChange={(event) => onTextChange('identifier', event.target.value)}
-            placeholder="Subscription identifier"
-            value={subscription.identifier}
-            {...inputFieldProps(field)}
-          />
-        )}
-      </PUIField>
-      <div className="mt-[6px] text-[12px] font-semibold uppercase tracking-[0.04em] text-[var(--subs-faint)]">Store mapping</div>
-      <StoreMapping
-        onPriceChange={(value) => onTextChange('price', value)}
-        onValueChange={(value) => onTextChange('iosId', value)}
-        platform="iOS"
-        price={subscription.price}
-        store="App Store Connect"
-        value={subscription.iosId}
-      />
-      <StoreMapping
-        onPriceChange={(value) => onTextChange('price', value)}
-        onValueChange={(value) => onTextChange('androidId', value)}
-        platform="AND"
-        price={subscription.price}
-        store="Google Play"
-        value={subscription.androidId}
-      />
-      <div className="flex gap-[12px] max-sm:flex-col">
-        <PUIField className="flex-1" label="Billing period">
-          {(field) => (
-            <PUIInput
-              onChange={(event) => onTextChange('duration', event.target.value)}
-              placeholder="Billing period"
-              value={subscription.duration}
-              {...inputFieldProps(field)}
-            />
-          )}
-        </PUIField>
-        <PUIField className="flex-1" label="Entitlement">
-          {(field) => (
-            <PUIInput
-              className="font-mono"
-              onChange={(event) => onTextChange('entitlement', event.target.value)}
-              placeholder="Entitlement key"
-              value={subscription.entitlement}
-              {...inputFieldProps(field)}
-            />
-          )}
-        </PUIField>
-      </div>
-    </>
-  )
-}
-
-function StoreMapping({
-  onPriceChange,
-  onValueChange,
-  platform,
-  price,
-  store,
-  value,
-}: {
-  onPriceChange: (value: string) => void
-  onValueChange: (value: string) => void
-  platform: string
-  price: string
-  store: string
-  value: string
-}) {
-  return (
-    <div className="rounded-[12px] border border-[var(--subs-border)] p-[14px]">
-      <div className="mb-[12px] flex items-center gap-[8px]">
-        <span className="rounded-[5px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[7px] py-[2px] text-[11px] font-bold text-[var(--subs-dim)]">
-          {platform}
-        </span>
-        <span className="text-[13px] font-semibold">{store}</span>
-      </div>
-      <PUIInput
-        className="mb-[9px] font-mono"
-        onChange={(event) => onValueChange(event.target.value)}
-        placeholder={platform === 'iOS' ? 'App Store product ID' : 'Play Store product ID'}
-        value={value}
-      />
-      <PUIInput className="font-mono" onChange={(event) => onPriceChange(event.target.value)} placeholder="Price" value={price} />
-    </div>
-  )
-}
-
-export function NewAppForm({ draft, onChange }: { draft: AppDraft; onChange: (field: AppDraftField, value: string) => void }) {
-  return (
-    <div className="space-y-[16px]">
-      <PUIField label="App name">
-        {(field) => <PUIInput onChange={(event) => onChange('name', event.target.value)} placeholder="App name" value={draft.name} {...inputFieldProps(field)} />}
-      </PUIField>
-      <PUIField label="iOS bundle ID">
-        {(field) => (
-          <PUIInput
-            className="font-mono"
-            onChange={(event) => onChange('iosBundle', event.target.value)}
-            placeholder="iOS bundle ID"
-            value={draft.iosBundle}
-            {...inputFieldProps(field)}
-          />
-        )}
-      </PUIField>
-      <PUIField label="Android package name">
-        {(field) => (
-          <PUIInput
-            className="font-mono"
-            onChange={(event) => onChange('androidPackage', event.target.value)}
-            placeholder="Android package name"
-            value={draft.androidPackage}
-            {...inputFieldProps(field)}
-          />
-        )}
-      </PUIField>
-      <PUIField label="Status">
-        {(field) => (
-          <select
-            className="w-full rounded-[10px] border border-[var(--subs-border-2)] bg-[var(--subs-panel)] px-[11px] py-[9px] text-[13px] text-[var(--subs-text)] outline-none"
-            onChange={(event) => onChange('status', event.target.value)}
-            value={draft.status}
-            {...inputFieldProps(field)}
-          >
-            <option value="">Select status</option>
-            <option value="live">Live</option>
-            <option value="beta">Beta</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        )}
-      </PUIField>
-    </div>
-  )
-}
-
-export function TrialToggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
-  return (
-    <div className="flex items-center justify-between rounded-[11px] border border-[var(--subs-border)] px-[14px] py-[13px]">
-      <div>
-        <div className="text-[13px] font-semibold">Free trial</div>
-        <div className="text-[11.5px] text-[var(--subs-faint)]">{enabled ? '7-day free trial' : 'Off'}</div>
-      </div>
-      <button
-        aria-checked={enabled}
-        className={cn('relative h-[22px] w-[38px] cursor-pointer rounded-full transition-colors duration-fast', enabled ? 'bg-[var(--subs-accent)]' : 'bg-[var(--subs-border-2)]')}
-        onClick={onToggle}
-        role="switch"
-        type="button"
-      >
-        <span className={cn('absolute top-[2px] size-[18px] rounded-full bg-white shadow-sm transition-[left] duration-fast', enabled ? 'left-[18px]' : 'left-[2px]')} />
-      </button>
-    </div>
-  )
-}
-
-export function OfferingIcon() {
-  return <Layers2 aria-hidden className="size-[16px]" />
-}
-
 function sumCurrency(values: readonly string[]): string {
   const total = values.reduce((sum, value) => sum + Number(value.replace(/[^0-9.-]/g, '')), 0)
   return new Intl.NumberFormat('en-US', { currency: 'USD', maximumFractionDigits: 0, style: 'currency' }).format(total)
@@ -547,15 +346,6 @@ function sumCurrency(values: readonly string[]): string {
 function sumNumberText(values: readonly string[]): string {
   const total = values.reduce((sum, value) => sum + Number(value.replace(/[^0-9.-]/g, '')), 0)
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(total)
-}
-
-function inputFieldProps(field: PUIFieldRenderProps) {
-  return {
-    'aria-describedby': field.describedby,
-    'aria-invalid': field.invalid || undefined,
-    disabled: field.disabled,
-    id: field.id,
-  }
 }
 
 export { toneBgClass }
