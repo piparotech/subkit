@@ -72,6 +72,84 @@ export const apps = sqliteTable('apps', {
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
 })
 
+export const appStoreConnectCredentials = sqliteTable(
+  'app_store_connect_credentials',
+  {
+    id: text('id').primaryKey(),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    appId: text('app_id')
+      .notNull()
+      .references(() => apps.id, { onDelete: 'cascade' }),
+    keyId: text('key_id').notNull(),
+    issuerId: text('issuer_id').notNull(),
+    appleAppId: text('apple_app_id'),
+    bundleId: text('bundle_id'),
+    vendorNumber: text('vendor_number'),
+    privateKeyCiphertext: text('private_key_ciphertext'),
+    privateKeyIv: text('private_key_iv'),
+    privateKeyAuthTag: text('private_key_auth_tag'),
+    privateKeySha256: text('private_key_sha256'),
+    status: text('status', { enum: ['connected', 'needs_attention', 'invalid', 'deleted'] }).notNull().default('needs_attention'),
+    lastValidatedAt: integer('last_validated_at', { mode: 'timestamp_ms' }),
+    lastError: text('last_error'),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
+    disabledAt: integer('disabled_at', { mode: 'timestamp_ms' }),
+  },
+  (table) => [uniqueIndex('app_store_connect_credentials_app_id_unique').on(table.appId)],
+)
+
+export const appStoreConnectCapabilities = sqliteTable(
+  'app_store_connect_capabilities',
+  {
+    id: text('id').primaryKey(),
+    credentialId: text('credential_id')
+      .notNull()
+      .references(() => appStoreConnectCredentials.id, { onDelete: 'cascade' }),
+    key: text('key').notNull(),
+    label: text('label').notNull(),
+    description: text('description').notNull(),
+    status: text('status', { enum: ['available', 'missing', 'unknown'] }).notNull(),
+    detail: text('detail').notNull(),
+    checkedAt: integer('checked_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (table) => [uniqueIndex('app_store_connect_capabilities_credential_key_unique').on(table.credentialId, table.key)],
+)
+
+export const appStoreConnectSalesReports = sqliteTable('app_store_connect_sales_reports', {
+  id: text('id').primaryKey(),
+  credentialId: text('credential_id')
+    .notNull()
+    .references(() => appStoreConnectCredentials.id, { onDelete: 'cascade' }),
+  appId: text('app_id')
+    .notNull()
+    .references(() => apps.id, { onDelete: 'cascade' }),
+  vendorNumber: text('vendor_number').notNull(),
+  reportDate: text('report_date').notNull(),
+  status: text('status', { enum: ['imported', 'failed'] }).notNull(),
+  rowCount: integer('row_count').notNull().default(0),
+  rawText: text('raw_text'),
+  errorDetail: text('error_detail'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+})
+
+export const appStoreConnectAuditEvents = sqliteTable('app_store_connect_audit_events', {
+  id: text('id').primaryKey(),
+  tenantId: text('tenant_id')
+    .notNull()
+    .references(() => tenants.id, { onDelete: 'cascade' }),
+  appId: text('app_id')
+    .notNull()
+    .references(() => apps.id, { onDelete: 'cascade' }),
+  credentialId: text('credential_id').references(() => appStoreConnectCredentials.id, { onDelete: 'set null' }),
+  actorUserId: text('actor_user_id').references(() => users.id, { onDelete: 'set null' }),
+  action: text('action').notNull(),
+  detail: text('detail').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+})
+
 export const entitlements = sqliteTable('entitlements', {
   id: text('id').primaryKey(),
   appId: text('app_id')

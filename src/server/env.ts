@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 const requiredNonEmptyString = z.string().min(1)
 const requiredUrl = z.string().url()
+const optionalSecret = z.preprocess((value) => (value === '' ? undefined : value), z.string().min(16).optional())
 
 export const serverEnvSchema = z.object({
   AUTH_BASE_URL: requiredUrl,
@@ -13,6 +14,7 @@ export const serverEnvSchema = z.object({
   OIDC_DISCOVERY_URL: requiredUrl,
   OIDC_REDIRECT_PATH: z.string().startsWith('/'),
   SESSION_COOKIE_NAME: requiredNonEmptyString,
+  SECRET_ENCRYPTION_KEY: optionalSecret,
   SESSION_SECRET: z.string().min(16),
   TENANT_COLOR: requiredNonEmptyString,
   TENANT_ID: requiredNonEmptyString,
