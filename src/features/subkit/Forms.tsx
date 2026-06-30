@@ -1,5 +1,5 @@
 import { PUIField, PUIInput, cn, type PUIFieldRenderProps } from '@piparo/cn-web'
-import { Layers2 } from 'lucide-react'
+import { Layers2, LoaderCircle } from 'lucide-react'
 
 import type {
   AppDraft,
@@ -131,8 +131,13 @@ export function NewAppForm({
   return (
     <div className="space-y-[14px]">
       {loading ? (
-        <div className="rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]">
-          Syncing App Store Connect apps…
+        <div
+          aria-live="polite"
+          className="flex items-center gap-[9px] rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]"
+          role="status"
+        >
+          <LoaderCircle aria-hidden className="size-[16px] animate-spin text-[var(--subkit-accent)] motion-reduce:animate-none" strokeWidth={2} />
+          <span>Syncing App Store Connect apps…</span>
         </div>
       ) : null}
       {needsTenantKey ? (
