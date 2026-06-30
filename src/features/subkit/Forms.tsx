@@ -136,7 +136,7 @@ export function NewAppForm({
           className="flex items-center gap-[9px] rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]"
           role="status"
         >
-          <LoaderCircle aria-hidden className="size-[16px] animate-spin text-[var(--subkit-accent)] motion-reduce:animate-none" strokeWidth={2} />
+          <LoaderCircle aria-hidden className="subkit-ignore-reduced-motion size-[16px] animate-spin text-[var(--subkit-accent)]" strokeWidth={2} />
           <span>Syncing App Store Connect apps…</span>
         </div>
       ) : null}

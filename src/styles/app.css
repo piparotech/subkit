@@ -318,9 +318,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *:not(.subkit-ignore-reduced-motion),
+  *:not(.subkit-ignore-reduced-motion)::before,
+  *:not(.subkit-ignore-reduced-motion)::after {
     scroll-behavior: auto !important;
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
