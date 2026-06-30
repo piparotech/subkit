@@ -24,7 +24,7 @@ export function AppsView({ apps, onSelectApp }: { apps: AppTenant[]; onSelectApp
               Apps
             </PUIText>
             <p className="mt-[5px] mb-0 text-[13.5px] text-[var(--subs-dim)]">
-              Every app in your workspace. Manage iOS & Android subscriptions from one place.
+              Every iOS app in your workspace. Connect App Store apps from the tenant key.
             </p>
           </div>
         </div>
@@ -52,6 +52,11 @@ export function AppsView({ apps, onSelectApp }: { apps: AppTenant[]; onSelectApp
                 <StatusLabel label={app.status} tone={app.statusTone} />
               </div>
               <div className="my-[14px] flex gap-[6px]">
+                {app.platforms.length === 0 ? (
+                  <span className="rounded-[6px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[8px] py-[3px] text-[11px] font-medium text-[var(--subs-dim)]">
+                    iOS pending
+                  </span>
+                ) : null}
                 {app.platforms.map((platform) => (
                   <span
                     className="rounded-[6px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[8px] py-[3px] text-[11px] font-medium text-[var(--subs-dim)]"
@@ -173,20 +178,19 @@ export function SubscriptionsView({
 }) {
   return (
     <section className="animate-[subs-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
-      <ViewTitle description="Products mapped across stores. One identifier, both platforms." title="Subscriptions" />
+      <ViewTitle description="Products mapped to App Store Connect. Android support comes later." title="Subscriptions" />
       <div className="mt-[20px] overflow-hidden rounded-[14px] border border-[var(--subs-border)] bg-[var(--subs-panel)] max-lg:overflow-x-auto">
         <div className="min-w-[940px]">
-          <div className="grid grid-cols-[1.4fr_1.5fr_1.5fr_0.9fr_0.8fr_0.8fr] gap-[14px] border-b border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[18px] py-[12px] text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--subs-faint)]">
+          <div className="grid grid-cols-[1.4fr_1.7fr_0.9fr_0.9fr_0.8fr] gap-[14px] border-b border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[18px] py-[12px] text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--subs-faint)]">
             <div>Product</div>
             <div>App Store ID</div>
-            <div>Play Store ID</div>
             <div>Price</div>
             <div>Entitlement</div>
             <div className="text-right">Active</div>
           </div>
           {subscriptions.map((subscription) => (
             <button
-              className="grid w-full cursor-pointer grid-cols-[1.4fr_1.5fr_1.5fr_0.9fr_0.8fr_0.8fr] items-center gap-[14px] border-b border-[var(--subs-border)] px-[18px] py-[14px] text-left last:border-b-0 hover:bg-[var(--subs-panel-2)]"
+              className="grid w-full cursor-pointer grid-cols-[1.4fr_1.7fr_0.9fr_0.9fr_0.8fr] items-center gap-[14px] border-b border-[var(--subs-border)] px-[18px] py-[14px] text-left last:border-b-0 hover:bg-[var(--subs-panel-2)]"
               key={subscription.identifier}
               onClick={() => onOpenSubscription(subscription)}
               type="button"
@@ -198,7 +202,6 @@ export function SubscriptionsView({
                 </div>
               </div>
               <StoreId platform="iOS" value={subscription.iosId} />
-              <StoreId platform="AND" value={subscription.androidId} />
               <div className="font-mono text-[13.5px] font-semibold">{subscription.price}</div>
               <div>
                 <SoftTag tone="success">{subscription.entitlement}</SoftTag>
@@ -281,7 +284,7 @@ export function OfferingsView({ offerings }: { offerings: Offering[] }) {
 export function SubscribersView({ onOpenSubscriber, subscribers }: { onOpenSubscriber: (subscriber: Subscriber) => void; subscribers: Subscriber[] }) {
   return (
     <section className="animate-[subs-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
-      <ViewTitle description="Identified by App User ID. Same identity across iOS and Android." title="Subscribers" />
+      <ViewTitle description="Identified by App User ID. Ready for future cross-platform identity." title="Subscribers" />
       <div className="mt-[20px] overflow-hidden rounded-[14px] border border-[var(--subs-border)] bg-[var(--subs-panel)] max-lg:overflow-x-auto">
         <div className="min-w-[900px]">
           <div className="grid grid-cols-[1.5fr_1.3fr_1.2fr_1fr_0.9fr_0.8fr] gap-[14px] border-b border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[18px] py-[12px] text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--subs-faint)]">

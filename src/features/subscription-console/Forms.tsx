@@ -1,9 +1,13 @@
 import { PUIField, PUIInput, cn, type PUIFieldRenderProps } from '@piparo/cn-web'
 import { Layers2 } from 'lucide-react'
 
+import { CredentialForm } from './AppStoreConnectCredentialForm'
 import type {
   AppDraft,
   AppDraftField,
+  AppStoreConnectAccessibleApp,
+  AppStoreConnectConnection,
+  AppStoreConnectCredentialDraft,
   EditableSubscriptionTextField,
   SubscriptionProduct,
 } from './types'
@@ -46,14 +50,6 @@ export function ProductFormFields({
         price={subscription.price}
         store="App Store Connect"
         value={subscription.iosId}
-      />
-      <StoreMapping
-        onPriceChange={(value) => onTextChange('price', value)}
-        onValueChange={(value) => onTextChange('androidId', value)}
-        platform="AND"
-        price={subscription.price}
-        store="Google Play"
-        value={subscription.androidId}
       />
       <div className="flex gap-[12px] max-sm:flex-col">
         <PUIField className="flex-1" label="Billing period">
@@ -108,7 +104,7 @@ function StoreMapping({
       <PUIInput
         className="mb-[9px] font-mono"
         onChange={(event) => onValueChange(event.target.value)}
-        placeholder={platform === 'iOS' ? 'App Store product ID' : 'Play Store product ID'}
+        placeholder="App Store product ID"
         value={value}
       />
       <PUIInput className="font-mono" onChange={(event) => onPriceChange(event.target.value)} placeholder="Price" value={price} />
@@ -116,51 +112,88 @@ function StoreMapping({
   )
 }
 
-export function NewAppForm({ draft, onChange }: { draft: AppDraft; onChange: (field: AppDraftField, value: string) => void }) {
+export function NewAppForm({
+  apps,
+  connection,
+  credentialDraft,
+  draft,
+  error,
+  loading,
+  onChange,
+  onCredentialChange,
+  onLoadApps,
+}: {
+  apps: AppStoreConnectAccessibleApp[]
+  connection: AppStoreConnectConnection | null
+  credentialDraft: AppStoreConnectCredentialDraft
+  draft: AppDraft
+  error: string | null
+  loading: boolean
+  onChange: (field: AppDraftField, value: string) => void
+  onCredentialChange: (field: keyof AppStoreConnectCredentialDraft, value: string) => void
+  onLoadApps: () => void
+}) {
+  const needsTenantKey = connection == null || !connection.hasPrivateKey
   return (
-    <div className="space-y-[16px]">
-      <PUIField label="App name">
-        {(field) => <PUIInput onChange={(event) => onChange('name', event.target.value)} placeholder="App name" value={draft.name} {...inputFieldProps(field)} />}
-      </PUIField>
-      <PUIField label="iOS bundle ID">
-        {(field) => (
-          <PUIInput
-            className="font-mono"
-            onChange={(event) => onChange('iosBundle', event.target.value)}
-            placeholder="iOS bundle ID"
-            value={draft.iosBundle}
-            {...inputFieldProps(field)}
-          />
-        )}
-      </PUIField>
-      <PUIField label="Android package name">
-        {(field) => (
-          <PUIInput
-            className="font-mono"
-            onChange={(event) => onChange('androidPackage', event.target.value)}
-            placeholder="Android package name"
-            value={draft.androidPackage}
-            {...inputFieldProps(field)}
-          />
-        )}
-      </PUIField>
-      <PUIField label="Status">
-        {(field) => (
-          <select
-            className="w-full rounded-[10px] border border-[var(--subs-border-2)] bg-[var(--subs-panel)] px-[11px] py-[9px] text-[13px] text-[var(--subs-text)] outline-none"
-            onChange={(event) => onChange('status', event.target.value)}
-            value={draft.status}
-            {...inputFieldProps(field)}
-          >
-            <option value="">Select status</option>
-            <option value="live">Live</option>
-            <option value="beta">Beta</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        )}
-      </PUIField>
+    <div className="space-y-[14px]">
+      <div className="rounded-[11px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[12px] py-[10px] text-[12.5px] leading-[1.45] text-[var(--subs-dim)]">
+        Start iOS-only: {needsTenantKey ? 'upload the tenant App Store Connect API key first, then select an app.' : 'load apps through the tenant-wide App Store Connect key, then select the app to create locally.'}
+      </div>
+      {needsTenantKey ? (
+        <div className="rounded-[12px] border border-[var(--subs-border)] bg-[var(--subs-panel)] p-[12px]">
+          <CredentialForm draft={credentialDraft} hasStoredKey={connection?.hasPrivateKey ?? false} onChange={onCredentialChange} />
+        </div>
+      ) : null}
+      <button
+        className="min-h-[38px] w-full cursor-pointer rounded-[9px] border border-[var(--subs-border)] bg-[var(--subs-panel)] px-[13px] py-[8px] text-[12.5px] font-semibold text-[var(--subs-text)] transition-colors duration-fast hover:bg-[var(--subs-panel-2)] disabled:cursor-not-allowed disabled:opacity-50"
+        disabled={loading || (needsTenantKey && !canSaveTenantKey(credentialDraft))}
+        onClick={onLoadApps}
+        type="button"
+      >
+        {loading ? 'Loading App Store Connect apps…' : needsTenantKey ? 'Save key & load apps' : 'Load App Store Connect apps'}
+      </button>
+      {error != null ? (
+        <div className="rounded-[10px] border border-[color-mix(in_oklch,var(--subs-red)_30%,var(--subs-border))] bg-[color-mix(in_oklch,var(--subs-red)_7%,white)] px-[12px] py-[10px] text-[12.5px] text-[var(--subs-red)]">
+          {error}
+        </div>
+      ) : null}
+      {apps.length > 0 ? (
+        <div className="max-h-[300px] overflow-auto rounded-[11px] border border-[var(--subs-border)]">
+          {apps.map((app) => (
+            <button
+              className={cn(
+                'grid w-full cursor-pointer grid-cols-[1fr_auto] gap-[8px] border-b border-[var(--subs-border)] px-[12px] py-[10px] text-left last:border-b-0 hover:bg-[var(--subs-panel-2)]',
+                draft.appleAppId === app.appleAppId && 'bg-[var(--subs-accent-soft)]',
+              )}
+              key={app.appleAppId}
+              onClick={() => {
+                onChange('appleAppId', app.appleAppId)
+                onChange('bundleId', app.bundleId)
+                onChange('name', app.name)
+                onChange('sku', app.sku)
+              }}
+              type="button"
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-[13px] font-semibold text-[var(--subs-text)]">{app.name}</span>
+                <span className="mt-[2px] block truncate font-mono text-[11.5px] text-[var(--subs-faint)]">{app.bundleId || 'No bundle ID returned'}</span>
+              </span>
+              <span className="font-mono text-[11px] text-[var(--subs-faint)]">{app.appleAppId}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {draft.appleAppId !== '' ? (
+        <div className="rounded-[11px] border border-[var(--subs-accent-line)] bg-[var(--subs-accent-soft)] px-[12px] py-[10px] text-[12.5px] text-[var(--subs-accent-d)]">
+          Selected <strong>{draft.name}</strong> · <span className="font-mono">{draft.bundleId || draft.appleAppId}</span>
+        </div>
+      ) : null}
     </div>
   )
+}
+
+function canSaveTenantKey(draft: AppStoreConnectCredentialDraft): boolean {
+  return draft.keyId.trim() !== '' && draft.issuerId.trim() !== '' && draft.privateKey.trim() !== ''
 }
 
 export function TrialToggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {

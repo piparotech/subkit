@@ -1,6 +1,7 @@
 @import '@piparo/cn-web/src/index.css';
 
 @source '../features/subscription-console/**/*.{ts,tsx}';
+@source '../../node_modules/@piparo/cn-web/src/**/*.{ts,tsx}';
 
 
 

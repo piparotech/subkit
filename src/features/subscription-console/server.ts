@@ -1,13 +1,24 @@
 import { createServerFn } from '@tanstack/react-start'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { db } from '~/db/client'
 import { ensureDatabaseReady } from '~/db/setup'
 import { getOptionalCurrentUser, getRequiredCurrentUser } from '~/server/auth/current-user'
 import { parseServerEnv } from '~/server/env'
-import { apps, entitlements, offeringPackages, offerings, products, purchaseEvents, subscribers, tenants } from '~/db/schema'
-import { readAppStoreConnectConnectionsForTenant } from './app-store-connect-read'
+import {
+  apps,
+  appStoreConnectAuditEvents,
+  appStoreConnectSalesReports,
+  entitlements,
+  offeringPackages,
+  offerings,
+  products,
+  purchaseEvents,
+  subscribers,
+  tenants,
+} from '~/db/schema'
+import { readAppStoreConnectConnectionForTenant } from './app-store-connect-read'
 import type {
   ActivityEvent,
   AppTenant,
@@ -32,19 +43,17 @@ const env = parseServerEnv(process.env)
 const activeTenantId = env.TENANT_ID
 
 const appInputSchema = z.object({
-  androidPackage: z.string().optional(),
-  bundle: z.string().min(1),
+  appleAppId: z.string().min(1),
+  bundleId: z.string(),
   color: z.string().min(1),
   id: z.string().min(1),
   initials: z.string().min(1),
-  iosBundle: z.string().optional(),
   name: z.string().min(1),
-  status: z.enum(['live', 'beta', 'inactive']),
   tenantId: z.string().min(1),
 })
 
 const subscriptionInputSchema = z.object({
-  androidId: z.string().min(1),
+  androidId: z.string().optional(),
   appId: z.string().min(1),
   duration: z.string().min(1),
   entitlement: z.string().min(1),
@@ -54,6 +63,10 @@ const subscriptionInputSchema = z.object({
   originalIdentifier: z.string().nullable(),
   price: z.string().min(1),
   trialOn: z.boolean(),
+})
+
+const deleteAppInputSchema = z.object({
+  appId: z.string().min(1),
 })
 
 function parsePriceCents(price: string): number {
@@ -85,7 +98,8 @@ function formatInteger(value: number): string {
   return new Intl.NumberFormat('en-US').format(value)
 }
 
-function appStatus(status: 'live' | 'beta' | 'inactive'): { label: string; tone: StatusTone } {
+function appStatus(status: 'setup' | 'live' | 'beta' | 'inactive'): { label: string; tone: StatusTone } {
+  if (status === 'setup') return { label: 'Setup', tone: 'warning' }
   if (status === 'live') return { label: 'Live', tone: 'success' }
   if (status === 'beta') return { label: 'Beta', tone: 'warning' }
   return { label: 'Inactive', tone: 'muted' }
@@ -136,11 +150,24 @@ function revenueBarsForEvents(events: readonly typeof purchaseEvents.$inferSelec
   return values.map(([month, cents]) => ({ month, height: `${Math.max(1, Math.round((cents * 100) / maxRevenue))}%` }))
 }
 
-function appPlatforms(iosBundleId: string | null, androidPackageName: string | null): Platform[] {
+function appPlatforms(appleAppId: string | null, iosBundleId: string | null, bundleId: string, androidPackageName: string | null): Platform[] {
   const platforms: Platform[] = []
-  if (iosBundleId != null && iosBundleId.trim() !== '') platforms.push('iOS')
+  if (appleAppId != null && appleAppId.trim() !== '') platforms.push('iOS')
+  else if (iosBundleId != null && iosBundleId.trim() !== '') platforms.push('iOS')
+  else if (bundleId.trim() !== '') platforms.push('iOS')
   if (androidPackageName != null && androidPackageName.trim() !== '') platforms.push('Android')
   return platforms
+}
+
+function appStoreSummary(appleAppId: string | null, iosBundleId: string | null, bundleId: string, androidPackageName: string | null): string {
+  const appleId = appleAppId?.trim()
+  const ios = iosBundleId?.trim() || bundleId.trim()
+  const android = androidPackageName?.trim()
+  if (ios && android) return 'iOS + Android mapped'
+  if (ios) return `iOS ${ios}`
+  if (appleId) return `App Store Connect ${appleId}`
+  if (android) return `Android ${android}`
+  return 'Local app · no store mapping'
 }
 
 function isOwnedApp(appId: string, ownedAppIds: ReadonlySet<string>): boolean {
@@ -187,7 +214,7 @@ export const getSubscriptionConsoleData = createServerFn({ method: 'GET' }).hand
     packageRows,
     subscriberRowsAll,
     eventRowsAll,
-    appStoreConnectConnections,
+    appStoreConnectConnection,
   ] = await Promise.all([
     db.select().from(tenants),
     db.select().from(apps),
@@ -197,7 +224,7 @@ export const getSubscriptionConsoleData = createServerFn({ method: 'GET' }).hand
     db.select().from(offeringPackages),
     db.select().from(subscribers),
     db.select().from(purchaseEvents),
-    readAppStoreConnectConnectionsForTenant(activeTenantId),
+    readAppStoreConnectConnectionForTenant(activeTenantId),
   ])
 
   const activeTenant = tenantRows.find((tenant) => tenant.id === activeTenantId)
@@ -244,8 +271,11 @@ export const getSubscriptionConsoleData = createServerFn({ method: 'GET' }).hand
       name: app.name,
       initials: app.initials,
       color: app.color,
-      bundle: app.bundleId,
-      platforms: appPlatforms(app.iosBundleId, app.androidPackageName),
+      bundle: appStoreSummary(app.appleAppId, app.iosBundleId, app.bundleId, app.androidPackageName),
+      appleAppId: app.appleAppId,
+      iosBundleId: app.iosBundleId,
+      androidPackageName: app.androidPackageName,
+      platforms: appPlatforms(app.appleAppId, app.iosBundleId, app.bundleId, app.androidPackageName),
       mrr: formatCurrency(app.monthlyRevenueCents),
       activeSubs: formatInteger(app.activeSubscriberCount),
       status: status.label,
@@ -370,7 +400,7 @@ export const getSubscriptionConsoleData = createServerFn({ method: 'GET' }).hand
   })
 
   return {
-    appStoreConnect: appStoreConnectConnections,
+    appStoreConnect: appStoreConnectConnection,
     apps: appItems,
     currentUser: toConsoleUser(currentUser),
     dashboards,
@@ -396,30 +426,58 @@ export const createAppRecord = createServerFn({ method: 'POST' })
       .insert(apps)
       .values({
         activeSubscriberCount: 0,
-        androidPackageName: data.androidPackage?.trim() || null,
-        bundleId: data.bundle,
+        androidPackageName: null,
+        appleAppId: data.appleAppId,
+        bundleId: data.bundleId,
         color: data.color,
         createdAt: new Date(),
         id: data.id,
         initials: data.initials,
-        iosBundleId: data.iosBundle?.trim() || null,
+        iosBundleId: data.bundleId,
         monthlyRevenueCents: 0,
         name: data.name,
-        status: data.status,
+        status: 'setup',
         tenantId: activeTenantId,
       })
       .onConflictDoUpdate({
         set: {
-          androidPackageName: data.androidPackage?.trim() || null,
-          bundleId: data.bundle,
+          appleAppId: data.appleAppId,
+          bundleId: data.bundleId,
           color: data.color,
           initials: data.initials,
-          iosBundleId: data.iosBundle?.trim() || null,
+          iosBundleId: data.bundleId,
           name: data.name,
-          status: data.status,
         },
         target: apps.id,
       })
+    return { ok: true }
+  })
+
+export const deleteAppRecord = createServerFn({ method: 'POST' })
+  .validator((input: unknown) => deleteAppInputSchema.parse(input))
+  .handler(async ({ data }) => {
+    await ensureDatabaseReady()
+    await getCurrentConsoleUser()
+    assertOwnedApp(data.appId)
+
+    await db.transaction(async (tx) => {
+      const subscriberRows = await tx.select({ id: subscribers.id }).from(subscribers).where(eq(subscribers.appId, data.appId))
+      const offeringRows = await tx.select({ id: offerings.id }).from(offerings).where(eq(offerings.appId, data.appId))
+      const subscriberIds = subscriberRows.map((subscriber) => subscriber.id)
+      const offeringIds = offeringRows.map((offering) => offering.id)
+
+      if (subscriberIds.length > 0) await tx.delete(purchaseEvents).where(inArray(purchaseEvents.subscriberId, subscriberIds))
+      if (offeringIds.length > 0) await tx.delete(offeringPackages).where(inArray(offeringPackages.offeringId, offeringIds))
+
+      await tx.delete(appStoreConnectSalesReports).where(eq(appStoreConnectSalesReports.appId, data.appId))
+      await tx.delete(appStoreConnectAuditEvents).where(eq(appStoreConnectAuditEvents.appId, data.appId))
+      await tx.delete(products).where(eq(products.appId, data.appId))
+      await tx.delete(subscribers).where(eq(subscribers.appId, data.appId))
+      await tx.delete(offerings).where(eq(offerings.appId, data.appId))
+      await tx.delete(entitlements).where(eq(entitlements.appId, data.appId))
+      await tx.delete(apps).where(eq(apps.id, data.appId))
+    })
+
     return { ok: true }
   })
 
@@ -462,7 +520,7 @@ export const upsertSubscriptionRecord = createServerFn({ method: 'POST' })
         entitlementId,
         id: productRowId(data.appId, data.identifier),
         identifier: data.identifier,
-        playStoreId: data.androidId,
+        playStoreId: data.androidId ?? '',
         priceCents: parsePriceCents(data.price),
         trialEnabled: data.trialOn,
       })
@@ -474,7 +532,7 @@ export const upsertSubscriptionRecord = createServerFn({ method: 'POST' })
           duration: data.duration,
           entitlementId,
           identifier: data.identifier,
-          playStoreId: data.androidId,
+          playStoreId: data.androidId ?? '',
           priceCents: parsePriceCents(data.price),
           trialEnabled: data.trialOn,
         },

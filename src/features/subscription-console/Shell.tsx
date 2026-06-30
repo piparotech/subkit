@@ -32,6 +32,7 @@ const APP_NAV: NavItem[] = [
 
 const viewLabels: Record<View, string> = {
   apps: 'All Apps',
+  workspaceSettings: 'Workspace Settings',
   dashboard: 'Dashboard',
   subscriptions: 'Subscriptions',
   entitlements: 'Entitlements',
@@ -75,7 +76,7 @@ export function ConsoleShell({
   searchQuery,
   subscriptionsCount,
 }: ShellProps) {
-  const showPrimary = view === 'apps' || view === 'subscriptions'
+  const showPrimary = view === 'apps' || (view === 'subscriptions' && currentApp != null)
   const primaryLabel = view === 'apps' ? 'New App' : 'New Subscription'
 
   return (
@@ -105,6 +106,12 @@ export function ConsoleShell({
             icon={AppsIcon}
             label="All Apps"
             onPress={onGoAllApps}
+          />
+          <SidebarButton
+            active={view === 'workspaceSettings'}
+            icon={SettingsIcon}
+            label="Workspace Settings"
+            onPress={() => onGoView('workspaceSettings')}
           />
 
           {currentApp != null ? (

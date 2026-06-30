@@ -1,5 +1,18 @@
 import type { AppDraft, AppStatusValue, AppTenant, StatusTone, Subscriber, SubscriptionProduct } from './types'
 
+export interface AppRouteParams {
+  appSlug: string
+  tenantSlug: string
+}
+
+interface AppRouteSource {
+  appleAppId: string | null
+  id: string
+  iosBundleId: string | null
+  name: string
+  tenantId: string
+}
+
 const appColors = [
   'oklch(0.62 0.17 152)',
   'oklch(0.55 0.19 264)',
@@ -29,24 +42,43 @@ export function idForLabel(label: string): string {
   return normalized
 }
 
+export function appRouteParams(app: AppRouteSource): AppRouteParams {
+  return { appSlug: appRouteSlug(app), tenantSlug: tenantRouteSlug(app.tenantId) }
+}
+
+export function appMatchesRouteParams(app: AppRouteSource, params: AppRouteParams): boolean {
+  return tenantRouteSlug(app.tenantId) === params.tenantSlug && appRouteSlug(app) === params.appSlug
+}
+
+function appRouteSlug(app: AppRouteSource): string {
+  const label = app.name.trim() || app.iosBundleId?.trim() || app.appleAppId?.trim() || app.id
+  return idForLabel(label)
+}
+
+function tenantRouteSlug(tenantId: string): string {
+  return idForLabel(tenantId)
+}
+
 export function createAppFromDraft(draft: AppDraft, existingCount: number, tenantId: string): AppTenant {
   const name = draft.name.trim()
-  const iosBundle = draft.iosBundle.trim()
-  const androidPackage = draft.androidPackage.trim()
-  const status = readAppStatus(draft.status)
+  const appleAppId = draft.appleAppId.trim()
+  const bundleId = draft.bundleId.trim()
+  const status: AppStatusValue = 'setup'
   if (!name) throw new Error('App name is required')
-  if (!iosBundle && !androidPackage) throw new Error('At least one store bundle identifier is required')
+  if (!appleAppId) throw new Error('Select an App Store Connect app first')
 
-  const id = `${tenantId}:${idForLabel(name)}`
-  const platforms = [iosBundle ? 'iOS' : null, androidPackage ? 'Android' : null].filter((platform): platform is 'iOS' | 'Android' => platform != null)
+  const id = `${tenantId}:ios:${appleAppId}`
   return {
     id,
     tenantId,
     name,
     initials: initialsForName(name),
     color: appColors[existingCount % appColors.length] ?? appColors[0],
-    bundle: iosBundle || androidPackage,
-    platforms,
+    bundle: bundleId ? `iOS ${bundleId}` : `App Store Connect ${appleAppId}`,
+    appleAppId,
+    iosBundleId: bundleId || null,
+    androidPackageName: null,
+    platforms: ['iOS'],
     mrr: '$0',
     activeSubs: '0',
     status: formatAppStatus(status),
@@ -54,12 +86,8 @@ export function createAppFromDraft(draft: AppDraft, existingCount: number, tenan
   }
 }
 
-function readAppStatus(status: AppStatusValue | ''): AppStatusValue {
-  if (status === 'live' || status === 'beta' || status === 'inactive') return status
-  throw new Error('App status is required')
-}
-
 function formatAppStatus(status: AppStatusValue): string {
+  if (status === 'setup') return 'Setup'
   if (status === 'live') return 'Live'
   if (status === 'beta') return 'Beta'
   return 'Inactive'
@@ -67,7 +95,7 @@ function formatAppStatus(status: AppStatusValue): string {
 
 function appStatusTone(status: AppStatusValue): StatusTone {
   if (status === 'live') return 'success'
-  if (status === 'beta') return 'warning'
+  if (status === 'beta' || status === 'setup') return 'warning'
   return 'muted'
 }
 
@@ -78,7 +106,17 @@ export function matchesQuery(query: string, values: readonly string[]): boolean 
 }
 
 export function filterApps(items: readonly AppTenant[], query: string): AppTenant[] {
-  return items.filter((app) => matchesQuery(query, [app.name, app.bundle, app.status, app.platforms.join(' ')]))
+  return items.filter((app) =>
+    matchesQuery(query, [
+      app.name,
+      app.bundle,
+      app.appleAppId ?? '',
+      app.iosBundleId ?? '',
+      app.androidPackageName ?? '',
+      app.status,
+      app.platforms.join(' '),
+    ]),
+  )
 }
 
 export function filterSubscriptions(items: readonly SubscriptionProduct[], query: string): SubscriptionProduct[] {

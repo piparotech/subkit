@@ -10,17 +10,18 @@ import {
 
 import type { AppStoreConnectCapability, AppStoreConnectConnection } from './types'
 
-export async function readAppStoreConnectConnectionsForTenant(tenantId: string): Promise<AppStoreConnectConnection[]> {
+export async function readAppStoreConnectConnectionForTenant(tenantId: string): Promise<AppStoreConnectConnection | null> {
   const [credentialRows, capabilityRows, reportRows, auditRows] = await Promise.all([
-    db.select().from(appStoreConnectCredentials).where(eq(appStoreConnectCredentials.tenantId, tenantId)),
+    db.select().from(appStoreConnectCredentials).where(eq(appStoreConnectCredentials.tenantId, tenantId)).limit(1),
     db.select().from(appStoreConnectCapabilities),
     db.select().from(appStoreConnectSalesReports).orderBy(desc(appStoreConnectSalesReports.createdAt)),
     db.select().from(appStoreConnectAuditEvents).orderBy(desc(appStoreConnectAuditEvents.createdAt)),
   ])
 
-  return credentialRows.map((credential) => ({
-    appId: credential.appId,
-    appleAppId: credential.appleAppId,
+  const credential = credentialRows[0]
+  if (credential == null) return null
+
+  return {
     auditEvents: auditRows
       .filter((event) => event.credentialId === credential.id)
       .slice(0, 8)
@@ -30,7 +31,6 @@ export async function readAppStoreConnectConnectionsForTenant(tenantId: string):
         detail: event.detail,
         id: event.id,
       })),
-    bundleId: credential.bundleId,
     capabilities: capabilityRows
       .filter((capabilityRow) => capabilityRow.credentialId === credential.id)
       .map((capabilityRow): AppStoreConnectCapability => ({
@@ -61,8 +61,9 @@ export async function readAppStoreConnectConnectionsForTenant(tenantId: string):
         vendorNumber: report.vendorNumber,
       })),
     status: credential.status,
+    tenantId: credential.tenantId,
     vendorNumber: credential.vendorNumber,
-  }))
+  }
 }
 
 function formatDateTime(value: Date): string {

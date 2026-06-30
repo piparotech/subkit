@@ -1,12 +1,12 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { db } from '~/db/client'
 import { ensureDatabaseReady } from '~/db/setup'
 import { createRandomToken } from '~/server/auth/crypto'
 import { getRequiredCurrentUser } from '~/server/auth/current-user'
-import { appStoreConnectAuditEvents, appStoreConnectCredentials } from '~/db/schema'
+import { appStoreConnectAuditEvents, appStoreConnectCredentials, apps } from '~/db/schema'
 import {
   getAppStoreConnectResourcePage,
   type AppStoreConnectCredentials,
@@ -31,21 +31,21 @@ export const inspectAppStoreConnectMonitoring = createServerFn({ method: 'POST' 
   .handler(async ({ data }): Promise<AppStoreConnectMonitorSnapshot> => {
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
-    assertOwnedApp(data.appId)
-    const credential = await requireCredential(data.appId)
+    const app = await requireApp(data.appId)
+    const credential = await requireCredential()
     const credentials = decryptCredential(credential)
-    if (credential.appleAppId == null || credential.appleAppId.trim() === '') {
-      throw new Error('Validate the connection before inspecting App Store Connect monitoring data')
+    if (app.appleAppId == null || app.appleAppId.trim() === '') {
+      throw new Error('Select an App Store Connect app before inspecting monitoring data')
     }
 
-    const appleAppId = credential.appleAppId
+    const appleAppId = app.appleAppId
     const [versions, builds, reviews, bundleIds] = await Promise.all([
       readResources(credentials, `/v1/apps/${encodeURIComponent(appleAppId)}/appStoreVersions?limit=5`),
       readResources(credentials, `/v1/apps/${encodeURIComponent(appleAppId)}/builds?limit=5`),
       readResources(credentials, `/v1/apps/${encodeURIComponent(appleAppId)}/customerReviews?limit=5`),
-      credential.bundleId == null || credential.bundleId.trim() === ''
+      app.iosBundleId == null || app.iosBundleId.trim() === ''
         ? Promise.resolve({ error: 'Bundle ID is missing.', resources: [] })
-        : readResources(credentials, `/v1/bundleIds?filter[identifier]=${encodeURIComponent(credential.bundleId)}&limit=5`),
+        : readResources(credentials, `/v1/bundleIds?filter[identifier]=${encodeURIComponent(app.iosBundleId)}&limit=5`),
     ])
 
     await db.insert(appStoreConnectAuditEvents).values({
@@ -89,13 +89,19 @@ function section(
   return { items: result.resources.map(mapper), title }
 }
 
-async function requireCredential(appId: string): Promise<typeof appStoreConnectCredentials.$inferSelect> {
+async function requireApp(appId: string): Promise<typeof apps.$inferSelect> {
+  const [app] = await db.select().from(apps).where(eq(apps.id, appId)).limit(1)
+  if (app == null || app.tenantId !== activeTenantId) throw new Error('App does not belong to the active tenant')
+  return app
+}
+
+async function requireCredential(): Promise<typeof appStoreConnectCredentials.$inferSelect> {
   const [credential] = await db
     .select()
     .from(appStoreConnectCredentials)
-    .where(and(eq(appStoreConnectCredentials.appId, appId), eq(appStoreConnectCredentials.tenantId, activeTenantId)))
+    .where(eq(appStoreConnectCredentials.tenantId, activeTenantId))
     .limit(1)
-  if (!credential) throw new Error('No App Store Connect credential is configured for this app')
+  if (!credential) throw new Error('No tenant App Store Connect credential is configured')
   if (credential.status === 'deleted') throw new Error('App Store Connect credential was deleted')
   return credential
 }
@@ -163,8 +169,4 @@ function readNumber(resource: AppStoreConnectResource, key: string): number | un
 
 function trimText(value: string): string {
   return value.length > 140 ? `${value.slice(0, 137)}…` : value
-}
-
-function assertOwnedApp(appId: string): void {
-  if (!appId.startsWith(`${activeTenantId}:`)) throw new Error('App does not belong to the active tenant')
 }

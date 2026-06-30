@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { db } from '~/db/client'
@@ -11,6 +11,7 @@ import {
   appStoreConnectCapabilities,
   appStoreConnectCredentials,
   appStoreConnectSalesReports,
+  apps,
   entitlements,
   products,
 } from '~/db/schema'
@@ -34,15 +35,13 @@ const env = parseServerEnv(process.env)
 const activeTenantId = env.TENANT_ID
 
 const credentialInputSchema = z.object({
-  appId: z.string().min(1),
-  appleAppId: z.string().optional(),
-  bundleId: z.string().optional(),
   issuerId: z.string().min(1),
   keyId: z.string().min(1),
   privateKey: z.string().optional(),
   vendorNumber: z.string().optional(),
 })
 
+const tenantCredentialInputSchema = z.object({})
 const appInputSchema = z.object({ appId: z.string().min(1) })
 
 const importInputSchema = z.object({
@@ -73,9 +72,8 @@ export const saveAppStoreConnectCredential = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
-    assertOwnedApp(data.appId)
 
-    const existing = await findCredential(data.appId)
+    const existing = await findCredential()
     const cleanPrivateKey = data.privateKey?.trim()
     if (!existing && (cleanPrivateKey == null || cleanPrivateKey === '')) {
       throw new Error('Private key is required for a new App Store Connect connection')
@@ -88,9 +86,6 @@ export const saveAppStoreConnectCredential = createServerFn({ method: 'POST' })
     await db
       .insert(appStoreConnectCredentials)
       .values({
-        appleAppId: optionalTrim(data.appleAppId),
-        appId: data.appId,
-        bundleId: optionalTrim(data.bundleId),
         createdAt: now,
         disabledAt: null,
         id: credentialId,
@@ -109,8 +104,6 @@ export const saveAppStoreConnectCredential = createServerFn({ method: 'POST' })
       })
       .onConflictDoUpdate({
         set: {
-          appleAppId: optionalTrim(data.appleAppId),
-          bundleId: optionalTrim(data.bundleId),
           disabledAt: null,
           issuerId: data.issuerId.trim(),
           keyId: data.keyId.trim(),
@@ -122,31 +115,35 @@ export const saveAppStoreConnectCredential = createServerFn({ method: 'POST' })
           updatedAt: now,
           vendorNumber: optionalTrim(data.vendorNumber),
         },
-        target: appStoreConnectCredentials.appId,
+        target: appStoreConnectCredentials.tenantId,
       })
 
-    await recordAudit({ action: existing ? 'credential.updated' : 'credential.created', appId: data.appId, credentialId, detail: 'Credential metadata saved; private key redacted.', userId: currentUser.id })
-    await validateCredentialByAppId(data.appId, currentUser.id)
+    await recordAudit({
+      action: existing ? 'credential.updated' : 'credential.created',
+      appId: null,
+      credentialId,
+      detail: 'Tenant credential metadata saved; private key redacted.',
+      userId: currentUser.id,
+    })
+    await validateTenantCredential(currentUser.id)
     return { ok: true }
   })
 
 export const validateAppStoreConnectCredential = createServerFn({ method: 'POST' })
-  .validator((input: unknown) => appInputSchema.parse(input))
-  .handler(async ({ data }) => {
+  .validator((input: unknown) => tenantCredentialInputSchema.parse(input))
+  .handler(async () => {
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
-    assertOwnedApp(data.appId)
-    await validateCredentialByAppId(data.appId, currentUser.id)
+    await validateTenantCredential(currentUser.id)
     return { ok: true }
   })
 
 export const deleteAppStoreConnectCredential = createServerFn({ method: 'POST' })
-  .validator((input: unknown) => appInputSchema.parse(input))
-  .handler(async ({ data }) => {
+  .validator((input: unknown) => tenantCredentialInputSchema.parse(input))
+  .handler(async () => {
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
-    assertOwnedApp(data.appId)
-    const credential = await requireCredential(data.appId)
+    const credential = await requireCredential()
     const now = new Date()
     await db
       .update(appStoreConnectCredentials)
@@ -160,7 +157,13 @@ export const deleteAppStoreConnectCredential = createServerFn({ method: 'POST' }
         updatedAt: now,
       })
       .where(eq(appStoreConnectCredentials.id, credential.id))
-    await recordAudit({ action: 'credential.deleted', appId: data.appId, credentialId: credential.id, detail: 'Encrypted private key material deleted locally. Revoke the key in App Store Connect too.', userId: currentUser.id })
+    await recordAudit({
+      action: 'credential.deleted',
+      appId: null,
+      credentialId: credential.id,
+      detail: 'Encrypted private key material deleted locally. Revoke the key in App Store Connect too.',
+      userId: currentUser.id,
+    })
     return { ok: true }
   })
 
@@ -174,7 +177,13 @@ export const previewAppStoreConnectProducts = createServerFn({ method: 'POST' })
     const appleProducts = await fetchAppleCatalogProducts(credentials, appleAppId)
     const localProducts = await db.select().from(products).where(eq(products.appId, data.appId))
     const preview = appleProducts.map((product) => previewProduct(product, localProducts))
-    await recordAudit({ action: 'products.previewed', appId: data.appId, credentialId: credential.id, detail: `${preview.length} Apple catalogue products compared locally.`, userId: currentUser.id })
+    await recordAudit({
+      action: 'products.previewed',
+      appId: data.appId,
+      credentialId: credential.id,
+      detail: `${preview.length} Apple catalogue products compared locally.`,
+      userId: currentUser.id,
+    })
     return preview
   })
 
@@ -184,7 +193,7 @@ export const importAppStoreConnectProductPreview = createServerFn({ method: 'POS
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
     assertOwnedApp(data.appId)
-    const credential = await requireCredential(data.appId)
+    const credential = await requireCredential()
     let created = 0
     let updated = 0
     let skipped = 0
@@ -239,7 +248,13 @@ export const importAppStoreConnectProductPreview = createServerFn({ method: 'POS
       if (item.action === 'update') updated += 1
     }
 
-    await recordAudit({ action: 'products.imported', appId: data.appId, credentialId: credential.id, detail: `${created} created, ${updated} updated, ${skipped} skipped from Apple catalogue preview.`, userId: currentUser.id })
+    await recordAudit({
+      action: 'products.imported',
+      appId: data.appId,
+      credentialId: credential.id,
+      detail: `${created} created, ${updated} updated, ${skipped} skipped from Apple catalogue preview.`,
+      userId: currentUser.id,
+    })
     return { created, skipped, updated }
   })
 
@@ -268,7 +283,13 @@ export const syncAppStoreConnectSalesReport = createServerFn({ method: 'POST' })
         status: 'imported',
         vendorNumber,
       })
-      await recordAudit({ action: 'reports.synced', appId: data.appId, credentialId: credential.id, detail: `Daily Sales Report ${reportDate} imported with ${report.rowCount} rows.`, userId: currentUser.id })
+      await recordAudit({
+        action: 'reports.synced',
+        appId: data.appId,
+        credentialId: credential.id,
+        detail: `Daily Sales Report ${reportDate} imported with ${report.rowCount} rows.`,
+        userId: currentUser.id,
+      })
       return { reportDate, rowCount: report.rowCount, status: 'imported' }
     } catch (error) {
       const detail = safeErrorDetail(error)
@@ -284,26 +305,30 @@ export const syncAppStoreConnectSalesReport = createServerFn({ method: 'POST' })
         status: 'failed',
         vendorNumber,
       })
-      await recordAudit({ action: 'reports.failed', appId: data.appId, credentialId: credential.id, detail: `Daily Sales Report ${reportDate} failed: ${detail}`, userId: currentUser.id })
+      await recordAudit({
+        action: 'reports.failed',
+        appId: data.appId,
+        credentialId: credential.id,
+        detail: `Daily Sales Report ${reportDate} failed: ${detail}`,
+        userId: currentUser.id,
+      })
       return { reportDate, rowCount: 0, status: 'failed' }
     }
   })
 
-async function validateCredentialByAppId(appId: string, userId: string): Promise<void> {
-  const credential = await requireCredential(appId)
+async function validateTenantCredential(userId: string): Promise<void> {
+  const credential = await requireCredential()
   const credentials = decryptCredential(credential)
   const result = await validateAppStoreConnectAccess({
-    bundleId: credential.bundleId,
+    bundleId: null,
     credentials,
-    requestedAppleAppId: credential.appleAppId,
+    requestedAppleAppId: null,
     vendorNumber: credential.vendorNumber,
   })
   const now = new Date()
   await db
     .update(appStoreConnectCredentials)
     .set({
-      appleAppId: result.appleAppId ?? credential.appleAppId,
-      bundleId: result.bundleId ?? credential.bundleId,
       lastError: result.lastError,
       lastValidatedAt: now,
       status: result.status,
@@ -336,7 +361,13 @@ async function validateCredentialByAppId(appId: string, userId: string): Promise
       })
   }
 
-  await recordAudit({ action: 'credential.validated', appId, credentialId: credential.id, detail: `Validation completed with status ${result.status}.`, userId })
+  await recordAudit({
+    action: 'credential.validated',
+    appId: null,
+    credentialId: credential.id,
+    detail: `Tenant validation completed with status ${result.status}.`,
+    userId,
+  })
 }
 
 async function requireActiveAppleCredential(appId: string): Promise<{
@@ -344,23 +375,30 @@ async function requireActiveAppleCredential(appId: string): Promise<{
   credential: typeof appStoreConnectCredentials.$inferSelect
   credentials: AppStoreConnectCredentials
 }> {
-  const credential = await requireCredential(appId)
+  const credential = await requireCredential()
   if (credential.status === 'deleted') throw new Error('App Store Connect credential was deleted')
-  if (credential.appleAppId == null || credential.appleAppId.trim() === '') throw new Error('Validate the connection before syncing Apple app data')
-  return { appleAppId: credential.appleAppId, credential, credentials: decryptCredential(credential) }
+  const app = await requireApp(appId)
+  if (app.appleAppId == null || app.appleAppId.trim() === '') throw new Error('Select an App Store Connect app before syncing Apple app data')
+  return { appleAppId: app.appleAppId, credential, credentials: decryptCredential(credential) }
 }
 
-async function requireCredential(appId: string): Promise<typeof appStoreConnectCredentials.$inferSelect> {
-  const credential = await findCredential(appId)
-  if (!credential) throw new Error('No App Store Connect credential is configured for this app')
+async function requireApp(appId: string): Promise<typeof apps.$inferSelect> {
+  const [app] = await db.select().from(apps).where(eq(apps.id, appId)).limit(1)
+  if (app == null || app.tenantId !== activeTenantId) throw new Error('App does not belong to the active tenant')
+  return app
+}
+
+async function requireCredential(): Promise<typeof appStoreConnectCredentials.$inferSelect> {
+  const credential = await findCredential()
+  if (!credential) throw new Error('No tenant App Store Connect credential is configured')
   return credential
 }
 
-async function findCredential(appId: string): Promise<typeof appStoreConnectCredentials.$inferSelect | undefined> {
+async function findCredential(): Promise<typeof appStoreConnectCredentials.$inferSelect | undefined> {
   const [credential] = await db
     .select()
     .from(appStoreConnectCredentials)
-    .where(and(eq(appStoreConnectCredentials.appId, appId), eq(appStoreConnectCredentials.tenantId, activeTenantId)))
+    .where(eq(appStoreConnectCredentials.tenantId, activeTenantId))
     .limit(1)
   return credential
 }
@@ -388,7 +426,7 @@ async function recordAudit({
   userId,
 }: {
   action: string
-  appId: string
+  appId: string | null
   credentialId: string
   detail: string
   userId: string

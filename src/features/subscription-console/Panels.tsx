@@ -7,6 +7,9 @@ import { GhostBox, SoftTag, StatusLabel, ToneDot, toneTextClass } from './ui'
 import type {
   AppDraft,
   AppDraftField,
+  AppStoreConnectAccessibleApp,
+  AppStoreConnectConnection,
+  AppStoreConnectCredentialDraft,
   EditableSubscriptionTextField,
   PanelState,
   Subscriber,
@@ -15,9 +18,16 @@ import type {
 
 interface PanelsProps {
   appDraft: AppDraft
+  appStoreApps: AppStoreConnectAccessibleApp[]
+  appStoreConnection: AppStoreConnectConnection | null
+  appStoreCredentialDraft: AppStoreConnectCredentialDraft
+  appStoreLoadError: string | null
+  loadingAppStoreApps: boolean
   onAppDraftChange: (field: AppDraftField, value: string) => void
+  onAppStoreCredentialDraftChange: (field: keyof AppStoreConnectCredentialDraft, value: string) => void
   onClose: () => void
   onCreateApp: () => void
+  onLoadAppStoreApps: () => void
   onSaveSubscription: () => void
   onSubscriptionFieldChange: (field: EditableSubscriptionTextField, value: string) => void
   onSubscriptionTrialToggle: () => void
@@ -26,9 +36,16 @@ interface PanelsProps {
 
 export function Panels({
   appDraft,
+  appStoreApps,
+  appStoreConnection,
+  appStoreCredentialDraft,
+  appStoreLoadError,
+  loadingAppStoreApps,
   onAppDraftChange,
+  onAppStoreCredentialDraftChange,
   onClose,
   onCreateApp,
+  onLoadAppStoreApps,
   onSaveSubscription,
   onSubscriptionFieldChange,
   onSubscriptionTrialToggle,
@@ -56,7 +73,19 @@ export function Panels({
       ) : null}
       {panel.kind === 'subscriber' ? <SubscriberPanel onClose={onClose} subscriber={panel.subscriber} /> : null}
       {panel.kind === 'newApp' ? (
-        <NewAppDialog draft={appDraft} onChange={onAppDraftChange} onClose={onClose} onCreate={onCreateApp} />
+        <NewAppDialog
+          appStoreApps={appStoreApps}
+          appStoreConnection={appStoreConnection}
+          appStoreCredentialDraft={appStoreCredentialDraft}
+          appStoreLoadError={appStoreLoadError}
+          draft={appDraft}
+          loadingAppStoreApps={loadingAppStoreApps}
+          onChange={onAppDraftChange}
+          onCredentialChange={onAppStoreCredentialDraftChange}
+          onClose={onClose}
+          onCreate={onCreateApp}
+          onLoadAppStoreApps={onLoadAppStoreApps}
+        />
       ) : null}
     </>
   )
@@ -148,35 +177,60 @@ function SubscriberPanel({ onClose, subscriber }: { onClose: () => void; subscri
 }
 
 function NewAppDialog({
+  appStoreApps,
+  appStoreConnection,
+  appStoreCredentialDraft,
+  appStoreLoadError,
   draft,
+  loadingAppStoreApps,
   onChange,
+  onCredentialChange,
   onClose,
   onCreate,
+  onLoadAppStoreApps,
 }: {
+  appStoreApps: AppStoreConnectAccessibleApp[]
+  appStoreConnection: AppStoreConnectConnection | null
+  appStoreCredentialDraft: AppStoreConnectCredentialDraft
+  appStoreLoadError: string | null
   draft: AppDraft
+  loadingAppStoreApps: boolean
   onChange: (field: AppDraftField, value: string) => void
+  onCredentialChange: (field: keyof AppStoreConnectCredentialDraft, value: string) => void
   onClose: () => void
   onCreate: () => void
+  onLoadAppStoreApps: () => void
 }) {
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-[24px]">
       <div
         aria-label="Create app"
-        className="w-[460px] overflow-hidden rounded-[16px] bg-[var(--subs-panel)] shadow-[0_24px_60px_-16px_rgba(20,20,50,0.4)] animate-[subs-pop-in_180ms_ease]"
+        aria-modal="true"
+        className="w-[620px] max-w-full overflow-hidden rounded-[16px] bg-[var(--subs-panel)] shadow-[0_24px_60px_-16px_rgba(20,20,50,0.4)] animate-[subs-pop-in_180ms_ease]"
         role="dialog"
       >
         <div className="px-[24px] pt-[20px]">
           <PUIText as="h2" className="text-[18px] font-bold" variant="title3">
-            Create app
+            Create iOS app
           </PUIText>
-          <div className="mt-[4px] text-[13px] text-[var(--subs-dim)]">A new tenant. Connect stores after creating.</div>
+          <div className="mt-[4px] text-[13px] text-[var(--subs-dim)]">Select an app from App Store Connect using the tenant API key.</div>
         </div>
         <div className="px-[24px] py-[18px]">
-          <NewAppForm draft={draft} onChange={onChange} />
+          <NewAppForm
+            apps={appStoreApps}
+            connection={appStoreConnection}
+            credentialDraft={appStoreCredentialDraft}
+            draft={draft}
+            error={appStoreLoadError}
+            loading={loadingAppStoreApps}
+            onChange={onChange}
+            onCredentialChange={onCredentialChange}
+            onLoadApps={onLoadAppStoreApps}
+          />
         </div>
         <div className="flex justify-end gap-[10px] border-t border-[var(--subs-border)] px-[24px] py-[16px]">
           <PUIButton className="rounded-[9px]" label="Cancel" onPress={onClose} variant="outline" />
-          <PUIButton className="rounded-[9px]" label="Create app" onPress={onCreate} />
+          <PUIButton className="rounded-[9px]" disabled={draft.appleAppId.trim() === ''} label="Create app" onPress={onCreate} />
         </div>
       </div>
     </div>

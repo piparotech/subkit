@@ -11,9 +11,20 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LogoutRouteImport } from './routes/logout'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ConsoleRouteImport } from './routes/_console'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthStartRouteImport } from './routes/auth.start'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
+import { Route as ConsoleSettingsRouteImport } from './routes/_console.settings'
+import { Route as ConsoleAppsRouteImport } from './routes/_console.apps'
+import { Route as ConsoleAppsIndexRouteImport } from './routes/_console.apps.index'
+import { Route as ConsoleTenantSlugAppSlugRouteImport } from './routes/_console.$tenantSlug.$appSlug'
+import { Route as ConsoleTenantSlugAppSlugIndexRouteImport } from './routes/_console.$tenantSlug.$appSlug.index'
+import { Route as ConsoleTenantSlugAppSlugSubscriptionsRouteImport } from './routes/_console.$tenantSlug.$appSlug.subscriptions'
+import { Route as ConsoleTenantSlugAppSlugSubscribersRouteImport } from './routes/_console.$tenantSlug.$appSlug.subscribers'
+import { Route as ConsoleTenantSlugAppSlugSettingsRouteImport } from './routes/_console.$tenantSlug.$appSlug.settings'
+import { Route as ConsoleTenantSlugAppSlugOfferingsRouteImport } from './routes/_console.$tenantSlug.$appSlug.offerings'
+import { Route as ConsoleTenantSlugAppSlugEntitlementsRouteImport } from './routes/_console.$tenantSlug.$appSlug.entitlements'
 
 const LogoutRoute = LogoutRouteImport.update({
   id: '/logout',
@@ -23,6 +34,10 @@ const LogoutRoute = LogoutRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConsoleRoute = ConsoleRouteImport.update({
+  id: '/_console',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -40,39 +55,171 @@ const AuthCallbackRoute = AuthCallbackRouteImport.update({
   path: '/auth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConsoleSettingsRoute = ConsoleSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => ConsoleRoute,
+} as any)
+const ConsoleAppsRoute = ConsoleAppsRouteImport.update({
+  id: '/apps',
+  path: '/apps',
+  getParentRoute: () => ConsoleRoute,
+} as any)
+const ConsoleAppsIndexRoute = ConsoleAppsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConsoleAppsRoute,
+} as any)
+const ConsoleTenantSlugAppSlugRoute =
+  ConsoleTenantSlugAppSlugRouteImport.update({
+    id: '/$tenantSlug/$appSlug',
+    path: '/$tenantSlug/$appSlug',
+    getParentRoute: () => ConsoleRoute,
+  } as any)
+const ConsoleTenantSlugAppSlugIndexRoute =
+  ConsoleTenantSlugAppSlugIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ConsoleTenantSlugAppSlugRoute,
+  } as any)
+const ConsoleTenantSlugAppSlugSubscriptionsRoute =
+  ConsoleTenantSlugAppSlugSubscriptionsRouteImport.update({
+    id: '/subscriptions',
+    path: '/subscriptions',
+    getParentRoute: () => ConsoleTenantSlugAppSlugRoute,
+  } as any)
+const ConsoleTenantSlugAppSlugSubscribersRoute =
+  ConsoleTenantSlugAppSlugSubscribersRouteImport.update({
+    id: '/subscribers',
+    path: '/subscribers',
+    getParentRoute: () => ConsoleTenantSlugAppSlugRoute,
+  } as any)
+const ConsoleTenantSlugAppSlugSettingsRoute =
+  ConsoleTenantSlugAppSlugSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => ConsoleTenantSlugAppSlugRoute,
+  } as any)
+const ConsoleTenantSlugAppSlugOfferingsRoute =
+  ConsoleTenantSlugAppSlugOfferingsRouteImport.update({
+    id: '/offerings',
+    path: '/offerings',
+    getParentRoute: () => ConsoleTenantSlugAppSlugRoute,
+  } as any)
+const ConsoleTenantSlugAppSlugEntitlementsRoute =
+  ConsoleTenantSlugAppSlugEntitlementsRouteImport.update({
+    id: '/entitlements',
+    path: '/entitlements',
+    getParentRoute: () => ConsoleTenantSlugAppSlugRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
+  '/apps': typeof ConsoleAppsRouteWithChildren
+  '/settings': typeof ConsoleSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/start': typeof AuthStartRoute
+  '/$tenantSlug/$appSlug': typeof ConsoleTenantSlugAppSlugRouteWithChildren
+  '/apps/': typeof ConsoleAppsIndexRoute
+  '/$tenantSlug/$appSlug/entitlements': typeof ConsoleTenantSlugAppSlugEntitlementsRoute
+  '/$tenantSlug/$appSlug/offerings': typeof ConsoleTenantSlugAppSlugOfferingsRoute
+  '/$tenantSlug/$appSlug/settings': typeof ConsoleTenantSlugAppSlugSettingsRoute
+  '/$tenantSlug/$appSlug/subscribers': typeof ConsoleTenantSlugAppSlugSubscribersRoute
+  '/$tenantSlug/$appSlug/subscriptions': typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
+  '/$tenantSlug/$appSlug/': typeof ConsoleTenantSlugAppSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
+  '/settings': typeof ConsoleSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/start': typeof AuthStartRoute
+  '/apps': typeof ConsoleAppsIndexRoute
+  '/$tenantSlug/$appSlug/entitlements': typeof ConsoleTenantSlugAppSlugEntitlementsRoute
+  '/$tenantSlug/$appSlug/offerings': typeof ConsoleTenantSlugAppSlugOfferingsRoute
+  '/$tenantSlug/$appSlug/settings': typeof ConsoleTenantSlugAppSlugSettingsRoute
+  '/$tenantSlug/$appSlug/subscribers': typeof ConsoleTenantSlugAppSlugSubscribersRoute
+  '/$tenantSlug/$appSlug/subscriptions': typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
+  '/$tenantSlug/$appSlug': typeof ConsoleTenantSlugAppSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_console': typeof ConsoleRouteWithChildren
   '/login': typeof LoginRoute
   '/logout': typeof LogoutRoute
+  '/_console/apps': typeof ConsoleAppsRouteWithChildren
+  '/_console/settings': typeof ConsoleSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/start': typeof AuthStartRoute
+  '/_console/$tenantSlug/$appSlug': typeof ConsoleTenantSlugAppSlugRouteWithChildren
+  '/_console/apps/': typeof ConsoleAppsIndexRoute
+  '/_console/$tenantSlug/$appSlug/entitlements': typeof ConsoleTenantSlugAppSlugEntitlementsRoute
+  '/_console/$tenantSlug/$appSlug/offerings': typeof ConsoleTenantSlugAppSlugOfferingsRoute
+  '/_console/$tenantSlug/$appSlug/settings': typeof ConsoleTenantSlugAppSlugSettingsRoute
+  '/_console/$tenantSlug/$appSlug/subscribers': typeof ConsoleTenantSlugAppSlugSubscribersRoute
+  '/_console/$tenantSlug/$appSlug/subscriptions': typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
+  '/_console/$tenantSlug/$appSlug/': typeof ConsoleTenantSlugAppSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/logout' | '/auth/callback' | '/auth/start'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/logout'
+    | '/apps'
+    | '/settings'
+    | '/auth/callback'
+    | '/auth/start'
+    | '/$tenantSlug/$appSlug'
+    | '/apps/'
+    | '/$tenantSlug/$appSlug/entitlements'
+    | '/$tenantSlug/$appSlug/offerings'
+    | '/$tenantSlug/$appSlug/settings'
+    | '/$tenantSlug/$appSlug/subscribers'
+    | '/$tenantSlug/$appSlug/subscriptions'
+    | '/$tenantSlug/$appSlug/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/logout' | '/auth/callback' | '/auth/start'
-  id: '__root__' | '/' | '/login' | '/logout' | '/auth/callback' | '/auth/start'
+  to:
+    | '/'
+    | '/login'
+    | '/logout'
+    | '/settings'
+    | '/auth/callback'
+    | '/auth/start'
+    | '/apps'
+    | '/$tenantSlug/$appSlug/entitlements'
+    | '/$tenantSlug/$appSlug/offerings'
+    | '/$tenantSlug/$appSlug/settings'
+    | '/$tenantSlug/$appSlug/subscribers'
+    | '/$tenantSlug/$appSlug/subscriptions'
+    | '/$tenantSlug/$appSlug'
+  id:
+    | '__root__'
+    | '/'
+    | '/_console'
+    | '/login'
+    | '/logout'
+    | '/_console/apps'
+    | '/_console/settings'
+    | '/auth/callback'
+    | '/auth/start'
+    | '/_console/$tenantSlug/$appSlug'
+    | '/_console/apps/'
+    | '/_console/$tenantSlug/$appSlug/entitlements'
+    | '/_console/$tenantSlug/$appSlug/offerings'
+    | '/_console/$tenantSlug/$appSlug/settings'
+    | '/_console/$tenantSlug/$appSlug/subscribers'
+    | '/_console/$tenantSlug/$appSlug/subscriptions'
+    | '/_console/$tenantSlug/$appSlug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ConsoleRoute: typeof ConsoleRouteWithChildren
   LoginRoute: typeof LoginRoute
   LogoutRoute: typeof LogoutRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
@@ -93,6 +240,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_console': {
+      id: '/_console'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof ConsoleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -116,11 +270,138 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_console/settings': {
+      id: '/_console/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof ConsoleSettingsRouteImport
+      parentRoute: typeof ConsoleRoute
+    }
+    '/_console/apps': {
+      id: '/_console/apps'
+      path: '/apps'
+      fullPath: '/apps'
+      preLoaderRoute: typeof ConsoleAppsRouteImport
+      parentRoute: typeof ConsoleRoute
+    }
+    '/_console/apps/': {
+      id: '/_console/apps/'
+      path: '/'
+      fullPath: '/apps/'
+      preLoaderRoute: typeof ConsoleAppsIndexRouteImport
+      parentRoute: typeof ConsoleAppsRoute
+    }
+    '/_console/$tenantSlug/$appSlug': {
+      id: '/_console/$tenantSlug/$appSlug'
+      path: '/$tenantSlug/$appSlug'
+      fullPath: '/$tenantSlug/$appSlug'
+      preLoaderRoute: typeof ConsoleTenantSlugAppSlugRouteImport
+      parentRoute: typeof ConsoleRoute
+    }
+    '/_console/$tenantSlug/$appSlug/': {
+      id: '/_console/$tenantSlug/$appSlug/'
+      path: '/'
+      fullPath: '/$tenantSlug/$appSlug/'
+      preLoaderRoute: typeof ConsoleTenantSlugAppSlugIndexRouteImport
+      parentRoute: typeof ConsoleTenantSlugAppSlugRoute
+    }
+    '/_console/$tenantSlug/$appSlug/subscriptions': {
+      id: '/_console/$tenantSlug/$appSlug/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/$tenantSlug/$appSlug/subscriptions'
+      preLoaderRoute: typeof ConsoleTenantSlugAppSlugSubscriptionsRouteImport
+      parentRoute: typeof ConsoleTenantSlugAppSlugRoute
+    }
+    '/_console/$tenantSlug/$appSlug/subscribers': {
+      id: '/_console/$tenantSlug/$appSlug/subscribers'
+      path: '/subscribers'
+      fullPath: '/$tenantSlug/$appSlug/subscribers'
+      preLoaderRoute: typeof ConsoleTenantSlugAppSlugSubscribersRouteImport
+      parentRoute: typeof ConsoleTenantSlugAppSlugRoute
+    }
+    '/_console/$tenantSlug/$appSlug/settings': {
+      id: '/_console/$tenantSlug/$appSlug/settings'
+      path: '/settings'
+      fullPath: '/$tenantSlug/$appSlug/settings'
+      preLoaderRoute: typeof ConsoleTenantSlugAppSlugSettingsRouteImport
+      parentRoute: typeof ConsoleTenantSlugAppSlugRoute
+    }
+    '/_console/$tenantSlug/$appSlug/offerings': {
+      id: '/_console/$tenantSlug/$appSlug/offerings'
+      path: '/offerings'
+      fullPath: '/$tenantSlug/$appSlug/offerings'
+      preLoaderRoute: typeof ConsoleTenantSlugAppSlugOfferingsRouteImport
+      parentRoute: typeof ConsoleTenantSlugAppSlugRoute
+    }
+    '/_console/$tenantSlug/$appSlug/entitlements': {
+      id: '/_console/$tenantSlug/$appSlug/entitlements'
+      path: '/entitlements'
+      fullPath: '/$tenantSlug/$appSlug/entitlements'
+      preLoaderRoute: typeof ConsoleTenantSlugAppSlugEntitlementsRouteImport
+      parentRoute: typeof ConsoleTenantSlugAppSlugRoute
+    }
   }
 }
 
+interface ConsoleAppsRouteChildren {
+  ConsoleAppsIndexRoute: typeof ConsoleAppsIndexRoute
+}
+
+const ConsoleAppsRouteChildren: ConsoleAppsRouteChildren = {
+  ConsoleAppsIndexRoute: ConsoleAppsIndexRoute,
+}
+
+const ConsoleAppsRouteWithChildren = ConsoleAppsRoute._addFileChildren(
+  ConsoleAppsRouteChildren,
+)
+
+interface ConsoleTenantSlugAppSlugRouteChildren {
+  ConsoleTenantSlugAppSlugEntitlementsRoute: typeof ConsoleTenantSlugAppSlugEntitlementsRoute
+  ConsoleTenantSlugAppSlugOfferingsRoute: typeof ConsoleTenantSlugAppSlugOfferingsRoute
+  ConsoleTenantSlugAppSlugSettingsRoute: typeof ConsoleTenantSlugAppSlugSettingsRoute
+  ConsoleTenantSlugAppSlugSubscribersRoute: typeof ConsoleTenantSlugAppSlugSubscribersRoute
+  ConsoleTenantSlugAppSlugSubscriptionsRoute: typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
+  ConsoleTenantSlugAppSlugIndexRoute: typeof ConsoleTenantSlugAppSlugIndexRoute
+}
+
+const ConsoleTenantSlugAppSlugRouteChildren: ConsoleTenantSlugAppSlugRouteChildren =
+  {
+    ConsoleTenantSlugAppSlugEntitlementsRoute:
+      ConsoleTenantSlugAppSlugEntitlementsRoute,
+    ConsoleTenantSlugAppSlugOfferingsRoute:
+      ConsoleTenantSlugAppSlugOfferingsRoute,
+    ConsoleTenantSlugAppSlugSettingsRoute:
+      ConsoleTenantSlugAppSlugSettingsRoute,
+    ConsoleTenantSlugAppSlugSubscribersRoute:
+      ConsoleTenantSlugAppSlugSubscribersRoute,
+    ConsoleTenantSlugAppSlugSubscriptionsRoute:
+      ConsoleTenantSlugAppSlugSubscriptionsRoute,
+    ConsoleTenantSlugAppSlugIndexRoute: ConsoleTenantSlugAppSlugIndexRoute,
+  }
+
+const ConsoleTenantSlugAppSlugRouteWithChildren =
+  ConsoleTenantSlugAppSlugRoute._addFileChildren(
+    ConsoleTenantSlugAppSlugRouteChildren,
+  )
+
+interface ConsoleRouteChildren {
+  ConsoleAppsRoute: typeof ConsoleAppsRouteWithChildren
+  ConsoleSettingsRoute: typeof ConsoleSettingsRoute
+  ConsoleTenantSlugAppSlugRoute: typeof ConsoleTenantSlugAppSlugRouteWithChildren
+}
+
+const ConsoleRouteChildren: ConsoleRouteChildren = {
+  ConsoleAppsRoute: ConsoleAppsRouteWithChildren,
+  ConsoleSettingsRoute: ConsoleSettingsRoute,
+  ConsoleTenantSlugAppSlugRoute: ConsoleTenantSlugAppSlugRouteWithChildren,
+}
+
+const ConsoleRouteWithChildren =
+  ConsoleRoute._addFileChildren(ConsoleRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ConsoleRoute: ConsoleRouteWithChildren,
   LoginRoute: LoginRoute,
   LogoutRoute: LogoutRoute,
   AuthCallbackRoute: AuthCallbackRoute,

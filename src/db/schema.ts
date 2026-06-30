@@ -63,10 +63,11 @@ export const apps = sqliteTable('apps', {
   name: text('name').notNull(),
   initials: text('initials').notNull(),
   color: text('color').notNull(),
-  bundleId: text('bundle_id').notNull(),
+  bundleId: text('bundle_id').notNull().default(''),
+  appleAppId: text('apple_app_id'),
   iosBundleId: text('ios_bundle_id'),
   androidPackageName: text('android_package_name'),
-  status: text('status', { enum: ['live', 'beta', 'inactive'] }).notNull().default('live'),
+  status: text('status', { enum: ['setup', 'live', 'beta', 'inactive'] }).notNull().default('setup'),
   monthlyRevenueCents: integer('monthly_revenue_cents').notNull().default(0),
   activeSubscriberCount: integer('active_subscriber_count').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
@@ -79,13 +80,8 @@ export const appStoreConnectCredentials = sqliteTable(
     tenantId: text('tenant_id')
       .notNull()
       .references(() => tenants.id, { onDelete: 'cascade' }),
-    appId: text('app_id')
-      .notNull()
-      .references(() => apps.id, { onDelete: 'cascade' }),
     keyId: text('key_id').notNull(),
     issuerId: text('issuer_id').notNull(),
-    appleAppId: text('apple_app_id'),
-    bundleId: text('bundle_id'),
     vendorNumber: text('vendor_number'),
     privateKeyCiphertext: text('private_key_ciphertext'),
     privateKeyIv: text('private_key_iv'),
@@ -98,7 +94,7 @@ export const appStoreConnectCredentials = sqliteTable(
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
     disabledAt: integer('disabled_at', { mode: 'timestamp_ms' }),
   },
-  (table) => [uniqueIndex('app_store_connect_credentials_app_id_unique').on(table.appId)],
+  (table) => [uniqueIndex('app_store_connect_credentials_tenant_id_unique').on(table.tenantId)],
 )
 
 export const appStoreConnectCapabilities = sqliteTable(
@@ -123,9 +119,7 @@ export const appStoreConnectSalesReports = sqliteTable('app_store_connect_sales_
   credentialId: text('credential_id')
     .notNull()
     .references(() => appStoreConnectCredentials.id, { onDelete: 'cascade' }),
-  appId: text('app_id')
-    .notNull()
-    .references(() => apps.id, { onDelete: 'cascade' }),
+  appId: text('app_id').references(() => apps.id, { onDelete: 'cascade' }),
   vendorNumber: text('vendor_number').notNull(),
   reportDate: text('report_date').notNull(),
   status: text('status', { enum: ['imported', 'failed'] }).notNull(),
@@ -140,9 +134,7 @@ export const appStoreConnectAuditEvents = sqliteTable('app_store_connect_audit_e
   tenantId: text('tenant_id')
     .notNull()
     .references(() => tenants.id, { onDelete: 'cascade' }),
-  appId: text('app_id')
-    .notNull()
-    .references(() => apps.id, { onDelete: 'cascade' }),
+  appId: text('app_id').references(() => apps.id, { onDelete: 'cascade' }),
   credentialId: text('credential_id').references(() => appStoreConnectCredentials.id, { onDelete: 'set null' }),
   actorUserId: text('actor_user_id').references(() => users.id, { onDelete: 'set null' }),
   action: text('action').notNull(),

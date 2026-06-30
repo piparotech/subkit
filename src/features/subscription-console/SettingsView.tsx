@@ -1,6 +1,7 @@
-import { PUICard, PUIField, PUIInput, cn, type PUIFieldRenderProps } from '@piparo/cn-web'
+import { PUICard, PUIInput, cn } from '@piparo/cn-web'
 import * as React from 'react'
 
+import { CredentialForm } from './AppStoreConnectCredentialForm'
 import { listAppStoreConnectApps } from './app-store-connect-apps-server'
 import { inspectAppStoreConnectMonitoring } from './app-store-connect-monitor-server'
 import {
@@ -11,6 +12,7 @@ import {
   syncAppStoreConnectSalesReport,
   validateAppStoreConnectCredential,
 } from './app-store-connect-server'
+import { deleteAppRecord } from './server'
 import { StatusLabel, ViewTitle } from './ui'
 import type {
   AppStoreConnectAccessibleApp,
@@ -24,16 +26,14 @@ import type {
   StatusTone,
 } from './types'
 
-export function SettingsView({
-  app,
+export function WorkspaceSettingsView({
   connection,
   onRefreshConsoleData,
 }: {
-  app: AppTenant
   connection: AppStoreConnectConnection | null
   onRefreshConsoleData: () => void
 }) {
-  const [draft, setDraft] = React.useState<AppStoreConnectCredentialDraft>(() => credentialDraftFromConnection(app, connection))
+  const [draft, setDraft] = React.useState<AppStoreConnectCredentialDraft>(() => credentialDraftFromConnection(connection))
   const [busy, setBusy] = React.useState<string | null>(null)
   const [feedback, setFeedback] = React.useState<string | null>(null)
   const [accessibleApps, setAccessibleApps] = React.useState<AppStoreConnectAccessibleApp[]>([])
@@ -42,12 +42,10 @@ export function SettingsView({
   const [reportDate, setReportDate] = React.useState('')
 
   React.useEffect(() => {
-    setDraft(credentialDraftFromConnection(app, connection))
+    setDraft(credentialDraftFromConnection(connection))
     setAccessibleApps([])
-    setPreview([])
-    setMonitoring(null)
     setFeedback(null)
-  }, [app, connection])
+  }, [connection])
 
   const updateDraft = (field: keyof AppStoreConnectCredentialDraft, value: string) => {
     setDraft((current) => ({ ...current, [field]: value }))
@@ -76,29 +74,107 @@ export function SettingsView({
 
   const listAccessibleApps = () => {
     runTask('list-apps', async () => {
-      const result = await listAppStoreConnectApps({ data: draft })
+      const result = await listAppStoreConnectApps({ data: connection?.hasPrivateKey ? {} : draft })
       setAccessibleApps(result)
       return `${result.length} App Store Connect apps found for this key.`
     })
   }
 
-  const applyAccessibleApp = (selected: AppStoreConnectAccessibleApp) => {
-    setDraft((current) => ({ ...current, appleAppId: selected.appleAppId, bundleId: selected.bundleId || current.bundleId }))
-  }
-
   const validateCredential = () => {
     runTask('validate', async () => {
-      await validateAppStoreConnectCredential({ data: { appId: app.id } })
+      await validateAppStoreConnectCredential({ data: {} })
       return 'Capability preflight finished.'
     })
   }
 
   const deleteCredential = () => {
     runTask('delete', async () => {
-      await deleteAppStoreConnectCredential({ data: { appId: app.id } })
+      await deleteAppStoreConnectCredential({ data: {} })
       setPreview([])
       return 'Local encrypted private key material deleted. Revoke the key in App Store Connect too.'
     })
+  }
+
+
+  return (
+    <section className="max-w-[1080px] animate-[subs-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
+      <ViewTitle
+        description="Tenant-wide App Store Connect access used to list and connect iOS apps."
+        title="Workspace Settings"
+      />
+
+      <div className="mt-[20px] grid grid-cols-[1.15fr_0.85fr] gap-[16px] max-lg:grid-cols-1">
+        <SettingsCard
+          description="Upload one App Store Connect API key for this tenant. It can list and connect multiple iOS apps; individual apps are selected from the New App flow."
+          title="Tenant App Store Connect key"
+        >
+          <CredentialForm draft={draft} hasStoredKey={connection?.hasPrivateKey ?? false} onChange={updateDraft} />
+          <div className="flex flex-wrap gap-[8px]">
+            <ActionButton disabled={busy != null} label={connection == null ? 'Save & validate key' : 'Save / rotate key'} onPress={saveCredential} tone="primary" />
+            <ActionButton disabled={busy != null} label="List accessible apps" onPress={listAccessibleApps} />
+            <ActionButton disabled={busy != null || connection == null} label="Run preflight" onPress={validateCredential} />
+            <ActionButton disabled={busy != null || connection == null} label="Delete tenant key" onPress={deleteCredential} tone="danger" />
+          </div>
+          {feedback != null ? <div className="rounded-[10px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subs-dim)]">{feedback}</div> : null}
+          {accessibleApps.length > 0 ? <AccessibleAppList apps={accessibleApps} /> : null}
+        </SettingsCard>
+
+        <SettingsCard description="What this credential can do right now." title="Connection health">
+          {connection == null ? (
+            <EmptySettingsText>No App Store Connect credential is configured yet.</EmptySettingsText>
+          ) : (
+            <>
+              <ConnectionSummary connection={connection} />
+              <CapabilityList capabilities={connection.capabilities} />
+            </>
+          )}
+        </SettingsCard>
+      </div>
+
+      <SettingsCard description="Customer-visible history for credential actions. Secret values are redacted." title="Audit log">
+        <AuditHistory connection={connection} />
+      </SettingsCard>
+    </section>
+  )
+}
+
+export function AppSettingsView({
+  app,
+  connection,
+  onAppDeleted,
+  onRefreshConsoleData,
+}: {
+  app: AppTenant
+  connection: AppStoreConnectConnection | null
+  onAppDeleted: (id: string) => void
+  onRefreshConsoleData: () => void
+}) {
+  const [busy, setBusy] = React.useState<string | null>(null)
+  const [feedback, setFeedback] = React.useState<string | null>(null)
+  const [preview, setPreview] = React.useState<AppStoreConnectProductPreview[]>([])
+  const [monitoring, setMonitoring] = React.useState<AppStoreConnectMonitorSnapshot | null>(null)
+  const [reportDate, setReportDate] = React.useState('')
+  const [deleteConfirmation, setDeleteConfirmation] = React.useState('')
+
+  React.useEffect(() => {
+    setPreview([])
+    setMonitoring(null)
+    setFeedback(null)
+    setDeleteConfirmation('')
+  }, [app])
+
+  const runTask = (label: string, task: () => Promise<string>) => {
+    setBusy(label)
+    setFeedback(null)
+    task()
+      .then((message) => {
+        setFeedback(message)
+        onRefreshConsoleData()
+      })
+      .catch((error: unknown) => {
+        setFeedback(error instanceof Error ? error.message : 'App Store Connect operation failed')
+      })
+      .finally(() => setBusy(null))
   }
 
   const previewProducts = () => {
@@ -133,37 +209,27 @@ export function SettingsView({
     })
   }
 
+  const deleteApp = () => {
+    if (deleteConfirmation !== app.name) return
+    setBusy('delete-app')
+    setFeedback(null)
+    deleteAppRecord({ data: { appId: app.id } })
+      .then(() => {
+        setBusy(null)
+        onRefreshConsoleData()
+        onAppDeleted(app.id)
+      })
+      .catch((error: unknown) => {
+        setFeedback(error instanceof Error ? error.message : 'App could not be deleted')
+        setBusy(null)
+      })
+  }
+
   return (
     <section className="max-w-[1080px] animate-[subs-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
-      <ViewTitle description={`Connect App Store Connect for ${app.name}; secrets stay server-side and read-only checks run first.`} title="Settings" />
+      <ViewTitle description={`App-specific App Store Connect workflows for ${app.name}. Workspace credentials live in Workspace Settings.`} title="App Settings" />
 
-      <div className="mt-[20px] grid grid-cols-[1.15fr_0.85fr] gap-[16px] max-lg:grid-cols-1">
-        <SettingsCard
-          description="Use a dedicated App Store Connect API key with the smallest role needed. The .p8 private key is encrypted and never shown again."
-          title="App Store Connect key"
-        >
-          <CredentialForm draft={draft} hasStoredKey={connection?.hasPrivateKey ?? false} onChange={updateDraft} />
-          {accessibleApps.length > 0 ? <AccessibleAppPicker apps={accessibleApps} onSelect={applyAccessibleApp} /> : null}
-          <div className="flex flex-wrap gap-[8px]">
-            <ActionButton disabled={busy != null} label={connection == null ? 'Save & validate' : 'Save / rotate key'} onPress={saveCredential} tone="primary" />
-            <ActionButton disabled={busy != null} label="List accessible apps" onPress={listAccessibleApps} />
-            <ActionButton disabled={busy != null || connection == null} label="Run preflight" onPress={validateCredential} />
-            <ActionButton disabled={busy != null || connection == null} label="Delete local key" onPress={deleteCredential} tone="danger" />
-          </div>
-          {feedback != null ? <div className="rounded-[10px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subs-dim)]">{feedback}</div> : null}
-        </SettingsCard>
-
-        <SettingsCard description="What this credential can do right now." title="Connection health">
-          {connection == null ? (
-            <EmptySettingsText>No App Store Connect credential is configured yet.</EmptySettingsText>
-          ) : (
-            <>
-              <ConnectionSummary connection={connection} />
-              <CapabilityList capabilities={connection.capabilities} />
-            </>
-          )}
-        </SettingsCard>
-      </div>
+      {feedback != null ? <div className="mt-[16px] rounded-[10px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subs-dim)]">{feedback}</div> : null}
 
       <div className="grid grid-cols-[1fr_1fr] gap-[16px] max-lg:grid-cols-1">
         <SettingsCard description="Fetch Apple subscriptions and IAPs, compare them with local products, then import local records after review." title="Subscription product sync">
@@ -196,82 +262,67 @@ export function SettingsView({
         {monitoring == null ? <EmptySettingsText>No monitoring snapshot yet. This is read-only App Store Connect inspection.</EmptySettingsText> : <MonitoringSnapshot snapshot={monitoring} />}
       </SettingsCard>
 
-      <SettingsCard description="Customer-visible history for credential and import actions. Secret values are redacted." title="Audit log">
-        <AuditHistory connection={connection} />
+      <SettingsCard
+        description="Delete this app and all local subscription-console records for it. App Store Connect is not changed."
+        title="Danger zone"
+        tone="danger"
+      >
+        <div className="rounded-[11px] border border-[color-mix(in_oklch,var(--subs-red)_24%,var(--subs-border))] bg-[color-mix(in_oklch,var(--subs-red)_5%,white)] px-[12px] py-[10px] text-[12.5px] leading-[1.45] text-[var(--subs-dim)]">
+          This removes local products, entitlements, offerings, subscribers, imported reports, and app-scoped audit entries for <strong className="text-[var(--subs-text)]">{app.name}</strong>.
+        </div>
+        <div className="flex flex-col gap-[7px]">
+          <label className="text-[12.5px] font-semibold text-[var(--subs-text)]" htmlFor="delete-app-confirmation">
+            Type <span className="font-mono">{app.name}</span> to confirm
+          </label>
+          <PUIInput
+            className="font-mono"
+            disabled={busy != null}
+            id="delete-app-confirmation"
+            onChange={(event) => setDeleteConfirmation(event.target.value)}
+            placeholder={app.name}
+            value={deleteConfirmation}
+          />
+        </div>
+        <div className="flex justify-end">
+          <ActionButton
+            disabled={busy != null || deleteConfirmation !== app.name}
+            label={busy === 'delete-app' ? 'Deleting app…' : 'Delete app'}
+            onPress={deleteApp}
+            tone="danger"
+          />
+        </div>
       </SettingsCard>
     </section>
   )
 }
 
-function CredentialForm({
-  draft,
-  hasStoredKey,
-  onChange,
-}: {
-  draft: AppStoreConnectCredentialDraft
-  hasStoredKey: boolean
-  onChange: (field: keyof AppStoreConnectCredentialDraft, value: string) => void
-}) {
-  return (
-    <>
-      <div className="grid grid-cols-2 gap-[12px] max-sm:grid-cols-1">
-        <PUIField label="Key ID">
-          {(field) => <PUIInput className="font-mono" onChange={(event) => onChange('keyId', event.target.value)} placeholder="ABC123DEFG" value={draft.keyId} {...inputFieldProps(field)} />}
-        </PUIField>
-        <PUIField label="Issuer ID">
-          {(field) => <PUIInput className="font-mono" onChange={(event) => onChange('issuerId', event.target.value)} placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" value={draft.issuerId} {...inputFieldProps(field)} />}
-        </PUIField>
-        <PUIField hint="Optional if Bundle ID can resolve the app." label="Apple App ID">
-          {(field) => <PUIInput className="font-mono" onChange={(event) => onChange('appleAppId', event.target.value)} placeholder="1234567890" value={draft.appleAppId} {...inputFieldProps(field)} />}
-        </PUIField>
-        <PUIField label="Bundle ID">
-          {(field) => <PUIInput className="font-mono" onChange={(event) => onChange('bundleId', event.target.value)} placeholder="com.company.app" value={draft.bundleId} {...inputFieldProps(field)} />}
-        </PUIField>
-        <PUIField hint="Required for Sales & Trends reports." label="Vendor Number">
-          {(field) => <PUIInput className="font-mono" onChange={(event) => onChange('vendorNumber', event.target.value)} placeholder="12345678" value={draft.vendorNumber} {...inputFieldProps(field)} />}
-        </PUIField>
-        <div className="rounded-[11px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] p-[12px] text-[12.5px] text-[var(--subs-dim)]">
-          <div className="font-semibold text-[var(--subs-text)]">Least privilege</div>
-          <p className="mt-[4px] mb-0 leading-[1.45]">Start with read access. Sales reports, TestFlight, provisioning, and release metadata are checked separately.</p>
-        </div>
-      </div>
-      <label className="block">
-        <span className="mb-[7px] block text-[12.5px] font-semibold text-[var(--subs-text)]">Private .p8 key</span>
-        <textarea
-          className="min-h-[118px] w-full resize-y rounded-[10px] border border-[var(--subs-border-2)] bg-[var(--subs-panel)] px-[11px] py-[9px] font-mono text-[12px] text-[var(--subs-text)] outline-none placeholder:text-[var(--subs-faint)] focus:border-[var(--subs-accent)]"
-          onChange={(event) => onChange('privateKey', event.target.value)}
-          placeholder={hasStoredKey ? 'Private key already stored. Paste a new .p8 only when rotating.' : '-----BEGIN PRIVATE KEY-----'}
-          value={draft.privateKey}
-        />
-      </label>
-    </>
-  )
-}
-
-function AccessibleAppPicker({ apps, onSelect }: { apps: AppStoreConnectAccessibleApp[]; onSelect: (app: AppStoreConnectAccessibleApp) => void }) {
+function AccessibleAppList({ apps }: { apps: AppStoreConnectAccessibleApp[] }) {
   return (
     <div className="rounded-[11px] border border-[var(--subs-border)]">
       <div className="border-b border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[12px] py-[9px] text-[12px] font-semibold">Accessible App Store Connect apps</div>
       {apps.map((app) => (
-        <button
-          className="grid w-full cursor-pointer grid-cols-[1fr_1fr_auto] gap-[10px] border-b border-[var(--subs-border)] px-[12px] py-[10px] text-left text-[12px] last:border-b-0 hover:bg-[var(--subs-panel-2)] max-sm:grid-cols-1"
+        <div
+          className="grid grid-cols-[1fr_1fr_auto] gap-[10px] border-b border-[var(--subs-border)] px-[12px] py-[10px] text-left text-[12px] last:border-b-0 max-sm:grid-cols-1"
           key={app.appleAppId}
-          onClick={() => onSelect(app)}
-          type="button"
         >
           <span className="font-semibold text-[var(--subs-text)]">{app.name}</span>
           <span className="font-mono text-[var(--subs-dim)]">{app.bundleId || 'No bundle ID returned'}</span>
           <span className="font-mono text-[var(--subs-faint)]">{app.appleAppId}</span>
-        </button>
+        </div>
       ))}
     </div>
   )
 }
 
-function SettingsCard({ children, description, title }: { children: React.ReactNode; description?: string; title: string }) {
+function SettingsCard({ children, description, title, tone = 'neutral' }: { children: React.ReactNode; description?: string; title: string; tone?: 'danger' | 'neutral' }) {
   return (
-    <PUICard className="mt-[16px] rounded-[14px] border-[var(--subs-border)] bg-[var(--subs-panel)] p-[20px] first:mt-[20px]">
-      <div className="mb-[14px] text-[14px] font-semibold">{title}</div>
+    <PUICard
+      className={cn(
+        'mt-[16px] rounded-[14px] border-[var(--subs-border)] bg-[var(--subs-panel)] p-[20px] first:mt-[20px]',
+        tone === 'danger' && 'border-[color-mix(in_oklch,var(--subs-red)_32%,var(--subs-border))]',
+      )}
+    >
+      <div className={cn('mb-[14px] text-[14px] font-semibold', tone === 'danger' && 'text-[var(--subs-red)]')}>{title}</div>
       {description != null ? <div className="mb-[12px] text-[12.5px] text-[var(--subs-dim)]">{description}</div> : null}
       <div className="flex flex-col gap-[12px]">{children}</div>
     </PUICard>
@@ -282,11 +333,8 @@ function EmptySettingsText({ children }: { children: React.ReactNode }) {
   return <div className="rounded-[10px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subs-dim)]">{children}</div>
 }
 
-function credentialDraftFromConnection(app: AppTenant, connection: AppStoreConnectConnection | null): AppStoreConnectCredentialDraft {
+function credentialDraftFromConnection(connection: AppStoreConnectConnection | null): AppStoreConnectCredentialDraft {
   return {
-    appId: app.id,
-    appleAppId: connection?.appleAppId ?? '',
-    bundleId: connection?.bundleId ?? app.bundle,
     issuerId: connection?.issuerId ?? '',
     keyId: connection?.keyId ?? '',
     privateKey: '',
@@ -305,8 +353,7 @@ function ConnectionSummary({ connection }: { connection: AppStoreConnectConnecti
         <StatusLabel label={connection.status.replaceAll('_', ' ')} tone={connectionStatusTone(connection.status)} />
       </div>
       <div className="mt-[12px] grid grid-cols-2 gap-[8px] text-[12px] max-sm:grid-cols-1">
-        <ConnectionFact label="Apple App ID" value={connection.appleAppId ?? 'Not mapped'} />
-        <ConnectionFact label="Bundle ID" value={connection.bundleId ?? 'Not mapped'} />
+        <ConnectionFact label="Scope" value="Tenant" />
         <ConnectionFact label="Vendor Number" value={connection.vendorNumber ?? 'Missing'} />
         <ConnectionFact label="Private key" value={connection.keyFingerprint == null ? 'Missing' : `sha256:${connection.keyFingerprint}`} />
       </div>
@@ -465,13 +512,4 @@ function productActionTone(action: AppStoreConnectProductSyncAction): StatusTone
   if (action === 'update') return 'warning'
   if (action === 'conflict') return 'destructive'
   return 'muted'
-}
-
-function inputFieldProps(field: PUIFieldRenderProps) {
-  return {
-    'aria-describedby': field.describedby,
-    'aria-invalid': field.invalid || undefined,
-    disabled: field.disabled,
-    id: field.id,
-  }
 }

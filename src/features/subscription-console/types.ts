@@ -1,5 +1,6 @@
 export type View =
   | 'apps'
+  | 'workspaceSettings'
   | 'dashboard'
   | 'subscriptions'
   | 'entitlements'
@@ -9,7 +10,7 @@ export type View =
 
 export type Platform = 'iOS' | 'Android'
 export type StatusTone = 'success' | 'warning' | 'muted' | 'destructive'
-export type AppStatusValue = 'live' | 'beta' | 'inactive'
+export type AppStatusValue = 'setup' | 'live' | 'beta' | 'inactive'
 export type Store = 'App Store' | 'Play Store'
 
 export interface ConsoleUser {
@@ -35,6 +36,9 @@ export interface AppTenant {
   initials: string
   color: string
   bundle: string
+  appleAppId: string | null
+  iosBundleId: string | null
+  androidPackageName: string | null
   platforms: Platform[]
   mrr: string
   activeSubs: string
@@ -173,27 +177,22 @@ export interface AppStoreConnectAuditEventSummary {
 }
 
 export interface AppStoreConnectConnection {
-  appId: string
-  appleAppId: string | null
-  bundleId: string | null
+  auditEvents: AppStoreConnectAuditEventSummary[]
   capabilities: AppStoreConnectCapability[]
   hasPrivateKey: boolean
   id: string
   issuerId: string
-  keyId: string
   keyFingerprint: string | null
+  keyId: string
   lastError: string | null
   lastValidatedAt: string | null
   salesReports: AppStoreConnectSalesReportSummary[]
-  auditEvents: AppStoreConnectAuditEventSummary[]
   status: AppStoreConnectConnectionStatus
+  tenantId: string
   vendorNumber: string | null
 }
 
 export interface AppStoreConnectCredentialDraft {
-  appId: string
-  appleAppId: string
-  bundleId: string
   issuerId: string
   keyId: string
   privateKey: string
@@ -204,7 +203,7 @@ export interface AppStoreConnectAccessibleApp {
   appleAppId: string
   bundleId: string
   name: string
-  sku: string | null
+  sku: string
 }
 
 export interface AppStoreConnectProductPreview {
@@ -250,7 +249,7 @@ export interface AppStoreConnectMonitorSnapshot {
 }
 
 export interface ConsoleData {
-  appStoreConnect: AppStoreConnectConnection[]
+  appStoreConnect: AppStoreConnectConnection | null
   apps: AppTenant[]
   currentUser: ConsoleUser
   dashboards: DashboardSummary[]
@@ -263,10 +262,10 @@ export interface ConsoleData {
 }
 
 export interface AppDraft {
+  appleAppId: string
+  bundleId: string
   name: string
-  iosBundle: string
-  androidPackage: string
-  status: AppStatusValue | ''
+  sku: string
 }
 
 export type AppDraftField = keyof AppDraft

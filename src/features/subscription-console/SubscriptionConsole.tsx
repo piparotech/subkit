@@ -1,4 +1,4 @@
-import { useLoaderData, useRouter } from '@tanstack/react-router'
+import { useLoaderData, useNavigate, useRouter } from '@tanstack/react-router'
 import * as React from 'react'
 
 import { ConsoleShell } from './Shell'
@@ -10,15 +10,18 @@ import {
   SubscribersView,
   SubscriptionsView,
 } from './Views'
-import { SettingsView } from './SettingsView'
+import { AppSettingsView, WorkspaceSettingsView } from './SettingsView'
 import { newSubscription } from './data'
 import { Panels } from './Panels'
-import { createAppFromDraft, filterApps, filterSubscribers, filterSubscriptions } from './store'
+import { appRouteParams, createAppFromDraft, filterApps, filterSubscribers, filterSubscriptions } from './store'
+import { listAppStoreConnectApps } from './app-store-connect-apps-server'
+import { saveAppStoreConnectCredential } from './app-store-connect-server'
 import { createAppRecord, upsertSubscriptionRecord } from './server'
 import type {
   AppDraft,
   AppDraftField,
-  AppStatusValue,
+  AppStoreConnectAccessibleApp,
+  AppStoreConnectCredentialDraft,
   AppTenant,
   ConsoleData,
   EditableSubscriptionTextField,
@@ -30,11 +33,13 @@ import type {
   View,
 } from './types'
 
-const emptyAppDraft: AppDraft = { androidPackage: '', iosBundle: '', name: '', status: '' }
+const emptyAppDraft: AppDraft = { appleAppId: '', bundleId: '', name: '', sku: '' }
+const emptyCredentialDraft: AppStoreConnectCredentialDraft = { issuerId: '', keyId: '', privateKey: '', vendorNumber: '' }
 
-export function SubscriptionConsole() {
-  const consoleData = useLoaderData({ from: '/' })
+export function SubscriptionConsole({ currentAppId, view }: { currentAppId: string | null; view: View }) {
+  const consoleData = useLoaderData({ from: '/_console' })
   const router = useRouter()
+  const navigate = useNavigate()
   const tenant = consoleData.tenant
   const currentUser = consoleData.currentUser
   const [apps, setApps] = React.useState<AppTenant[]>(consoleData.apps)
@@ -42,11 +47,13 @@ export function SubscriptionConsole() {
   const [entitlements, setEntitlements] = React.useState<Entitlement[]>(consoleData.entitlements)
   const [offerings, setOfferings] = React.useState<Offering[]>(consoleData.offerings)
   const [subscribers, setSubscribers] = React.useState<Subscriber[]>(consoleData.subscribers)
-  const [view, setView] = React.useState<View>('apps')
-  const [currentAppId, setCurrentAppId] = React.useState<string | null>(null)
   const [switcherOpen, setSwitcherOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState('')
   const [appDraft, setAppDraft] = React.useState<AppDraft>(emptyAppDraft)
+  const [appStoreApps, setAppStoreApps] = React.useState<AppStoreConnectAccessibleApp[]>([])
+  const [appStoreCredentialDraft, setAppStoreCredentialDraft] = React.useState<AppStoreConnectCredentialDraft>(() => credentialDraftFromConnection(consoleData.appStoreConnect))
+  const [appStoreLoadError, setAppStoreLoadError] = React.useState<string | null>(null)
+  const [loadingAppStoreApps, setLoadingAppStoreApps] = React.useState(false)
   const [panel, setPanel] = React.useState<PanelState>({ kind: 'closed' })
 
   React.useEffect(() => {
@@ -55,7 +62,14 @@ export function SubscriptionConsole() {
     setEntitlements(consoleData.entitlements)
     setOfferings(consoleData.offerings)
     setSubscribers(consoleData.subscribers)
+    setAppStoreCredentialDraft(credentialDraftFromConnection(consoleData.appStoreConnect))
   }, [consoleData])
+
+  React.useEffect(() => {
+    setSearchQuery('')
+    setSwitcherOpen(false)
+    setPanel({ kind: 'closed' })
+  }, [currentAppId, view])
 
   const currentApp = apps.find((app) => app.id === currentAppId) ?? null
   const currentSubscriptions = React.useMemo(
@@ -85,31 +99,64 @@ export function SubscriptionConsole() {
     [currentSubscribers, searchQuery],
   )
 
+  const reportNavigationError = (error: unknown) => {
+    console.error('Failed to navigate subscription console', error)
+  }
+
   const selectApp = (id: string) => {
-    setCurrentAppId(id)
-    setView('dashboard')
+    const app = apps.find((item) => item.id === id)
+    if (app == null) return
     setSwitcherOpen(false)
-    setSearchQuery('')
-    setPanel({ kind: 'closed' })
+    navigate({ params: appRouteParams(app), to: '/$tenantSlug/$appSlug' }).catch(reportNavigationError)
   }
 
   const goAllApps = () => {
-    setCurrentAppId(null)
-    setView('apps')
     setSwitcherOpen(false)
-    setPanel({ kind: 'closed' })
+    navigate({ to: '/apps' }).catch(reportNavigationError)
   }
 
   const goView = (nextView: View) => {
-    if (nextView !== view) setSearchQuery('')
-    setView(nextView)
     setSwitcherOpen(false)
-    setPanel({ kind: 'closed' })
+
+    if (nextView === 'apps') {
+      navigate({ to: '/apps' }).catch(reportNavigationError)
+      return
+    }
+
+    if (nextView === 'workspaceSettings') {
+      navigate({ to: '/settings' }).catch(reportNavigationError)
+      return
+    }
+
+    if (currentApp == null) return
+
+    switch (nextView) {
+      case 'dashboard':
+        navigate({ params: appRouteParams(currentApp), to: '/$tenantSlug/$appSlug' }).catch(reportNavigationError)
+        return
+      case 'subscriptions':
+        navigate({ params: appRouteParams(currentApp), to: '/$tenantSlug/$appSlug/subscriptions' }).catch(reportNavigationError)
+        return
+      case 'entitlements':
+        navigate({ params: appRouteParams(currentApp), to: '/$tenantSlug/$appSlug/entitlements' }).catch(reportNavigationError)
+        return
+      case 'offerings':
+        navigate({ params: appRouteParams(currentApp), to: '/$tenantSlug/$appSlug/offerings' }).catch(reportNavigationError)
+        return
+      case 'subscribers':
+        navigate({ params: appRouteParams(currentApp), to: '/$tenantSlug/$appSlug/subscribers' }).catch(reportNavigationError)
+        return
+      case 'settings':
+        navigate({ params: appRouteParams(currentApp), to: '/$tenantSlug/$appSlug/settings' }).catch(reportNavigationError)
+        return
+    }
   }
 
   const primaryAction = () => {
     if (view === 'apps') {
       setAppDraft(emptyAppDraft)
+      setAppStoreApps([])
+      setAppStoreLoadError(null)
       setPanel({ kind: 'newApp' })
       return
     }
@@ -190,7 +237,7 @@ export function SubscriptionConsole() {
     })
     upsertSubscriptionRecord({
       data: {
-        androidId: nextSubscription.androidId,
+        androidId: nextSubscription.androidId || undefined,
         appId,
         duration: nextSubscription.duration,
         entitlement: nextSubscription.entitlement,
@@ -210,31 +257,47 @@ export function SubscriptionConsole() {
   }
 
   const updateAppDraft = (field: AppDraftField, value: string) => {
-    if (field === 'status') {
-      setAppDraft((draft) => ({ ...draft, status: readAppDraftStatus(value) }))
-      return
-    }
     setAppDraft((draft) => ({ ...draft, [field]: value }))
+  }
+
+  const updateAppStoreCredentialDraft = (field: keyof AppStoreConnectCredentialDraft, value: string) => {
+    setAppStoreCredentialDraft((draft) => ({ ...draft, [field]: value }))
+  }
+
+  const loadAppStoreApps = () => {
+    setLoadingAppStoreApps(true)
+    setAppStoreLoadError(null)
+    const needsSave = consoleData.appStoreConnect == null || !consoleData.appStoreConnect.hasPrivateKey
+    const saveIfNeeded = needsSave
+      ? saveAppStoreConnectCredential({ data: appStoreCredentialDraft }).then(() => undefined)
+      : Promise.resolve()
+
+    saveIfNeeded
+      .then(() => listAppStoreConnectApps({ data: needsSave ? appStoreCredentialDraft : {} }))
+      .then((items) => {
+        setAppStoreApps(items)
+        refreshConsoleData()
+      })
+      .catch((error: unknown) => {
+        setAppStoreLoadError(error instanceof Error ? error.message : 'Failed to load App Store Connect apps')
+      })
+      .finally(() => setLoadingAppStoreApps(false))
   }
 
   const createApp = () => {
     const app = createAppFromDraft(appDraft, apps.length, tenant.id)
     setApps((current) => [...current, app])
-    setCurrentAppId(app.id)
-    setView('dashboard')
-    setSearchQuery('')
+    navigate({ params: appRouteParams(app), to: '/$tenantSlug/$appSlug' }).catch(reportNavigationError)
     setPanel({ kind: 'closed' })
     setAppDraft(emptyAppDraft)
     createAppRecord({
       data: {
-        androidPackage: appDraft.androidPackage,
-        bundle: app.bundle,
+        appleAppId: app.appleAppId ?? '',
+        bundleId: app.iosBundleId ?? '',
         color: app.color,
         id: app.id,
         initials: app.initials,
-        iosBundle: appDraft.iosBundle,
         name: app.name,
-        status: readRequiredAppDraftStatus(appDraft.status),
         tenantId: tenant.id,
       },
     })
@@ -242,6 +305,15 @@ export function SubscriptionConsole() {
       .catch((error: unknown) => {
         console.error('Failed to create app', error)
       })
+  }
+
+  const deleteLocalApp = (id: string) => {
+    setApps((current) => current.filter((app) => app.id !== id))
+    setSubscriptions((current) => current.filter((subscription) => subscription.appId !== id))
+    setEntitlements((current) => current.filter((entitlement) => entitlement.appId !== id))
+    setOfferings((current) => current.filter((offering) => offering.appId !== id))
+    setSubscribers((current) => current.filter((subscriber) => subscriber.appId !== id))
+    navigate({ to: '/apps' }).catch(reportNavigationError)
   }
 
   return (
@@ -268,6 +340,7 @@ export function SubscriptionConsole() {
           currentApp={currentApp}
           entitlements={currentEntitlements}
           offerings={currentOfferings}
+          onAppDeleted={deleteLocalApp}
           onOpenSubscriber={openSubscriber}
           onOpenSubscription={openSubscription}
           onRefreshConsoleData={refreshConsoleData}
@@ -279,9 +352,16 @@ export function SubscriptionConsole() {
       </ConsoleShell>
       <Panels
         appDraft={appDraft}
+        appStoreApps={appStoreApps}
+        appStoreConnection={consoleData.appStoreConnect}
+        appStoreCredentialDraft={appStoreCredentialDraft}
+        appStoreLoadError={appStoreLoadError}
+        loadingAppStoreApps={loadingAppStoreApps}
         onAppDraftChange={updateAppDraft}
+        onAppStoreCredentialDraftChange={updateAppStoreCredentialDraft}
         onClose={closePanel}
         onCreateApp={createApp}
+        onLoadAppStoreApps={loadAppStoreApps}
         onSaveSubscription={saveSubscription}
         onSubscriptionFieldChange={updateSubscriptionField}
         onSubscriptionTrialToggle={toggleSubscriptionTrial}
@@ -291,14 +371,10 @@ export function SubscriptionConsole() {
   )
 }
 
-function readAppDraftStatus(value: string): AppStatusValue | '' {
-  if (value === '' || value === 'live' || value === 'beta' || value === 'inactive') return value
-  throw new Error('Invalid app status')
-}
-
-function readRequiredAppDraftStatus(status: AppStatusValue | ''): AppStatusValue {
-  if (status === '') throw new Error('App status is required')
-  return status
+function credentialDraftFromConnection(connection: ConsoleData['appStoreConnect']): AppStoreConnectCredentialDraft {
+  return connection == null
+    ? emptyCredentialDraft
+    : { issuerId: connection.issuerId, keyId: connection.keyId, privateKey: '', vendorNumber: connection.vendorNumber ?? '' }
 }
 
 function ActiveView({
@@ -307,6 +383,7 @@ function ActiveView({
   currentApp,
   entitlements,
   offerings,
+  onAppDeleted,
   onOpenSubscriber,
   onOpenSubscription,
   onRefreshConsoleData,
@@ -320,6 +397,7 @@ function ActiveView({
   currentApp: AppTenant | null
   entitlements: Entitlement[]
   offerings: Offering[]
+  onAppDeleted: (id: string) => void
   onOpenSubscriber: (subscriber: Subscriber) => void
   onOpenSubscription: (subscription: SubscriptionProduct) => void
   onRefreshConsoleData: () => void
@@ -328,7 +406,13 @@ function ActiveView({
   subscriptions: SubscriptionProduct[]
   view: View
 }) {
-  if (view === 'apps' || currentApp == null) return <AppsView apps={apps} onSelectApp={onSelectApp} />
+  if (view === 'workspaceSettings') {
+    return <WorkspaceSettingsView connection={consoleData.appStoreConnect} onRefreshConsoleData={onRefreshConsoleData} />
+  }
+
+  if (view === 'apps') return <AppsView apps={apps} onSelectApp={onSelectApp} />
+
+  if (currentApp == null) return <AppRouteNotFound apps={apps} onSelectApp={onSelectApp} />
 
   switch (view) {
     case 'dashboard': {
@@ -353,12 +437,31 @@ function ActiveView({
     case 'subscribers':
       return <SubscribersView onOpenSubscriber={onOpenSubscriber} subscribers={subscribers} />
     case 'settings':
-      return (
-        <SettingsView
-          app={currentApp}
-          connection={consoleData.appStoreConnect.find((item) => item.appId === currentApp.id) ?? null}
-          onRefreshConsoleData={onRefreshConsoleData}
-        />
-      )
+      return <AppSettingsView app={currentApp} connection={consoleData.appStoreConnect} onAppDeleted={onAppDeleted} onRefreshConsoleData={onRefreshConsoleData} />
   }
+}
+
+function AppRouteNotFound({ apps, onSelectApp }: { apps: AppTenant[]; onSelectApp: (id: string) => void }) {
+  return (
+    <section className="max-w-[760px] animate-[subs-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
+      <div className="rounded-[14px] border border-[var(--subs-border)] bg-[var(--subs-panel)] p-[22px]">
+        <h1 className="m-0 text-[19px] font-bold tracking-[-0.01em]">App route not found</h1>
+        <p className="mt-[8px] mb-0 text-[13.5px] text-[var(--subs-dim)]">The app in the URL is not available in this workspace.</p>
+        {apps.length > 0 ? (
+          <div className="mt-[16px] flex flex-wrap gap-[8px]">
+            {apps.map((app) => (
+              <button
+                className="cursor-pointer rounded-[9px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[11px] py-[7px] text-[12.5px] font-semibold text-[var(--subs-text)] hover:bg-[var(--subs-accent-soft)]"
+                key={app.id}
+                onClick={() => onSelectApp(app.id)}
+                type="button"
+              >
+                {app.name}
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </section>
+  )
 }
