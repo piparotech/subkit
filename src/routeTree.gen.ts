@@ -21,6 +21,7 @@ import { Route as ConsoleAppsRouteImport } from './routes/_console.apps'
 import { Route as ConsoleAppsIndexRouteImport } from './routes/_console.apps.index'
 import { Route as ConsoleTenantSlugAppSlugRouteImport } from './routes/_console.$tenantSlug.$appSlug'
 import { Route as ConsoleTenantSlugAppSlugIndexRouteImport } from './routes/_console.$tenantSlug.$appSlug.index'
+import { Route as ApiRuntimeEntitlementsCheckRouteImport } from './routes/api.runtime.entitlements.check'
 import { Route as ConsoleTenantSlugAppSlugSubscriptionsRouteImport } from './routes/_console.$tenantSlug.$appSlug.subscriptions'
 import { Route as ConsoleTenantSlugAppSlugSettingsRouteImport } from './routes/_console.$tenantSlug.$appSlug.settings'
 import { Route as ConsoleTenantSlugAppSlugOfferingsRouteImport } from './routes/_console.$tenantSlug.$appSlug.offerings'
@@ -88,6 +89,12 @@ const ConsoleTenantSlugAppSlugIndexRoute =
     path: '/',
     getParentRoute: () => ConsoleTenantSlugAppSlugRoute,
   } as any)
+const ApiRuntimeEntitlementsCheckRoute =
+  ApiRuntimeEntitlementsCheckRouteImport.update({
+    id: '/api/runtime/entitlements/check',
+    path: '/api/runtime/entitlements/check',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ConsoleTenantSlugAppSlugSubscriptionsRoute =
   ConsoleTenantSlugAppSlugSubscriptionsRouteImport.update({
     id: '/subscriptions',
@@ -135,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/$tenantSlug/$appSlug/offerings': typeof ConsoleTenantSlugAppSlugOfferingsRoute
   '/$tenantSlug/$appSlug/settings': typeof ConsoleTenantSlugAppSlugSettingsRoute
   '/$tenantSlug/$appSlug/subscriptions': typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
+  '/api/runtime/entitlements/check': typeof ApiRuntimeEntitlementsCheckRoute
   '/$tenantSlug/$appSlug/': typeof ConsoleTenantSlugAppSlugIndexRoute
 }
 export interface FileRoutesByTo {
@@ -151,6 +159,7 @@ export interface FileRoutesByTo {
   '/$tenantSlug/$appSlug/offerings': typeof ConsoleTenantSlugAppSlugOfferingsRoute
   '/$tenantSlug/$appSlug/settings': typeof ConsoleTenantSlugAppSlugSettingsRoute
   '/$tenantSlug/$appSlug/subscriptions': typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
+  '/api/runtime/entitlements/check': typeof ApiRuntimeEntitlementsCheckRoute
   '/$tenantSlug/$appSlug': typeof ConsoleTenantSlugAppSlugIndexRoute
 }
 export interface FileRoutesById {
@@ -171,6 +180,7 @@ export interface FileRoutesById {
   '/_console/$tenantSlug/$appSlug/offerings': typeof ConsoleTenantSlugAppSlugOfferingsRoute
   '/_console/$tenantSlug/$appSlug/settings': typeof ConsoleTenantSlugAppSlugSettingsRoute
   '/_console/$tenantSlug/$appSlug/subscriptions': typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
+  '/api/runtime/entitlements/check': typeof ApiRuntimeEntitlementsCheckRoute
   '/_console/$tenantSlug/$appSlug/': typeof ConsoleTenantSlugAppSlugIndexRoute
 }
 export interface FileRouteTypes {
@@ -191,6 +201,7 @@ export interface FileRouteTypes {
     | '/$tenantSlug/$appSlug/offerings'
     | '/$tenantSlug/$appSlug/settings'
     | '/$tenantSlug/$appSlug/subscriptions'
+    | '/api/runtime/entitlements/check'
     | '/$tenantSlug/$appSlug/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -207,6 +218,7 @@ export interface FileRouteTypes {
     | '/$tenantSlug/$appSlug/offerings'
     | '/$tenantSlug/$appSlug/settings'
     | '/$tenantSlug/$appSlug/subscriptions'
+    | '/api/runtime/entitlements/check'
     | '/$tenantSlug/$appSlug'
   id:
     | '__root__'
@@ -226,6 +238,7 @@ export interface FileRouteTypes {
     | '/_console/$tenantSlug/$appSlug/offerings'
     | '/_console/$tenantSlug/$appSlug/settings'
     | '/_console/$tenantSlug/$appSlug/subscriptions'
+    | '/api/runtime/entitlements/check'
     | '/_console/$tenantSlug/$appSlug/'
   fileRoutesById: FileRoutesById
 }
@@ -236,6 +249,7 @@ export interface RootRouteChildren {
   LogoutRoute: typeof LogoutRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthStartRoute: typeof AuthStartRoute
+  ApiRuntimeEntitlementsCheckRoute: typeof ApiRuntimeEntitlementsCheckRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -323,6 +337,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$tenantSlug/$appSlug/'
       preLoaderRoute: typeof ConsoleTenantSlugAppSlugIndexRouteImport
       parentRoute: typeof ConsoleTenantSlugAppSlugRoute
+    }
+    '/api/runtime/entitlements/check': {
+      id: '/api/runtime/entitlements/check'
+      path: '/api/runtime/entitlements/check'
+      fullPath: '/api/runtime/entitlements/check'
+      preLoaderRoute: typeof ApiRuntimeEntitlementsCheckRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_console/$tenantSlug/$appSlug/subscriptions': {
       id: '/_console/$tenantSlug/$appSlug/subscriptions'
@@ -427,6 +448,7 @@ const rootRouteChildren: RootRouteChildren = {
   LogoutRoute: LogoutRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthStartRoute: AuthStartRoute,
+  ApiRuntimeEntitlementsCheckRoute: ApiRuntimeEntitlementsCheckRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
