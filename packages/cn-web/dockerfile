@@ -1,0 +1,35 @@
+# piparo PUI web component registry (React + Tailwind v4), served by nginx at cn.piparo.tech.
+# Mirrors packages/cn-native/dockerfile. Build context = piparo-platform monorepo root:
+#   docker build -f packages/cn-web/dockerfile -t ghcr.io/piparotech/cn-web .
+#
+# cn-web's registry build is cross-package: stage 1 first builds the design tokens (from
+# packages/tokens, via style-dictionary), then derives + compiles the shadcn registry, which
+# reads those tokens and reuses cn-native's registry.json for shared item metadata. Stage 2
+# serves the static registry.
+
+FROM node:22-alpine AS registry
+WORKDIR /repo
+
+# 1. Build the design tokens -> packages/tokens/dist (consumed by the cn-web theme item).
+COPY packages/tokens/package.json packages/tokens/theme.css ./packages/tokens/
+COPY packages/tokens/scripts ./packages/tokens/scripts
+COPY packages/tokens/tokens ./packages/tokens/tokens
+RUN cd packages/tokens \
+  && npm install --no-save --no-package-lock style-dictionary@5.4.1 \
+  && node scripts/build-tokens.mjs
+
+# 2. Derive + compile the registry (reads ../tokens, ../cn-native/registry.json, src/).
+COPY packages/cn-native/registry.json ./packages/cn-native/registry.json
+COPY packages/cn-web/build.mjs packages/cn-web/components.json ./packages/cn-web/
+COPY packages/cn-web/src ./packages/cn-web/src
+RUN cd packages/cn-web \
+  && node build.mjs \
+  && npx --yes shadcn@latest build registry.build.json
+
+FROM nginx:alpine
+LABEL org.opencontainers.image.source=https://github.com/piparotech/piparo-platform
+COPY packages/cn-web/registry-index.html /usr/share/nginx/html/index.html
+COPY --from=registry /repo/packages/cn-web/public /usr/share/nginx/registry
+COPY packages/cn-web/nginx.conf /etc/nginx/nginx.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

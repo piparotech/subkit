@@ -1,0 +1,31 @@
+/* Tailwind v4 entry (ADR 0017 / v3 to v4 migration). The token CSS vars + the @theme token mapping
+   come from the shared @piparo/design-tokens (single source, also consumed by cn-native), so there is
+   no v3 preset anymore. tw-animate-css ports the tailwindcss-animate utilities the Radix overlays use. */
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import './piparo-theme.css';
+@import './theme.css';
+
+/* Custom indeterminate-progress sweep, ported from the v3 preset keyframes (PUIProgressBar). */
+@theme {
+  --animate-indeterminate-progress: indeterminate-progress 1.2s ease-in-out infinite;
+}
+@keyframes indeterminate-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
+
+:root {
+  --radius: 0.5rem;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-background-default);
+  color: var(--color-foreground-default);
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}

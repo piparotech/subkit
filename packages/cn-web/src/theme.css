@@ -1,0 +1,370 @@
+/* @piparo/design-tokens — shared Tailwind v4 @theme mapping (NativeWind v5 / shadcn v4).
+   Maps Tailwind theme tokens to the @piparo/design-tokens CSS vars. `inline` makes the
+   generated utilities reference the vars directly, so theme switching (light/dark) works.
+   Token VALUES live only in ./css; this file only references them. Same single-source
+   model as the v3 ./tailwind preset — no token double-maintenance (#8). */
+
+@theme inline {
+  --color-background: var(--color-background-default);
+  --color-foreground: var(--color-foreground-default);
+  /* piparo foreground roles beyond shadcn (PUIText subtle/inverse, PUILinkText brand).
+     @theme names differ from the token var names to avoid a self-referential cycle. */
+  --color-subtle-foreground: var(--color-foreground-subtle);
+  --color-inverse-foreground: var(--color-foreground-inverse);
+  --color-brand: var(--color-foreground-brand);
+  --color-border: var(--color-border-default);
+  --color-input: var(--color-border-default);
+  --color-ring: var(--color-border-focus);
+
+  --color-primary: var(--color-action-primary-background);
+  --color-primary-foreground: var(--color-action-primary-foreground);
+  --color-primary-hover: var(--color-action-primary-hover);
+  --color-secondary: var(--color-action-secondary-background);
+  --color-secondary-foreground: var(--color-action-secondary-foreground);
+  --color-secondary-hover: var(--color-action-secondary-hover);
+
+  --color-muted: var(--color-background-muted);
+  --color-muted-foreground: var(--color-foreground-muted);
+  --color-accent: var(--color-background-subtle);
+  --color-accent-foreground: var(--color-foreground-default);
+
+  --color-destructive: var(--color-intent-danger-background);
+  --color-destructive-foreground: var(--color-intent-danger-foreground);
+  --color-success: var(--color-intent-success-background);
+  --color-success-foreground: var(--color-intent-success-foreground);
+  --color-warning: var(--color-intent-warning-background);
+  --color-warning-foreground: var(--color-intent-warning-foreground);
+  --color-info: var(--color-intent-info-background);
+  --color-info-foreground: var(--color-intent-info-foreground);
+
+  --color-card: var(--color-background-card);
+  --color-card-foreground: var(--color-foreground-default);
+  --color-popover: var(--color-background-card);
+  --color-popover-foreground: var(--color-foreground-default);
+
+  /* Modal/sheet scrim — single source for backdrops (replaces bg-black/40,
+     bg-black/30, bg-foreground/40). Resolves to bg-overlay on both platforms. */
+  --color-overlay: var(--color-background-scrim);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  /* Numeric font-size ramp wired from OUR DTCG --font-size-* scale (single source) so
+     text-xs..text-7xl resolve from tokens, not Tailwind defaults. Line-heights pair our
+     --font-line-height-* ratios: body sizes read at 1.5 (normal), larger display sizes
+     tighten toward 1.25 (tight). This ramp stays at the rem base (NOT --ui-scale-wrapped):
+     ADR 0022 display scaling rides the HIG ramp + --spacing below and is WEB-ONLY (native does not
+     runtime-scale dimensions; see the --spacing note below). line-heights stay unitless ratios. */
+  --text-xs: var(--font-size-xs);
+  --text-xs--line-height: var(--font-line-height-normal);
+  --text-sm: var(--font-size-sm);
+  --text-sm--line-height: var(--font-line-height-normal);
+  --text-base: var(--font-size-base);
+  --text-base--line-height: var(--font-line-height-normal);
+  --text-lg: var(--font-size-lg);
+  --text-lg--line-height: var(--font-line-height-normal);
+  --text-xl: var(--font-size-xl);
+  --text-xl--line-height: var(--font-line-height-snug);
+  --text-2xl: var(--font-size-2xl);
+  --text-2xl--line-height: var(--font-line-height-snug);
+  --text-3xl: var(--font-size-3xl);
+  --text-3xl--line-height: var(--font-line-height-tight);
+  --text-4xl: var(--font-size-4xl);
+  --text-4xl--line-height: var(--font-line-height-tight);
+  --text-5xl: var(--font-size-5xl);
+  --text-5xl--line-height: var(--font-line-height-tight);
+  --text-6xl: var(--font-size-6xl);
+  --text-6xl--line-height: var(--font-line-height-none);
+  --text-7xl: var(--font-size-7xl);
+  --text-7xl--line-height: var(--font-line-height-none);
+
+  /* Apple HIG type scale — semantic display styles (PUIText variant). Fixed
+     px size + line-height pairs per Apple's reference at the default Dynamic
+     Type size; kebab-case so they read as text-large-title..text-caption-2.
+     Sits alongside the numeric ramp above (both stay valid). */
+  /* line-heights are UNITLESS ratios (Apple px ÷ font-size) — NativeWind v5
+     multiplies the ratio by font-size, like the numeric ramp above. Using px
+     here would be read as a ratio and blow up the line box on native. */
+  --text-large-title: calc(34px * var(--ui-scale, 1));
+  --text-large-title--line-height: 1.21;
+  --text-title-1: calc(28px * var(--ui-scale, 1));
+  --text-title-1--line-height: 1.21;
+  --text-title-2: calc(22px * var(--ui-scale, 1));
+  --text-title-2--line-height: 1.27;
+  --text-title-3: calc(20px * var(--ui-scale, 1));
+  --text-title-3--line-height: 1.25;
+  --text-headline: calc(17px * var(--ui-scale, 1));
+  --text-headline--line-height: 1.29;
+  --text-body: calc(17px * var(--ui-scale, 1));
+  --text-body--line-height: 1.41;
+  --text-callout: calc(16px * var(--ui-scale, 1));
+  --text-callout--line-height: 1.31;
+  --text-subheadline: calc(15px * var(--ui-scale, 1));
+  --text-subheadline--line-height: 1.33;
+  --text-footnote: calc(13px * var(--ui-scale, 1));
+  --text-footnote--line-height: 1.38;
+  --text-caption-1: calc(12px * var(--ui-scale, 1));
+  --text-caption-1--line-height: 1.33;
+  --text-caption-2: calc(11px * var(--ui-scale, 1));
+  --text-caption-2--line-height: 1.18;
+
+  /* Motion easing — ease-standard / ease-decelerate / ease-accelerate from our
+     --easing-* cubic-beziers (replaces hardcoded ease-* picks). */
+  --ease-standard: var(--easing-standard);
+  --ease-decelerate: var(--easing-decelerate);
+  --ease-accelerate: var(--easing-accelerate);
+}
+
+/* Spacing is token-driven: Tailwind v4 derives p-4/gap-2/min-h-11 etc. from --spacing.
+   space.1 = 0.25rem = 4px at the standard 16px base. The 4px base (not var(--space-1))
+   keeps native (react-native-css resolves rem at a base of 14, not 16) in pixel parity
+   with cn-web (where 0.25rem == 4px) and yields round values (p-4 = 16, gap-3 = 12).
+
+   Display-relative scale (ADR 0022) is WEB-ONLY. --ui-scale defaults to 1, so the unscaled 4px base
+   holds until a web provider sets the display factor; then the browser resolves this calc and scales
+   p-4/gap/size fluidly per viewport. NATIVE does NOT runtime-scale these: NativeWind v5 inlines the
+   dimension utilities at build time (the calc resolves to the 4px base, --ui-scale staying 1), so a
+   runtime --ui-scale/--spacing override via vars() is inert — only color utilities stay runtime vars.
+   Native uses these fixed token sizes + OS Dynamic Type for font a11y; raw per-device sizing goes
+   through useDisplayScale() in style props. (See ADR 0022 / the NativeWind dimension-inline note.) */
+@theme {
+  --spacing: calc(4px * var(--ui-scale, 1));
+
+  /* Named spacing/size aliases. Use these in app/library classNames instead of raw
+     Tailwind scale steps (`p-4`, `gap-2`, `min-h-11`, ...). They all derive from
+     the same 4px token base above, preserving Native/Web parity. */
+  --spacing-none: 0px;
+  --spacing-hairline: calc(var(--spacing) * 0.5);
+  --spacing-xxs: calc(var(--spacing) * 1);
+  --spacing-xs: calc(var(--spacing) * 1.5);
+  --spacing-sm: calc(var(--spacing) * 2);
+  --spacing-control: calc(var(--spacing) * 2.5);
+  --spacing-md: calc(var(--spacing) * 3);
+  --spacing-lg: calc(var(--spacing) * 4);
+  --spacing-xl: calc(var(--spacing) * 5);
+  --spacing-xxl: calc(var(--spacing) * 6);
+  --spacing-xxxl: calc(var(--spacing) * 8);
+
+  --spacing-section-sm: calc(var(--spacing) * 5.5);
+  --spacing-section-md: calc(var(--spacing) * 9);
+  --spacing-touch: calc(var(--spacing) * 11);
+  --spacing-control-sm: calc(var(--spacing) * 9);
+  --spacing-control-lg: calc(var(--spacing) * 12);
+  --spacing-icon-sm: calc(var(--spacing) * 6);
+  --spacing-icon-md: calc(var(--spacing) * 7);
+  --spacing-icon-lg: calc(var(--spacing) * 7.5);
+  --spacing-brand-sm: calc(var(--spacing) * 9.5);
+  --spacing-brand-md: calc(var(--spacing) * 10);
+  --spacing-avatar-sm: calc(var(--spacing) * 8);
+  --spacing-avatar-md: calc(var(--spacing) * 10);
+  --spacing-avatar-lg: calc(var(--spacing) * 14);
+  --spacing-avatar-profile: calc(var(--spacing) * 14.5);
+  --spacing-sheet-lg: calc(var(--spacing) * 8);
+  --spacing-toast-top: calc(var(--spacing) * 14);
+  --spacing-toast-bottom: calc(var(--spacing) * 10);
+  --spacing-search-offset: calc(var(--spacing) * 20);
+  --spacing-screen-bottom: calc(var(--spacing) * 24);
+  --spacing-skeleton-xs: calc(var(--spacing) * 3);
+  --spacing-skeleton-sm: calc(var(--spacing) * 4);
+  --spacing-skeleton-md: calc(var(--spacing) * 24);
+  --spacing-skeleton-lg: calc(var(--spacing) * 32);
+  --spacing-skeleton-xl: calc(var(--spacing) * 40);
+  --spacing-skeleton-xxl: calc(var(--spacing) * 48);
+  --spacing-popover-md: calc(var(--spacing) * 55);
+  --spacing-popover-lg: calc(var(--spacing) * 80);
+  --spacing-menu-md: calc(var(--spacing) * 56);
+  --spacing-menu-lg: calc(var(--spacing) * 80);
+  --spacing-tooltip-md: calc(var(--spacing) * 60);
+  --spacing-tooltip-lg: calc(var(--spacing) * 72);
+  --spacing-dialog-lg: calc(var(--spacing) * 112);
+  --spacing-logo-wordmark-height: calc(var(--spacing) * 4.5);
+  --spacing-logo-wordmark-width: calc(var(--spacing) * 30);
+}
+
+/* Motion duration + press-scale as utilities. Tailwind v4 has no --duration-*
+   theme namespace, so expose duration-fast/normal/slow/instant, ease pairings,
+   scale-press, and z-overlay/z-toast as token-backed utilities. */
+@utility duration-instant {
+  transition-duration: var(--duration-instant);
+}
+@utility duration-fast {
+  transition-duration: var(--duration-fast);
+}
+@utility duration-normal {
+  transition-duration: var(--duration-normal);
+}
+@utility duration-slow {
+  transition-duration: var(--duration-slow);
+}
+@utility scale-press {
+  scale: var(--press-scale);
+}
+@utility z-overlay {
+  z-index: var(--z-overlay);
+}
+@utility z-toast {
+  z-index: var(--z-toast);
+}
+
+/* Named opacity / interaction utilities. */
+@utility opacity-hidden {
+  opacity: var(--opacity-hidden);
+}
+@utility opacity-disabled {
+  opacity: var(--opacity-disabled);
+}
+@utility opacity-unavailable {
+  opacity: var(--opacity-unavailable);
+}
+@utility opacity-muted {
+  opacity: var(--opacity-muted);
+}
+@utility opacity-pressed {
+  opacity: var(--opacity-pressed);
+}
+@utility opacity-resting {
+  opacity: var(--opacity-resting);
+}
+@utility opacity-subtle {
+  opacity: var(--opacity-subtle);
+}
+@utility opacity-full {
+  opacity: var(--opacity-full);
+}
+@utility press-faint {
+  &:active {
+    opacity: var(--opacity-disabled);
+  }
+}
+@utility press-muted {
+  &:active {
+    opacity: var(--opacity-muted);
+  }
+}
+@utility press-resting {
+  &:active {
+    opacity: var(--opacity-pressed);
+  }
+}
+@utility press-strong {
+  &:active {
+    opacity: var(--opacity-resting);
+  }
+}
+@utility press-subtle {
+  &:active {
+    opacity: var(--opacity-subtle);
+  }
+}
+@utility press-reset {
+  &:active {
+    opacity: var(--opacity-full);
+  }
+}
+
+/* Named flex/layout aliases used to avoid numeric scale classes in app code. */
+@utility flex-fill {
+  flex: 1;
+}
+@utility flex-none {
+  flex-grow: 0;
+  flex-shrink: 0;
+  flex-basis: auto;
+}
+@utility shrink-none {
+  flex-shrink: 0;
+}
+@utility min-w-content {
+  min-width: 0;
+}
+@utility grow-none {
+  flex-grow: 0;
+}
+@utility inset-fill {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+@utility inset-y-fill {
+  top: 0;
+  bottom: 0;
+}
+@utility edge-start {
+  left: 0;
+}
+@utility edge-end {
+  right: 0;
+}
+@utility rotate-diagonal {
+  rotate: 45deg;
+}
+
+/* Named radius aliases backed by token vars. */
+@utility rounded-xs {
+  border-radius: var(--radius-xs);
+}
+@utility rounded-sm {
+  border-radius: var(--radius-sm);
+}
+@utility rounded-md {
+  border-radius: var(--radius-md);
+}
+@utility rounded-lg {
+  border-radius: var(--radius-lg);
+}
+@utility rounded-xl {
+  border-radius: var(--radius-xl);
+}
+@utility rounded-xxl {
+  border-radius: var(--radius-2xl);
+}
+@utility rounded-pill {
+  border-radius: var(--radius-pill);
+}
+@utility rounded-sheet-top {
+  border-top-left-radius: var(--radius-2xl);
+  border-top-right-radius: var(--radius-2xl);
+}
+
+/* Named border width aliases. */
+@utility border-token {
+  border-width: var(--border-width-1);
+}
+@utility border-t-token {
+  border-top-width: var(--border-width-1);
+}
+@utility border-r-token {
+  border-right-width: var(--border-width-1);
+}
+@utility border-b-token {
+  border-bottom-width: var(--border-width-1);
+}
+@utility border-l-token {
+  border-left-width: var(--border-width-1);
+}
+@utility border-strong {
+  border-width: var(--border-width-2);
+}
+
+/* Named proportional layout utilities. */
+@utility w-progress-indicator {
+  width: 33.333333%;
+}
+
+/* Named font-size alias for legacy generic text-lg usage. */
+@utility text-emphasis {
+  font-size: var(--text-lg);
+  line-height: var(--text-lg--line-height);
+}
+@utility text-icon {
+  font-size: var(--text-xl);
+  line-height: var(--text-xl--line-height);
+}
+
+/* Elevation. The token CSS (`@piparo/design-tokens/css`) already defines
+   --shadow-sm / --shadow-md on :root in the Tailwind --shadow-* namespace, so
+   the shadow-sm / shadow-md utilities (NativeWind v5 reads them as boxShadow)
+   resolve straight from those token vars — no @theme remap, and no
+   self-referential cycle. Documented here so the wiring is discoverable. */

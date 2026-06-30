@@ -1,9 +1,6 @@
 packages:
   - '.'
-  - '/Users/patwoz/dev/piparo.tech/piparo-platform/packages/cn-web'
-  - '/Users/patwoz/dev/piparo.tech/piparo-platform/packages/tokens'
-  - '/Users/patwoz/dev/piparo.tech/piparo-platform/packages/tsconfig'
-  - '/Users/patwoz/dev/piparo.tech/piparo-platform/packages/utils'
+  - 'packages/*'
 
 catalog:
   '@eslint/js': ^9

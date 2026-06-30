@@ -1,7 +1,7 @@
 @import '@piparo/cn-web/src/index.css';
 
 @source '../features/subkit/**/*.{ts,tsx}';
-@source '../../node_modules/@piparo/cn-web/src/**/*.{ts,tsx}';
+@source '../../packages/cn-web/src/**/*.{ts,tsx}';
 
 
 

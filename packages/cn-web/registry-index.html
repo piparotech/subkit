@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>piparo PUI web · component registry</title>
+    <style>
+      :root {
+        --ink: #131d3e;
+        --muted: #5b647e;
+        --indigo: #4f46e5;
+        --indigo-soft: #eef1ff;
+        --line: #e6e8f2;
+        --bg: #fcfcfe;
+        --ok: #16a34a;
+      }
+      * { box-sizing: border-box; }
+      body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--ink); line-height: 1.6; }
+      .wrap { max-width: 54rem; margin: 0 auto; padding: 4.5rem 1.5rem 6rem; }
+      h1 { letter-spacing: -0.03em; font-size: 2.1rem; margin: 0 0 0.4rem; }
+      .tagline { color: var(--muted); margin: 0 0 1.5rem; max-width: 40rem; }
+      code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .install { display: inline-flex; align-items: center; gap: 0.6rem; background: var(--indigo-soft); border-radius: 0.55rem; padding: 0.55rem 0.9rem; font-size: 0.9rem; max-width: 100%; overflow-x: auto; }
+      .install code { color: var(--indigo); white-space: nowrap; }
+      .meta { color: var(--muted); font-size: 0.85rem; margin: 1rem 0 0; }
+      .meta a { color: var(--indigo); text-decoration: none; }
+      .meta a:hover { text-decoration: underline; }
+      .toolbar { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin: 2.75rem 0 1rem; }
+      .toolbar h2 { font-size: 1rem; letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 600; }
+      #count { color: var(--muted); font-size: 0.85rem; }
+      .search { width: 100%; padding: 0.7rem 0.95rem; border: 1px solid var(--line); border-radius: 0.6rem; font-size: 1rem; font-family: inherit; color: var(--ink); background: #fff; margin-bottom: 1.25rem; }
+      .search:focus { outline: none; border-color: var(--indigo); box-shadow: 0 0 0 3px var(--indigo-soft); }
+      .list { display: flex; flex-direction: column; gap: 0.5rem; }
+      .item { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; padding: 0.85rem 1rem; border: 1px solid var(--line); border-radius: 0.6rem; background: #fff; transition: border-color 0.15s ease; }
+      .item:hover { border-color: #c7cce0; }
+      .item-main { min-width: 0; }
+      .item-name { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; color: var(--indigo); }
+      .item-title { font-weight: 600; margin: 0.1rem 0; }
+      .item-desc { color: var(--muted); font-size: 0.9rem; margin: 0; }
+      .copy { flex-shrink: 0; border: 1px solid var(--line); background: #fff; color: var(--muted); border-radius: 0.45rem; padding: 0.4rem 0.7rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.78rem; cursor: pointer; white-space: nowrap; transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease; }
+      .copy:hover { border-color: var(--indigo); color: var(--indigo); background: var(--indigo-soft); }
+      .copy.copied { border-color: var(--ok); color: var(--ok); background: #f0fdf4; }
+      .empty { color: var(--muted); padding: 2.5rem 0; text-align: center; }
+      footer { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.85rem; }
+      footer a { color: var(--indigo); text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>piparo PUI web</h1>
+        <p class="tagline">
+          React + Tailwind v4 component registry — the <code>PUI*</code> primitives of the piparo
+          design system. Install any component shadcn-style: token-backed source files plus their
+          full dependency closure, statically and updateable.
+        </p>
+        <span class="install"><code>npx shadcn@latest add https://cn.piparo.tech/r/pui-button.json</code></span>
+        <p class="meta">
+          <span id="stat-count">…</span> &middot; live from <a href="/list.json">/list.json</a> &middot;
+          items at <code>/r/&lt;name&gt;.json</code> &middot; <a href="/health">health</a>
+        </p>
+      </header>
+
+      <div class="toolbar">
+        <h2>Components</h2>
+        <span id="count"></span>
+      </div>
+      <input class="search" id="search" type="search" placeholder="Search components…" autocomplete="off" spellcheck="false" />
+      <div class="list" id="list"><div class="empty">Loading components…</div></div>
+
+      <footer>
+        piparo.tech &middot; the React-Native registry lives at
+        <a href="https://pui.piparo.tech">pui.piparo.tech</a>.
+      </footer>
+    </div>
+
+    <script>
+      const LABEL = (name) => `shadcn add ${name}`
+      const CMD = (name) => `npx shadcn@latest add https://cn.piparo.tech/r/${name}.json`
+      const listEl = document.getElementById('list')
+      const countEl = document.getElementById('count')
+      const searchEl = document.getElementById('search')
+      let items = []
+
+      function row(item) {
+        const el = document.createElement('div')
+        el.className = 'item'
+
+        const main = document.createElement('div')
+        main.className = 'item-main'
+        const name = document.createElement('div')
+        name.className = 'item-name'
+        name.textContent = item.value
+        const title = document.createElement('div')
+        title.className = 'item-title'
+        title.textContent = item.title || item.value
+        const desc = document.createElement('p')
+        desc.className = 'item-desc'
+        desc.textContent = item.description || ''
+        main.append(name, title, desc)
+
+        const btn = document.createElement('button')
+        btn.className = 'copy'
+        btn.type = 'button'
+        const label = LABEL(item.value)
+        const cmd = CMD(item.value)
+        btn.textContent = label
+        btn.title = cmd
+        btn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(cmd)
+          } catch {}
+          btn.textContent = 'copied ✓'
+          btn.classList.add('copied')
+          setTimeout(() => {
+            btn.textContent = label
+            btn.classList.remove('copied')
+          }, 1200)
+        })
+
+        el.append(main, btn)
+        return el
+      }
+
+      function render(filter = '') {
+        const f = filter.trim().toLowerCase()
+        const shown = f
+          ? items.filter((i) =>
+              `${i.value} ${i.title || ''} ${i.description || ''}`.toLowerCase().includes(f),
+            )
+          : items
+        countEl.textContent = `${shown.length} of ${items.length}`
+        listEl.replaceChildren()
+        if (!shown.length) {
+          const empty = document.createElement('div')
+          empty.className = 'empty'
+          empty.textContent = 'No components match.'
+          listEl.append(empty)
+          return
+        }
+        const frag = document.createDocumentFragment()
+        for (const item of shown) frag.append(row(item))
+        listEl.append(frag)
+      }
+
+      searchEl.addEventListener('input', () => render(searchEl.value))
+
+      fetch('/list.json')
+        .then((r) => r.json())
+        .then((data) => {
+          items = data.slice().sort((a, b) => a.value.localeCompare(b.value))
+          document.getElementById('stat-count').textContent = `${items.length} components`
+          render()
+        })
+        .catch(() => {
+          listEl.replaceChildren()
+          const e = document.createElement('div')
+          e.className = 'empty'
+          e.textContent = 'Could not load /list.json.'
+          listEl.append(e)
+        })
+    </script>
+  </body>
+</html>
