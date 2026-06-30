@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { ensureDatabaseReady } from '~/db/setup'
 import { findOrCreateUserFromClaims } from '~/server/auth/current-user'
+import { redirectResponse } from '~/server/auth/http'
 import { exchangeCodeForClaims } from '~/server/auth/oidc'
 import { clearAuthCookies, getLoginChallengeSession, setAuthenticatedSession } from '~/server/auth/session'
 
@@ -43,7 +44,7 @@ export const Route = createFileRoute('/auth/callback')({
           await setAuthenticatedSession(user.id)
           await challengeSession.clear()
 
-          return Response.redirect(new URL(challenge.returnTo, url.origin), 302)
+          return redirectResponse(new URL(challenge.returnTo, url.origin))
         } catch (authError) {
           console.error('OIDC callback failed', authError)
           await clearAuthCookies()
@@ -57,5 +58,5 @@ export const Route = createFileRoute('/auth/callback')({
 function redirectToLogin(origin: string, reason: string): Response {
   const url = new URL('/login', origin)
   url.searchParams.set('reason', reason)
-  return Response.redirect(url, 302)
+  return redirectResponse(url)
 }

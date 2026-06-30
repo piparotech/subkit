@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 import { createCodeVerifier, createRandomToken } from '~/server/auth/crypto'
+import { redirectResponse } from '~/server/auth/http'
 import { buildAuthorizeUrl } from '~/server/auth/oidc'
 import { getLoginChallengeSession } from '~/server/auth/session'
 import type { AuthMethod } from '~/server/auth/types'
@@ -23,7 +24,7 @@ export const Route = createFileRoute('/auth/start')({
         await challengeSession.update({ codeVerifier, createdAt: Date.now(), method, nonce, returnTo, state })
 
         const authorizeUrl = await buildAuthorizeUrl({ codeVerifier, loginHint, method, nonce, state })
-        return Response.redirect(authorizeUrl, 302)
+        return redirectResponse(authorizeUrl)
       },
     },
   },
