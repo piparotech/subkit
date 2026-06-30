@@ -16,6 +16,7 @@ export const serverEnvSchema = z.object({
   SESSION_COOKIE_NAME: requiredNonEmptyString,
   SECRET_ENCRYPTION_KEY: optionalSecret,
   SESSION_SECRET: z.string().min(16),
+  SUBKIT_RUNTIME_API_KEY: optionalSecret,
   TENANT_COLOR: requiredNonEmptyString,
   TENANT_ID: requiredNonEmptyString,
   TENANT_INITIALS: requiredNonEmptyString,

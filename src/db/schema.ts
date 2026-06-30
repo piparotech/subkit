@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 export const tenants = sqliteTable('tenants', {
   id: text('id').primaryKey(),
@@ -17,6 +17,7 @@ export const users = sqliteTable(
     organization: text('organization').notNull(),
     initials: text('initials').notNull(),
     operator: integer('operator', { mode: 'boolean' }).notNull().default(false),
+    globalRole: text('global_role', { enum: ['user', 'super_admin'] }).notNull().default('user'),
     zitadelSubject: text('zitadel_subject'),
     zitadelLoginName: text('zitadel_login_name'),
     identityProvider: text('identity_provider'),
@@ -28,6 +29,22 @@ export const users = sqliteTable(
     uniqueIndex('users_email_unique').on(table.email),
     uniqueIndex('users_zitadel_subject_unique').on(table.zitadelSubject),
   ],
+)
+
+export const userTenants = sqliteTable(
+  'user_tenants',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    role: text('role', { enum: ['admin', 'developer'] }).notNull(),
+    invitedByUserId: text('invited_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.tenantId] })],
 )
 
 export const authSessions = sqliteTable(
@@ -217,4 +234,19 @@ export const purchaseEvents = sqliteTable('purchase_events', {
   occurredOn: text('occurred_on').notNull(),
   store: text('store', { enum: ['App Store', 'Play Store'] }).notNull(),
   amountCents: integer('amount_cents'),
+})
+
+export const runtimeSyncEvents = sqliteTable('runtime_sync_events', {
+  id: text('id').primaryKey(),
+  appId: text('app_id')
+    .notNull()
+    .references(() => apps.id, { onDelete: 'cascade' }),
+  source: text('source').notNull(),
+  status: text('status', { enum: ['imported', 'failed'] }).notNull(),
+  received: integer('received').notNull().default(0),
+  created: integer('created').notNull().default(0),
+  updated: integer('updated').notNull().default(0),
+  failed: integer('failed').notNull().default(0),
+  detail: text('detail').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
 })

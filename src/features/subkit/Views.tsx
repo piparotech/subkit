@@ -284,7 +284,7 @@ export function OfferingsView({ offerings }: { offerings: Offering[] }) {
 export function SubscribersView({ onOpenSubscriber, subscribers }: { onOpenSubscriber: (subscriber: Subscriber) => void; subscribers: Subscriber[] }) {
   return (
     <section className="animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
-      <ViewTitle description="Identified by App User ID. Ready for future cross-platform identity." title="Subscribers" />
+      <ViewTitle description="End users of this app, identified by App User ID and resolved through SubKit entitlements." title="App Users" />
       <div className="mt-[20px] overflow-hidden rounded-[14px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] max-lg:overflow-x-auto">
         <div className="min-w-[900px]">
           <div className="grid grid-cols-[1.5fr_1.3fr_1.2fr_1fr_0.9fr_0.8fr] gap-[14px] border-b border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[18px] py-[12px] text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--subkit-faint)]">

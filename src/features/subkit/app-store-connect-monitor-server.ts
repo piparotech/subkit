@@ -6,6 +6,8 @@ import { db } from '~/db/client'
 import { ensureDatabaseReady } from '~/db/setup'
 import { createRandomToken } from '~/server/auth/crypto'
 import { getRequiredCurrentUser } from '~/server/auth/current-user'
+import { requireTenantAccess } from '~/server/auth/tenant-access'
+import type { AuthUser } from '~/server/auth/types'
 import { appStoreConnectAuditEvents, appStoreConnectCredentials, apps } from '~/db/schema'
 import {
   getAppStoreConnectResourcePage,
@@ -13,7 +15,6 @@ import {
   type AppStoreConnectResource,
 } from '~/server/app-store-connect/client'
 import { decryptSecret } from '~/server/secrets'
-import { parseServerEnv } from '~/server/env'
 
 import type { AppStoreConnectMonitorItem, AppStoreConnectMonitorSection, AppStoreConnectMonitorSnapshot } from './types'
 
@@ -22,8 +23,6 @@ interface ResourceResult {
   resources: AppStoreConnectResource[]
 }
 
-const env = parseServerEnv(process.env)
-const activeTenantId = env.TENANT_ID
 const appInputSchema = z.object({ appId: z.string().min(1) })
 
 export const inspectAppStoreConnectMonitoring = createServerFn({ method: 'POST' })
@@ -31,8 +30,8 @@ export const inspectAppStoreConnectMonitoring = createServerFn({ method: 'POST' 
   .handler(async ({ data }): Promise<AppStoreConnectMonitorSnapshot> => {
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
-    const app = await requireApp(data.appId)
-    const credential = await requireCredential()
+    const app = await requireApp(currentUser, data.appId)
+    const credential = await requireCredential(app.tenantId)
     const credentials = decryptCredential(credential)
     if (app.appleAppId == null || app.appleAppId.trim() === '') {
       throw new Error('Select an App Store Connect app before inspecting monitoring data')
@@ -56,7 +55,7 @@ export const inspectAppStoreConnectMonitoring = createServerFn({ method: 'POST' 
       credentialId: credential.id,
       detail: 'Read release, TestFlight, review, and provisioning monitoring snapshots.',
       id: `asa_${createRandomToken(14)}`,
-      tenantId: activeTenantId,
+      tenantId: app.tenantId,
     })
 
     return {
@@ -89,17 +88,18 @@ function section(
   return { items: result.resources.map(mapper), title }
 }
 
-async function requireApp(appId: string): Promise<typeof apps.$inferSelect> {
+async function requireApp(user: AuthUser, appId: string): Promise<typeof apps.$inferSelect> {
   const [app] = await db.select().from(apps).where(eq(apps.id, appId)).limit(1)
-  if (app == null || app.tenantId !== activeTenantId) throw new Error('App does not belong to the active tenant')
+  if (app == null) throw new Error('App does not belong to an accessible tenant')
+  await requireTenantAccess(user, app.tenantId)
   return app
 }
 
-async function requireCredential(): Promise<typeof appStoreConnectCredentials.$inferSelect> {
+async function requireCredential(tenantId: string): Promise<typeof appStoreConnectCredentials.$inferSelect> {
   const [credential] = await db
     .select()
     .from(appStoreConnectCredentials)
-    .where(eq(appStoreConnectCredentials.tenantId, activeTenantId))
+    .where(eq(appStoreConnectCredentials.tenantId, tenantId))
     .limit(1)
   if (!credential) throw new Error('No tenant App Store Connect credential is configured')
   if (credential.status === 'deleted') throw new Error('App Store Connect credential was deleted')

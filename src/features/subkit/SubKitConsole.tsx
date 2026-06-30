@@ -13,13 +13,14 @@ import {
 import { AppSettingsView, WorkspaceSettingsView } from './SettingsView'
 import { newSubscription } from './data'
 import { Panels } from './Panels'
-import { appRouteParams, createAppFromDraft, filterApps, filterSubscribers, filterSubscriptions } from './store'
+import { appRouteParams, createAppFromDraft, filterApps, filterSubscribers, filterSubscriptions, idForLabel, initialsForName } from './store'
 import { listAppStoreConnectApps } from './app-store-connect-apps-server'
-import { createAppRecord, upsertSubscriptionRecord } from './server'
+import { createAppRecord, createTenantRecord, upsertSubscriptionRecord } from './server'
 import type {
   AppDraft,
   AppDraftField,
   AppStoreConnectAccessibleApp,
+  AppStoreConnectConnection,
   AppTenant,
   ConsoleData,
   EditableSubscriptionTextField,
@@ -28,16 +29,18 @@ import type {
   PanelState,
   Subscriber,
   SubscriptionProduct,
+  TenantDraft,
+  TenantDraftField,
   View,
 } from './types'
 
 const emptyAppDraft: AppDraft = { appleAppId: '', bundleId: '', name: '', sku: '' }
+const emptyTenantDraft: TenantDraft = { color: 'oklch(0.62 0.17 152)', id: '', initials: '', name: '' }
 
 export function SubKitConsole({ currentAppId, view }: { currentAppId: string | null; view: View }) {
   const consoleData = useLoaderData({ from: '/_console' })
   const router = useRouter()
   const navigate = useNavigate()
-  const tenant = consoleData.tenant
   const currentUser = consoleData.currentUser
   const [apps, setApps] = React.useState<AppTenant[]>(consoleData.apps)
   const [subscriptions, setSubscriptions] = React.useState<SubscriptionProduct[]>(consoleData.subscriptions)
@@ -45,8 +48,10 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
   const [offerings, setOfferings] = React.useState<Offering[]>(consoleData.offerings)
   const [subscribers, setSubscribers] = React.useState<Subscriber[]>(consoleData.subscribers)
   const [switcherOpen, setSwitcherOpen] = React.useState(false)
+  const [selectedTenantId, setSelectedTenantId] = React.useState(consoleData.tenant.id)
   const [searchQuery, setSearchQuery] = React.useState('')
   const [appDraft, setAppDraft] = React.useState<AppDraft>(emptyAppDraft)
+  const [tenantDraft, setTenantDraft] = React.useState<TenantDraft>(emptyTenantDraft)
   const [appStoreApps, setAppStoreApps] = React.useState<AppStoreConnectAccessibleApp[]>([])
   const [appStoreAppsLoaded, setAppStoreAppsLoaded] = React.useState(false)
   const [appStoreLoadError, setAppStoreLoadError] = React.useState<string | null>(null)
@@ -68,6 +73,8 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
   }, [currentAppId, view])
 
   const currentApp = apps.find((app) => app.id === currentAppId) ?? null
+  const currentTenant = consoleData.accessibleTenants.find((item) => item.id === (currentApp?.tenantId ?? selectedTenantId)) ?? consoleData.tenant
+  const currentConnection = consoleData.appStoreConnectConnections.find((connection) => connection.tenantId === currentTenant.id) ?? null
   const currentSubscriptions = React.useMemo(
     () => (currentApp == null ? subscriptions : subscriptions.filter((subscription) => subscription.appId === currentApp.id)),
     [currentApp, subscriptions],
@@ -111,6 +118,14 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
     navigate({ to: '/apps' }).catch(reportNavigationError)
   }
 
+  const selectTenant = (id: string) => {
+    setSelectedTenantId(id)
+    setSwitcherOpen(false)
+    if (currentApp != null && currentApp.tenantId !== id) {
+      navigate({ to: '/apps' }).catch(reportNavigationError)
+    }
+  }
+
   const goView = (nextView: View) => {
     setSwitcherOpen(false)
 
@@ -120,6 +135,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
     }
 
     if (nextView === 'workspaceSettings') {
+      if (currentApp != null) setSelectedTenantId(currentApp.tenantId)
       navigate({ to: '/settings' }).catch(reportNavigationError)
       return
     }
@@ -150,6 +166,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
 
   const primaryAction = () => {
     if (view === 'apps') {
+      setSelectedTenantId(currentTenant.id)
       setAppDraft(emptyAppDraft)
       setAppStoreApps([])
       setAppStoreAppsLoaded(false)
@@ -257,10 +274,24 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
     setAppDraft((draft) => ({ ...draft, [field]: value }))
   }
 
+  const updateTenantDraft = (field: TenantDraftField, value: string) => {
+    setTenantDraft((draft) => {
+      const next = { ...draft, [field]: value }
+      if (field === 'name') {
+        return {
+          ...next,
+          id: draft.id.trim() === '' || draft.id === safeTenantId(draft.name) ? safeTenantId(value) : draft.id,
+          initials: draft.initials.trim() === '' || draft.initials === safeInitials(draft.name) ? safeInitials(value) : draft.initials,
+        }
+      }
+      return next
+    })
+  }
+
   const loadAppStoreApps = React.useCallback(() => {
     if (loadingAppStoreApps) return
 
-    if (consoleData.appStoreConnect?.hasPrivateKey !== true) {
+    if (currentConnection?.hasPrivateKey !== true) {
       setAppStoreApps([])
       setAppStoreLoadError('Configure the App Store Connect key in Workspace Settings before creating an iOS app.')
       setAppStoreAppsLoaded(true)
@@ -269,7 +300,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
 
     setLoadingAppStoreApps(true)
     setAppStoreLoadError(null)
-    listAppStoreConnectApps({ data: {} })
+    listAppStoreConnectApps({ data: { tenantId: currentTenant.id } })
       .then((items) => {
         setAppStoreApps(items)
         setAppStoreAppsLoaded(true)
@@ -279,7 +310,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
         setAppStoreAppsLoaded(true)
       })
       .finally(() => setLoadingAppStoreApps(false))
-  }, [consoleData.appStoreConnect?.hasPrivateKey, loadingAppStoreApps])
+  }, [currentConnection?.hasPrivateKey, currentTenant.id, loadingAppStoreApps])
 
   React.useEffect(() => {
     if (panel.kind !== 'newApp') return
@@ -288,7 +319,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
   }, [appStoreAppsLoaded, loadAppStoreApps, loadingAppStoreApps, panel.kind])
 
   const createApp = () => {
-    const app = createAppFromDraft(appDraft, apps.length, tenant.id)
+    const app = createAppFromDraft(appDraft, apps.length, currentTenant.id)
     setApps((current) => [...current, app])
     navigate({ params: appRouteParams(app), to: '/$tenantSlug/$appSlug' }).catch(reportNavigationError)
     setPanel({ kind: 'closed' })
@@ -301,13 +332,41 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
         id: app.id,
         initials: app.initials,
         name: app.name,
-        tenantId: tenant.id,
+        tenantId: currentTenant.id,
       },
     })
       .then(refreshConsoleData)
       .catch((error: unknown) => {
         console.error('Failed to create app', error)
       })
+  }
+
+  const createTenant = () => {
+    const normalizedId = safeTenantId(tenantDraft.id || tenantDraft.name)
+    if (!normalizedId || !tenantDraft.name.trim()) return
+    createTenantRecord({
+      data: {
+        color: tenantDraft.color,
+        id: normalizedId,
+        initials: tenantDraft.initials.trim() || safeInitials(tenantDraft.name),
+        name: tenantDraft.name.trim(),
+      },
+    })
+      .then((result) => {
+        setSelectedTenantId(result.id)
+        setPanel({ kind: 'closed' })
+        setTenantDraft(emptyTenantDraft)
+        refreshConsoleData()
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to create tenant', error)
+      })
+  }
+
+  const openTenantCreator = () => {
+    setTenantDraft(emptyTenantDraft)
+    setSwitcherOpen(false)
+    setPanel({ kind: 'newTenant' })
   }
 
   const deleteLocalApp = (id: string) => {
@@ -325,12 +384,17 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
         apps={apps}
         currentApp={currentApp}
         currentUser={currentUser}
-        tenant={tenant}
+        accessibleTenants={consoleData.accessibleTenants}
+        canCreateApps={currentTenant.role === 'admin' || currentTenant.role === 'super_admin'}
+        canCreateTenants={currentUser.canCreateTenants}
+        tenant={currentTenant}
         onGoAllApps={goAllApps}
         onGoView={goView}
+        onNewTenant={openTenantCreator}
         onPrimaryAction={primaryAction}
         onSearchQueryChange={setSearchQuery}
         onSelectApp={selectApp}
+        onSelectTenant={selectTenant}
         onToggleSwitcher={() => setSwitcherOpen((open) => !open)}
         searchQuery={searchQuery}
         subscriptionsCount={currentSubscriptions.length}
@@ -340,7 +404,9 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
         <ActiveView
           apps={visibleApps}
           consoleData={consoleData}
+          connection={currentConnection}
           currentApp={currentApp}
+          tenant={currentTenant}
           entitlements={currentEntitlements}
           offerings={currentOfferings}
           onAppDeleted={deleteLocalApp}
@@ -357,16 +423,19 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
         appDraft={appDraft}
         appStoreApps={appStoreApps}
         appStoreAppsLoaded={appStoreAppsLoaded}
-        appStoreConnection={consoleData.appStoreConnect}
+        appStoreConnection={currentConnection}
         appStoreLoadError={appStoreLoadError}
         loadingAppStoreApps={loadingAppStoreApps}
         onAppDraftChange={updateAppDraft}
         onClose={closePanel}
         onCreateApp={createApp}
+        onCreateTenant={createTenant}
         onSaveSubscription={saveSubscription}
         onSubscriptionFieldChange={updateSubscriptionField}
+        onTenantDraftChange={updateTenantDraft}
         onSubscriptionTrialToggle={toggleSubscriptionTrial}
         panel={panel}
+        tenantDraft={tenantDraft}
       />
     </>
   )
@@ -374,8 +443,10 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
 
 function ActiveView({
   apps,
+  connection,
   consoleData,
   currentApp,
+  tenant,
   entitlements,
   offerings,
   onAppDeleted,
@@ -388,8 +459,10 @@ function ActiveView({
   view,
 }: {
   apps: AppTenant[]
+  connection: AppStoreConnectConnection | null
   consoleData: ConsoleData
   currentApp: AppTenant | null
+  tenant: ConsoleData['tenant']
   entitlements: Entitlement[]
   offerings: Offering[]
   onAppDeleted: (id: string) => void
@@ -402,7 +475,7 @@ function ActiveView({
   view: View
 }) {
   if (view === 'workspaceSettings') {
-    return <WorkspaceSettingsView connection={consoleData.appStoreConnect} onRefreshConsoleData={onRefreshConsoleData} />
+    return <WorkspaceSettingsView connection={connection} onRefreshConsoleData={onRefreshConsoleData} tenant={tenant} />
   }
 
   if (view === 'apps') return <AppsView apps={apps} onSelectApp={onSelectApp} />
@@ -432,7 +505,31 @@ function ActiveView({
     case 'subscribers':
       return <SubscribersView onOpenSubscriber={onOpenSubscriber} subscribers={subscribers} />
     case 'settings':
-      return <AppSettingsView app={currentApp} connection={consoleData.appStoreConnect} onAppDeleted={onAppDeleted} onRefreshConsoleData={onRefreshConsoleData} />
+      return (
+        <AppSettingsView
+          app={currentApp}
+          connection={connection}
+          onAppDeleted={onAppDeleted}
+          onRefreshConsoleData={onRefreshConsoleData}
+          runtimeSyncEvents={consoleData.runtimeSyncEvents.filter((event) => event.appId === currentApp.id)}
+        />
+      )
+  }
+}
+
+function safeTenantId(value: string): string {
+  try {
+    return idForLabel(value)
+  } catch {
+    return ''
+  }
+}
+
+function safeInitials(value: string): string {
+  try {
+    return initialsForName(value)
+  } catch {
+    return ''
   }
 }
 

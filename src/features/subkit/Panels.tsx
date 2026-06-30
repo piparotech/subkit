@@ -11,6 +11,8 @@ import type {
   AppStoreConnectConnection,
   EditableSubscriptionTextField,
   PanelState,
+  TenantDraft,
+  TenantDraftField,
   Subscriber,
   SubscriptionProduct,
 } from './types'
@@ -25,10 +27,13 @@ interface PanelsProps {
   onAppDraftChange: (field: AppDraftField, value: string) => void
   onClose: () => void
   onCreateApp: () => void
+  onCreateTenant: () => void
   onSaveSubscription: () => void
   onSubscriptionFieldChange: (field: EditableSubscriptionTextField, value: string) => void
   onSubscriptionTrialToggle: () => void
+  onTenantDraftChange: (field: TenantDraftField, value: string) => void
   panel: PanelState
+  tenantDraft: TenantDraft
 }
 
 export function Panels({
@@ -41,10 +46,13 @@ export function Panels({
   onAppDraftChange,
   onClose,
   onCreateApp,
+  onCreateTenant,
   onSaveSubscription,
   onSubscriptionFieldChange,
   onSubscriptionTrialToggle,
+  onTenantDraftChange,
   panel,
+  tenantDraft,
 }: PanelsProps) {
   if (panel.kind === 'closed') return null
 
@@ -80,7 +88,88 @@ export function Panels({
           onCreate={onCreateApp}
         />
       ) : null}
+      {panel.kind === 'newTenant' ? (
+        <NewTenantDialog
+          draft={tenantDraft}
+          onChange={onTenantDraftChange}
+          onClose={onClose}
+          onCreate={onCreateTenant}
+        />
+      ) : null}
     </>
+  )
+}
+
+function NewTenantDialog({
+  draft,
+  onChange,
+  onClose,
+  onCreate,
+}: {
+  draft: TenantDraft
+  onChange: (field: TenantDraftField, value: string) => void
+  onClose: () => void
+  onCreate: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center p-[24px]">
+      <div
+        aria-label="Create tenant"
+        aria-modal="true"
+        className="w-[520px] max-w-full overflow-hidden rounded-[16px] bg-[var(--subkit-panel)] shadow-[0_24px_60px_-16px_rgba(20,20,50,0.4)] animate-[subkit-pop-in_180ms_ease]"
+        role="dialog"
+      >
+        <div className="px-[24px] pt-[20px]">
+          <PUIText as="h2" className="text-[18px] font-bold" variant="title3">
+            Create tenant
+          </PUIText>
+          <div className="mt-[4px] text-[13px] text-[var(--subkit-dim)]">Admins are assigned to tenants they create automatically.</div>
+        </div>
+        <div className="flex flex-col gap-[12px] px-[24px] py-[18px]">
+          <label className="flex flex-col gap-[6px] text-[12.5px] font-semibold text-[var(--subkit-text)]">
+            Tenant name
+            <input
+              className="rounded-[9px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[11px] py-[9px] font-sans text-[13px] text-[var(--subkit-text)] outline-none"
+              onChange={(event) => onChange('name', event.target.value)}
+              placeholder="Customer GmbH"
+              value={draft.name}
+            />
+          </label>
+          <label className="flex flex-col gap-[6px] text-[12.5px] font-semibold text-[var(--subkit-text)]">
+            Tenant ID
+            <input
+              className="rounded-[9px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[11px] py-[9px] font-mono text-[13px] text-[var(--subkit-text)] outline-none"
+              onChange={(event) => onChange('id', event.target.value)}
+              placeholder="customer-gmbh"
+              value={draft.id}
+            />
+          </label>
+          <div className="grid grid-cols-[1fr_1.4fr] gap-[10px] max-sm:grid-cols-1">
+            <label className="flex flex-col gap-[6px] text-[12.5px] font-semibold text-[var(--subkit-text)]">
+              Initials
+              <input
+                className="rounded-[9px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[11px] py-[9px] font-mono text-[13px] text-[var(--subkit-text)] outline-none"
+                onChange={(event) => onChange('initials', event.target.value.toUpperCase())}
+                placeholder="CG"
+                value={draft.initials}
+              />
+            </label>
+            <label className="flex flex-col gap-[6px] text-[12.5px] font-semibold text-[var(--subkit-text)]">
+              Color
+              <input
+                className="rounded-[9px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[11px] py-[9px] font-mono text-[13px] text-[var(--subkit-text)] outline-none"
+                onChange={(event) => onChange('color', event.target.value)}
+                value={draft.color}
+              />
+            </label>
+          </div>
+        </div>
+        <div className="flex justify-end gap-[10px] border-t border-[var(--subkit-border)] px-[24px] py-[16px]">
+          <PUIButton className="rounded-[9px]" label="Cancel" onPress={onClose} variant="outline" />
+          <PUIButton className="rounded-[9px]" disabled={draft.name.trim() === '' || draft.id.trim() === ''} label="Create tenant" onPress={onCreate} />
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -124,13 +213,13 @@ function SubscriptionPanel({
 function SubscriberPanel({ onClose, subscriber }: { onClose: () => void; subscriber: Subscriber }) {
   return (
     <aside
-      aria-label={`Subscriber ${subscriber.userId}`}
+      aria-label={`App User ${subscriber.userId}`}
       className="fixed bottom-0 right-0 top-0 z-[90] flex w-[460px] animate-[subkit-slide-in_220ms_cubic-bezier(.2,.7,.2,1)] flex-col bg-[var(--subkit-panel)] shadow-[-16px_0_40px_-16px_rgba(20,20,50,0.28)] max-sm:left-0 max-sm:w-auto"
       role="dialog"
     >
       <div className="flex items-start gap-[12px] border-b border-[var(--subkit-border)] px-[22px] py-[18px]">
         <div className="min-w-0 flex-1">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--subkit-faint)]">Subscriber</div>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--subkit-faint)]">App User</div>
           <div className="mt-[3px] break-all font-mono text-[15px] font-bold">{subscriber.userId}</div>
           <div className="mt-[8px]">
             <StatusLabel label={subscriber.status} tone={subscriber.statusTone} />
@@ -141,7 +230,7 @@ function SubscriberPanel({ onClose, subscriber }: { onClose: () => void; subscri
       <div className="flex-1 overflow-y-auto p-[22px]">
         <div className="mb-[22px] grid grid-cols-2 gap-[12px]">
           <SubscriberFact label="Country" value={subscriber.country} />
-          <SubscriberFact label="Subscriber since" value={subscriber.since} />
+          <SubscriberFact label="App User since" value={subscriber.since} />
           <SubscriberFact label="Current plan" value={subscriber.plan} />
           <SubscriberFact mono label="Lifetime value" value={subscriber.ltv} />
         </div>

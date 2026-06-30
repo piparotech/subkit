@@ -6,6 +6,8 @@ import { db } from '~/db/client'
 import { ensureDatabaseReady } from '~/db/setup'
 import { createRandomToken } from '~/server/auth/crypto'
 import { getRequiredCurrentUser } from '~/server/auth/current-user'
+import { requireTenantAccess, requireTenantRole } from '~/server/auth/tenant-access'
+import type { AuthUser } from '~/server/auth/types'
 import {
   appStoreConnectAuditEvents,
   appStoreConnectCapabilities,
@@ -22,8 +24,6 @@ import {
   type AppStoreConnectCredentials,
 } from '~/server/app-store-connect/client'
 import { decryptSecret, encryptSecret, fingerprintSecret } from '~/server/secrets'
-import { parseServerEnv } from '~/server/env'
-
 import { previewProduct } from './app-store-connect-preview'
 import type {
   AppStoreConnectCatalogSyncResult,
@@ -32,17 +32,15 @@ import type {
   AppStoreConnectReportSyncResult,
 } from './types'
 
-const env = parseServerEnv(process.env)
-const activeTenantId = env.TENANT_ID
-
 const credentialInputSchema = z.object({
   issuerId: z.string().min(1),
   keyId: z.string().min(1),
   privateKey: z.string().optional(),
+  tenantId: z.string().min(1),
   vendorNumber: z.string().optional(),
 })
 
-const tenantCredentialInputSchema = z.object({})
+const tenantCredentialInputSchema = z.object({ tenantId: z.string().min(1) })
 const appInputSchema = z.object({ appId: z.string().min(1) })
 
 const importInputSchema = z.object({
@@ -74,7 +72,8 @@ export const saveAppStoreConnectCredential = createServerFn({ method: 'POST' })
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
 
-    const existing = await findCredential()
+    await requireTenantRole(currentUser, data.tenantId, ['admin'])
+    const existing = await findCredential(data.tenantId)
     const cleanPrivateKey = data.privateKey?.trim()
     if (!existing && (cleanPrivateKey == null || cleanPrivateKey === '')) {
       throw new Error('Private key is required for a new App Store Connect connection')
@@ -99,7 +98,7 @@ export const saveAppStoreConnectCredential = createServerFn({ method: 'POST' })
         privateKeyIv: encrypted?.iv ?? existing?.privateKeyIv ?? null,
         privateKeySha256: cleanPrivateKey != null && cleanPrivateKey !== '' ? fingerprintSecret(cleanPrivateKey) : existing?.privateKeySha256 ?? null,
         status: 'needs_attention',
-        tenantId: activeTenantId,
+        tenantId: data.tenantId,
         updatedAt: now,
         vendorNumber: optionalTrim(data.vendorNumber),
       })
@@ -124,27 +123,30 @@ export const saveAppStoreConnectCredential = createServerFn({ method: 'POST' })
       appId: null,
       credentialId,
       detail: 'Tenant credential metadata saved; private key redacted.',
+      tenantId: data.tenantId,
       userId: currentUser.id,
     })
-    await validateTenantCredential(currentUser.id)
+    await validateTenantCredential(currentUser, data.tenantId)
     return { ok: true }
   })
 
 export const validateAppStoreConnectCredential = createServerFn({ method: 'POST' })
   .validator((input: unknown) => tenantCredentialInputSchema.parse(input))
-  .handler(async () => {
+  .handler(async ({ data }) => {
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
-    await validateTenantCredential(currentUser.id)
+    await requireTenantRole(currentUser, data.tenantId, ['admin'])
+    await validateTenantCredential(currentUser, data.tenantId)
     return { ok: true }
   })
 
 export const deleteAppStoreConnectCredential = createServerFn({ method: 'POST' })
   .validator((input: unknown) => tenantCredentialInputSchema.parse(input))
-  .handler(async () => {
+  .handler(async ({ data }) => {
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
-    const credential = await requireCredential()
+    await requireTenantRole(currentUser, data.tenantId, ['admin'])
+    const credential = await requireCredential(data.tenantId)
     const now = new Date()
     await db
       .update(appStoreConnectCredentials)
@@ -163,6 +165,7 @@ export const deleteAppStoreConnectCredential = createServerFn({ method: 'POST' }
       appId: null,
       credentialId: credential.id,
       detail: 'Encrypted private key material deleted locally. Revoke the key in App Store Connect too.',
+      tenantId: data.tenantId,
       userId: currentUser.id,
     })
     return { ok: true }
@@ -173,14 +176,14 @@ export const previewAppStoreConnectProducts = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<AppStoreConnectProductPreview[]> => {
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
-    assertOwnedApp(data.appId)
-    const { appleAppId, credential, credentials } = await requireActiveAppleCredential(data.appId)
+    const { appleAppId, app, credential, credentials } = await requireActiveAppleCredential(currentUser, data.appId)
     const preview = await readAppleProductPreview(data.appId, credentials, appleAppId)
     await recordAudit({
       action: 'products.previewed',
       appId: data.appId,
       credentialId: credential.id,
       detail: `${preview.length} Apple catalogue products compared locally.`,
+      tenantId: app.tenantId,
       userId: currentUser.id,
     })
     return preview
@@ -191,8 +194,8 @@ export const importAppStoreConnectProductPreview = createServerFn({ method: 'POS
   .handler(async ({ data }): Promise<AppStoreConnectImportResult> => {
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
-    assertOwnedApp(data.appId)
-    const credential = await requireCredential()
+    const app = await requireApp(currentUser, data.appId)
+    const credential = await requireCredential(app.tenantId)
     const result = await applyProductPreview(data.appId, data.preview)
 
     await recordAudit({
@@ -200,6 +203,7 @@ export const importAppStoreConnectProductPreview = createServerFn({ method: 'POS
       appId: data.appId,
       credentialId: credential.id,
       detail: `${result.created} created, ${result.updated} updated, ${result.skipped} skipped from Apple catalogue preview.`,
+      tenantId: app.tenantId,
       userId: currentUser.id,
     })
     return result
@@ -210,8 +214,7 @@ export const syncAppStoreConnectCatalog = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<AppStoreConnectCatalogSyncResult> => {
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
-    assertOwnedApp(data.appId)
-    const { appleAppId, credential, credentials } = await requireActiveAppleCredential(data.appId)
+    const { appleAppId, app, credential, credentials } = await requireActiveAppleCredential(currentUser, data.appId)
     const preview = await readAppleProductPreview(data.appId, credentials, appleAppId)
     const result = await applyProductPreview(data.appId, preview)
     const unchanged = preview.filter((item) => item.action === 'unchanged').length
@@ -222,6 +225,7 @@ export const syncAppStoreConnectCatalog = createServerFn({ method: 'POST' })
       appId: data.appId,
       credentialId: credential.id,
       detail: `${result.created} created, ${result.updated} updated, ${unchanged} unchanged, ${conflicts} conflicts from Apple catalogue sync.`,
+      tenantId: app.tenantId,
       userId: currentUser.id,
     })
     return { ...result, conflicts, preview, unchanged }
@@ -232,8 +236,7 @@ export const syncAppStoreConnectSalesReport = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<AppStoreConnectReportSyncResult> => {
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
-    assertOwnedApp(data.appId)
-    const { credential, credentials } = await requireActiveAppleCredential(data.appId)
+    const { app, credential, credentials } = await requireActiveAppleCredential(currentUser, data.appId)
     const vendorNumber = credential.vendorNumber?.trim()
     if (!vendorNumber) throw new Error('Vendor Number is required to sync Sales Reports')
     const reportDate = data.reportDate ?? defaultReportDate()
@@ -257,6 +260,7 @@ export const syncAppStoreConnectSalesReport = createServerFn({ method: 'POST' })
         appId: data.appId,
         credentialId: credential.id,
         detail: `Daily Sales Report ${reportDate} imported with ${report.rowCount} rows.`,
+        tenantId: app.tenantId,
         userId: currentUser.id,
       })
       return { reportDate, rowCount: report.rowCount, status: 'imported' }
@@ -279,6 +283,7 @@ export const syncAppStoreConnectSalesReport = createServerFn({ method: 'POST' })
         appId: data.appId,
         credentialId: credential.id,
         detail: `Daily Sales Report ${reportDate} failed: ${detail}`,
+        tenantId: app.tenantId,
         userId: currentUser.id,
       })
       return { reportDate, rowCount: 0, status: 'failed' }
@@ -349,8 +354,9 @@ async function applyProductPreview(appId: string, preview: readonly AppStoreConn
   return { created, skipped, updated }
 }
 
-async function validateTenantCredential(userId: string): Promise<void> {
-  const credential = await requireCredential()
+async function validateTenantCredential(user: AuthUser, tenantId: string): Promise<void> {
+  await requireTenantRole(user, tenantId, ['admin'])
+  const credential = await requireCredential(tenantId)
   const credentials = decryptCredential(credential)
   const result = await validateAppStoreConnectAccess({
     bundleId: null,
@@ -399,39 +405,42 @@ async function validateTenantCredential(userId: string): Promise<void> {
     appId: null,
     credentialId: credential.id,
     detail: `Tenant validation completed with status ${result.status}.`,
-    userId,
+    tenantId,
+    userId: user.id,
   })
 }
 
-async function requireActiveAppleCredential(appId: string): Promise<{
+async function requireActiveAppleCredential(user: AuthUser, appId: string): Promise<{
   appleAppId: string
+  app: typeof apps.$inferSelect
   credential: typeof appStoreConnectCredentials.$inferSelect
   credentials: AppStoreConnectCredentials
 }> {
-  const credential = await requireCredential()
+  const app = await requireApp(user, appId)
+  const credential = await requireCredential(app.tenantId)
   if (credential.status === 'deleted') throw new Error('App Store Connect credential was deleted')
-  const app = await requireApp(appId)
   if (app.appleAppId == null || app.appleAppId.trim() === '') throw new Error('Select an App Store Connect app before syncing Apple app data')
-  return { appleAppId: app.appleAppId, credential, credentials: decryptCredential(credential) }
+  return { appleAppId: app.appleAppId, app, credential, credentials: decryptCredential(credential) }
 }
 
-async function requireApp(appId: string): Promise<typeof apps.$inferSelect> {
+async function requireApp(user: AuthUser, appId: string): Promise<typeof apps.$inferSelect> {
   const [app] = await db.select().from(apps).where(eq(apps.id, appId)).limit(1)
-  if (app == null || app.tenantId !== activeTenantId) throw new Error('App does not belong to the active tenant')
+  if (app == null) throw new Error('App does not belong to an accessible tenant')
+  await requireTenantAccess(user, app.tenantId)
   return app
 }
 
-async function requireCredential(): Promise<typeof appStoreConnectCredentials.$inferSelect> {
-  const credential = await findCredential()
+async function requireCredential(tenantId: string): Promise<typeof appStoreConnectCredentials.$inferSelect> {
+  const credential = await findCredential(tenantId)
   if (!credential) throw new Error('No tenant App Store Connect credential is configured')
   return credential
 }
 
-async function findCredential(): Promise<typeof appStoreConnectCredentials.$inferSelect | undefined> {
+async function findCredential(tenantId: string): Promise<typeof appStoreConnectCredentials.$inferSelect | undefined> {
   const [credential] = await db
     .select()
     .from(appStoreConnectCredentials)
-    .where(eq(appStoreConnectCredentials.tenantId, activeTenantId))
+    .where(eq(appStoreConnectCredentials.tenantId, tenantId))
     .limit(1)
   return credential
 }
@@ -456,12 +465,14 @@ async function recordAudit({
   appId,
   credentialId,
   detail,
+  tenantId,
   userId,
 }: {
   action: string
   appId: string | null
   credentialId: string
   detail: string
+  tenantId: string
   userId: string
 }): Promise<void> {
   await db.insert(appStoreConnectAuditEvents).values({
@@ -472,14 +483,8 @@ async function recordAudit({
     detail: redactSecretLikeText(detail),
     id: `asa_${createRandomToken(14)}`,
     actorUserId: userId,
-    tenantId: activeTenantId,
+    tenantId,
   })
-}
-
-function assertOwnedApp(appId: string): void {
-  if (!appId.startsWith(`${activeTenantId}:`)) {
-    throw new Error('App does not belong to the active tenant')
-  }
 }
 
 function productRowId(appId: string, identifier: string): string {

@@ -1,11 +1,18 @@
 import { createServerFn } from '@tanstack/react-start'
-import { eq, inArray } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 
 import { db } from '~/db/client'
 import { ensureDatabaseReady } from '~/db/setup'
 import { getOptionalCurrentUser, getRequiredCurrentUser } from '~/server/auth/current-user'
-import { parseServerEnv } from '~/server/env'
+import {
+  isSuperAdmin,
+  listAccessibleTenantRows,
+  requireCanCreateTenant,
+  requireTenantAccess,
+  requireTenantRole,
+} from '~/server/auth/tenant-access'
+import type { AuthUser } from '~/server/auth/types'
 import {
   apps,
   appStoreConnectAuditEvents,
@@ -15,8 +22,10 @@ import {
   offerings,
   products,
   purchaseEvents,
+  runtimeSyncEvents,
   subscribers,
   tenants,
+  userTenants,
 } from '~/db/schema'
 import { readAppStoreConnectConnectionForTenant } from './app-store-connect-read'
 import type {
@@ -34,13 +43,11 @@ import type {
   PurchaseHistoryEvent,
   RevenueBar,
   StatusTone,
+  RuntimeSyncEventSummary,
   Subscriber,
   SubscriptionProduct,
   WorkspaceTenant,
 } from './types'
-
-const env = parseServerEnv(process.env)
-const activeTenantId = env.TENANT_ID
 
 const appInputSchema = z.object({
   appleAppId: z.string().min(1),
@@ -67,6 +74,13 @@ const subscriptionInputSchema = z.object({
 
 const deleteAppInputSchema = z.object({
   appId: z.string().min(1),
+})
+
+const tenantInputSchema = z.object({
+  color: z.string().min(1),
+  id: z.string().min(1),
+  initials: z.string().min(1),
+  name: z.string().min(1),
 })
 
 function parsePriceCents(price: string): number {
@@ -96,6 +110,13 @@ function formatSignedCurrency(cents: number | null): string {
 
 function formatInteger(value: number): string {
   return new Intl.NumberFormat('en-US').format(value)
+}
+
+function formatDateTime(value: Date): string {
+  return new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(value)
 }
 
 function appStatus(status: 'setup' | 'live' | 'beta' | 'inactive'): { label: string; tone: StatusTone } {
@@ -174,15 +195,41 @@ function isOwnedApp(appId: string, ownedAppIds: ReadonlySet<string>): boolean {
   return ownedAppIds.has(appId)
 }
 
-function assertOwnedApp(appId: string): void {
-  if (!appId.startsWith(`${activeTenantId}:`)) {
-    throw new Error('App does not belong to the active tenant')
+function toWorkspaceTenant(tenant: typeof tenants.$inferSelect, role: WorkspaceTenant['role']): WorkspaceTenant {
+  return {
+    color: tenant.color,
+    id: tenant.id,
+    initials: tenant.initials,
+    name: tenant.name,
+    role,
   }
 }
 
-function toConsoleUser(user: ConsoleUser): ConsoleUser {
+async function tenantRolesById(user: AuthUser, tenantIds: readonly string[]): Promise<Map<string, WorkspaceTenant['role']>> {
+  if (isSuperAdmin(user)) return new Map(tenantIds.map((tenantId) => [tenantId, 'super_admin']))
+  if (tenantIds.length === 0) return new Map()
+
+  const rows = await db
+    .select({ role: userTenants.role, tenantId: userTenants.tenantId })
+    .from(userTenants)
+    .where(and(eq(userTenants.userId, user.id), inArray(userTenants.tenantId, [...tenantIds])))
+
+  return new Map(rows.map((row) => [row.tenantId, row.role]))
+}
+
+function roleForTenant(roleByTenantId: ReadonlyMap<string, WorkspaceTenant['role']>, tenantId: string): WorkspaceTenant['role'] {
+  return roleByTenantId.get(tenantId) ?? 'developer'
+}
+
+function canCreateTenants(user: AuthUser, roleByTenantId: ReadonlyMap<string, WorkspaceTenant['role']>): boolean {
+  return isSuperAdmin(user) || [...roleByTenantId.values()].some((role) => role === 'admin')
+}
+
+function toConsoleUser(user: AuthUser, canCreateNewTenants: boolean): ConsoleUser {
   return {
+    canCreateTenants: canCreateNewTenants,
     email: user.email,
+    globalRole: isSuperAdmin(user) ? 'super_admin' : user.globalRole,
     id: user.id,
     initials: user.initials,
     name: user.name,
@@ -191,8 +238,25 @@ function toConsoleUser(user: ConsoleUser): ConsoleUser {
   }
 }
 
-async function getCurrentConsoleUser(): Promise<ConsoleUser> {
+async function getCurrentConsoleUser(): Promise<AuthUser> {
   return getRequiredCurrentUser()
+}
+
+async function requireAccessibleApp(user: AuthUser, appId: string): Promise<typeof apps.$inferSelect> {
+  const [app] = await db.select().from(apps).where(eq(apps.id, appId)).limit(1)
+  if (app == null) throw new Error('App does not exist')
+  await requireTenantAccess(user, app.tenantId)
+  return app
+}
+
+function normalizeTenantId(id: string): string {
+  const normalized = id
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  if (!normalized) throw new Error('Tenant id is required')
+  return normalized
 }
 
 export const getAuthStatus = createServerFn({ method: 'GET' }).handler(async () => {
@@ -204,9 +268,11 @@ export const getAuthStatus = createServerFn({ method: 'GET' }).handler(async () 
 export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(async (): Promise<ConsoleData> => {
   await ensureDatabaseReady()
   const currentUser = await getCurrentConsoleUser()
+  const accessibleTenantRows = await listAccessibleTenantRows(currentUser)
+  const roleByTenantId = await tenantRolesById(currentUser, accessibleTenantRows.map((tenant) => tenant.id))
+  const accessibleTenantIds = new Set(accessibleTenantRows.map((tenant) => tenant.id))
 
   const [
-    tenantRows,
     appRowsAll,
     productRowsAll,
     entitlementRowsAll,
@@ -214,9 +280,9 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
     packageRows,
     subscriberRowsAll,
     eventRowsAll,
-    appStoreConnectConnection,
+    appStoreConnectConnections,
+    runtimeSyncEventRowsAll,
   ] = await Promise.all([
-    db.select().from(tenants),
     db.select().from(apps),
     db.select().from(products),
     db.select().from(entitlements),
@@ -224,13 +290,12 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
     db.select().from(offeringPackages),
     db.select().from(subscribers),
     db.select().from(purchaseEvents),
-    readAppStoreConnectConnectionForTenant(activeTenantId),
+    Promise.all(accessibleTenantRows.map((tenant) => readAppStoreConnectConnectionForTenant(tenant.id))),
+    db.select().from(runtimeSyncEvents),
   ])
 
-  const activeTenant = tenantRows.find((tenant) => tenant.id === activeTenantId)
-  if (activeTenant == null) throw new Error('Active tenant is not configured')
-
-  const appRows = appRowsAll.filter((app) => app.tenantId === activeTenant.id)
+  const activeTenant = accessibleTenantRows[0]
+  const appRows = appRowsAll.filter((app) => accessibleTenantIds.has(app.tenantId))
   const ownedAppIds = new Set(appRows.map((app) => app.id))
   const productRows = productRowsAll.filter((product) => isOwnedApp(product.appId, ownedAppIds))
   const entitlementRows = entitlementRowsAll.filter((entitlement) => isOwnedApp(entitlement.appId, ownedAppIds))
@@ -238,9 +303,10 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
   const subscriberRows = subscriberRowsAll.filter((subscriber) => isOwnedApp(subscriber.appId, ownedAppIds))
   const ownedSubscriberIds = new Set(subscriberRows.map((subscriber) => subscriber.id))
   const eventRows = eventRowsAll.filter((event) => ownedSubscriberIds.has(event.subscriberId))
+  const runtimeSyncEventRows = runtimeSyncEventRowsAll.filter((event) => isOwnedApp(event.appId, ownedAppIds))
 
   const stats: ConsoleStats = {
-    tenants: tenantRows.length,
+    tenants: accessibleTenantRows.length,
     apps: appRows.length,
     products: productRows.length,
     entitlements: entitlementRows.length,
@@ -248,12 +314,12 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
     purchaseEvents: eventRows.length,
   }
 
-  const tenant: WorkspaceTenant = {
-    id: activeTenant.id,
-    name: activeTenant.name,
-    initials: activeTenant.initials,
-    color: activeTenant.color,
-  }
+  const tenant: WorkspaceTenant = activeTenant == null
+    ? { color: 'oklch(0.62 0.17 152)', id: 'none', initials: '—', name: 'No tenant access', role: 'developer' }
+    : toWorkspaceTenant(activeTenant, roleForTenant(roleByTenantId, activeTenant.id))
+  const accessibleTenants = accessibleTenantRows.map((tenantRow) => toWorkspaceTenant(tenantRow, roleForTenant(roleByTenantId, tenantRow.id)))
+  const appStoreConnectConnectionsFiltered = appStoreConnectConnections.filter((connection) => connection != null)
+  const appStoreConnectConnection = appStoreConnectConnectionsFiltered[0] ?? null
 
   const entitlementById = new Map(entitlementRows.map((row) => [row.id, row]))
   const productsByEntitlement = new Map<string, string[]>()
@@ -366,6 +432,22 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
   })
 
   const subscriberById = new Map(subscriberRows.map((subscriber) => [subscriber.id, subscriber]))
+  const runtimeSyncEventItems: RuntimeSyncEventSummary[] = runtimeSyncEventRows
+    .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+    .slice(0, 8)
+    .map((event) => ({
+      appId: event.appId,
+      created: event.created,
+      createdAt: formatDateTime(event.createdAt),
+      detail: event.detail,
+      failed: event.failed,
+      id: event.id,
+      received: event.received,
+      source: event.source,
+      status: event.status,
+      updated: event.updated,
+    }))
+
   const dashboards: DashboardSummary[] = appRows.map((app) => {
     const appSubscribers = subscriberRows.filter((subscriber) => subscriber.appId === app.id)
     const activeSubscriptions = app.activeSubscriberCount
@@ -400,26 +482,62 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
   })
 
   return {
+    accessibleTenants,
     appStoreConnect: appStoreConnectConnection,
+    appStoreConnectConnections: appStoreConnectConnectionsFiltered,
     apps: appItems,
-    currentUser: toConsoleUser(currentUser),
+    currentUser: toConsoleUser(currentUser, canCreateTenants(currentUser, roleByTenantId)),
     dashboards,
     subscriptions: subscriptionProducts,
     entitlements: consoleEntitlements,
     offerings: consoleOfferings,
+    runtimeSyncEvents: runtimeSyncEventItems,
     subscribers: consoleSubscribers,
     stats,
     tenant,
   }
 })
 
+export const createTenantRecord = createServerFn({ method: 'POST' })
+  .validator((input: unknown) => tenantInputSchema.parse(input))
+  .handler(async ({ data }) => {
+    await ensureDatabaseReady()
+    const currentUser = await getCurrentConsoleUser()
+    await requireCanCreateTenant(currentUser)
+    const tenantId = normalizeTenantId(data.id)
+    const now = new Date()
+
+    await db.transaction(async (tx) => {
+      await tx.insert(tenants).values({
+        color: data.color,
+        createdAt: now,
+        id: tenantId,
+        initials: data.initials.trim().slice(0, 4).toUpperCase(),
+        name: data.name.trim(),
+      })
+
+      if (!isSuperAdmin(currentUser)) {
+        await tx.insert(userTenants).values({
+          createdAt: now,
+          invitedByUserId: currentUser.id,
+          role: 'admin',
+          tenantId,
+          userId: currentUser.id,
+        })
+      }
+    })
+
+    return { id: tenantId, ok: true }
+  })
+
 export const createAppRecord = createServerFn({ method: 'POST' })
   .validator((input: unknown) => appInputSchema.parse(input))
   .handler(async ({ data }) => {
     await ensureDatabaseReady()
-    await getCurrentConsoleUser()
-    if (data.tenantId !== activeTenantId || !data.id.startsWith(`${activeTenantId}:`)) {
-      throw new Error('Cannot create apps outside the active tenant')
+    const currentUser = await getCurrentConsoleUser()
+    await requireTenantRole(currentUser, data.tenantId, ['admin'])
+    if (!data.id.startsWith(`${data.tenantId}:`)) {
+      throw new Error('Cannot create apps outside the requested tenant')
     }
 
     await db
@@ -437,7 +555,7 @@ export const createAppRecord = createServerFn({ method: 'POST' })
         monthlyRevenueCents: 0,
         name: data.name,
         status: 'setup',
-        tenantId: activeTenantId,
+        tenantId: data.tenantId,
       })
       .onConflictDoUpdate({
         set: {
@@ -457,8 +575,9 @@ export const deleteAppRecord = createServerFn({ method: 'POST' })
   .validator((input: unknown) => deleteAppInputSchema.parse(input))
   .handler(async ({ data }) => {
     await ensureDatabaseReady()
-    await getCurrentConsoleUser()
-    assertOwnedApp(data.appId)
+    const currentUser = await getCurrentConsoleUser()
+    const app = await requireAccessibleApp(currentUser, data.appId)
+    await requireTenantRole(currentUser, app.tenantId, ['admin'])
 
     await db.transaction(async (tx) => {
       const subscriberRows = await tx.select({ id: subscribers.id }).from(subscribers).where(eq(subscribers.appId, data.appId))
@@ -471,6 +590,7 @@ export const deleteAppRecord = createServerFn({ method: 'POST' })
 
       await tx.delete(appStoreConnectSalesReports).where(eq(appStoreConnectSalesReports.appId, data.appId))
       await tx.delete(appStoreConnectAuditEvents).where(eq(appStoreConnectAuditEvents.appId, data.appId))
+      await tx.delete(runtimeSyncEvents).where(eq(runtimeSyncEvents.appId, data.appId))
       await tx.delete(products).where(eq(products.appId, data.appId))
       await tx.delete(subscribers).where(eq(subscribers.appId, data.appId))
       await tx.delete(offerings).where(eq(offerings.appId, data.appId))
@@ -485,8 +605,8 @@ export const upsertSubscriptionRecord = createServerFn({ method: 'POST' })
   .validator((input: unknown) => subscriptionInputSchema.parse(input))
   .handler(async ({ data }) => {
     await ensureDatabaseReady()
-    await getCurrentConsoleUser()
-    assertOwnedApp(data.appId)
+    const currentUser = await getCurrentConsoleUser()
+    await requireAccessibleApp(currentUser, data.appId)
 
     const entitlementId = entitlementRowId(data.appId, data.entitlement)
     await db

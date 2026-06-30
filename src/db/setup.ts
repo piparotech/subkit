@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
   organization text NOT NULL,
   initials text NOT NULL,
   operator integer DEFAULT false NOT NULL,
+  global_role text DEFAULT 'user' NOT NULL,
   zitadel_subject text,
   zitadel_login_name text,
   identity_provider text,
@@ -30,6 +31,14 @@ CREATE TABLE IF NOT EXISTS users (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON users(email);
 CREATE UNIQUE INDEX IF NOT EXISTS users_zitadel_subject_unique ON users(zitadel_subject);
+CREATE TABLE IF NOT EXISTS user_tenants (
+  user_id text NOT NULL REFERENCES users(id) ON DELETE cascade,
+  tenant_id text NOT NULL REFERENCES tenants(id) ON DELETE cascade,
+  role text NOT NULL,
+  invited_by_user_id text REFERENCES users(id) ON DELETE set null,
+  created_at integer NOT NULL,
+  PRIMARY KEY (user_id, tenant_id)
+);
 CREATE TABLE IF NOT EXISTS auth_sessions (
   id text PRIMARY KEY NOT NULL,
   user_id text NOT NULL REFERENCES users(id) ON DELETE cascade,
@@ -170,6 +179,18 @@ CREATE TABLE IF NOT EXISTS purchase_events (
   store text NOT NULL,
   amount_cents integer
 );
+CREATE TABLE IF NOT EXISTS runtime_sync_events (
+  id text PRIMARY KEY NOT NULL,
+  app_id text NOT NULL REFERENCES apps(id) ON DELETE cascade,
+  source text NOT NULL,
+  status text NOT NULL,
+  received integer DEFAULT 0 NOT NULL,
+  created integer DEFAULT 0 NOT NULL,
+  updated integer DEFAULT 0 NOT NULL,
+  failed integer DEFAULT 0 NOT NULL,
+  detail text NOT NULL,
+  created_at integer NOT NULL
+);
 `
 
 export async function ensureDatabaseReady(): Promise<void> {
@@ -177,6 +198,7 @@ export async function ensureDatabaseReady(): Promise<void> {
   await ensureSchemaCompatibility()
   await dbClient.execute("UPDATE apps SET status = 'setup' WHERE status = 'live' AND trim(coalesce(ios_bundle_id, '')) = '' AND trim(coalesce(android_package_name, '')) = ''")
   await ensureConfiguredTenant()
+  await ensureInitialTenantMemberships()
 }
 
 async function ensureSchemaCompatibility(): Promise<void> {
@@ -184,6 +206,9 @@ async function ensureSchemaCompatibility(): Promise<void> {
     await migrateTenantWideAppStoreConnectTables()
   }
   await ensureColumn('apps', 'apple_app_id', 'text')
+  await ensureColumn('users', 'global_role', "text DEFAULT 'user' NOT NULL")
+  await ensureUserTenantTable()
+  await ensureInitialTenantMemberships()
   await ensureNullableAppStoreConnectEventTables()
 }
 
@@ -231,6 +256,32 @@ ALTER TABLE __new_app_store_connect_audit_events RENAME TO app_store_connect_aud
 DROP TABLE __asc_credential_map;
 PRAGMA foreign_keys=ON;
 `)
+}
+
+async function ensureUserTenantTable(): Promise<void> {
+  await dbClient.execute(`
+CREATE TABLE IF NOT EXISTS user_tenants (
+  user_id text NOT NULL REFERENCES users(id) ON DELETE cascade,
+  tenant_id text NOT NULL REFERENCES tenants(id) ON DELETE cascade,
+  role text NOT NULL,
+  invited_by_user_id text REFERENCES users(id) ON DELETE set null,
+  created_at integer NOT NULL,
+  PRIMARY KEY (user_id, tenant_id)
+)
+`)
+}
+
+async function ensureInitialTenantMemberships(): Promise<void> {
+  const result = await dbClient.execute('SELECT count(*) AS count FROM user_tenants')
+  const countValue = result.rows[0]?.count
+  const count = typeof countValue === 'number' ? countValue : Number(countValue ?? 0)
+  if (count > 0) return
+
+  const env = parseServerEnv(process.env)
+  await dbClient.execute(
+    "INSERT OR IGNORE INTO user_tenants (user_id, tenant_id, role, created_at) SELECT users.id, tenants.id, CASE WHEN users.operator THEN 'admin' ELSE 'developer' END, ? FROM users INNER JOIN tenants ON tenants.id = ? WHERE users.global_role != 'super_admin'",
+    [Date.now(), env.TENANT_ID],
+  )
 }
 
 async function ensureNullableAppStoreConnectEventTables(): Promise<void> {

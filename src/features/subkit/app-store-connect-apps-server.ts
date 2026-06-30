@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { db } from '~/db/client'
 import { ensureDatabaseReady } from '~/db/setup'
 import { getRequiredCurrentUser } from '~/server/auth/current-user'
+import { requireTenantAccess } from '~/server/auth/tenant-access'
 import { appStoreConnectCredentials } from '~/db/schema'
 import {
   getAppStoreConnectResourcePage,
@@ -12,24 +13,22 @@ import {
   type AppStoreConnectResource,
 } from '~/server/app-store-connect/client'
 import { decryptSecret } from '~/server/secrets'
-import { parseServerEnv } from '~/server/env'
 
 import type { AppStoreConnectAccessibleApp } from './types'
-
-const env = parseServerEnv(process.env)
-const activeTenantId = env.TENANT_ID
 
 const listAppsInputSchema = z.object({
   issuerId: z.string().optional(),
   keyId: z.string().optional(),
   privateKey: z.string().optional(),
+  tenantId: z.string().min(1),
 })
 
 export const listAppStoreConnectApps = createServerFn({ method: 'POST' })
   .validator((input: unknown) => listAppsInputSchema.parse(input))
   .handler(async ({ data }): Promise<AppStoreConnectAccessibleApp[]> => {
     await ensureDatabaseReady()
-    await getRequiredCurrentUser()
+    const currentUser = await getRequiredCurrentUser()
+    await requireTenantAccess(currentUser, data.tenantId)
     const credentials = await credentialsFromInputOrStored(data)
     const resources = await getAppStoreConnectResourcePage(credentials, '/v1/apps?limit=50')
     return resources.map(toAccessibleApp)
@@ -43,7 +42,7 @@ async function credentialsFromInputOrStored(data: z.infer<typeof listAppsInputSc
   const [credential] = await db
     .select()
     .from(appStoreConnectCredentials)
-    .where(eq(appStoreConnectCredentials.tenantId, activeTenantId))
+    .where(eq(appStoreConnectCredentials.tenantId, data.tenantId))
     .limit(1)
   if (!credential) throw new Error('Save or paste App Store Connect key details before listing apps')
   if (credential.privateKeyCiphertext == null || credential.privateKeyIv == null || credential.privateKeyAuthTag == null) {

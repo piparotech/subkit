@@ -56,6 +56,7 @@ export async function findOrCreateUserFromClaims(claims: OidcClaims, identityPro
       .update(users)
       .set({
         email: email ?? existing.email,
+        globalRole: existing.globalRole,
         identityProvider,
         lastLoginAt: now,
         name: readDisplayName(claims),
@@ -79,6 +80,7 @@ export async function findOrCreateUserFromClaims(claims: OidcClaims, identityPro
       createdAt: now,
       email,
       id: `usr_${sha256Hex(claims.sub).slice(0, 24)}`,
+      globalRole: 'user',
       identityProvider,
       initials: createInitials(readDisplayName(claims)),
       lastLoginAt: now,
@@ -131,6 +133,7 @@ function normalizeEmail(email: string | undefined): string | undefined {
 function toAuthUser(user: typeof users.$inferSelect): AuthUser {
   return {
     email: user.email ?? undefined,
+    globalRole: user.globalRole,
     id: user.id,
     identityProvider: user.identityProvider ?? undefined,
     initials: user.initials,

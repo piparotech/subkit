@@ -26,7 +26,7 @@ const APP_NAV: NavItem[] = [
   { view: 'subscriptions', label: 'Subscriptions', icon: SubscriptionsIcon },
   { view: 'entitlements', label: 'Entitlements', icon: EntitlementsIcon },
   { view: 'offerings', label: 'Offerings', icon: OfferingsIcon },
-  { view: 'subscribers', label: 'Subscribers', icon: SubscribersIcon },
+  { view: 'subscribers', label: 'App Users', icon: SubscribersIcon },
   { view: 'settings', label: 'Settings', icon: SettingsIcon },
 ]
 
@@ -37,12 +37,15 @@ const viewLabels: Record<View, string> = {
   subscriptions: 'Subscriptions',
   entitlements: 'Entitlements',
   offerings: 'Offerings',
-  subscribers: 'Subscribers',
+  subscribers: 'App Users',
   settings: 'Settings',
 }
 
 interface ShellProps {
+  accessibleTenants: WorkspaceTenant[]
   apps: AppTenant[]
+  canCreateApps: boolean
+  canCreateTenants: boolean
   children: React.ReactNode
   currentApp: AppTenant | null
   currentUser: ConsoleUser
@@ -54,13 +57,18 @@ interface ShellProps {
   onSearchQueryChange: (query: string) => void
   onToggleSwitcher: () => void
   onSelectApp: (id: string) => void
+  onSelectTenant: (id: string) => void
   onGoAllApps: () => void
   onGoView: (view: View) => void
+  onNewTenant: () => void
   onPrimaryAction: () => void
 }
 
 export function ConsoleShell({
+  accessibleTenants,
   apps,
+  canCreateApps,
+  canCreateTenants,
   children,
   currentApp,
   currentUser,
@@ -71,12 +79,14 @@ export function ConsoleShell({
   onSelectApp,
   onGoAllApps,
   onGoView,
+  onNewTenant,
   onPrimaryAction,
   onSearchQueryChange,
+  onSelectTenant,
   searchQuery,
   subscriptionsCount,
 }: ShellProps) {
-  const showPrimary = view === 'apps' || (view === 'subscriptions' && currentApp != null)
+  const showPrimary = (view === 'apps' && canCreateApps) || (view === 'subscriptions' && currentApp != null)
   const primaryLabel = view === 'apps' ? 'New App' : 'New Subscription'
 
   return (
@@ -95,7 +105,17 @@ export function ConsoleShell({
             </div>
             <ChevronDown aria-hidden className="size-[14px] text-[var(--subkit-faint)]" strokeWidth={1.6} />
           </button>
-          {switcherOpen ? <WorkspaceSwitcher apps={apps} onSelectApp={onSelectApp} onViewAll={onGoAllApps} /> : null}
+          {switcherOpen ? (
+            <WorkspaceSwitcher
+              apps={apps}
+              canCreateTenants={canCreateTenants}
+              onNewTenant={onNewTenant}
+              onSelectApp={onSelectApp}
+              onSelectTenant={onSelectTenant}
+              onViewAll={onGoAllApps}
+              tenants={accessibleTenants}
+            />
+          ) : null}
         </div>
 
         <nav className="flex-1 overflow-y-auto px-[12px] pb-[12px] pt-[4px]">
@@ -145,7 +165,7 @@ export function ConsoleShell({
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[12.5px] font-semibold leading-[1.15]">{currentUser.name}</div>
-            <div className="truncate text-[11px] text-[var(--subkit-faint)]">{currentUser.operator ? 'Operator' : currentUser.organization}</div>
+            <div className="truncate text-[11px] text-[var(--subkit-faint)]">{currentUser.globalRole === 'super_admin' ? 'SuperAdmin' : currentUser.organization}</div>
           </div>
           <a aria-label="Sign out" className="text-[var(--subkit-faint)] hover:text-[var(--subkit-text)]" href="/logout">
             <MoreVertical aria-hidden className="size-[15px]" strokeWidth={1.6} />
@@ -196,19 +216,45 @@ export function ConsoleShell({
 
 function WorkspaceSwitcher({
   apps,
+  canCreateTenants,
+  onNewTenant,
   onSelectApp,
+  onSelectTenant,
   onViewAll,
+  tenants,
 }: {
   apps: AppTenant[]
+  canCreateTenants: boolean
+  onNewTenant: () => void
   onSelectApp: (id: string) => void
+  onSelectTenant: (id: string) => void
   onViewAll: () => void
+  tenants: WorkspaceTenant[]
 }) {
   return (
     <div className="absolute left-[14px] right-[14px] top-[54px] z-40 animate-[subkit-drop-in_140ms_ease] rounded-[12px] border border-[var(--subkit-border-2)] bg-[var(--subkit-panel)] p-[6px] shadow-[0_12px_32px_-8px_rgba(20,20,40,0.18)]">
       <div className="px-[8px] pb-[4px] pt-[6px] text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--subkit-faint)]">
+        Tenants
+      </div>
+      {tenants.map((item) => (
+        <button
+          className="flex w-full cursor-pointer items-center gap-[8px] rounded-[8px] px-[8px] py-[6px] text-left hover:bg-[var(--subkit-panel-2)]"
+          key={item.id}
+          onClick={() => onSelectTenant(item.id)}
+          type="button"
+        >
+          <MiniAppAvatar color={item.color} initials={item.initials} />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[12.5px] font-semibold">{item.name}</div>
+            <div className="truncate text-[10.5px] text-[var(--subkit-faint)]">{item.role === 'super_admin' ? 'SuperAdmin access' : item.role}</div>
+          </div>
+        </button>
+      ))}
+      <div className="mx-[4px] my-[5px] h-px bg-[var(--subkit-border)]" />
+      <div className="px-[8px] pb-[4px] pt-[4px] text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--subkit-faint)]">
         Switch app
       </div>
-      {apps.map((app) => (
+      {apps.slice(0, 8).map((app) => (
         <button
           className="flex w-full cursor-pointer items-center gap-[9px] rounded-[8px] px-[8px] py-[7px] text-left hover:bg-[var(--subkit-panel-2)]"
           key={app.id}
@@ -216,7 +262,10 @@ function WorkspaceSwitcher({
           type="button"
         >
           <AppAvatar app={app} size="sm" />
-          <span className="flex-1 text-[13px] font-medium">{app.name}</span>
+          <span className="min-w-0 flex-1 text-[13px] font-medium">
+            <span className="block truncate">{app.name}</span>
+            <span className="block truncate text-[10.5px] font-normal text-[var(--subkit-faint)]">{app.tenantId}</span>
+          </span>
         </button>
       ))}
       <div className="mx-[4px] my-[5px] h-px bg-[var(--subkit-border)]" />
@@ -227,6 +276,15 @@ function WorkspaceSwitcher({
       >
         View all apps
       </button>
+      {canCreateTenants ? (
+        <button
+          className="mt-[2px] flex w-full cursor-pointer items-center gap-[9px] rounded-[8px] px-[8px] py-[7px] text-[13px] font-semibold text-[var(--subkit-accent-d)] hover:bg-[var(--subkit-accent-soft)]"
+          onClick={onNewTenant}
+          type="button"
+        >
+          Create tenant
+        </button>
+      ) : null}
     </div>
   )
 }

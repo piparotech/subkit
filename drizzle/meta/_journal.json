@@ -29,6 +29,13 @@
       "when": 1782811000514,
       "tag": "0003_flaky_annihilus",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1782864000000,
+      "tag": "0004_tenant_rbac",
+      "breakpoints": true
     }
   ]
 }

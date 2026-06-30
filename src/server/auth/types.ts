@@ -1,7 +1,10 @@
 export type AuthMethod = 'microsoft' | 'email'
 
+export type GlobalRole = 'user' | 'super_admin'
+
 export type AuthUser = {
   email?: string
+  globalRole: GlobalRole
   id: string
   identityProvider?: string
   initials: string

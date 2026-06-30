@@ -12,9 +12,13 @@ export type Platform = 'iOS' | 'Android'
 export type StatusTone = 'success' | 'warning' | 'muted' | 'destructive'
 export type AppStatusValue = 'setup' | 'live' | 'beta' | 'inactive'
 export type Store = 'App Store' | 'Play Store'
+export type GlobalRole = 'user' | 'super_admin'
+export type TenantRole = 'admin' | 'developer'
 
 export interface ConsoleUser {
+  canCreateTenants: boolean
   email?: string
+  globalRole: GlobalRole
   id: string
   initials: string
   name: string
@@ -23,11 +27,21 @@ export interface ConsoleUser {
 }
 
 export interface WorkspaceTenant {
-  id: string
-  name: string
-  initials: string
   color: string
+  id: string
+  initials: string
+  name: string
+  role: TenantRole | 'super_admin'
 }
+
+export interface TenantDraft {
+  color: string
+  id: string
+  initials: string
+  name: string
+}
+
+export type TenantDraftField = keyof TenantDraft
 
 export interface AppTenant {
   id: string
@@ -176,6 +190,19 @@ export interface AppStoreConnectAuditEventSummary {
   id: string
 }
 
+export interface RuntimeSyncEventSummary {
+  appId: string
+  created: number
+  createdAt: string
+  detail: string
+  failed: number
+  id: string
+  received: number
+  source: string
+  status: 'imported' | 'failed'
+  updated: number
+}
+
 export interface AppStoreConnectConnection {
   auditEvents: AppStoreConnectAuditEventSummary[]
   capabilities: AppStoreConnectCapability[]
@@ -255,12 +282,15 @@ export interface AppStoreConnectMonitorSnapshot {
 }
 
 export interface ConsoleData {
+  accessibleTenants: WorkspaceTenant[]
   appStoreConnect: AppStoreConnectConnection | null
+  appStoreConnectConnections: AppStoreConnectConnection[]
   apps: AppTenant[]
   currentUser: ConsoleUser
   dashboards: DashboardSummary[]
   entitlements: Entitlement[]
   offerings: Offering[]
+  runtimeSyncEvents: RuntimeSyncEventSummary[]
   stats: ConsoleStats
   subscribers: Subscriber[]
   subscriptions: SubscriptionProduct[]
@@ -289,5 +319,6 @@ export type EditableSubscriptionTextField =
 export type PanelState =
   | { kind: 'closed' }
   | { kind: 'newApp' }
+  | { kind: 'newTenant' }
   | { kind: 'subscription'; mode: 'new' | 'edit'; originalIdentifier: string | null; subscription: SubscriptionProduct }
   | { kind: 'subscriber'; subscriber: Subscriber }

@@ -24,15 +24,19 @@ import type {
   AppStoreConnectProductPreview,
   AppStoreConnectProductSyncAction,
   AppTenant,
+  RuntimeSyncEventSummary,
   StatusTone,
+  WorkspaceTenant,
 } from './types'
 
 export function WorkspaceSettingsView({
   connection,
   onRefreshConsoleData,
+  tenant,
 }: {
   connection: AppStoreConnectConnection | null
   onRefreshConsoleData: () => void
+  tenant: WorkspaceTenant
 }) {
   const [draft, setDraft] = React.useState<AppStoreConnectCredentialDraft>(() => credentialDraftFromConnection(connection))
   const [busy, setBusy] = React.useState<string | null>(null)
@@ -41,6 +45,7 @@ export function WorkspaceSettingsView({
   const [preview, setPreview] = React.useState<AppStoreConnectProductPreview[]>([])
   const [monitoring, setMonitoring] = React.useState<AppStoreConnectMonitorSnapshot | null>(null)
   const [reportDate, setReportDate] = React.useState('')
+  const canManageTenant = tenant.role === 'admin' || tenant.role === 'super_admin'
 
   React.useEffect(() => {
     setDraft(credentialDraftFromConnection(connection))
@@ -68,14 +73,14 @@ export function WorkspaceSettingsView({
 
   const saveCredential = () => {
     runTask('save', async () => {
-      await saveAppStoreConnectCredential({ data: draft })
+      await saveAppStoreConnectCredential({ data: { ...draft, tenantId: tenant.id } })
       return 'App Store Connect credential saved and validated.'
     })
   }
 
   const listAccessibleApps = () => {
     runTask('list-apps', async () => {
-      const result = await listAppStoreConnectApps({ data: connection?.hasPrivateKey ? {} : draft })
+      const result = await listAppStoreConnectApps({ data: connection?.hasPrivateKey ? { tenantId: tenant.id } : { ...draft, tenantId: tenant.id } })
       setAccessibleApps(result)
       return `${result.length} App Store Connect apps found for this key.`
     })
@@ -83,14 +88,14 @@ export function WorkspaceSettingsView({
 
   const validateCredential = () => {
     runTask('validate', async () => {
-      await validateAppStoreConnectCredential({ data: {} })
+      await validateAppStoreConnectCredential({ data: { tenantId: tenant.id } })
       return 'Capability preflight finished.'
     })
   }
 
   const deleteCredential = () => {
     runTask('delete', async () => {
-      await deleteAppStoreConnectCredential({ data: {} })
+      await deleteAppStoreConnectCredential({ data: { tenantId: tenant.id } })
       setPreview([])
       return 'Local encrypted private key material deleted. Revoke the key in App Store Connect too.'
     })
@@ -111,10 +116,10 @@ export function WorkspaceSettingsView({
         >
           <CredentialForm draft={draft} hasStoredKey={connection?.hasPrivateKey ?? false} onChange={updateDraft} />
           <div className="flex flex-wrap gap-[8px]">
-            <ActionButton disabled={busy != null} label={connection == null ? 'Save & validate key' : 'Save / rotate key'} onPress={saveCredential} tone="primary" />
+            <ActionButton disabled={busy != null || !canManageTenant} label={connection == null ? 'Save & validate key' : 'Save / rotate key'} onPress={saveCredential} tone="primary" />
             <ActionButton disabled={busy != null} label="List accessible apps" onPress={listAccessibleApps} />
-            <ActionButton disabled={busy != null || connection == null} label="Run preflight" onPress={validateCredential} />
-            <ActionButton disabled={busy != null || connection == null} label="Delete tenant key" onPress={deleteCredential} tone="danger" />
+            <ActionButton disabled={busy != null || connection == null || !canManageTenant} label="Run preflight" onPress={validateCredential} />
+            <ActionButton disabled={busy != null || connection == null || !canManageTenant} label="Delete tenant key" onPress={deleteCredential} tone="danger" />
           </div>
           {feedback != null ? <div className="rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]">{feedback}</div> : null}
           {accessibleApps.length > 0 ? <AccessibleAppList apps={accessibleApps} /> : null}
@@ -144,11 +149,13 @@ export function AppSettingsView({
   connection,
   onAppDeleted,
   onRefreshConsoleData,
+  runtimeSyncEvents,
 }: {
   app: AppTenant
   connection: AppStoreConnectConnection | null
   onAppDeleted: (id: string) => void
   onRefreshConsoleData: () => void
+  runtimeSyncEvents: RuntimeSyncEventSummary[]
 }) {
   const [busy, setBusy] = React.useState<string | null>(null)
   const [feedback, setFeedback] = React.useState<string | null>(null)
@@ -270,6 +277,13 @@ export function AppSettingsView({
           <ActionButton disabled={busy != null || connection == null || connection.status === 'deleted'} label="Inspect monitoring" onPress={inspectMonitoring} />
         </div>
         {monitoring == null ? <EmptySettingsText>No monitoring snapshot yet. This is read-only App Store Connect inspection.</EmptySettingsText> : <MonitoringSnapshot snapshot={monitoring} />}
+      </SettingsCard>
+
+      <SettingsCard description="Receive subscriber state from your app backend through the runtime API. This updates local SubKit subscribers and derived app counters only." title="Runtime subscriber sync">
+        <EmptySettingsText>
+          POST subscriber snapshots to <span className="font-mono">/api/runtime/subscribers</span> with the runtime bearer token. Expected fields: <span className="font-mono">appId</span>, <span className="font-mono">source</span>, and <span className="font-mono">subscribers[]</span>.
+        </EmptySettingsText>
+        <RuntimeSyncHistory appId={app.id} events={runtimeSyncEvents} />
       </SettingsCard>
 
       <SettingsCard
@@ -441,6 +455,28 @@ function SalesReportHistory({ connection }: { connection: AppStoreConnectConnect
           <StatusLabel label={report.status} tone={report.status === 'imported' ? 'success' : 'destructive'} />
           <span className="font-mono text-[var(--subkit-dim)]">{report.rowCount} rows</span>
           <span className="truncate text-[var(--subkit-faint)]">{report.errorDetail ?? report.createdAt}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function RuntimeSyncHistory({ appId, events }: { appId: string; events: RuntimeSyncEventSummary[] }) {
+  const appEvents = events.filter((event) => event.appId === appId)
+  if (appEvents.length === 0) {
+    return <EmptySettingsText>No runtime subscriber sync has been received for this app yet.</EmptySettingsText>
+  }
+
+  return (
+    <div className="rounded-[11px] border border-[var(--subkit-border)]">
+      {appEvents.map((event) => (
+        <div className="grid grid-cols-[0.85fr_0.8fr_0.8fr_1.4fr] gap-[10px] border-b border-[var(--subkit-border)] px-[12px] py-[10px] text-[12px] last:border-b-0 max-md:grid-cols-1" key={event.id}>
+          <span className="font-mono text-[var(--subkit-faint)]">{event.createdAt}</span>
+          <StatusLabel label={event.status} tone={event.status === 'imported' ? 'success' : 'destructive'} />
+          <span className="font-mono text-[var(--subkit-dim)]">
+            {event.created} new · {event.updated} updated
+          </span>
+          <span className="truncate text-[var(--subkit-dim)]">{event.detail}</span>
         </div>
       ))}
     </div>
