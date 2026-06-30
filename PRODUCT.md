@@ -10,7 +10,7 @@ Subscription, growth, and release operators responsible for mobile apps with App
 
 ## Product Purpose
 
-piparo subscription management centralizes app, subscription product, entitlement, offering, subscriber, and store-integration state. Success means teams can connect a store account, map apps, compare product catalogues, import subscription signals, and spot operational issues without switching between App Store Connect, Play Console, spreadsheets, and internal tools.
+SubKit centralizes app, subscription product, entitlement, offering, subscriber, and store-integration state. Success means teams can connect a store account, map apps, compare product catalogues, import subscription signals, and spot operational issues without switching between App Store Connect, Play Console, spreadsheets, and internal tools.
 
 ## Brand Personality
 

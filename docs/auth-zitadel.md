@@ -1,6 +1,6 @@
 # ZITADEL authentication
 
-The subscription console always uses ZITADEL OIDC. There is no dev-login or auth bypass.
+SubKit always uses ZITADEL OIDC. There is no dev-login or auth bypass.
 
 ## Target login behavior
 
@@ -14,14 +14,14 @@ Local development reads `.env.development` automatically. The file is git-ignore
 Required keys:
 
 ```sh
-DATABASE_URL=file:subscription-console.sqlite
+DATABASE_URL=file:subkit.sqlite
 AUTH_BASE_URL=http://127.0.0.1:3010
 AUTH_ISSUER=https://auth.piparo.tech
 OIDC_CLIENT_ID=...
 OIDC_CLIENT_SECRET=...
 OIDC_DISCOVERY_URL=https://auth.piparo.tech/.well-known/openid-configuration
 OIDC_REDIRECT_PATH=/auth/callback
-SESSION_COOKIE_NAME=piparo_subs_session
+SESSION_COOKIE_NAME=subkit_session
 SESSION_SECRET=...
 TENANT_ID=piparo
 TENANT_NAME=piparo.tech
