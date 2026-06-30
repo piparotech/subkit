@@ -5,17 +5,17 @@ import * as React from 'react'
 import type { AppTenant, StatusTone } from './types'
 
 const toneText: Record<StatusTone, string> = {
-  success: 'text-[var(--subs-green)]',
-  warning: 'text-[var(--subs-amber)]',
-  muted: 'text-[var(--subs-faint)]',
-  destructive: 'text-[var(--subs-red)]',
+  success: 'text-[var(--subkit-green)]',
+  warning: 'text-[var(--subkit-amber)]',
+  muted: 'text-[var(--subkit-faint)]',
+  destructive: 'text-[var(--subkit-red)]',
 }
 
 const toneBg: Record<StatusTone, string> = {
-  success: 'bg-[var(--subs-green)]',
-  warning: 'bg-[var(--subs-amber)]',
-  muted: 'bg-[var(--subs-faint)]',
-  destructive: 'bg-[var(--subs-red)]',
+  success: 'bg-[var(--subkit-green)]',
+  warning: 'bg-[var(--subkit-amber)]',
+  muted: 'bg-[var(--subkit-faint)]',
+  destructive: 'bg-[var(--subkit-red)]',
 }
 
 const tagIntent: Record<StatusTone, 'neutral' | 'success' | 'warning' | 'destructive'> = {
@@ -49,7 +49,7 @@ export function StatusLabel({ label, tone }: { label: string; tone: StatusTone }
 export function SoftTag({ children, tone = 'muted' }: { children: React.ReactNode; tone?: StatusTone }) {
   return (
     <PUITag
-      className="border border-[var(--subs-border)] font-mono"
+      className="border border-[var(--subkit-border)] font-mono"
       emphasis="soft"
       intent={tagIntent[tone]}
       label={children}
@@ -92,15 +92,15 @@ export function ViewTitle({ title, description }: { title: string; description: 
       <PUIText as="h1" className="m-0 tracking-[-0.01em] text-[22px] font-bold" variant="title2">
         {title}
       </PUIText>
-      <p className="mt-[5px] mb-0 text-[13.5px] text-[var(--subs-dim)]">{description}</p>
+      <p className="mt-[5px] mb-0 text-[13.5px] text-[var(--subkit-dim)]">{description}</p>
     </div>
   )
 }
 
 export function MetricCard({ label, value, delta, tone }: { label: string; value: string; delta?: string; tone?: StatusTone }) {
   return (
-    <div className="rounded-[12px] border border-[var(--subs-border)] bg-[var(--subs-panel)] px-[18px] py-[16px]">
-      <div className="text-[12.5px] text-[var(--subs-dim)]">{label}</div>
+    <div className="rounded-[12px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[18px] py-[16px]">
+      <div className="text-[12.5px] text-[var(--subkit-dim)]">{label}</div>
       <div className="mt-[7px] flex items-baseline gap-[9px]">
         <div className="font-mono text-[23px] font-bold">{value}</div>
         {delta != null && tone != null ? <div className={cn('text-[12.5px] font-semibold', toneText[tone])}>{delta}</div> : null}
@@ -110,7 +110,7 @@ export function MetricCard({ label, value, delta, tone }: { label: string; value
 }
 
 export function RowChevron() {
-  return <ChevronRight aria-hidden className="size-[18px] text-[var(--subs-faint)]" strokeWidth={1.6} />
+  return <ChevronRight aria-hidden className="size-[18px] text-[var(--subkit-faint)]" strokeWidth={1.6} />
 }
 
 export function HeaderButton({ children, onPress }: { children: React.ReactNode; onPress: () => void }) {
@@ -126,7 +126,7 @@ export function HeaderButton({ children, onPress }: { children: React.ReactNode;
 
 export function GhostBox({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('rounded-[11px] border border-[var(--subs-border)] p-[13px]', className)}>
+    <div className={cn('rounded-[11px] border border-[var(--subkit-border)] p-[13px]', className)}>
       {children}
     </div>
   )

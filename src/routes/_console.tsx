@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 
-import { getAuthStatus, getSubscriptionConsoleData } from '~/features/subscription-console/server'
+import { getAuthStatus, getSubKitConsoleData } from '~/features/subkit/server'
 
 export const Route = createFileRoute('/_console')({
   beforeLoad: async () => {
@@ -13,5 +13,5 @@ export const Route = createFileRoute('/_console')({
     }
   },
   component: Outlet,
-  loader: async () => getSubscriptionConsoleData(),
+  loader: async () => getSubKitConsoleData(),
 })

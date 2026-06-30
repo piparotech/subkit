@@ -14,7 +14,7 @@ export const Route = createRootRoute({
         name: 'description',
         content: 'Multi-tenant subscription management console for app stores and subscriber lifecycle operations.',
       },
-      { title: 'Piparo Subscriptions' },
+      { title: 'SubKit' },
     ],
     links: [
       { rel: 'preconnect', href: 'https://fonts.googleapis.com' },

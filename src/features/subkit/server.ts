@@ -201,7 +201,7 @@ export const getAuthStatus = createServerFn({ method: 'GET' }).handler(async () 
   return { authenticated: Boolean(currentUser) }
 })
 
-export const getSubscriptionConsoleData = createServerFn({ method: 'GET' }).handler(async (): Promise<ConsoleData> => {
+export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(async (): Promise<ConsoleData> => {
   await ensureDatabaseReady()
   const currentUser = await getCurrentConsoleUser()
 

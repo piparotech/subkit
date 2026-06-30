@@ -1,13 +1,11 @@
 import { PUIField, PUIInput, cn, type PUIFieldRenderProps } from '@piparo/cn-web'
 import { Layers2 } from 'lucide-react'
 
-import { CredentialForm } from './AppStoreConnectCredentialForm'
 import type {
   AppDraft,
   AppDraftField,
   AppStoreConnectAccessibleApp,
   AppStoreConnectConnection,
-  AppStoreConnectCredentialDraft,
   EditableSubscriptionTextField,
   SubscriptionProduct,
 } from './types'
@@ -42,7 +40,7 @@ export function ProductFormFields({
           />
         )}
       </PUIField>
-      <div className="mt-[6px] text-[12px] font-semibold uppercase tracking-[0.04em] text-[var(--subs-faint)]">Store mapping</div>
+      <div className="mt-[6px] text-[12px] font-semibold uppercase tracking-[0.04em] text-[var(--subkit-faint)]">Store mapping</div>
       <StoreMapping
         onPriceChange={(value) => onTextChange('price', value)}
         onValueChange={(value) => onTextChange('iosId', value)}
@@ -94,9 +92,9 @@ function StoreMapping({
   value: string
 }) {
   return (
-    <div className="rounded-[12px] border border-[var(--subs-border)] p-[14px]">
+    <div className="rounded-[12px] border border-[var(--subkit-border)] p-[14px]">
       <div className="mb-[12px] flex items-center gap-[8px]">
-        <span className="rounded-[5px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[7px] py-[2px] text-[11px] font-bold text-[var(--subs-dim)]">
+        <span className="rounded-[5px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[7px] py-[2px] text-[11px] font-bold text-[var(--subkit-dim)]">
           {platform}
         </span>
         <span className="text-[13px] font-semibold">{store}</span>
@@ -114,56 +112,54 @@ function StoreMapping({
 
 export function NewAppForm({
   apps,
+  appsLoaded,
   connection,
-  credentialDraft,
   draft,
   error,
   loading,
   onChange,
-  onCredentialChange,
-  onLoadApps,
 }: {
   apps: AppStoreConnectAccessibleApp[]
+  appsLoaded: boolean
   connection: AppStoreConnectConnection | null
-  credentialDraft: AppStoreConnectCredentialDraft
   draft: AppDraft
   error: string | null
   loading: boolean
   onChange: (field: AppDraftField, value: string) => void
-  onCredentialChange: (field: keyof AppStoreConnectCredentialDraft, value: string) => void
-  onLoadApps: () => void
 }) {
   const needsTenantKey = connection == null || !connection.hasPrivateKey
   return (
     <div className="space-y-[14px]">
-      <div className="rounded-[11px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[12px] py-[10px] text-[12.5px] leading-[1.45] text-[var(--subs-dim)]">
-        Start iOS-only: {needsTenantKey ? 'upload the tenant App Store Connect API key first, then select an app.' : 'load apps through the tenant-wide App Store Connect key, then select the app to create locally.'}
+      <div className="rounded-[11px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[12px] py-[10px] text-[12.5px] leading-[1.45] text-[var(--subkit-dim)]">
+        Start iOS-only: apps are synced automatically from the workspace App Store Connect key when this dialog opens.
       </div>
-      {needsTenantKey ? (
-        <div className="rounded-[12px] border border-[var(--subs-border)] bg-[var(--subs-panel)] p-[12px]">
-          <CredentialForm draft={credentialDraft} hasStoredKey={connection?.hasPrivateKey ?? false} onChange={onCredentialChange} />
+      {loading ? (
+        <div className="rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]">
+          Syncing App Store Connect apps…
         </div>
       ) : null}
-      <button
-        className="min-h-[38px] w-full cursor-pointer rounded-[9px] border border-[var(--subs-border)] bg-[var(--subs-panel)] px-[13px] py-[8px] text-[12.5px] font-semibold text-[var(--subs-text)] transition-colors duration-fast hover:bg-[var(--subs-panel-2)] disabled:cursor-not-allowed disabled:opacity-50"
-        disabled={loading || (needsTenantKey && !canSaveTenantKey(credentialDraft))}
-        onClick={onLoadApps}
-        type="button"
-      >
-        {loading ? 'Loading App Store Connect apps…' : needsTenantKey ? 'Save key & load apps' : 'Load App Store Connect apps'}
-      </button>
+      {needsTenantKey ? (
+        <div className="rounded-[10px] border border-[color-mix(in_oklch,var(--subkit-amber)_40%,var(--subkit-border))] bg-[color-mix(in_oklch,var(--subkit-amber)_9%,white)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]">
+          Configure the workspace App Store Connect key in Workspace Settings before creating an iOS app.
+        </div>
+      ) : null}
       {error != null ? (
-        <div className="rounded-[10px] border border-[color-mix(in_oklch,var(--subs-red)_30%,var(--subs-border))] bg-[color-mix(in_oklch,var(--subs-red)_7%,white)] px-[12px] py-[10px] text-[12.5px] text-[var(--subs-red)]">
+        <div className="rounded-[10px] border border-[color-mix(in_oklch,var(--subkit-red)_30%,var(--subkit-border))] bg-[color-mix(in_oklch,var(--subkit-red)_7%,white)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-red)]">
           {error}
         </div>
       ) : null}
+      {!loading && appsLoaded && apps.length === 0 && error == null && !needsTenantKey ? (
+        <div className="rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]">
+          No App Store Connect apps were returned for this workspace key.
+        </div>
+      ) : null}
       {apps.length > 0 ? (
-        <div className="max-h-[300px] overflow-auto rounded-[11px] border border-[var(--subs-border)]">
+        <div className="max-h-[300px] overflow-auto rounded-[11px] border border-[var(--subkit-border)]">
           {apps.map((app) => (
             <button
               className={cn(
-                'grid w-full cursor-pointer grid-cols-[1fr_auto] gap-[8px] border-b border-[var(--subs-border)] px-[12px] py-[10px] text-left last:border-b-0 hover:bg-[var(--subs-panel-2)]',
-                draft.appleAppId === app.appleAppId && 'bg-[var(--subs-accent-soft)]',
+                'grid w-full cursor-pointer grid-cols-[1fr_auto] gap-[8px] border-b border-[var(--subkit-border)] px-[12px] py-[10px] text-left last:border-b-0 hover:bg-[var(--subkit-panel-2)]',
+                draft.appleAppId === app.appleAppId && 'bg-[var(--subkit-accent-soft)]',
               )}
               key={app.appleAppId}
               onClick={() => {
@@ -175,16 +171,16 @@ export function NewAppForm({
               type="button"
             >
               <span className="min-w-0">
-                <span className="block truncate text-[13px] font-semibold text-[var(--subs-text)]">{app.name}</span>
-                <span className="mt-[2px] block truncate font-mono text-[11.5px] text-[var(--subs-faint)]">{app.bundleId || 'No bundle ID returned'}</span>
+                <span className="block truncate text-[13px] font-semibold text-[var(--subkit-text)]">{app.name}</span>
+                <span className="mt-[2px] block truncate font-mono text-[11.5px] text-[var(--subkit-faint)]">{app.bundleId || 'No bundle ID returned'}</span>
               </span>
-              <span className="font-mono text-[11px] text-[var(--subs-faint)]">{app.appleAppId}</span>
+              <span className="font-mono text-[11px] text-[var(--subkit-faint)]">{app.appleAppId}</span>
             </button>
           ))}
         </div>
       ) : null}
       {draft.appleAppId !== '' ? (
-        <div className="rounded-[11px] border border-[var(--subs-accent-line)] bg-[var(--subs-accent-soft)] px-[12px] py-[10px] text-[12.5px] text-[var(--subs-accent-d)]">
+        <div className="rounded-[11px] border border-[var(--subkit-accent-line)] bg-[var(--subkit-accent-soft)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-accent-d)]">
           Selected <strong>{draft.name}</strong> · <span className="font-mono">{draft.bundleId || draft.appleAppId}</span>
         </div>
       ) : null}
@@ -192,20 +188,16 @@ export function NewAppForm({
   )
 }
 
-function canSaveTenantKey(draft: AppStoreConnectCredentialDraft): boolean {
-  return draft.keyId.trim() !== '' && draft.issuerId.trim() !== '' && draft.privateKey.trim() !== ''
-}
-
 export function TrialToggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
   return (
-    <div className="flex items-center justify-between rounded-[11px] border border-[var(--subs-border)] px-[14px] py-[13px]">
+    <div className="flex items-center justify-between rounded-[11px] border border-[var(--subkit-border)] px-[14px] py-[13px]">
       <div>
         <div className="text-[13px] font-semibold">Free trial</div>
-        <div className="text-[11.5px] text-[var(--subs-faint)]">{enabled ? '7-day free trial' : 'Off'}</div>
+        <div className="text-[11.5px] text-[var(--subkit-faint)]">{enabled ? '7-day free trial' : 'Off'}</div>
       </div>
       <button
         aria-checked={enabled}
-        className={cn('relative h-[22px] w-[38px] cursor-pointer rounded-full transition-colors duration-fast', enabled ? 'bg-[var(--subs-accent)]' : 'bg-[var(--subs-border-2)]')}
+        className={cn('relative h-[22px] w-[38px] cursor-pointer rounded-full transition-colors duration-fast', enabled ? 'bg-[var(--subkit-accent)]' : 'bg-[var(--subkit-border-2)]')}
         onClick={onToggle}
         role="switch"
         type="button"

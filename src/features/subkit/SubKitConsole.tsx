@@ -15,13 +15,11 @@ import { newSubscription } from './data'
 import { Panels } from './Panels'
 import { appRouteParams, createAppFromDraft, filterApps, filterSubscribers, filterSubscriptions } from './store'
 import { listAppStoreConnectApps } from './app-store-connect-apps-server'
-import { saveAppStoreConnectCredential } from './app-store-connect-server'
 import { createAppRecord, upsertSubscriptionRecord } from './server'
 import type {
   AppDraft,
   AppDraftField,
   AppStoreConnectAccessibleApp,
-  AppStoreConnectCredentialDraft,
   AppTenant,
   ConsoleData,
   EditableSubscriptionTextField,
@@ -34,9 +32,8 @@ import type {
 } from './types'
 
 const emptyAppDraft: AppDraft = { appleAppId: '', bundleId: '', name: '', sku: '' }
-const emptyCredentialDraft: AppStoreConnectCredentialDraft = { issuerId: '', keyId: '', privateKey: '', vendorNumber: '' }
 
-export function SubscriptionConsole({ currentAppId, view }: { currentAppId: string | null; view: View }) {
+export function SubKitConsole({ currentAppId, view }: { currentAppId: string | null; view: View }) {
   const consoleData = useLoaderData({ from: '/_console' })
   const router = useRouter()
   const navigate = useNavigate()
@@ -51,7 +48,7 @@ export function SubscriptionConsole({ currentAppId, view }: { currentAppId: stri
   const [searchQuery, setSearchQuery] = React.useState('')
   const [appDraft, setAppDraft] = React.useState<AppDraft>(emptyAppDraft)
   const [appStoreApps, setAppStoreApps] = React.useState<AppStoreConnectAccessibleApp[]>([])
-  const [appStoreCredentialDraft, setAppStoreCredentialDraft] = React.useState<AppStoreConnectCredentialDraft>(() => credentialDraftFromConnection(consoleData.appStoreConnect))
+  const [appStoreAppsLoaded, setAppStoreAppsLoaded] = React.useState(false)
   const [appStoreLoadError, setAppStoreLoadError] = React.useState<string | null>(null)
   const [loadingAppStoreApps, setLoadingAppStoreApps] = React.useState(false)
   const [panel, setPanel] = React.useState<PanelState>({ kind: 'closed' })
@@ -62,7 +59,6 @@ export function SubscriptionConsole({ currentAppId, view }: { currentAppId: stri
     setEntitlements(consoleData.entitlements)
     setOfferings(consoleData.offerings)
     setSubscribers(consoleData.subscribers)
-    setAppStoreCredentialDraft(credentialDraftFromConnection(consoleData.appStoreConnect))
   }, [consoleData])
 
   React.useEffect(() => {
@@ -100,7 +96,7 @@ export function SubscriptionConsole({ currentAppId, view }: { currentAppId: stri
   )
 
   const reportNavigationError = (error: unknown) => {
-    console.error('Failed to navigate subscription console', error)
+    console.error('Failed to navigate SubKit', error)
   }
 
   const selectApp = (id: string) => {
@@ -156,6 +152,7 @@ export function SubscriptionConsole({ currentAppId, view }: { currentAppId: stri
     if (view === 'apps') {
       setAppDraft(emptyAppDraft)
       setAppStoreApps([])
+      setAppStoreAppsLoaded(false)
       setAppStoreLoadError(null)
       setPanel({ kind: 'newApp' })
       return
@@ -217,7 +214,7 @@ export function SubscriptionConsole({ currentAppId, view }: { currentAppId: stri
 
   const refreshConsoleData = () => {
     router.invalidate().catch((error: unknown) => {
-      console.error('Failed to refresh subscription console data', error)
+      console.error('Failed to refresh SubKit data', error)
     })
   }
 
@@ -260,29 +257,35 @@ export function SubscriptionConsole({ currentAppId, view }: { currentAppId: stri
     setAppDraft((draft) => ({ ...draft, [field]: value }))
   }
 
-  const updateAppStoreCredentialDraft = (field: keyof AppStoreConnectCredentialDraft, value: string) => {
-    setAppStoreCredentialDraft((draft) => ({ ...draft, [field]: value }))
-  }
+  const loadAppStoreApps = React.useCallback(() => {
+    if (loadingAppStoreApps) return
 
-  const loadAppStoreApps = () => {
+    if (consoleData.appStoreConnect?.hasPrivateKey !== true) {
+      setAppStoreApps([])
+      setAppStoreLoadError('Configure the App Store Connect key in Workspace Settings before creating an iOS app.')
+      setAppStoreAppsLoaded(true)
+      return
+    }
+
     setLoadingAppStoreApps(true)
     setAppStoreLoadError(null)
-    const needsSave = consoleData.appStoreConnect == null || !consoleData.appStoreConnect.hasPrivateKey
-    const saveIfNeeded = needsSave
-      ? saveAppStoreConnectCredential({ data: appStoreCredentialDraft }).then(() => undefined)
-      : Promise.resolve()
-
-    saveIfNeeded
-      .then(() => listAppStoreConnectApps({ data: needsSave ? appStoreCredentialDraft : {} }))
+    listAppStoreConnectApps({ data: {} })
       .then((items) => {
         setAppStoreApps(items)
-        refreshConsoleData()
+        setAppStoreAppsLoaded(true)
       })
       .catch((error: unknown) => {
         setAppStoreLoadError(error instanceof Error ? error.message : 'Failed to load App Store Connect apps')
+        setAppStoreAppsLoaded(true)
       })
       .finally(() => setLoadingAppStoreApps(false))
-  }
+  }, [consoleData.appStoreConnect?.hasPrivateKey, loadingAppStoreApps])
+
+  React.useEffect(() => {
+    if (panel.kind !== 'newApp') return
+    if (appStoreAppsLoaded || loadingAppStoreApps) return
+    loadAppStoreApps()
+  }, [appStoreAppsLoaded, loadAppStoreApps, loadingAppStoreApps, panel.kind])
 
   const createApp = () => {
     const app = createAppFromDraft(appDraft, apps.length, tenant.id)
@@ -353,15 +356,13 @@ export function SubscriptionConsole({ currentAppId, view }: { currentAppId: stri
       <Panels
         appDraft={appDraft}
         appStoreApps={appStoreApps}
+        appStoreAppsLoaded={appStoreAppsLoaded}
         appStoreConnection={consoleData.appStoreConnect}
-        appStoreCredentialDraft={appStoreCredentialDraft}
         appStoreLoadError={appStoreLoadError}
         loadingAppStoreApps={loadingAppStoreApps}
         onAppDraftChange={updateAppDraft}
-        onAppStoreCredentialDraftChange={updateAppStoreCredentialDraft}
         onClose={closePanel}
         onCreateApp={createApp}
-        onLoadAppStoreApps={loadAppStoreApps}
         onSaveSubscription={saveSubscription}
         onSubscriptionFieldChange={updateSubscriptionField}
         onSubscriptionTrialToggle={toggleSubscriptionTrial}
@@ -369,12 +370,6 @@ export function SubscriptionConsole({ currentAppId, view }: { currentAppId: stri
       />
     </>
   )
-}
-
-function credentialDraftFromConnection(connection: ConsoleData['appStoreConnect']): AppStoreConnectCredentialDraft {
-  return connection == null
-    ? emptyCredentialDraft
-    : { issuerId: connection.issuerId, keyId: connection.keyId, privateKey: '', vendorNumber: connection.vendorNumber ?? '' }
 }
 
 function ActiveView({
@@ -443,15 +438,15 @@ function ActiveView({
 
 function AppRouteNotFound({ apps, onSelectApp }: { apps: AppTenant[]; onSelectApp: (id: string) => void }) {
   return (
-    <section className="max-w-[760px] animate-[subs-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
-      <div className="rounded-[14px] border border-[var(--subs-border)] bg-[var(--subs-panel)] p-[22px]">
+    <section className="max-w-[760px] animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
+      <div className="rounded-[14px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] p-[22px]">
         <h1 className="m-0 text-[19px] font-bold tracking-[-0.01em]">App route not found</h1>
-        <p className="mt-[8px] mb-0 text-[13.5px] text-[var(--subs-dim)]">The app in the URL is not available in this workspace.</p>
+        <p className="mt-[8px] mb-0 text-[13.5px] text-[var(--subkit-dim)]">The app in the URL is not available in this workspace.</p>
         {apps.length > 0 ? (
           <div className="mt-[16px] flex flex-wrap gap-[8px]">
             {apps.map((app) => (
               <button
-                className="cursor-pointer rounded-[9px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[11px] py-[7px] text-[12.5px] font-semibold text-[var(--subs-text)] hover:bg-[var(--subs-accent-soft)]"
+                className="cursor-pointer rounded-[9px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[11px] py-[7px] text-[12.5px] font-semibold text-[var(--subkit-text)] hover:bg-[var(--subkit-accent-soft)]"
                 key={app.id}
                 onClick={() => onSelectApp(app.id)}
                 type="button"

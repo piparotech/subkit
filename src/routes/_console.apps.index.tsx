@@ -1,11 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { SubscriptionConsole } from '~/features/subscription-console/SubscriptionConsole'
+import { SubKitConsole } from '~/features/subkit/SubKitConsole'
 
 export const Route = createFileRoute('/_console/apps/')({
   component: AppsRoute,
 })
 
 function AppsRoute() {
-  return <SubscriptionConsole currentAppId={null} view="apps" />
+  return <SubKitConsole currentAppId={null} view="apps" />
 }

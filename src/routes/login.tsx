@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { getAuthStatus } from '~/features/subscription-console/server'
+import { getAuthStatus } from '~/features/subkit/server'
 
 interface LoginSearch {
   reason?: string
@@ -18,19 +18,19 @@ function LoginPage() {
   const reason = loginReasonText(search.reason)
 
   return (
-    <main className="subs-login-shell">
-      <section className="subs-login-card" aria-labelledby="login-title">
-        <div className="subs-login-orb" />
-        <div className="subs-login-kicker">Piparo Subscriptions</div>
+    <main className="subkit-login-shell">
+      <section className="subkit-login-card" aria-labelledby="login-title">
+        <div className="subkit-login-orb" />
+        <div className="subkit-login-kicker">SubKit</div>
         <h1 id="login-title">Sign in to manage app subscriptions</h1>
-        <p className="subs-login-copy">
+        <p className="subkit-login-copy">
           ZITADEL protects this console. Piparo staff use Microsoft; external operators receive a one-time e-mail code.
         </p>
-        {reason ? <p className="subs-login-notice">{reason}</p> : null}
+        {reason ? <p className="subkit-login-notice">{reason}</p> : null}
 
-        <div className="subs-login-actions">
-          <a className="subs-login-option" href="/auth/start?method=microsoft">
-            <span className="subs-login-mark microsoft">MS</span>
+        <div className="subkit-login-actions">
+          <a className="subkit-login-option" href="/auth/start?method=microsoft">
+            <span className="subkit-login-mark microsoft">MS</span>
             <span>
               <strong>Continue with Microsoft</strong>
               <small>Internal Piparo accounts via Microsoft Entra in ZITADEL.</small>
@@ -38,10 +38,10 @@ function LoginPage() {
             <span aria-hidden>→</span>
           </a>
 
-          <form action="/auth/start" className="subs-login-email" method="get">
+          <form action="/auth/start" className="subkit-login-email" method="get">
             <input name="method" type="hidden" value="email" />
             <label htmlFor="login-email">External e-mail code</label>
-            <div className="subs-login-email-row">
+            <div className="subkit-login-email-row">
               <input id="login-email" name="login_hint" placeholder="name@company.com" type="email" autoComplete="email" />
               <button type="submit">Send code</button>
             </div>
@@ -60,7 +60,7 @@ function validateLoginSearch(search: Record<string, unknown>): LoginSearch {
 function loginReasonText(reason: string | undefined): string | undefined {
   switch (reason) {
     case 'auth_required':
-      return 'Please sign in to open the subscription console.'
+      return 'Please sign in to open SubKit.'
     case 'callback_failed':
     case 'expired':
     case 'invalid_state':

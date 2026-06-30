@@ -298,7 +298,7 @@ async function ensureConfiguredTenant(): Promise<void> {
   await db.update(tenants).set({ color: tenant.color, initials: tenant.initials, name: tenant.name }).where(eq(tenants.id, tenantId))
 }
 
-export const prepareSubscriptionConsoleDatabase = createServerFn({ method: 'POST' }).handler(async () => {
+export const prepareSubKitConsoleDatabase = createServerFn({ method: 'POST' }).handler(async () => {
   await ensureDatabaseReady()
   return { ok: true }
 })

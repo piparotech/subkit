@@ -97,7 +97,7 @@ export function WorkspaceSettingsView({
 
 
   return (
-    <section className="max-w-[1080px] animate-[subs-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
+    <section className="max-w-[1080px] animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
       <ViewTitle
         description="Tenant-wide App Store Connect access used to list and connect iOS apps."
         title="Workspace Settings"
@@ -115,7 +115,7 @@ export function WorkspaceSettingsView({
             <ActionButton disabled={busy != null || connection == null} label="Run preflight" onPress={validateCredential} />
             <ActionButton disabled={busy != null || connection == null} label="Delete tenant key" onPress={deleteCredential} tone="danger" />
           </div>
-          {feedback != null ? <div className="rounded-[10px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subs-dim)]">{feedback}</div> : null}
+          {feedback != null ? <div className="rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]">{feedback}</div> : null}
           {accessibleApps.length > 0 ? <AccessibleAppList apps={accessibleApps} /> : null}
         </SettingsCard>
 
@@ -226,10 +226,10 @@ export function AppSettingsView({
   }
 
   return (
-    <section className="max-w-[1080px] animate-[subs-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
+    <section className="max-w-[1080px] animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
       <ViewTitle description={`App-specific App Store Connect workflows for ${app.name}. Workspace credentials live in Workspace Settings.`} title="App Settings" />
 
-      {feedback != null ? <div className="mt-[16px] rounded-[10px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subs-dim)]">{feedback}</div> : null}
+      {feedback != null ? <div className="mt-[16px] rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]">{feedback}</div> : null}
 
       <div className="grid grid-cols-[1fr_1fr] gap-[16px] max-lg:grid-cols-1">
         <SettingsCard description="Fetch Apple subscriptions and IAPs, compare them with local products, then import local records after review." title="Subscription product sync">
@@ -263,15 +263,15 @@ export function AppSettingsView({
       </SettingsCard>
 
       <SettingsCard
-        description="Delete this app and all local subscription-console records for it. App Store Connect is not changed."
+        description="Delete this app and all local SubKit records for it. App Store Connect is not changed."
         title="Danger zone"
         tone="danger"
       >
-        <div className="rounded-[11px] border border-[color-mix(in_oklch,var(--subs-red)_24%,var(--subs-border))] bg-[color-mix(in_oklch,var(--subs-red)_5%,white)] px-[12px] py-[10px] text-[12.5px] leading-[1.45] text-[var(--subs-dim)]">
-          This removes local products, entitlements, offerings, subscribers, imported reports, and app-scoped audit entries for <strong className="text-[var(--subs-text)]">{app.name}</strong>.
+        <div className="rounded-[11px] border border-[color-mix(in_oklch,var(--subkit-red)_24%,var(--subkit-border))] bg-[color-mix(in_oklch,var(--subkit-red)_5%,white)] px-[12px] py-[10px] text-[12.5px] leading-[1.45] text-[var(--subkit-dim)]">
+          This removes local products, entitlements, offerings, subscribers, imported reports, and app-scoped audit entries for <strong className="text-[var(--subkit-text)]">{app.name}</strong>.
         </div>
         <div className="flex flex-col gap-[7px]">
-          <label className="text-[12.5px] font-semibold text-[var(--subs-text)]" htmlFor="delete-app-confirmation">
+          <label className="text-[12.5px] font-semibold text-[var(--subkit-text)]" htmlFor="delete-app-confirmation">
             Type <span className="font-mono">{app.name}</span> to confirm
           </label>
           <PUIInput
@@ -298,16 +298,16 @@ export function AppSettingsView({
 
 function AccessibleAppList({ apps }: { apps: AppStoreConnectAccessibleApp[] }) {
   return (
-    <div className="rounded-[11px] border border-[var(--subs-border)]">
-      <div className="border-b border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[12px] py-[9px] text-[12px] font-semibold">Accessible App Store Connect apps</div>
+    <div className="rounded-[11px] border border-[var(--subkit-border)]">
+      <div className="border-b border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[12px] py-[9px] text-[12px] font-semibold">Accessible App Store Connect apps</div>
       {apps.map((app) => (
         <div
-          className="grid grid-cols-[1fr_1fr_auto] gap-[10px] border-b border-[var(--subs-border)] px-[12px] py-[10px] text-left text-[12px] last:border-b-0 max-sm:grid-cols-1"
+          className="grid grid-cols-[1fr_1fr_auto] gap-[10px] border-b border-[var(--subkit-border)] px-[12px] py-[10px] text-left text-[12px] last:border-b-0 max-sm:grid-cols-1"
           key={app.appleAppId}
         >
-          <span className="font-semibold text-[var(--subs-text)]">{app.name}</span>
-          <span className="font-mono text-[var(--subs-dim)]">{app.bundleId || 'No bundle ID returned'}</span>
-          <span className="font-mono text-[var(--subs-faint)]">{app.appleAppId}</span>
+          <span className="font-semibold text-[var(--subkit-text)]">{app.name}</span>
+          <span className="font-mono text-[var(--subkit-dim)]">{app.bundleId || 'No bundle ID returned'}</span>
+          <span className="font-mono text-[var(--subkit-faint)]">{app.appleAppId}</span>
         </div>
       ))}
     </div>
@@ -318,19 +318,19 @@ function SettingsCard({ children, description, title, tone = 'neutral' }: { chil
   return (
     <PUICard
       className={cn(
-        'mt-[16px] rounded-[14px] border-[var(--subs-border)] bg-[var(--subs-panel)] p-[20px] first:mt-[20px]',
-        tone === 'danger' && 'border-[color-mix(in_oklch,var(--subs-red)_32%,var(--subs-border))]',
+        'mt-[16px] rounded-[14px] border-[var(--subkit-border)] bg-[var(--subkit-panel)] p-[20px] first:mt-[20px]',
+        tone === 'danger' && 'border-[color-mix(in_oklch,var(--subkit-red)_32%,var(--subkit-border))]',
       )}
     >
-      <div className={cn('mb-[14px] text-[14px] font-semibold', tone === 'danger' && 'text-[var(--subs-red)]')}>{title}</div>
-      {description != null ? <div className="mb-[12px] text-[12.5px] text-[var(--subs-dim)]">{description}</div> : null}
+      <div className={cn('mb-[14px] text-[14px] font-semibold', tone === 'danger' && 'text-[var(--subkit-red)]')}>{title}</div>
+      {description != null ? <div className="mb-[12px] text-[12.5px] text-[var(--subkit-dim)]">{description}</div> : null}
       <div className="flex flex-col gap-[12px]">{children}</div>
     </PUICard>
   )
 }
 
 function EmptySettingsText({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-[10px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subs-dim)]">{children}</div>
+  return <div className="rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]">{children}</div>
 }
 
 function credentialDraftFromConnection(connection: AppStoreConnectConnection | null): AppStoreConnectCredentialDraft {
@@ -344,11 +344,11 @@ function credentialDraftFromConnection(connection: AppStoreConnectConnection | n
 
 function ConnectionSummary({ connection }: { connection: AppStoreConnectConnection }) {
   return (
-    <div className="rounded-[11px] border border-[var(--subs-border)] bg-[var(--subs-panel-2)] p-[13px]">
+    <div className="rounded-[11px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] p-[13px]">
       <div className="flex items-center justify-between gap-[12px]">
         <div>
           <div className="text-[13px] font-semibold">Key {connection.keyId}</div>
-          <div className="mt-[3px] font-mono text-[11.5px] text-[var(--subs-faint)]">Issuer {connection.issuerId}</div>
+          <div className="mt-[3px] font-mono text-[11.5px] text-[var(--subkit-faint)]">Issuer {connection.issuerId}</div>
         </div>
         <StatusLabel label={connection.status.replaceAll('_', ' ')} tone={connectionStatusTone(connection.status)} />
       </div>
@@ -357,17 +357,17 @@ function ConnectionSummary({ connection }: { connection: AppStoreConnectConnecti
         <ConnectionFact label="Vendor Number" value={connection.vendorNumber ?? 'Missing'} />
         <ConnectionFact label="Private key" value={connection.keyFingerprint == null ? 'Missing' : `sha256:${connection.keyFingerprint}`} />
       </div>
-      {connection.lastError != null ? <div className="mt-[10px] rounded-[9px] border border-[color-mix(in_oklch,var(--subs-red)_30%,var(--subs-border))] bg-[color-mix(in_oklch,var(--subs-red)_8%,white)] px-[10px] py-[8px] text-[12px] text-[var(--subs-red)]">{connection.lastError}</div> : null}
-      {connection.lastValidatedAt != null ? <div className="mt-[9px] text-[11.5px] text-[var(--subs-faint)]">Last preflight: {connection.lastValidatedAt}</div> : null}
+      {connection.lastError != null ? <div className="mt-[10px] rounded-[9px] border border-[color-mix(in_oklch,var(--subkit-red)_30%,var(--subkit-border))] bg-[color-mix(in_oklch,var(--subkit-red)_8%,white)] px-[10px] py-[8px] text-[12px] text-[var(--subkit-red)]">{connection.lastError}</div> : null}
+      {connection.lastValidatedAt != null ? <div className="mt-[9px] text-[11.5px] text-[var(--subkit-faint)]">Last preflight: {connection.lastValidatedAt}</div> : null}
     </div>
   )
 }
 
 function ConnectionFact({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[9px] border border-[var(--subs-border)] bg-[var(--subs-panel)] px-[10px] py-[8px]">
-      <div className="text-[10.5px] font-semibold uppercase tracking-[0.04em] text-[var(--subs-faint)]">{label}</div>
-      <div className="mt-[3px] truncate font-mono text-[12px] text-[var(--subs-text)]">{value}</div>
+    <div className="rounded-[9px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[10px] py-[8px]">
+      <div className="text-[10.5px] font-semibold uppercase tracking-[0.04em] text-[var(--subkit-faint)]">{label}</div>
+      <div className="mt-[3px] truncate font-mono text-[12px] text-[var(--subkit-text)]">{value}</div>
     </div>
   )
 }
@@ -375,15 +375,15 @@ function ConnectionFact({ label, value }: { label: string; value: string }) {
 function CapabilityList({ capabilities }: { capabilities: AppStoreConnectConnection['capabilities'] }) {
   if (capabilities.length === 0) return <EmptySettingsText>No preflight has run yet.</EmptySettingsText>
   return (
-    <div className="rounded-[11px] border border-[var(--subs-border)]">
+    <div className="rounded-[11px] border border-[var(--subkit-border)]">
       {capabilities.map((capability) => (
-        <div className="border-b border-[var(--subs-border)] px-[12px] py-[11px] last:border-b-0" key={capability.key}>
+        <div className="border-b border-[var(--subkit-border)] px-[12px] py-[11px] last:border-b-0" key={capability.key}>
           <div className="flex items-center justify-between gap-[10px]">
             <div className="text-[13px] font-semibold">{capability.label}</div>
             <StatusLabel label={capability.status} tone={capabilityStatusTone(capability.status)} />
           </div>
-          <div className="mt-[4px] text-[12px] text-[var(--subs-dim)]">{capability.description}</div>
-          <div className="mt-[3px] text-[11.5px] text-[var(--subs-faint)]">{capability.detail}</div>
+          <div className="mt-[4px] text-[12px] text-[var(--subkit-dim)]">{capability.description}</div>
+          <div className="mt-[3px] text-[11.5px] text-[var(--subkit-faint)]">{capability.detail}</div>
         </div>
       ))}
     </div>
@@ -392,8 +392,8 @@ function CapabilityList({ capabilities }: { capabilities: AppStoreConnectConnect
 
 function ProductPreviewTable({ preview }: { preview: AppStoreConnectProductPreview[] }) {
   return (
-    <div className="max-h-[360px] overflow-auto rounded-[11px] border border-[var(--subs-border)]">
-      <div className="grid min-w-[720px] grid-cols-[0.8fr_1.2fr_1.2fr_0.9fr_1.2fr] gap-[10px] border-b border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[12px] py-[9px] text-[10.5px] font-semibold uppercase tracking-[0.04em] text-[var(--subs-faint)]">
+    <div className="max-h-[360px] overflow-auto rounded-[11px] border border-[var(--subkit-border)]">
+      <div className="grid min-w-[720px] grid-cols-[0.8fr_1.2fr_1.2fr_0.9fr_1.2fr] gap-[10px] border-b border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[12px] py-[9px] text-[10.5px] font-semibold uppercase tracking-[0.04em] text-[var(--subkit-faint)]">
         <div>Action</div>
         <div>Apple product</div>
         <div>Local product</div>
@@ -401,18 +401,18 @@ function ProductPreviewTable({ preview }: { preview: AppStoreConnectProductPrevi
         <div>Note</div>
       </div>
       {preview.map((item) => (
-        <div className="grid min-w-[720px] grid-cols-[0.8fr_1.2fr_1.2fr_0.9fr_1.2fr] gap-[10px] border-b border-[var(--subs-border)] px-[12px] py-[10px] text-[12px] last:border-b-0" key={`${item.appleProductId}-${item.action}`}>
+        <div className="grid min-w-[720px] grid-cols-[0.8fr_1.2fr_1.2fr_0.9fr_1.2fr] gap-[10px] border-b border-[var(--subkit-border)] px-[12px] py-[10px] text-[12px] last:border-b-0" key={`${item.appleProductId}-${item.action}`}>
           <StatusLabel label={item.action} tone={productActionTone(item.action)} />
           <div className="min-w-0">
             <div className="truncate font-semibold">{item.appleName}</div>
-            <div className="truncate font-mono text-[11px] text-[var(--subs-faint)]">{item.appleProductId}</div>
+            <div className="truncate font-mono text-[11px] text-[var(--subkit-faint)]">{item.appleProductId}</div>
           </div>
           <div className="min-w-0">
             <div className="truncate font-semibold">{item.localName ?? 'New local product'}</div>
-            <div className="truncate font-mono text-[11px] text-[var(--subs-faint)]">{item.localIdentifier ?? item.entitlement}</div>
+            <div className="truncate font-mono text-[11px] text-[var(--subkit-faint)]">{item.localIdentifier ?? item.entitlement}</div>
           </div>
-          <div className="font-mono text-[11.5px] text-[var(--subs-dim)]">{item.appleState}</div>
-          <div className="text-[11.5px] text-[var(--subs-dim)]">{item.note}</div>
+          <div className="font-mono text-[11.5px] text-[var(--subkit-dim)]">{item.appleState}</div>
+          <div className="text-[11.5px] text-[var(--subkit-dim)]">{item.note}</div>
         </div>
       ))}
     </div>
@@ -424,13 +424,13 @@ function SalesReportHistory({ connection }: { connection: AppStoreConnectConnect
     return <EmptySettingsText>Vendor Number required. Reports are delayed Apple snapshots, not realtime entitlements.</EmptySettingsText>
   }
   return (
-    <div className="overflow-hidden rounded-[11px] border border-[var(--subs-border)]">
+    <div className="overflow-hidden rounded-[11px] border border-[var(--subkit-border)]">
       {connection.salesReports.map((report) => (
-        <div className="grid grid-cols-[0.9fr_0.8fr_0.7fr_1.2fr] gap-[10px] border-b border-[var(--subs-border)] px-[12px] py-[10px] text-[12px] last:border-b-0" key={report.id}>
+        <div className="grid grid-cols-[0.9fr_0.8fr_0.7fr_1.2fr] gap-[10px] border-b border-[var(--subkit-border)] px-[12px] py-[10px] text-[12px] last:border-b-0" key={report.id}>
           <span className="font-mono font-semibold">{report.reportDate}</span>
           <StatusLabel label={report.status} tone={report.status === 'imported' ? 'success' : 'destructive'} />
-          <span className="font-mono text-[var(--subs-dim)]">{report.rowCount} rows</span>
-          <span className="truncate text-[var(--subs-faint)]">{report.errorDetail ?? report.createdAt}</span>
+          <span className="font-mono text-[var(--subkit-dim)]">{report.rowCount} rows</span>
+          <span className="truncate text-[var(--subkit-faint)]">{report.errorDetail ?? report.createdAt}</span>
         </div>
       ))}
     </div>
@@ -441,18 +441,18 @@ function MonitoringSnapshot({ snapshot }: { snapshot: AppStoreConnectMonitorSnap
   return (
     <div className="grid grid-cols-2 gap-[12px] max-lg:grid-cols-1">
       {snapshot.sections.map((section) => (
-        <div className="rounded-[11px] border border-[var(--subs-border)]" key={section.title}>
-          <div className="border-b border-[var(--subs-border)] bg-[var(--subs-panel-2)] px-[12px] py-[9px] text-[12px] font-semibold">{section.title}</div>
+        <div className="rounded-[11px] border border-[var(--subkit-border)]" key={section.title}>
+          <div className="border-b border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[12px] py-[9px] text-[12px] font-semibold">{section.title}</div>
           {section.items.length === 0 ? (
-            <div className="px-[12px] py-[10px] text-[12px] text-[var(--subs-faint)]">No records returned.</div>
+            <div className="px-[12px] py-[10px] text-[12px] text-[var(--subkit-faint)]">No records returned.</div>
           ) : (
             section.items.map((item) => (
-              <div className="border-b border-[var(--subs-border)] px-[12px] py-[10px] text-[12px] last:border-b-0" key={item.id}>
+              <div className="border-b border-[var(--subkit-border)] px-[12px] py-[10px] text-[12px] last:border-b-0" key={item.id}>
                 <div className="flex items-center justify-between gap-[8px]">
-                  <span className="font-semibold text-[var(--subs-text)]">{item.label}</span>
-                  <span className="rounded-[999px] border border-[var(--subs-border)] px-[7px] py-[2px] font-mono text-[10.5px] text-[var(--subs-dim)]">{item.status}</span>
+                  <span className="font-semibold text-[var(--subkit-text)]">{item.label}</span>
+                  <span className="rounded-[999px] border border-[var(--subkit-border)] px-[7px] py-[2px] font-mono text-[10.5px] text-[var(--subkit-dim)]">{item.status}</span>
                 </div>
-                <div className="mt-[4px] text-[var(--subs-dim)]">{item.detail}</div>
+                <div className="mt-[4px] text-[var(--subkit-dim)]">{item.detail}</div>
               </div>
             ))
           )}
@@ -465,12 +465,12 @@ function MonitoringSnapshot({ snapshot }: { snapshot: AppStoreConnectMonitorSnap
 function AuditHistory({ connection }: { connection: AppStoreConnectConnection | null }) {
   if (!connection?.auditEvents.length) return <EmptySettingsText>No App Store Connect audit events yet.</EmptySettingsText>
   return (
-    <div className="rounded-[11px] border border-[var(--subs-border)]">
+    <div className="rounded-[11px] border border-[var(--subkit-border)]">
       {connection.auditEvents.map((event) => (
-        <div className="grid grid-cols-[0.8fr_1fr_2fr] gap-[12px] border-b border-[var(--subs-border)] px-[12px] py-[10px] text-[12px] last:border-b-0 max-md:grid-cols-1" key={event.id}>
-          <span className="font-mono text-[var(--subs-faint)]">{event.createdAt}</span>
-          <span className="font-mono font-semibold text-[var(--subs-text)]">{event.action}</span>
-          <span className="text-[var(--subs-dim)]">{event.detail}</span>
+        <div className="grid grid-cols-[0.8fr_1fr_2fr] gap-[12px] border-b border-[var(--subkit-border)] px-[12px] py-[10px] text-[12px] last:border-b-0 max-md:grid-cols-1" key={event.id}>
+          <span className="font-mono text-[var(--subkit-faint)]">{event.createdAt}</span>
+          <span className="font-mono font-semibold text-[var(--subkit-text)]">{event.action}</span>
+          <span className="text-[var(--subkit-dim)]">{event.detail}</span>
         </div>
       ))}
     </div>
@@ -482,9 +482,9 @@ function ActionButton({ disabled, label, onPress, tone = 'neutral' }: { disabled
     <button
       className={cn(
         'min-h-[36px] cursor-pointer rounded-[9px] px-[13px] py-[8px] text-[12.5px] font-semibold transition-colors duration-fast disabled:cursor-not-allowed disabled:opacity-50',
-        tone === 'primary' && 'bg-[var(--subs-text)] text-white hover:bg-[color-mix(in_oklch,var(--subs-text)_88%,white)]',
-        tone === 'neutral' && 'border border-[var(--subs-border)] bg-[var(--subs-panel)] text-[var(--subs-text)] hover:bg-[var(--subs-panel-2)]',
-        tone === 'danger' && 'border border-[color-mix(in_oklch,var(--subs-red)_30%,var(--subs-border))] bg-white text-[var(--subs-red)] hover:bg-[color-mix(in_oklch,var(--subs-red)_7%,white)]',
+        tone === 'primary' && 'bg-[var(--subkit-text)] text-white hover:bg-[color-mix(in_oklch,var(--subkit-text)_88%,white)]',
+        tone === 'neutral' && 'border border-[var(--subkit-border)] bg-[var(--subkit-panel)] text-[var(--subkit-text)] hover:bg-[var(--subkit-panel-2)]',
+        tone === 'danger' && 'border border-[color-mix(in_oklch,var(--subkit-red)_30%,var(--subkit-border))] bg-white text-[var(--subkit-red)] hover:bg-[color-mix(in_oklch,var(--subkit-red)_7%,white)]',
       )}
       disabled={disabled}
       onClick={onPress}
