@@ -7,6 +7,7 @@ import { ensureDatabaseReady } from '~/db/setup'
 import { getOptionalCurrentUser, getRequiredCurrentUser } from '~/server/auth/current-user'
 import { parseServerEnv } from '~/server/env'
 import { apps, entitlements, offeringPackages, offerings, products, purchaseEvents, subscribers, tenants } from '~/db/schema'
+import { readAppStoreConnectConnectionsForTenant } from './app-store-connect-read'
 import type {
   ActivityEvent,
   AppTenant,
@@ -155,6 +156,7 @@ function assertOwnedApp(appId: string): void {
 function toConsoleUser(user: ConsoleUser): ConsoleUser {
   return {
     email: user.email,
+    id: user.id,
     initials: user.initials,
     name: user.name,
     operator: user.operator,
@@ -176,7 +178,17 @@ export const getSubscriptionConsoleData = createServerFn({ method: 'GET' }).hand
   await ensureDatabaseReady()
   const currentUser = await getCurrentConsoleUser()
 
-  const [tenantRows, appRowsAll, productRowsAll, entitlementRowsAll, offeringRowsAll, packageRows, subscriberRowsAll, eventRowsAll] = await Promise.all([
+  const [
+    tenantRows,
+    appRowsAll,
+    productRowsAll,
+    entitlementRowsAll,
+    offeringRowsAll,
+    packageRows,
+    subscriberRowsAll,
+    eventRowsAll,
+    appStoreConnectConnections,
+  ] = await Promise.all([
     db.select().from(tenants),
     db.select().from(apps),
     db.select().from(products),
@@ -185,6 +197,7 @@ export const getSubscriptionConsoleData = createServerFn({ method: 'GET' }).hand
     db.select().from(offeringPackages),
     db.select().from(subscribers),
     db.select().from(purchaseEvents),
+    readAppStoreConnectConnectionsForTenant(activeTenantId),
   ])
 
   const activeTenant = tenantRows.find((tenant) => tenant.id === activeTenantId)
@@ -357,6 +370,7 @@ export const getSubscriptionConsoleData = createServerFn({ method: 'GET' }).hand
   })
 
   return {
+    appStoreConnect: appStoreConnectConnections,
     apps: appItems,
     currentUser: toConsoleUser(currentUser),
     dashboards,
