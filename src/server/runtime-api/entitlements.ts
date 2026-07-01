@@ -69,7 +69,7 @@ export async function checkRuntimeEntitlement(input: RuntimeEntitlementCheckInpu
       entitlementKey: entitlements.key,
       expiresAt: entitlementGrants.expiresAt,
       id: entitlementGrants.id,
-      productIdentifier: products.identifier,
+      productIdentifier: products.key,
       revokedAt: entitlementGrants.revokedAt,
       source: entitlementGrants.source,
       startsAt: entitlementGrants.startsAt,

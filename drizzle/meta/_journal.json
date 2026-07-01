@@ -5,50 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1782764600023,
-      "tag": "0000_tan_tusk",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1782767039085,
-      "tag": "0001_clammy_starjammers",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1782800000000,
-      "tag": "0002_app_store_connect",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1782811000514,
-      "tag": "0003_flaky_annihilus",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1782864000000,
-      "tag": "0004_tenant_rbac",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1782865000000,
-      "tag": "0005_seed_piparo_tenant",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1782892800000,
-      "tag": "0006_runtime_iap_ownership",
+      "when": 1782935152152,
+      "tag": "0000_groovy_frank_castle",
       "breakpoints": true
     }
   ]

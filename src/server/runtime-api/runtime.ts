@@ -6,6 +6,7 @@ import {
   type IapReconcileRequestInput,
   type NormalizedStorePurchase,
   type Offering,
+  type ProductKind,
   type PurchaseOwnershipConflict,
   type PurchaseSyncResult,
   type RejectedPurchase,
@@ -15,7 +16,7 @@ import {
   type StoreIdentityHints,
   type StoreName,
 } from '@piparotech/subkit-core'
-import { and, eq, or } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 
 import { db } from '~/db/client'
 import { ensureDatabaseReady } from '~/db/setup'
@@ -27,15 +28,22 @@ import {
   entitlements,
   offeringPackages,
   offerings,
+  prices,
+  productEntitlements,
+  productOffers,
+  productPlans,
   products,
   purchaseEvents,
   runtimeReconcileEvents,
+  storeProductBindings,
   storePurchaseOwnerships,
 } from '~/db/schema'
 import { parseServerEnv } from '~/server/env'
 
 type AppUserRow = typeof appUsers.$inferSelect
 type ProductRow = typeof products.$inferSelect
+type ProductPlanRow = typeof productPlans.$inferSelect
+type StoreProductBindingRow = typeof storeProductBindings.$inferSelect
 type EntitlementGrantStatus = typeof entitlementGrants.$inferSelect.status
 type RuntimeStore = typeof storePurchaseOwnerships.$inferSelect.store
 
@@ -45,8 +53,35 @@ interface RuntimeAppUserContext {
 }
 
 interface RuntimeProductContext {
-  entitlementKey: string
+  binding: StoreProductBindingRow
+  entitlementIds: string[]
   product: ProductRow
+  productPlan: ProductPlanRow
+}
+
+interface RuntimeOfferingRow {
+  appleProductId: string | null
+  badge: string
+  billingPeriod: string | null
+  entitlementKey: string | null
+  googleBasePlanId: string | null
+  googleProductId: string | null
+  offeringDescription: string
+  offeringId: string
+  offeringKey: string
+  offeringName: string
+  packageKey: string
+  packageLabel: string
+  packageSortOrder: number
+  planId: string
+  planKey: string
+  priceAmountMicros: number | null
+  productDescription: string
+  productId: string
+  productKey: string
+  productName: string
+  productType: ProductRow['productType']
+  trialEnabled: boolean
 }
 
 export function authorizeRuntimeRequest(request: Request): Response | null {
@@ -74,30 +109,46 @@ export async function listRuntimeOfferings(input: RuntimeOfferingsRequestInput):
   await ensureDatabaseReady()
   await assertAppExists(input.appId)
 
-  const rows = await db
+  const packageRows = await db
     .select({
       badge: offeringPackages.badge,
-      duration: products.duration,
-      entitlementKey: entitlements.key,
+      billingPeriod: productPlans.billingPeriodIso,
       offeringDescription: offerings.description,
       offeringId: offerings.id,
       offeringKey: offerings.key,
       offeringName: offerings.name,
+      packageKey: offeringPackages.key,
       packageLabel: offeringPackages.label,
-      packagePriceLabel: offeringPackages.priceLabel,
       packageSortOrder: offeringPackages.sortOrder,
-      productAppStoreId: products.appStoreId,
-      productDisplayName: products.displayName,
-      productIdentifier: products.identifier,
-      productPlayStoreId: products.playStoreId,
-      productPriceCents: products.priceCents,
-      productTrialEnabled: products.trialEnabled,
+      planId: productPlans.id,
+      planKey: productPlans.key,
+      priceAmountMicros: prices.amountMicros,
+      productDescription: products.description,
+      productId: products.id,
+      productKey: products.key,
+      productName: products.name,
+      productType: products.productType,
     })
     .from(offerings)
     .innerJoin(offeringPackages, eq(offeringPackages.offeringId, offerings.id))
-    .innerJoin(products, eq(products.id, offeringPackages.productId))
-    .innerJoin(entitlements, eq(entitlements.id, products.entitlementId))
+    .innerJoin(productPlans, eq(productPlans.id, offeringPackages.productPlanId))
+    .innerJoin(products, eq(products.id, productPlans.productId))
+    .leftJoin(prices, and(eq(prices.productPlanId, productPlans.id), eq(prices.status, 'active')))
     .where(eq(offerings.appId, input.appId))
+
+  const planIds = [...new Set(packageRows.map((row) => row.planId))]
+  const entitlementKeysByProductId = await readEntitlementKeysByProductId([...new Set(packageRows.map((row) => row.productId))])
+  const trialEnabledByPlanId = await readTrialEnabledByPlanId(planIds)
+  const bindingIdsByPlanId = await readRuntimeStoreProductIdsByPlanId(planIds)
+
+  const rows: RuntimeOfferingRow[] = packageRows.map((row) => ({
+    ...row,
+    appleProductId: bindingIdsByPlanId.get(row.planId)?.apple ?? null,
+    entitlementKey: entitlementKeysByProductId.get(row.productId)?.[0] ?? null,
+    googleBasePlanId: bindingIdsByPlanId.get(row.planId)?.googleBasePlanId ?? null,
+    googleProductId: bindingIdsByPlanId.get(row.planId)?.google ?? null,
+    trialEnabled: trialEnabledByPlanId.get(row.planId) ?? false,
+  }))
 
   const byOffering = new Map<string, Offering>()
   const sortedRows = [...rows].sort((left, right) => {
@@ -118,21 +169,22 @@ export async function listRuntimeOfferings(input: RuntimeOfferingsRequestInput):
 
     offering.packages.push({
       badge: row.badge.trim() === '' ? null : row.badge,
-      identifier: row.packageLabel,
+      identifier: row.packageKey,
       label: row.packageLabel,
       product: {
-        description: row.packagePriceLabel,
-        displayName: row.productDisplayName,
-        duration: row.duration,
-        entitlementKey: row.entitlementKey,
-        identifier: row.productIdentifier,
-        kind: row.duration.toLowerCase() === 'lifetime' ? 'non_consumable' : 'subscription',
-        priceCents: row.productPriceCents,
+        billingPeriod: row.billingPeriod,
+        description: row.productDescription,
+        displayName: row.productName,
+        entitlementKeys: entitlementKeysByProductId.get(row.productId) ?? [],
+        kind: toRuntimeProductKind(row.productType),
+        planKey: row.planKey,
+        priceCents: amountMicrosToCents(row.priceAmountMicros),
+        productKey: row.productKey,
         storeProductIds: {
-          apple: row.productAppStoreId.trim() === '' ? undefined : row.productAppStoreId,
-          google: row.productPlayStoreId.trim() === '' ? undefined : row.productPlayStoreId,
+          apple: row.appleProductId ?? undefined,
+          google: row.googleProductId ?? undefined,
         },
-        trialEnabled: row.productTrialEnabled,
+        trialEnabled: row.trialEnabled,
       },
     })
 
@@ -179,7 +231,7 @@ export async function reconcileRuntimeIap(input: IapReconcileRequestInput): Prom
     const originalTransactionId = purchase.originalTransactionId ?? transactionId
     const productContext = await findRuntimeProduct(input.appId, purchase.store, purchase.storeProductId)
     if (productContext == null) {
-      rejectedPurchases.push(rejectPurchase(purchase, 'product_not_found', 'Store product is not mapped in SubKit'))
+      rejectedPurchases.push(rejectPurchase(purchase, 'product_not_found', 'Store product is not bound to a SubKit product plan'))
       await insertRuntimeEvent(input.appId, appUser.id, null, store, 'product_not_found', purchase.storeProductId)
       continue
     }
@@ -221,6 +273,7 @@ export async function reconcileRuntimeIap(input: IapReconcileRequestInput): Prom
         ownershipType: purchase.ownershipType ?? 'unknown',
         productId: productContext.product.id,
         productIdentifier: purchase.storeProductId,
+        productPlanId: productContext.productPlan.id,
         purchaseTokenHash,
         purchasedAt: startsAt,
         rawPayloadJson,
@@ -228,6 +281,7 @@ export async function reconcileRuntimeIap(input: IapReconcileRequestInput): Prom
         revokedAt: null,
         status,
         store,
+        storeProductBindingId: productContext.binding.id,
         transactionId,
         updatedAt: now,
       })
@@ -241,10 +295,12 @@ export async function reconcileRuntimeIap(input: IapReconcileRequestInput): Prom
           lastReconciledAt: now,
           productId: productContext.product.id,
           productIdentifier: purchase.storeProductId,
+          productPlanId: productContext.productPlan.id,
           purchaseTokenHash,
           rawPayloadJson,
           receiptHash,
           status,
+          storeProductBindingId: productContext.binding.id,
           transactionId,
           updatedAt: now,
         })
@@ -252,21 +308,25 @@ export async function reconcileRuntimeIap(input: IapReconcileRequestInput): Prom
       await insertRuntimeEvent(input.appId, appUser.id, existingOwnership.id, store, 'purchase_updated', originalTransactionId)
     }
 
-    await upsertEntitlementGrant({
-      appId: input.appId,
-      appUserId: appUser.id,
-      entitlementId: productContext.product.entitlementId,
-      grantId,
-      ownershipId,
-      ownershipSource: store === 'apple' ? 'app_account_token' : 'obfuscated_account_id',
-      productId: productContext.product.id,
-      source: store === 'apple' ? 'apple' : 'google',
-      startsAt,
-      status,
-    })
+    for (const entitlementId of productContext.entitlementIds) {
+      await upsertEntitlementGrant({
+        appId: input.appId,
+        appUserId: appUser.id,
+        entitlementId,
+        grantId: entitlementId === productContext.entitlementIds[0] ? grantId : `${grantId}:${entitlementId}`,
+        ownershipId,
+        ownershipSource: store === 'apple' ? 'app_account_token' : 'obfuscated_account_id',
+        productId: productContext.product.id,
+        productPlanId: productContext.productPlan.id,
+        source: store === 'apple' ? 'apple' : 'google',
+        startsAt,
+        status,
+        storeProductBindingId: productContext.binding.id,
+      })
+    }
 
     await insertPurchaseEventIfMissing({
-      amountCents: productContext.product.priceCents,
+      amountCents: await readPlanPriceCents(productContext.productPlan.id),
       appUserId: appUser.id,
       eventId: purchaseEventId(input.appId, store, transactionId),
       grantId,
@@ -275,7 +335,7 @@ export async function reconcileRuntimeIap(input: IapReconcileRequestInput): Prom
     })
 
     acceptedPurchases.push(transactionId)
-    finishableTransactions.push({ isConsumable: productContext.product.duration.toLowerCase() === 'consumable', purchaseId: purchaseQueueId(purchase), store: purchase.store, transactionId })
+    finishableTransactions.push({ isConsumable: productContext.product.productType === 'consumable', purchaseId: purchaseQueueId(purchase), store: purchase.store, transactionId })
   }
 
   const customerInfo = await buildCustomerInfo(input.appId, appUser)
@@ -358,7 +418,7 @@ async function buildCustomerInfo(appId: string, appUser: AppUserRow): Promise<Cu
     .select({
       entitlementKey: entitlements.key,
       expiresAt: entitlementGrants.expiresAt,
-      productIdentifier: products.identifier,
+      productIdentifier: products.key,
       source: entitlementGrants.source,
       startsAt: entitlementGrants.startsAt,
       status: entitlementGrants.status,
@@ -417,24 +477,29 @@ function emptyCustomerInfo(appId: string, appUserId: string, checkedAt: string):
 }
 
 async function findRuntimeProduct(appId: string, store: StoreName, productIdentifier: string): Promise<RuntimeProductContext | null> {
+  const runtimeStore = toRuntimeStore(store)
   const [row] = await db
     .select({
-      entitlementKey: entitlements.key,
+      binding: storeProductBindings,
       product: products,
+      productPlan: productPlans,
     })
-    .from(products)
-    .innerJoin(entitlements, eq(entitlements.id, products.entitlementId))
+    .from(storeProductBindings)
+    .innerJoin(products, eq(products.id, storeProductBindings.productId))
+    .innerJoin(productPlans, eq(productPlans.id, storeProductBindings.productPlanId))
     .where(
       and(
-        eq(products.appId, appId),
-        or(
-          eq(products.identifier, productIdentifier),
-          store === 'apple_app_store' ? eq(products.appStoreId, productIdentifier) : eq(products.playStoreId, productIdentifier),
-        ),
+        eq(storeProductBindings.appId, appId),
+        eq(storeProductBindings.store, runtimeStore),
+        eq(storeProductBindings.externalProductId, productIdentifier),
+        inArray(storeProductBindings.bindingStatus, ['linked', 'synced', 'drifted']),
       ),
     )
     .limit(1)
-  return row ?? null
+
+  if (row == null) return null
+  const entitlementIds = await readEntitlementIdsForProduct(row.product.id)
+  return { ...row, entitlementIds }
 }
 
 async function findStorePurchaseOwnership(appId: string, store: RuntimeStore, originalTransactionId: string): Promise<typeof storePurchaseOwnerships.$inferSelect | null> {
@@ -454,9 +519,11 @@ async function upsertEntitlementGrant(input: {
   ownershipId: string
   ownershipSource: 'app_account_token' | 'obfuscated_account_id'
   productId: string
+  productPlanId: string
   source: 'apple' | 'google'
   startsAt: string
   status: EntitlementGrantStatus
+  storeProductBindingId: string
 }): Promise<void> {
   const now = new Date()
   const [existing] = await db.select({ id: entitlementGrants.id }).from(entitlementGrants).where(eq(entitlementGrants.id, input.grantId)).limit(1)
@@ -471,8 +538,10 @@ async function upsertEntitlementGrant(input: {
       note: 'SubKit runtime IAP reconcile · validation pending',
       ownershipSource: input.ownershipSource,
       productId: input.productId,
+      productPlanId: input.productPlanId,
       revokedAt: null,
       source: input.source,
+      storeProductBindingId: input.storeProductBindingId,
       storePurchaseId: input.ownershipId,
       startsAt: input.startsAt,
       status: input.status,
@@ -486,8 +555,10 @@ async function upsertEntitlementGrant(input: {
       note: 'SubKit runtime IAP reconcile · validation pending',
       ownershipSource: input.ownershipSource,
       productId: input.productId,
+      productPlanId: input.productPlanId,
       startsAt: input.startsAt,
       status: input.status,
+      storeProductBindingId: input.storeProductBindingId,
       storePurchaseId: input.ownershipId,
     })
     .where(eq(entitlementGrants.id, input.grantId))
@@ -579,6 +650,75 @@ async function getOrCreateStoreIdentityHints(appId: string, appUser: AppUserRow)
   }
 }
 
+async function readEntitlementIdsForProduct(productId: string): Promise<string[]> {
+  const rows = await db.select({ entitlementId: productEntitlements.entitlementId }).from(productEntitlements).where(eq(productEntitlements.productId, productId))
+  return rows.map((row) => row.entitlementId)
+}
+
+async function readEntitlementKeysByProductId(productIds: readonly string[]): Promise<Map<string, string[]>> {
+  if (productIds.length === 0) return new Map()
+  const rows = await db
+    .select({ entitlementKey: entitlements.key, productId: productEntitlements.productId })
+    .from(productEntitlements)
+    .innerJoin(entitlements, eq(entitlements.id, productEntitlements.entitlementId))
+    .where(inArray(productEntitlements.productId, [...productIds]))
+  const map = new Map<string, string[]>()
+  for (const row of rows) {
+    const list = map.get(row.productId) ?? []
+    list.push(row.entitlementKey)
+    map.set(row.productId, list)
+  }
+  return map
+}
+
+async function readTrialEnabledByPlanId(planIds: readonly string[]): Promise<Map<string, boolean>> {
+  if (planIds.length === 0) return new Map()
+  const rows = await db
+    .select({ planId: productOffers.productPlanId })
+    .from(productOffers)
+    .where(and(inArray(productOffers.productPlanId, [...planIds]), eq(productOffers.status, 'active'), eq(productOffers.offerType, 'free_trial')))
+  return new Map(rows.map((row) => [row.planId, true]))
+}
+
+async function readRuntimeStoreProductIdsByPlanId(planIds: readonly string[]): Promise<Map<string, { apple?: string; google?: string; googleBasePlanId?: string }>> {
+  if (planIds.length === 0) return new Map()
+  const rows = await db
+    .select({
+      externalBasePlanId: storeProductBindings.externalBasePlanId,
+      externalProductId: storeProductBindings.externalProductId,
+      planId: storeProductBindings.productPlanId,
+      store: storeProductBindings.store,
+    })
+    .from(storeProductBindings)
+    .where(and(inArray(storeProductBindings.productPlanId, [...planIds]), inArray(storeProductBindings.bindingStatus, ['linked', 'synced', 'drifted'])))
+  const map = new Map<string, { apple?: string; google?: string; googleBasePlanId?: string }>()
+  for (const row of rows) {
+    if (row.planId == null) continue
+    const value = map.get(row.planId) ?? {}
+    if (row.store === 'apple') value.apple = row.externalProductId
+    if (row.store === 'google') {
+      value.google = row.externalProductId
+      if (row.externalBasePlanId != null) value.googleBasePlanId = row.externalBasePlanId
+    }
+    map.set(row.planId, value)
+  }
+  return map
+}
+
+async function readPlanPriceCents(productPlanId: string): Promise<number> {
+  const [row] = await db
+    .select({ amountMicros: prices.amountMicros })
+    .from(prices)
+    .where(and(eq(prices.productPlanId, productPlanId), eq(prices.status, 'active')))
+    .limit(1)
+  return amountMicrosToCents(row?.amountMicros ?? null)
+}
+
+function amountMicrosToCents(value: number | null): number {
+  if (value == null) return 0
+  return Math.round(value / 10_000)
+}
+
 function isGrantCurrentlyEffective(grant: { expiresAt: string | null; revokedAt: Date | null; startsAt: string; status: EntitlementGrantStatus }): boolean {
   if (grant.status !== 'active' && grant.status !== 'trialing' && grant.status !== 'billing_retry') return false
   if (grant.revokedAt != null) return false
@@ -592,6 +732,12 @@ function isGrantCurrentlyEffective(grant: { expiresAt: string | null; revokedAt:
 
 function toRuntimeStore(store: StoreName): RuntimeStore {
   return store === 'apple_app_store' ? 'apple' : 'google'
+}
+
+function toRuntimeProductKind(productType: ProductRow['productType']): ProductKind {
+  if (productType === 'non_consumable') return 'non_consumable'
+  if (productType === 'consumable') return 'consumable'
+  return 'subscription'
 }
 
 function toGrantStatus(purchase: NormalizedStorePurchase): EntitlementGrantStatus {

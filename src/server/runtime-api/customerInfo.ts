@@ -28,7 +28,7 @@ export async function getServerCustomerInfo(input: ServerCustomerInfoRequest): P
     .select({
       entitlementKey: entitlements.key,
       expiresAt: entitlementGrants.expiresAt,
-      productIdentifier: products.identifier,
+      productIdentifier: products.key,
       source: entitlementGrants.source,
       startsAt: entitlementGrants.startsAt,
       status: entitlementGrants.status,
