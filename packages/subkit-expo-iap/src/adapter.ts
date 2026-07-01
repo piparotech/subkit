@@ -1,4 +1,4 @@
-import type { SubKitIapProduct, SubKitIapProductType, SubKitIapPurchase, SubKitPurchaseRequest } from './types'
+import type { SubKitIapProduct, SubKitIapProductType, SubKitIapPurchase, SubKitPurchaseRequest } from './types.js'
 
 export interface SubKitExpoIapAdapter {
   endConnection?(): Promise<void>

@@ -8,11 +8,8 @@ SubKit is the entitlement authority. `expo-iap` is only the native store adapter
 
 ```ts
 import { AppState } from 'react-native'
-import {
-  createExpoIapAdapter,
-  createStoredPurchaseQueueStore,
-  createSubKitIapClient,
-} from '@piparotech/subkit-expo-iap'
+import { createStoredPurchaseQueueStore, createSubKitIapClient } from '@piparotech/subkit-expo-iap'
+import { createExpoIapAdapter } from '@piparotech/subkit-expo-iap/expo-iap'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const adapterBundle = createExpoIapAdapter()
@@ -78,5 +75,6 @@ Silent sync uses `getAvailablePurchases()` and never calls prompt-prone restore 
 
 - Transactions are finished only after SubKit runtime reconcile returns them as finishable.
 - Pending purchases are queued durably when a storage-backed queue is provided.
+- Queued purchases are scoped to the app user that first observed them; switching identities does not reconcile one user's pending purchases under another user.
 - Ownership conflicts are returned by the runtime API and are not silently transferred.
 - Server-side Apple/Google receipt validation is still a later milestone; the current reconcile path records `accepted_unverified` semantics.

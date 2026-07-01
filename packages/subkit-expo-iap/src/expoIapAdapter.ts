@@ -14,8 +14,8 @@ import {
   type Purchase,
 } from 'expo-iap'
 
-import type { SubKitExpoIapAdapter, SubKitIapAdapterBundle, SubKitPurchaseListenerAdapter, SubKitPurchaseListenerSubscription } from './adapter'
-import type { SubKitIapProduct, SubKitIapProductType, SubKitIapPurchase, SubKitPurchaseRequest } from './types'
+import type { SubKitExpoIapAdapter, SubKitIapAdapterBundle, SubKitPurchaseListenerAdapter, SubKitPurchaseListenerSubscription } from './adapter.js'
+import type { SubKitIapProduct, SubKitIapProductType, SubKitIapPurchase, SubKitPurchaseRequest } from './types.js'
 
 export function createExpoIapAdapter(): SubKitIapAdapterBundle {
   const iap: SubKitExpoIapAdapter = {

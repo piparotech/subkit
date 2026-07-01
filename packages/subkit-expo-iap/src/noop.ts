@@ -1,4 +1,4 @@
-import type { SubKitIapLogger } from './coordinator'
+import type { SubKitIapLogger } from './coordinator.js'
 
 export const noopSubKitIapLogger: SubKitIapLogger = {
   debug() {},

@@ -11,7 +11,7 @@ import {
   type StoreIdentityHints,
 } from '@piparotech/subkit-core'
 
-import type { SubKitIapPurchase } from './types'
+import type { SubKitIapPurchase } from './types.js'
 
 export interface SubKitRuntimeClientOptions {
   apiBaseUrl: string

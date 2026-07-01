@@ -1,12 +1,12 @@
 import type { CustomerInfo, Offering, PurchaseResult, PurchaseSyncResult, RuntimeOfferingsResponse, StoreIdentityHints } from '@piparotech/subkit-core'
 
-import type { SubKitIapAdapterBundle, SubKitPurchaseListenerSubscription } from './adapter'
-import { createSubKitAppStateSync, type SubKitAppStateSource } from './appState'
-import { SubKitRuntimeClient } from './client'
-import { createPurchaseSyncCoordinator, type PurchaseSyncCoordinator, type SubKitIapLogger } from './coordinator'
-import { MemoryIdentityStore } from './identity'
-import { createMemoryPurchaseQueueStore, type PurchaseQueueStore } from './queue'
-import type { SubKitExpoIapConfig, SubKitIapPlatform, SubKitPurchaseRequest, SubKitSyncOptions } from './types'
+import type { SubKitIapAdapterBundle, SubKitPurchaseListenerSubscription } from './adapter.js'
+import { createSubKitAppStateSync, type SubKitAppStateSource } from './appState.js'
+import { SubKitRuntimeClient } from './client.js'
+import { createPurchaseSyncCoordinator, type PurchaseSyncCoordinator, type SubKitIapLogger } from './coordinator.js'
+import { MemoryIdentityStore } from './identity.js'
+import { createMemoryPurchaseQueueStore, type PurchaseQueueStore } from './queue.js'
+import type { SubKitExpoIapConfig, SubKitIapPlatform, SubKitPurchaseRequest, SubKitSyncOptions } from './types.js'
 
 export interface CreateSubKitIapClientOptions extends SubKitExpoIapConfig {
   adapterBundle: SubKitIapAdapterBundle

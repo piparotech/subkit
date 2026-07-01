@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 
-import type { PurchaseSyncCoordinatorOptions } from './coordinator'
-import { createPurchaseSyncCoordinator } from './coordinator'
+import type { PurchaseSyncCoordinatorOptions } from './coordinator.js'
+import { createPurchaseSyncCoordinator } from './coordinator.js'
 
 export interface UseSubKitIapAutoSyncOptions extends PurchaseSyncCoordinatorOptions {
   enabled?: boolean
