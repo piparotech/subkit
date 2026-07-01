@@ -7,7 +7,7 @@ Referenzen:
 - `expo-iap`: <https://github.com/hyodotdev/openiap/tree/main/libraries/expo-iap>
 - RevenueCat React Native SDK: <https://github.com/RevenueCat/react-native-purchases>
 - Bestehender SubKit-Produktkontext: `PRODUCT.md`
-- Bestehende Runtime-Entitlement-Prüfung: `src/features/subkit/runtime-entitlements-server.ts`
+- Bestehende Runtime-Entitlement-Prüfung: `src/server/runtime-api/entitlements.ts`
 - Bestehende Runtime-Route: `src/routes/api.runtime.entitlements.check.ts`
 - Bestehender Prototyp-Seam: `packages/cn-web/src/lib/payments-iap-stripe/*`
 - Marina-IoT-Pattern für stillen Store-Sync: `~/dev/piparo.tech/weatherdock/marina-iot/app/src/screens/subscription/*`
@@ -132,14 +132,14 @@ Wenn das Paket später öffentlich werden soll, kann aus dieser Struktur sauber 
 
 ### Server-Code im bestehenden SubKit-App-Package
 
-Für den Anfang im bestehenden `src/features/subkit/*`-Bereich:
+Runtime-API-Implementierung lebt unter `src/server/runtime-api/*`:
 
 ```txt
-src/features/subkit/runtime-customer-info-server.ts
-src/features/subkit/runtime-offerings-server.ts
-src/features/subkit/runtime-purchases-server.ts
-src/features/subkit/store-purchase-ownership-server.ts
-src/features/subkit/store-purchase-validation-server.ts
+src/server/runtime-api/customerInfo.ts
+src/server/runtime-api/offerings.ts
+src/server/runtime-api/runtime.ts
+src/server/runtime-api/entitlements.ts
+src/server/runtime-api/serverApiAuth.ts
 ```
 
 Routes:
