@@ -1,9 +1,9 @@
 import { serverCustomerInfoRequestSchema } from '@piparotech/subkit-core'
 import { createFileRoute } from '@tanstack/react-router'
 
-import { authorizeServerApiRequest } from '~/features/subkit/server-api-auth'
-import { jsonApiError, jsonApiErrorFromThrown } from '~/features/subkit/server-api-errors'
-import { getServerCustomerInfo } from '~/features/subkit/server-customer-info'
+import { authorizeServerApiRequest } from '~/server/runtime-api'
+import { jsonApiError, jsonApiErrorFromThrown } from '~/server/runtime-api'
+import { getServerCustomerInfo } from '~/server/runtime-api'
 
 export const Route = createFileRoute('/api/server/customer-info')({
   server: {

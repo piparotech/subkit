@@ -1,6 +1,9 @@
 @import '@piparo/cn-web/src/index.css';
 
-@source '../features/subkit/**/*.{ts,tsx}';
+@source '../components/**/*.{ts,tsx}';
+@source '../console/**/*.{ts,tsx}';
+@source '../domain/**/*.{ts,tsx}';
+@source '../integrations/**/*.{ts,tsx}';
 @source '../../packages/cn-web/src/**/*.{ts,tsx}';
 
 

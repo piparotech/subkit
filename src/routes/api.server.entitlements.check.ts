@@ -1,9 +1,9 @@
 import { serverEntitlementCheckRequestSchema } from '@piparotech/subkit-core'
 import { createFileRoute } from '@tanstack/react-router'
 
-import { authorizeServerApiRequest } from '~/features/subkit/server-api-auth'
-import { jsonApiError, jsonApiErrorFromThrown } from '~/features/subkit/server-api-errors'
-import { checkRuntimeEntitlement } from '~/features/subkit/runtime-entitlements-server'
+import { authorizeServerApiRequest } from '~/server/runtime-api'
+import { jsonApiError, jsonApiErrorFromThrown } from '~/server/runtime-api'
+import { checkRuntimeEntitlement } from '~/server/runtime-api'
 
 export const Route = createFileRoute('/api/server/entitlements/check')({
   server: {

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { LoginPage } from '~/features/subkit/LoginPage'
-import { getAuthStatus } from '~/features/subkit/server'
+import { LoginPage } from '~/console'
+import { getAuthStatus } from '~/console/server'
 
 interface LoginSearch {
   reason?: string

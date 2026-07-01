@@ -1,9 +1,9 @@
 import { serverOfferingsRequestSchema } from '@piparotech/subkit-core'
 import { createFileRoute } from '@tanstack/react-router'
 
-import { authorizeServerApiRequest } from '~/features/subkit/server-api-auth'
-import { jsonApiError, jsonApiErrorFromThrown } from '~/features/subkit/server-api-errors'
-import { listServerOfferings } from '~/features/subkit/server-offerings'
+import { authorizeServerApiRequest } from '~/server/runtime-api'
+import { jsonApiError, jsonApiErrorFromThrown } from '~/server/runtime-api'
+import { listServerOfferings } from '~/server/runtime-api'
 
 export const Route = createFileRoute('/api/server/offerings')({
   server: {

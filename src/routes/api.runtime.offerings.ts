@@ -1,7 +1,7 @@
 import { runtimeOfferingsRequestSchema } from '@piparotech/subkit-core'
 import { createFileRoute } from '@tanstack/react-router'
 
-import { authorizeRuntimeRequest, listRuntimeOfferings } from '~/server/runtime-api/runtime'
+import { authorizeRuntimeRequest, listRuntimeOfferings } from '~/server/runtime-api'
 
 export const Route = createFileRoute('/api/runtime/offerings')({
   server: {

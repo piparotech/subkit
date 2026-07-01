@@ -1,7 +1,7 @@
 import { runtimeCustomerInfoRequestSchema } from '@piparotech/subkit-core'
 import { createFileRoute } from '@tanstack/react-router'
 
-import { authorizeRuntimeRequest, getRuntimeCustomerInfo } from '~/server/runtime-api/runtime'
+import { authorizeRuntimeRequest, getRuntimeCustomerInfo } from '~/server/runtime-api'
 
 export const Route = createFileRoute('/api/runtime/customer-info')({
   server: {

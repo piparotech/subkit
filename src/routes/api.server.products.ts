@@ -1,9 +1,9 @@
 import { serverProductsRequestSchema } from '@piparotech/subkit-core'
 import { createFileRoute } from '@tanstack/react-router'
 
-import { authorizeServerApiRequest } from '~/features/subkit/server-api-auth'
-import { jsonApiError, jsonApiErrorFromThrown } from '~/features/subkit/server-api-errors'
-import { listServerProducts } from '~/features/subkit/server-products'
+import { authorizeServerApiRequest } from '~/server/runtime-api'
+import { jsonApiError, jsonApiErrorFromThrown } from '~/server/runtime-api'
+import { listServerProducts } from '~/server/runtime-api'
 
 export const Route = createFileRoute('/api/server/products')({
   server: {

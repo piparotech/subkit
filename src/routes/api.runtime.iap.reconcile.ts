@@ -1,7 +1,7 @@
 import { iapReconcileRequestSchema } from '@piparotech/subkit-core'
 import { createFileRoute } from '@tanstack/react-router'
 
-import { authorizeRuntimeRequest, reconcileRuntimeIap } from '~/server/runtime-api/runtime'
+import { authorizeRuntimeRequest, reconcileRuntimeIap } from '~/server/runtime-api'
 
 export const Route = createFileRoute('/api/runtime/iap/reconcile')({
   server: {

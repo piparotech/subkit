@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { SubKitConsole } from '~/features/subkit/SubKitConsole'
+import { SubKitConsole } from '~/console'
 
 export const Route = createFileRoute('/_console/settings')({
   component: WorkspaceSettingsRoute,

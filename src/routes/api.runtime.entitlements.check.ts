@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { checkRuntimeEntitlement, runtimeEntitlementCheckInputSchema } from '~/features/subkit/runtime-entitlements-server'
+import { checkRuntimeEntitlement, runtimeEntitlementCheckInputSchema } from '~/server/runtime-api'
 import { parseServerEnv } from '~/server/env'
 
 export const Route = createFileRoute('/api/runtime/entitlements/check')({
