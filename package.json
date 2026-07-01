@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && tsc --noEmit",
+    "build": "pnpm --filter @piparotech/subkit-core build && pnpm --filter @piparotech/subkit-node build && vite build && tsc --noEmit",
     "preview": "vite preview",
     "start": "node .output/server/index.mjs",
     "typecheck": "tsc --noEmit",
@@ -21,6 +21,7 @@
   "dependencies": {
     "@libsql/client": "^0.17.4",
     "@piparo/cn-web": "workspace:*",
+    "@piparotech/subkit-core": "workspace:*",
     "@tanstack/react-router": "^1.170.16",
     "@tanstack/react-start": "^1.168.26",
     "drizzle-orm": "^0.45.2",

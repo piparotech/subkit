@@ -40,6 +40,9 @@ importers:
       '@piparo/cn-web':
         specifier: workspace:*
         version: link:packages/cn-web
+      '@piparotech/subkit-core':
+        specifier: workspace:*
+        version: link:packages/subkit-core
       '@tanstack/react-router':
         specifier: ^1.170.16
         version: 1.170.16(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -213,6 +216,26 @@ importers:
       zod:
         specifier: ^4.0.0
         version: 4.4.3
+
+  packages/subkit-core:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
+
+  packages/subkit-node:
+    dependencies:
+      '@piparotech/subkit-core':
+        specifier: workspace:*
+        version: link:../subkit-core
+    devDependencies:
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
 
 packages:
 
