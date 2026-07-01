@@ -1,22 +1,14 @@
-import { Link, useLoaderData, useNavigate, useRouter } from '@tanstack/react-router'
+import { useLoaderData, useNavigate, useRouter } from '@tanstack/react-router'
 import * as React from 'react'
 
-import { ConsoleShell } from './Shell'
-import {
-  AppUsersView,
-  AppsView,
-  DashboardView,
-  EntitlementsView,
-  OfferingsView,
-  SubscriptionsView,
-} from './Views'
-import { AppSettingsView, WorkspaceSettingsView } from './SettingsView'
-import { TenantMembersView } from './TenantMembersView'
+import { ActiveView } from './ActiveView'
+import { listAppStoreConnectApps } from './app-store-connect-apps-server'
+import { emptyAppDraft, emptyTenantDraft, safeInitials, safeTenantId } from './consoleHelpers'
 import { newSubscription } from './data'
 import { Panels } from './Panels'
-import { appRouteParams, createAppFromDraft, filterAppUsers, filterApps, filterSubscriptions, idForLabel, initialsForName } from './store'
-import { listAppStoreConnectApps } from './app-store-connect-apps-server'
 import { createAppRecord, createTenantRecord, upsertSubscriptionRecord } from './server'
+import { ConsoleShell } from './ConsoleShell'
+import { appRouteParams, createAppFromDraft, filterAppUsers, filterApps, filterSubscriptions } from './store'
 import type {
   AppDraft,
   AppDraftField,
@@ -24,7 +16,6 @@ import type {
   AppStoreConnectConnection,
   AppTenant,
   AppUser,
-  ConsoleData,
   EditableSubscriptionTextField,
   Entitlement,
   Offering,
@@ -34,9 +25,6 @@ import type {
   TenantDraftField,
   View,
 } from './types'
-
-const emptyAppDraft: AppDraft = { appleAppId: '', bundleId: '', name: '', sku: '' }
-const emptyTenantDraft: TenantDraft = { color: 'oklch(0.62 0.17 152)', id: '', initials: '', name: '' }
 
 export function SubKitConsole({ currentAppId, view }: { currentAppId: string | null; view: View }) {
   const consoleData = useLoaderData({ from: '/_console' })
@@ -388,121 +376,3 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
   )
 }
 
-function ActiveView({
-  apps,
-  connection,
-  consoleData,
-  currentApp,
-  tenant,
-  entitlements,
-  offerings,
-  onAppDeleted,
-  onOpenAppUser,
-  onOpenSubscription,
-  onRefreshConsoleData,
-  appUsers,
-  subscriptions,
-  view,
-}: {
-  apps: AppTenant[]
-  connection: AppStoreConnectConnection | null
-  consoleData: ConsoleData
-  currentApp: AppTenant | null
-  tenant: ConsoleData['tenant']
-  entitlements: Entitlement[]
-  offerings: Offering[]
-  onAppDeleted: (id: string) => void
-  onOpenAppUser: (appUser: AppUser) => void
-  onOpenSubscription: (subscription: SubscriptionProduct) => void
-  onRefreshConsoleData: () => void
-  appUsers: AppUser[]
-  subscriptions: SubscriptionProduct[]
-  view: View
-}) {
-  if (view === 'tenantMembers') {
-    return <TenantMembersView onRefreshConsoleData={onRefreshConsoleData} tenant={tenant} tenantMembers={consoleData.tenantMembers} />
-  }
-
-  if (view === 'workspaceSettings') {
-    return <WorkspaceSettingsView connection={connection} onRefreshConsoleData={onRefreshConsoleData} tenant={tenant} />
-  }
-
-  if (view === 'apps') return <AppsView apps={apps} />
-
-  if (currentApp == null) return <AppRouteNotFound apps={apps} />
-
-  switch (view) {
-    case 'dashboard': {
-      const dashboard = consoleData.dashboards.find((item) => item.appId === currentApp.id)
-      if (dashboard == null) throw new Error('Dashboard data missing for selected app')
-      return (
-        <DashboardView
-          activity={dashboard.activity}
-          app={currentApp}
-          dbStats={consoleData.stats}
-          metrics={dashboard.metrics}
-          revenueBars={dashboard.revenueBars}
-        />
-      )
-    }
-    case 'subscriptions':
-      return <SubscriptionsView onOpenSubscription={onOpenSubscription} subscriptions={subscriptions} />
-    case 'entitlements':
-      return <EntitlementsView entitlements={entitlements} />
-    case 'offerings':
-      return <OfferingsView offerings={offerings} />
-    case 'appUsers':
-      return <AppUsersView appUsers={appUsers} onOpenAppUser={onOpenAppUser} />
-    case 'settings':
-      return (
-        <AppSettingsView
-          app={currentApp}
-          connection={connection}
-          onAppDeleted={onAppDeleted}
-          onRefreshConsoleData={onRefreshConsoleData}
-        />
-      )
-  }
-}
-
-function safeTenantId(value: string): string {
-  try {
-    return idForLabel(value)
-  } catch {
-    return ''
-  }
-}
-
-function safeInitials(value: string): string {
-  try {
-    return initialsForName(value)
-  } catch {
-    return ''
-  }
-}
-
-function AppRouteNotFound({ apps }: { apps: AppTenant[] }) {
-  return (
-    <section className="max-w-[760px] animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
-      <div className="rounded-[14px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] p-[22px]">
-        <h1 className="m-0 text-[19px] font-bold tracking-[-0.01em]">App route not found</h1>
-        <p className="mt-[8px] mb-0 text-[13.5px] text-[var(--subkit-dim)]">The app in the URL is not available in this workspace.</p>
-        {apps.length > 0 ? (
-          <div className="mt-[16px] flex flex-wrap gap-[8px]">
-            {apps.map((app) => (
-              <Link
-                className="cursor-pointer rounded-[9px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[11px] py-[7px] text-[12.5px] font-semibold text-[var(--subkit-text)] hover:bg-[var(--subkit-accent-soft)]"
-                key={app.id}
-                params={appRouteParams(app)}
-                preload="intent"
-                to="/$tenantSlug/$appSlug"
-              >
-                {app.name}
-              </Link>
-            ))}
-          </div>
-        ) : null}
-      </div>
-    </section>
-  )
-}

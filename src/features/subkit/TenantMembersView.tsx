@@ -1,9 +1,12 @@
-import { PUIInput, cn } from '@piparo/cn-web'
+import { PUIInput } from '@piparo/cn-web'
 import * as React from 'react'
 
+import { ActionButton } from './ActionButton'
+import { Notice } from './Notice'
+import { RoleSelect } from './RoleSelect'
 import { inviteTenantMember, removeTenantMember, updateTenantMemberRole } from './server'
-import { ViewTitle } from './ui'
 import type { TenantMemberSummary, TenantRole, WorkspaceTenant } from './types'
+import { ViewTitle } from './ViewTitle'
 
 export function TenantMembersView({
   onRefreshConsoleData,
@@ -103,37 +106,3 @@ export function TenantMembersView({
   )
 }
 
-function RoleSelect({ disabled, onChange, value }: { disabled: boolean; onChange: (role: TenantRole) => void; value: TenantRole }) {
-  return (
-    <select
-      className="min-h-[36px] rounded-[9px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[10px] py-[7px] text-[12.5px] font-semibold text-[var(--subkit-text)] outline-none disabled:opacity-50"
-      disabled={disabled}
-      onChange={(event) => onChange(event.target.value === 'admin' ? 'admin' : 'developer')}
-      value={value}
-    >
-      <option value="developer">Developer</option>
-      <option value="admin">Admin</option>
-    </select>
-  )
-}
-
-function ActionButton({ disabled, label, onPress, tone }: { disabled: boolean; label: string; onPress: () => void; tone: 'danger' | 'primary' }) {
-  return (
-    <button
-      className={cn(
-        'min-h-[36px] cursor-pointer rounded-[9px] px-[13px] py-[8px] text-[12.5px] font-semibold transition-colors duration-fast disabled:cursor-not-allowed disabled:opacity-50',
-        tone === 'primary' && 'bg-[var(--subkit-text)] text-white hover:bg-[color-mix(in_oklch,var(--subkit-text)_88%,white)]',
-        tone === 'danger' && 'border border-[color-mix(in_oklch,var(--subkit-red)_30%,var(--subkit-border))] bg-white text-[var(--subkit-red)] hover:bg-[color-mix(in_oklch,var(--subkit-red)_7%,white)]',
-      )}
-      disabled={disabled}
-      onClick={onPress}
-      type="button"
-    >
-      {label}
-    </button>
-  )
-}
-
-function Notice({ children }: { children: React.ReactNode }) {
-  return <div className="mt-[12px] rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]">{children}</div>
-}
