@@ -6,13 +6,13 @@
   "description": "Shared backend API contracts for SubKit.",
   "exports": {
     ".": {
-      "types": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "development": "./src/index.ts",
       "import": "./dist/index.js"
     }
   },
   "main": "./dist/index.js",
-  "types": "./src/index.ts",
+  "types": "./dist/index.d.ts",
   "files": ["dist"],
   "scripts": {
     "build": "tsc -p tsconfig.json",

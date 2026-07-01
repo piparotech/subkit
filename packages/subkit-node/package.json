@@ -18,7 +18,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@piparotech/subkit-core": "workspace:*"
+    "@piparotech/subkit-core": "workspace:*",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "typescript": "catalog:"
