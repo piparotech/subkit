@@ -1,6 +1,6 @@
 import { and, eq, gt, isNull, or } from 'drizzle-orm'
 
-import { authEvents, authSessions, users } from '~/db/schema'
+import { authEvents, authSessions, tenants, users, userTenants } from '~/db/schema'
 import { db } from '~/db/client'
 
 import { createRandomToken, sha256Hex } from './crypto'
@@ -11,6 +11,13 @@ export class AuthenticationRequiredError extends Error {
   constructor() {
     super('Authentication required')
   }
+}
+
+const defaultTenant = {
+  color: 'oklch(0.62 0.17 152)',
+  id: 'piparo',
+  initials: 'PI',
+  name: 'piparo.tech',
 }
 
 export async function getOptionalCurrentUser(): Promise<AuthUser | undefined> {
@@ -36,6 +43,7 @@ export async function getOptionalCurrentUser(): Promise<AuthUser | undefined> {
   if (!row) return undefined
 
   await db.update(authSessions).set({ lastSeenAt: new Date() }).where(eq(authSessions.id, row.authSession.id))
+  await ensureDefaultTenantAccess(row.user)
   return toAuthUser(row.user)
 }
 
@@ -68,6 +76,7 @@ export async function findOrCreateUserFromClaims(claims: OidcClaims, identityPro
 
     if (!updated) throw new Error('Failed to update authenticated user')
 
+    await ensureDefaultTenantAccess(updated)
     await recordAuthEvent(updated.id, 'login_success', identityProvider)
     return toAuthUser(updated)
   }
@@ -94,8 +103,57 @@ export async function findOrCreateUserFromClaims(claims: OidcClaims, identityPro
 
   if (!created) throw new Error('Failed to create authenticated user')
 
+  await ensureDefaultTenantAccess(created)
   await recordAuthEvent(created.id, 'login_success', identityProvider)
   return toAuthUser(created)
+}
+
+async function ensureDefaultTenantAccess(user: typeof users.$inferSelect): Promise<void> {
+  if (!shouldGrantDefaultTenantAccess(user)) return
+
+  const [membership] = await db
+    .select({ userId: userTenants.userId })
+    .from(userTenants)
+    .where(and(eq(userTenants.userId, user.id), eq(userTenants.tenantId, defaultTenant.id)))
+    .limit(1)
+  if (membership != null) return
+
+  const now = new Date()
+  await db.transaction(async (tx) => {
+    await tx
+      .insert(tenants)
+      .values({
+        color: defaultTenant.color,
+        createdAt: now,
+        id: defaultTenant.id,
+        initials: defaultTenant.initials,
+        name: defaultTenant.name,
+      })
+      .onConflictDoUpdate({
+        set: {
+          color: defaultTenant.color,
+          initials: defaultTenant.initials,
+          name: defaultTenant.name,
+        },
+        target: tenants.id,
+      })
+
+    await tx
+      .insert(userTenants)
+      .values({
+        createdAt: now,
+        invitedByUserId: null,
+        role: 'admin',
+        tenantId: defaultTenant.id,
+        userId: user.id,
+      })
+      .onConflictDoNothing({ target: [userTenants.userId, userTenants.tenantId] })
+  })
+}
+
+function shouldGrantDefaultTenantAccess(user: typeof users.$inferSelect): boolean {
+  const email = user.email?.trim().toLowerCase()
+  return user.operator || email?.endsWith('@piparo.tech') === true
 }
 
 async function findUserByClaims(zitadelSubject: string, email?: string) {
