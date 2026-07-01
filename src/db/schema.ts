@@ -226,6 +226,46 @@ export const appUsers = sqliteTable(
   (table) => [uniqueIndex('app_users_app_user_id_unique').on(table.appId, table.appUserId)],
 )
 
+export const appUserAliases = sqliteTable(
+  'app_user_aliases',
+  {
+    id: text('id').primaryKey(),
+    appId: text('app_id')
+      .notNull()
+      .references(() => apps.id, { onDelete: 'cascade' }),
+    appUserId: text('app_user_id')
+      .notNull()
+      .references(() => appUsers.id, { onDelete: 'cascade' }),
+    alias: text('alias').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (table) => [uniqueIndex('app_user_aliases_app_alias_unique').on(table.appId, table.alias)],
+)
+
+export const appUserStoreIdentities = sqliteTable(
+  'app_user_store_identities',
+  {
+    id: text('id').primaryKey(),
+    appId: text('app_id')
+      .notNull()
+      .references(() => apps.id, { onDelete: 'cascade' }),
+    appUserId: text('app_user_id')
+      .notNull()
+      .references(() => appUsers.id, { onDelete: 'cascade' }),
+    store: text('store', { enum: ['apple', 'google'] }).notNull(),
+    appAccountToken: text('app_account_token'),
+    obfuscatedAccountId: text('obfuscated_account_id'),
+    obfuscatedProfileId: text('obfuscated_profile_id'),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    lastSeenAt: integer('last_seen_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (table) => [
+    uniqueIndex('app_user_store_identities_user_store_unique').on(table.appId, table.appUserId, table.store),
+    uniqueIndex('app_user_store_identities_apple_token_unique').on(table.appId, table.appAccountToken),
+    uniqueIndex('app_user_store_identities_google_account_unique').on(table.appId, table.obfuscatedAccountId),
+  ],
+)
+
 export const entitlementGrants = sqliteTable('entitlement_grants', {
   id: text('id').primaryKey(),
   appId: text('app_id')
@@ -238,12 +278,66 @@ export const entitlementGrants = sqliteTable('entitlement_grants', {
     .notNull()
     .references(() => entitlements.id, { onDelete: 'cascade' }),
   productId: text('product_id').references(() => products.id, { onDelete: 'set null' }),
+  storePurchaseId: text('store_purchase_id'),
+  ownershipSource: text('ownership_source', {
+    enum: ['direct_app_user', 'app_account_token', 'obfuscated_account_id', 'claimed_restore', 'manual_admin', 'unowned'],
+  })
+    .notNull()
+    .default('direct_app_user'),
   source: text('source', { enum: ['apple', 'google', 'voucher', 'promo', 'manual', 'lifetime', 'migration'] }).notNull(),
   status: text('status', { enum: ['active', 'trialing', 'billing_retry', 'expired', 'revoked'] }).notNull(),
   startsAt: text('starts_at').notNull(),
   expiresAt: text('expires_at'),
   revokedAt: integer('revoked_at', { mode: 'timestamp_ms' }),
   note: text('note'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+})
+
+export const storePurchaseOwnerships = sqliteTable(
+  'store_purchase_ownerships',
+  {
+    id: text('id').primaryKey(),
+    appId: text('app_id')
+      .notNull()
+      .references(() => apps.id, { onDelete: 'cascade' }),
+    appUserId: text('app_user_id')
+      .notNull()
+      .references(() => appUsers.id, { onDelete: 'cascade' }),
+    productId: text('product_id').references(() => products.id, { onDelete: 'set null' }),
+    entitlementGrantId: text('entitlement_grant_id').references(() => entitlementGrants.id, { onDelete: 'set null' }),
+    store: text('store', { enum: ['apple', 'google'] }).notNull(),
+    productIdentifier: text('product_identifier').notNull(),
+    transactionId: text('transaction_id').notNull(),
+    originalTransactionId: text('original_transaction_id').notNull(),
+    environment: text('environment', { enum: ['sandbox', 'production', 'unknown'] }).notNull().default('unknown'),
+    ownershipType: text('ownership_type', { enum: ['purchased', 'family_shared', 'unknown'] }).notNull().default('unknown'),
+    purchaseTokenHash: text('purchase_token_hash'),
+    receiptHash: text('receipt_hash'),
+    status: text('status', { enum: ['active', 'trialing', 'billing_retry', 'expired', 'revoked', 'pending'] }).notNull().default('pending'),
+    purchasedAt: text('purchased_at').notNull(),
+    expiresAt: text('expires_at'),
+    revokedAt: integer('revoked_at', { mode: 'timestamp_ms' }),
+    rawPayloadJson: text('raw_payload_json'),
+    lastReconciledAt: integer('last_reconciled_at', { mode: 'timestamp_ms' }).notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (table) => [
+    uniqueIndex('store_purchase_ownerships_store_original_unique').on(table.appId, table.store, table.originalTransactionId),
+    uniqueIndex('store_purchase_ownerships_store_transaction_unique').on(table.appId, table.store, table.transactionId),
+  ],
+)
+
+export const runtimeReconcileEvents = sqliteTable('runtime_reconcile_events', {
+  id: text('id').primaryKey(),
+  appId: text('app_id')
+    .notNull()
+    .references(() => apps.id, { onDelete: 'cascade' }),
+  appUserId: text('app_user_id').references(() => appUsers.id, { onDelete: 'set null' }),
+  storePurchaseOwnershipId: text('store_purchase_ownership_id').references(() => storePurchaseOwnerships.id, { onDelete: 'set null' }),
+  store: text('store', { enum: ['apple', 'google'] }).notNull(),
+  action: text('action').notNull(),
+  detail: text('detail').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
 })
 

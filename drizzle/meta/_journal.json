@@ -43,6 +43,13 @@
       "when": 1782865000000,
       "tag": "0005_seed_piparo_tenant",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1782892800000,
+      "tag": "0006_runtime_iap_ownership",
+      "breakpoints": true
     }
   ]
 }
