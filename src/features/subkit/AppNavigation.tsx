@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router'
+import { ArrowLeft } from 'lucide-react'
 
 import { AppUsersIcon } from './AppUsersIcon'
 import { DashboardIcon } from './DashboardIcon'
@@ -14,6 +15,15 @@ export function AppNavigation({ app, subscriptionsCount }: { app: AppTenant; sub
   const routeParams = appRouteParams(app)
   return (
     <div>
+      <Link
+        className="mb-[8px] flex items-center gap-[8px] rounded-[9px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[10px] py-[8px] text-[13px] font-semibold text-[var(--subkit-text)] outline-none transition-colors duration-fast hover:border-[var(--subkit-border-2)] hover:bg-[var(--subkit-bg)] focus-visible:ring-2 focus-visible:ring-[var(--subkit-accent-line)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--subkit-panel)] motion-reduce:transition-none"
+        preload="intent"
+        to="/apps"
+      >
+        <ArrowLeft aria-hidden className="size-[14px] shrink-0 text-[var(--subkit-dim)]" strokeWidth={1.8} />
+        <span className="min-w-0 truncate">Back to workspace</span>
+      </Link>
+
       <div className="flex items-center gap-[7px] px-[8px] pb-[6px] pt-[14px] text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--subkit-faint)]">
         <span
           className="inline-flex size-[14px] items-center justify-center rounded-[4px] text-[8px] text-white"

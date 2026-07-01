@@ -1,10 +1,12 @@
 import { PUIButton } from '@piparo/cn-web'
+import { Link } from '@tanstack/react-router'
 import { ChevronDown, MoreVertical, Plus, Search } from 'lucide-react'
 import * as React from 'react'
 
 import { AppNavigation } from './AppNavigation'
 import { GlobalNavigation } from './GlobalNavigation'
 import { MiniAppAvatar } from './MiniAppAvatar'
+import { appRouteParams } from './store'
 import type { AppTenant, ConsoleUser, View, WorkspaceTenant } from './types'
 import { WorkspaceSwitcher } from './WorkspaceSwitcher'
 
@@ -49,6 +51,7 @@ export function ConsoleShell({
 }: ShellProps) {
   const showPrimary = (view === 'apps' && canCreateApps) || (view === 'subscriptions' && currentApp != null)
   const primaryLabel = view === 'apps' ? 'New App' : 'New Subscription'
+  const currentAppRouteParams = currentApp == null ? null : appRouteParams(currentApp)
 
   return (
     <div className="flex h-dvh w-full overflow-hidden bg-[var(--subkit-bg)] text-[14px] text-[var(--subkit-text)]">
@@ -101,25 +104,23 @@ export function ConsoleShell({
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <header className="flex h-[58px] shrink-0 items-center gap-[16px] border-b border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[22px]">
-          <div className="flex min-w-0 items-center gap-[8px] text-[13px]">
-            <span className="text-[var(--subkit-faint)]">{tenant.name}</span>
-            {currentApp != null ? (
+          <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-[8px] text-[13px]">
+            <Link className={breadcrumbLinkClass} preload="intent" to="/apps">
+              {tenant.name}
+            </Link>
+            {currentApp != null && currentAppRouteParams != null ? (
               <>
-                <span className="text-[var(--subkit-border-2)]">/</span>
-                <span className="truncate text-[var(--subkit-faint)]">{currentApp.name}</span>
+                <BreadcrumbSeparator />
+                <Link className={breadcrumbLinkClass} params={currentAppRouteParams} preload="intent" to="/$tenantSlug/$appSlug">
+                  {currentApp.name}
+                </Link>
               </>
             ) : null}
-            <span className="text-[var(--subkit-border-2)]">/</span>
-            {view === 'apps' ? <span className="font-semibold text-[var(--subkit-text)]">All Apps</span> : null}
-            {view === 'tenantMembers' ? <span className="font-semibold text-[var(--subkit-text)]">Tenant Members</span> : null}
-            {view === 'workspaceSettings' ? <span className="font-semibold text-[var(--subkit-text)]">Workspace Settings</span> : null}
-            {view === 'dashboard' ? <span className="font-semibold text-[var(--subkit-text)]">Dashboard</span> : null}
-            {view === 'subscriptions' ? <span className="font-semibold text-[var(--subkit-text)]">Subscriptions</span> : null}
-            {view === 'entitlements' ? <span className="font-semibold text-[var(--subkit-text)]">Entitlements</span> : null}
-            {view === 'offerings' ? <span className="font-semibold text-[var(--subkit-text)]">Offerings</span> : null}
-            {view === 'appUsers' ? <span className="font-semibold text-[var(--subkit-text)]">App Users</span> : null}
-            {view === 'settings' ? <span className="font-semibold text-[var(--subkit-text)]">Settings</span> : null}
-          </div>
+            <BreadcrumbSeparator />
+            <span aria-current="page" className="min-w-0 truncate font-semibold text-[var(--subkit-text)]">
+              {viewLabel(view)}
+            </span>
+          </nav>
           <div className="flex-1" />
           <label className="hidden w-[240px] items-center gap-[8px] rounded-[9px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[11px] py-[7px] md:flex">
             <Search aria-hidden className="size-[14px] text-[var(--subkit-faint)]" strokeWidth={1.6} />
@@ -146,4 +147,38 @@ export function ConsoleShell({
       </main>
     </div>
   )
+}
+
+const breadcrumbLinkClass =
+  'min-w-0 truncate font-medium text-[var(--subkit-faint)] outline-none transition-colors duration-fast hover:text-[var(--subkit-text)] hover:underline focus-visible:text-[var(--subkit-text)] focus-visible:underline motion-reduce:transition-none'
+
+function BreadcrumbSeparator() {
+  return (
+    <span aria-hidden className="shrink-0 text-[var(--subkit-border-2)]">
+      /
+    </span>
+  )
+}
+
+function viewLabel(view: View): string {
+  switch (view) {
+    case 'apps':
+      return 'All Apps'
+    case 'tenantMembers':
+      return 'Tenant Members'
+    case 'workspaceSettings':
+      return 'Workspace Settings'
+    case 'dashboard':
+      return 'Dashboard'
+    case 'subscriptions':
+      return 'Subscriptions'
+    case 'entitlements':
+      return 'Entitlements'
+    case 'offerings':
+      return 'Offerings'
+    case 'appUsers':
+      return 'App Users'
+    case 'settings':
+      return 'Settings'
+  }
 }
