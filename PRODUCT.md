@@ -10,7 +10,7 @@ Operatoren nutzen SubKit, um Store-Accounts zu verbinden, Apps zu mappen, Produk
 
 SubKit besitzt den App-User- und Entitlement-Zustand.
 
-App-Backends und Apps sollen SubKit-Zustand über Runtime-/Read-APIs konsumieren, zum Beispiel: „Hat App User X das Entitlement Y?“ Sie sollen nicht als autoritative Quelle dafür gelten, welcher App User subscribed ist — außer bei klar gekennzeichneten Import-, Migrations- oder Admin-Flows.
+App-Backends und Apps sollen SubKit-Zustand über Runtime-/Read-APIs konsumieren, zum Beispiel: „Hat App User X das Entitlement Y?“ Sie sollen nicht als autoritative Quelle dafür gelten, welcher App User Zugriff hat — außer bei klar gekennzeichneten Import-, Migrations- oder Admin-Flows.
 
 Store-Systeme speisen SubKit über verifizierte Quellen, zum Beispiel App-Store-Connect-Katalog-Lesezugriffe, Apple Server Notifications, Google Play RTDN, Receipt Validation, Report-Imports oder bewusste Operator-Aktionen.
 
@@ -43,8 +43,8 @@ Deshalb soll App-Code nicht fragen „hat dieser User eine Subscription?“, son
 ## Begriffe
 
 - „App User“ ist der Produktbegriff in UI, Doku und fachlicher Diskussion.
-- „Subscriber“ darf nur verwendet werden, wenn es um Store-spezifische Konzepte oder interne technische Tabellen/Legacy-Namen geht.
-- „Subscribed“ ist als fachlicher Zustand zu eng; maßgeblich ist, ob ein App User ein aktives Entitlement hat.
+- „App User“ ersetzt fachlich und technisch den alten Nutzerbegriff.
+- Ein aktives Entitlement ist der maßgebliche Zugriffszustand; Store-Subscriptions sind nur eine mögliche Quelle.
 - Console-/Operator-User sind Nutzer der SubKit-Oberfläche und nicht mit App Users zu verwechseln.
 
 ## Runtime-Modell

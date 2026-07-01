@@ -12,7 +12,7 @@ export const Route = createRootRoute({
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       {
         name: 'description',
-        content: 'Multi-tenant subscription management console for app stores and subscriber lifecycle operations.',
+        content: 'Multi-tenant entitlement management console for app stores, App Users, and access lifecycle operations.',
       },
       { title: 'SubKit' },
     ],
