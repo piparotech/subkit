@@ -5,13 +5,14 @@ import { AppsView } from '~/domain/apps/AppsView'
 import { DashboardView } from '~/domain/dashboard/DashboardView'
 import { EntitlementsView } from '~/domain/entitlements/EntitlementsView'
 import { OfferingsView } from '~/domain/offerings/OfferingsView'
-import { SubscriptionsView } from '~/domain/subscriptions/SubscriptionsView'
+import { ProductsView } from '~/domain/products/ProductsView'
+import { StoresView } from '~/domain/stores/StoresView'
 import { TenantMembersView } from '~/domain/tenants/TenantMembersView'
 import type { AppUser } from '~/domain/app-users/types'
 import type { AppTenant } from '~/domain/apps/types'
+import type { CatalogProduct } from '~/domain/products/types'
 import type { Entitlement } from '~/domain/entitlements/types'
 import type { Offering } from '~/domain/offerings/types'
-import type { SubscriptionProduct } from '~/domain/subscriptions/types'
 import type { AppStoreConnectConnection } from '~/integrations/app-store-connect/types'
 import type { ConsoleData, View } from '~/console/types'
 import { WorkspaceSettingsView } from '~/integrations/app-store-connect/WorkspaceSettingsView'
@@ -26,10 +27,10 @@ export function ActiveView({
   offerings,
   onAppDeleted,
   onOpenAppUser,
-  onOpenSubscription,
+  onOpenProduct,
   onRefreshConsoleData,
   appUsers,
-  subscriptions,
+  products,
   view,
 }: {
   apps: AppTenant[]
@@ -41,10 +42,10 @@ export function ActiveView({
   offerings: Offering[]
   onAppDeleted: (id: string) => void
   onOpenAppUser: (appUser: AppUser) => void
-  onOpenSubscription: (subscription: SubscriptionProduct) => void
+  onOpenProduct: (product: CatalogProduct) => void
   onRefreshConsoleData: () => void
   appUsers: AppUser[]
-  subscriptions: SubscriptionProduct[]
+  products: CatalogProduct[]
   view: View
 }) {
   if (view === 'tenantMembers') {
@@ -74,8 +75,13 @@ export function ActiveView({
         />
       )
     }
-    case 'subscriptions':
-      return <SubscriptionsView onOpenSubscription={onOpenSubscription} subscriptions={subscriptions} />
+    case 'products':
+      return <ProductsView onOpenProduct={onOpenProduct} products={products} />
+    case 'stores': {
+      const storeSync = consoleData.storeSync.find((item) => item.appId === currentApp.id)
+      if (storeSync == null) throw new Error('Store sync data missing for selected app')
+      return <StoresView storeSync={storeSync} />
+    }
     case 'entitlements':
       return <EntitlementsView entitlements={entitlements} />
     case 'offerings':

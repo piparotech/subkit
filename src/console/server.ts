@@ -16,6 +16,7 @@ import {
 import type { AuthUser } from '~/server/auth/types'
 import {
   apps,
+  appPlatforms,
   appStoreConnectAuditEvents,
   appStoreConnectSalesReports,
   appUsers,
@@ -23,8 +24,18 @@ import {
   entitlements,
   offeringPackages,
   offerings,
+  prices,
+  productEntitlements,
+  productOffers,
+  productPlans,
   products,
   purchaseEvents,
+  storeCatalogDriftItems,
+  storeCatalogSnapshots,
+  storeIntegrations,
+  storeMutationPlans,
+  storeProductBindings,
+  syncRuns,
   tenants,
   userTenants,
   users,
@@ -36,7 +47,19 @@ import type { AppTenant, Platform } from '~/domain/apps/types'
 import type { ActivityEvent, ConsoleStats, DashboardSummary, Metric, RevenueBar } from '~/domain/dashboard/types'
 import type { Entitlement, EntitlementGrantStatus } from '~/domain/entitlements/types'
 import type { Offering, OfferingPackage } from '~/domain/offerings/types'
-import type { SubscriptionProduct } from '~/domain/subscriptions/types'
+import type { CatalogProduct, ProductStatus, ProductType } from '~/domain/products/types'
+import type {
+  StoreBindingStatus,
+  StoreDriftSeverity,
+  StoreDriftStatus,
+  StoreMutationPlanStatus,
+  StoreMutationRisk,
+  StoreSyncAppSummary,
+  StoreSyncDirection,
+  StoreSyncRunMode,
+  StoreSyncRunStatus,
+  StoreSyncStore,
+} from '~/domain/stores/types'
 import type { ConsoleUser, TenantMemberSummary, TenantRole, WorkspaceTenant } from '~/domain/tenants/types'
 import type { ConsoleData } from '~/console/types'
 
@@ -50,16 +73,22 @@ const appInputSchema = z.object({
   tenantId: z.string().min(1),
 })
 
-const subscriptionInputSchema = z.object({
-  androidId: z.string().optional(),
+const productInputSchema = z.object({
   appId: z.string().min(1),
-  duration: z.string().min(1),
+  appleProductId: z.string().optional(),
+  billingPeriod: z.string().min(1),
+  description: z.string(),
   entitlement: z.string().min(1),
-  identifier: z.string().min(1),
-  iosId: z.string().min(1),
+  googleBasePlanId: z.string().optional(),
+  googleProductId: z.string().optional(),
   name: z.string().min(1),
-  originalIdentifier: z.string().nullable(),
+  planId: z.string().optional(),
+  planKey: z.string().min(1),
   price: z.string().min(1),
+  productId: z.string().optional(),
+  productKey: z.string().min(1),
+  productType: z.enum(['subscription', 'non_consumable', 'consumable', 'voucher', 'manual']),
+  status: z.enum(['draft', 'active', 'archived']),
   trialOn: z.boolean(),
 })
 
@@ -97,16 +126,45 @@ function parsePriceCents(price: string): number {
   return Math.round(amount * 100)
 }
 
-function productRowId(appId: string, identifier: string): string {
-  return `${appId}:${identifier}`
+function productRowId(appId: string, key: string): string {
+  return `${appId}:product:${key}`
+}
+
+function productPlanRowId(productId: string, planKey: string): string {
+  return `${productId}:plan:${planKey}`
+}
+
+function priceRowId(productPlanId: string, currencyCode: string, countryCode: string | null): string {
+  return `${productPlanId}:price:${currencyCode}:${countryCode ?? 'global'}`
+}
+
+function productEntitlementRowId(productId: string, entitlementId: string): string {
+  return `${productId}:entitlement:${entitlementId}`
+}
+
+function storeBindingRowId(productPlanId: string, store: 'apple' | 'google', externalProductId: string, basePlanId: string): string {
+  return `${productPlanId}:binding:${store}:${externalProductId}:${basePlanId || 'default'}`
+}
+
+function productOfferRowId(productPlanId: string, key: string): string {
+  return `${productPlanId}:offer:${key}`
 }
 
 function entitlementRowId(appId: string, key: string): string {
-  return `${appId}:${key}`
+  return `${appId}:entitlement:${key}`
 }
 
 function formatCurrency(cents: number): string {
   return new Intl.NumberFormat('en-US', { currency: 'USD', maximumFractionDigits: 2, style: 'currency' }).format(cents / 100)
+}
+
+function amountMicrosToCents(value: number | null): number {
+  if (value == null) return 0
+  return Math.round(value / 10_000)
+}
+
+function centsToAmountMicros(cents: number): number {
+  return cents * 10_000
 }
 
 function formatSignedCurrency(cents: number | null): string {
@@ -125,6 +183,38 @@ function formatDateTime(value: Date): string {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(value)
+}
+
+function formatOptionalDateTime(value: Date | null): string {
+  return value == null ? '—' : formatDateTime(value)
+}
+
+function formatJsonSummary(value: string | null): string {
+  if (value == null || value.trim() === '') return '—'
+  try {
+    const parsed: unknown = JSON.parse(value)
+    if (isStringRecord(parsed)) {
+      const entries = Object.entries(parsed)
+      if (entries.length === 0) return '{}'
+      return entries.slice(0, 3).map(([key, entryValue]) => `${key}: ${formatJsonScalar(entryValue)}`).join(' · ')
+    }
+    return formatJsonScalar(parsed)
+  } catch {
+    return value
+  }
+}
+
+function formatJsonScalar(value: unknown): string {
+  if (value == null) return 'null'
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  if (Array.isArray(value)) return `${value.length} items`
+  if (isStringRecord(value)) return `${Object.keys(value).length} fields`
+  return 'value'
+}
+
+function isStringRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value != null && !Array.isArray(value)
 }
 
 function appStatus(status: 'setup' | 'live' | 'beta' | 'inactive'): { label: string; tone: StatusTone } {
@@ -181,6 +271,18 @@ function amountTone(cents: number | null): StatusTone {
   return cents > 0 ? 'success' : 'destructive'
 }
 
+function storeSyncObjectLabel(
+  binding: typeof storeProductBindings.$inferSelect | null | undefined,
+  snapshot: typeof storeCatalogSnapshots.$inferSelect | null | undefined,
+): string {
+  if (binding != null) {
+    const basePlan = binding.externalBasePlanId.trim()
+    return basePlan === '' ? `${binding.store}:${binding.externalProductId}` : `${binding.store}:${binding.externalProductId}:${basePlan}`
+  }
+  if (snapshot != null) return `${snapshot.store}:${snapshot.externalId}`
+  return 'unbound store object'
+}
+
 function shortUserId(userId: string): string {
   const [firstPart] = userId.split('-')
   if (!firstPart) throw new Error('App User id is required')
@@ -223,7 +325,7 @@ function revenueBarsForEvents(events: readonly typeof purchaseEvents.$inferSelec
   return values.map(([month, cents]) => ({ month, height: `${Math.max(1, Math.round((cents * 100) / maxRevenue))}%` }))
 }
 
-function appPlatforms(appleAppId: string | null, iosBundleId: string | null, bundleId: string, androidPackageName: string | null): Platform[] {
+function appPlatformLabels(appleAppId: string | null, iosBundleId: string | null, bundleId: string, androidPackageName: string | null): Platform[] {
   const platforms: Platform[] = []
   if (appleAppId != null && appleAppId.trim() !== '') platforms.push('iOS')
   else if (iosBundleId != null && iosBundleId.trim() !== '') platforms.push('iOS')
@@ -358,6 +460,17 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
   const [
     appRowsAll,
     productRowsAll,
+    productPlanRowsAll,
+    productEntitlementRowsAll,
+    priceRowsAll,
+    productOfferRowsAll,
+    storeProductBindingRowsAll,
+    storeIntegrationRowsAll,
+    appPlatformRowsAll,
+    storeCatalogSnapshotRowsAll,
+    storeCatalogDriftRowsAll,
+    syncRunRowsAll,
+    storeMutationPlanRowsAll,
     entitlementRowsAll,
     offeringRowsAll,
     packageRows,
@@ -369,6 +482,17 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
   ] = await Promise.all([
     db.select().from(apps),
     db.select().from(products),
+    db.select().from(productPlans),
+    db.select().from(productEntitlements),
+    db.select().from(prices),
+    db.select().from(productOffers),
+    db.select().from(storeProductBindings),
+    db.select().from(storeIntegrations),
+    db.select().from(appPlatforms),
+    db.select().from(storeCatalogSnapshots),
+    db.select().from(storeCatalogDriftItems),
+    db.select().from(syncRuns),
+    db.select().from(storeMutationPlans),
     db.select().from(entitlements),
     db.select().from(offerings),
     db.select().from(offeringPackages),
@@ -392,6 +516,20 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
   const appRows = appRowsAll.filter((app) => accessibleTenantIds.has(app.tenantId))
   const ownedAppIds = new Set(appRows.map((app) => app.id))
   const productRows = productRowsAll.filter((product) => isOwnedApp(product.appId, ownedAppIds))
+  const ownedProductIds = new Set(productRows.map((product) => product.id))
+  const productPlanRows = productPlanRowsAll.filter((plan) => ownedProductIds.has(plan.productId))
+  const ownedProductPlanIds = new Set(productPlanRows.map((plan) => plan.id))
+  const productEntitlementRows = productEntitlementRowsAll.filter((row) => ownedProductIds.has(row.productId))
+  const priceRows = priceRowsAll.filter((price) => ownedProductPlanIds.has(price.productPlanId))
+  const productOfferRows = productOfferRowsAll.filter((offer) => ownedProductPlanIds.has(offer.productPlanId))
+  const storeProductBindingRows = storeProductBindingRowsAll.filter((binding) => isOwnedApp(binding.appId, ownedAppIds))
+  const storeIntegrationRows = storeIntegrationRowsAll.filter((integration) => isOwnedApp(integration.appId, ownedAppIds))
+  const appPlatformRows = appPlatformRowsAll.filter((platform) => isOwnedApp(platform.appId, ownedAppIds))
+  const ownedAppPlatformIds = new Set(appPlatformRows.map((platform) => platform.id))
+  const storeCatalogSnapshotRows = storeCatalogSnapshotRowsAll.filter((snapshot) => snapshot.appPlatformId != null && ownedAppPlatformIds.has(snapshot.appPlatformId))
+  const storeCatalogDriftRows = storeCatalogDriftRowsAll.filter((drift) => isOwnedApp(drift.appId, ownedAppIds))
+  const syncRunRows = syncRunRowsAll.filter((run) => isOwnedApp(run.appId, ownedAppIds))
+  const storeMutationPlanRows = storeMutationPlanRowsAll.filter((plan) => isOwnedApp(plan.appId, ownedAppIds))
   const entitlementRows = entitlementRowsAll.filter((entitlement) => isOwnedApp(entitlement.appId, ownedAppIds))
   const offeringRows = offeringRowsAll.filter((offering) => isOwnedApp(offering.appId, ownedAppIds))
   const appUserRows = appUserRowsAll.filter((appUser) => isOwnedApp(appUser.appId, ownedAppIds))
@@ -420,13 +558,36 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
   const appUserById = new Map(appUserRows.map((appUser) => [appUser.id, appUser]))
   const entitlementById = new Map(entitlementRows.map((row) => [row.id, row]))
   const productById = new Map(productRows.map((row) => [row.id, row]))
+  const planById = new Map(productPlanRows.map((row) => [row.id, row]))
+  const bindingById = new Map(storeProductBindingRows.map((row) => [row.id, row]))
+  const snapshotById = new Map(storeCatalogSnapshotRows.map((row) => [row.id, row]))
   const grantById = new Map(entitlementGrantRows.map((row) => [row.id, row]))
 
+  const entitlementKeysByProductId = new Map<string, string[]>()
   const productsByEntitlement = new Map<string, string[]>()
-  for (const product of productRows) {
-    const current = productsByEntitlement.get(product.entitlementId) ?? []
-    current.push(product.identifier)
-    productsByEntitlement.set(product.entitlementId, current)
+  for (const row of productEntitlementRows) {
+    const entitlement = entitlementById.get(row.entitlementId)
+    const product = productById.get(row.productId)
+    if (entitlement != null) {
+      const keys = entitlementKeysByProductId.get(row.productId) ?? []
+      keys.push(entitlement.key)
+      entitlementKeysByProductId.set(row.productId, keys)
+    }
+    if (product != null) {
+      const productsForEntitlement = productsByEntitlement.get(row.entitlementId) ?? []
+      productsForEntitlement.push(product.key)
+      productsByEntitlement.set(row.entitlementId, productsForEntitlement)
+    }
+  }
+
+  const priceByPlanId = new Map(priceRows.filter((price) => price.status === 'active').map((price) => [price.productPlanId, price]))
+  const trialEnabledByPlanId = new Map(productOfferRows.filter((offer) => offer.status === 'active' && offer.offerType === 'free_trial').map((offer) => [offer.productPlanId, true]))
+  const bindingsByPlanId = new Map<string, Array<typeof storeProductBindings.$inferSelect>>()
+  for (const binding of storeProductBindingRows) {
+    if (binding.productPlanId == null) continue
+    const current = bindingsByPlanId.get(binding.productPlanId) ?? []
+    current.push(binding)
+    bindingsByPlanId.set(binding.productPlanId, current)
   }
 
   const grantsByAppUser = new Map<string, Array<typeof entitlementGrants.$inferSelect>>()
@@ -477,7 +638,7 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
       appleAppId: app.appleAppId,
       iosBundleId: app.iosBundleId,
       androidPackageName: app.androidPackageName,
-      platforms: appPlatforms(app.appleAppId, app.iosBundleId, app.bundleId, app.androidPackageName),
+      platforms: appPlatformLabels(app.appleAppId, app.iosBundleId, app.bundleId, app.androidPackageName),
       mrr: formatCurrency(app.monthlyRevenueCents),
       activeAppUsers: formatInteger(activeAppUserIdsByApp.get(app.id)?.size ?? 0),
       status: status.label,
@@ -485,21 +646,36 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
     }
   })
 
-  const subscriptionProducts: SubscriptionProduct[] = productRows.map((product) => {
-    const entitlement = entitlementById.get(product.entitlementId)
-    return {
-      appId: product.appId,
-      name: product.displayName,
-      identifier: product.identifier,
-      iosId: product.appStoreId,
-      androidId: product.playStoreId,
-      duration: product.duration,
-      price: formatCurrency(product.priceCents),
+  const catalogProducts: CatalogProduct[] = productPlanRows.flatMap((plan) => {
+    const product = productById.get(plan.productId)
+    if (product == null) return []
+    const planBindings = bindingsByPlanId.get(plan.id) ?? []
+    const appleBinding = planBindings.find((binding) => binding.store === 'apple')
+    const googleBinding = planBindings.find((binding) => binding.store === 'google')
+    const price = priceByPlanId.get(plan.id)
+    const trialOn = trialEnabledByPlanId.get(plan.id) ?? false
+    const entitlementKeys = entitlementKeysByProductId.get(product.id) ?? []
+    return [{
       activeAppUsers: formatInteger(activeAppUserIdsByProduct.get(product.id)?.size ?? 0),
-      entitlement: entitlement?.key ?? product.entitlementId,
-      trial: product.trialEnabled ? '7-day free trial' : 'No trial',
-      trialOn: product.trialEnabled,
-    }
+      appId: product.appId,
+      appleProductId: appleBinding?.externalProductId ?? '',
+      billingKind: plan.billingKind,
+      billingPeriod: plan.billingPeriodIso ?? '',
+      description: product.description,
+      entitlement: entitlementKeys[0] ?? '',
+      googleBasePlanId: googleBinding?.externalBasePlanId ?? '',
+      googleProductId: googleBinding?.externalProductId ?? '',
+      name: product.name,
+      planId: plan.id,
+      planKey: plan.key,
+      price: formatCurrency(amountMicrosToCents(price?.amountMicros ?? null)),
+      productId: product.id,
+      productKey: product.key,
+      productType: product.productType,
+      status: product.status,
+      trial: trialOn ? '7-day free trial' : 'No trial',
+      trialOn,
+    }]
   })
 
   const consoleEntitlements: Entitlement[] = entitlementRows.map((entitlement) => {
@@ -516,12 +692,15 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
   const packagesByOffering = new Map<string, OfferingPackage[]>()
   for (const pkg of packageRows) {
     const current = packagesByOffering.get(pkg.offeringId) ?? []
+    const plan = planById.get(pkg.productPlanId)
+    const product = plan == null ? null : productById.get(plan.productId)
+    const price = priceByPlanId.get(pkg.productPlanId)
     current.push({
-      label: pkg.label,
-      productId: pkg.productId,
-      price: pkg.priceLabel,
       badge: pkg.badge,
       hasBadge: pkg.badge.trim() !== '',
+      label: pkg.label,
+      productId: product == null ? pkg.productPlanId : `${product.key}:${plan?.key ?? 'plan'}`,
+      price: formatCurrency(amountMicrosToCents(price?.amountMicros ?? null)),
     })
     packagesByOffering.set(pkg.offeringId, current)
   }
@@ -536,6 +715,96 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
     packages: packagesByOffering.get(offering.id) ?? [],
   }))
 
+  const storeSync: StoreSyncAppSummary[] = appRows.map((app) => {
+    const appBindingRows = storeProductBindingRows.filter((binding) => binding.appId === app.id)
+    const appPlatformIds = new Set(appPlatformRows.filter((platform) => platform.appId === app.id).map((platform) => platform.id))
+    const appSnapshotRows = storeCatalogSnapshotRows
+      .filter((snapshot) => snapshot.appPlatformId != null && appPlatformIds.has(snapshot.appPlatformId))
+      .sort((left, right) => right.fetchedAt.getTime() - left.fetchedAt.getTime())
+    const appSyncRunRows = syncRunRows
+      .filter((run) => run.appId === app.id)
+      .sort((left, right) => right.startedAt.getTime() - left.startedAt.getTime())
+    const appMutationPlanRows = storeMutationPlanRows
+      .filter((plan) => plan.appId === app.id)
+      .sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+
+    return {
+      appId: app.id,
+      bindings: appBindingRows.map((binding) => {
+        const plan = planById.get(binding.productPlanId)
+        const product = productById.get(binding.productId) ?? (plan == null ? undefined : productById.get(plan.productId))
+        return {
+          appId: app.id,
+          bindingStatus: binding.bindingStatus,
+          environment: binding.environment,
+          externalBasePlanId: binding.externalBasePlanId,
+          externalProductId: binding.externalProductId,
+          id: binding.id,
+          lastComparedAt: formatOptionalDateTime(binding.lastComparedAt),
+          planKey: plan?.key ?? binding.productPlanId,
+          productKey: product?.key ?? binding.productId,
+          store: binding.store,
+          syncDirection: binding.syncDirection,
+        }
+      }),
+      driftItems: storeCatalogDriftRows
+        .filter((drift) => drift.appId === app.id)
+        .sort((left, right) => right.detectedAt.getTime() - left.detectedAt.getTime())
+        .map((drift) => {
+          const binding = drift.storeProductBindingId == null ? null : bindingById.get(drift.storeProductBindingId)
+          const snapshot = drift.snapshotId == null ? null : snapshotById.get(drift.snapshotId)
+          return {
+            actual: formatJsonSummary(drift.actualJson),
+            bindingLabel: storeSyncObjectLabel(binding, snapshot),
+            detectedAt: formatDateTime(drift.detectedAt),
+            driftType: drift.driftType.replaceAll('_', ' '),
+            expected: formatJsonSummary(drift.expectedJson),
+            fieldPath: drift.fieldPath,
+            id: drift.id,
+            severity: drift.severity,
+            status: drift.status,
+          }
+        }),
+      integrations: storeIntegrationRows
+        .filter((integration) => integration.appId === app.id)
+        .map((integration) => ({
+          displayName: integration.displayName,
+          externalAppId: integration.externalAppId,
+          id: integration.id,
+          lastSyncAt: formatOptionalDateTime(integration.lastSyncAt),
+          status: integration.status.replaceAll('_', ' '),
+          store: integration.store,
+        })),
+      mutationPlans: appMutationPlanRows.slice(0, 8).map((plan) => ({
+        createdAt: formatDateTime(plan.createdAt),
+        id: plan.id,
+        previewHash: plan.previewHash,
+        risk: plan.risk,
+        status: plan.status,
+        store: plan.store,
+        summary: formatJsonSummary(plan.summaryJson),
+      })),
+      snapshots: appSnapshotRows.slice(0, 10).map((snapshot) => ({
+        contentHash: snapshot.contentHash,
+        externalId: snapshot.externalId,
+        fetchedAt: formatDateTime(snapshot.fetchedAt),
+        id: snapshot.id,
+        objectType: snapshot.objectType.replaceAll('_', ' '),
+        store: snapshot.store,
+      })),
+      syncRuns: appSyncRunRows.slice(0, 10).map((run) => ({
+        errorDetail: run.errorDetail,
+        finishedAt: formatOptionalDateTime(run.finishedAt),
+        id: run.id,
+        mode: run.mode,
+        startedAt: formatDateTime(run.startedAt),
+        status: run.status,
+        store: run.store,
+        summary: formatJsonSummary(run.summaryJson),
+      })),
+    }
+  })
+
   const consoleAppUsers: AppUser[] = appUserRows.map((appUser) => {
     const relevantGrants = sortGrantsByRelevance(grantsByAppUser.get(appUser.id) ?? [])
     const primaryGrant = relevantGrants[0]
@@ -548,7 +817,7 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
         entitlement: entitlement?.key ?? grant.entitlementId,
         expiresAt: grant.expiresAt ?? '—',
         id: grant.id,
-        product: product?.identifier ?? '—',
+        product: product?.key ?? '—',
         source: sourceLabel(grant.source),
         startsAt: grant.startsAt,
         status: status.label,
@@ -601,7 +870,7 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
       return {
         type: event.type,
         user: appUser != null ? shortUserId(appUser.appUserId) : event.appUserId,
-        product: product?.identifier ?? entitlement?.key ?? '—',
+        product: product?.key ?? entitlement?.key ?? '—',
         amount: formatSignedCurrency(event.amountCents),
         amountTone: amountTone(event.amountCents),
         time: event.occurredOn,
@@ -621,7 +890,7 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
     apps: appItems,
     currentUser: toConsoleUser(currentUser, canCreateTenants(currentUser, roleByTenantId)),
     dashboards,
-    subscriptions: subscriptionProducts,
+    products: catalogProducts,
     entitlements: consoleEntitlements,
     offerings: consoleOfferings,
     runtime: {
@@ -629,6 +898,7 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
       publicOrigin,
     },
     stats,
+    storeSync,
     tenant,
     tenantMembers,
   }
@@ -787,6 +1057,7 @@ export const deleteAppRecord = createServerFn({ method: 'POST' })
 
       await tx.delete(appStoreConnectSalesReports).where(eq(appStoreConnectSalesReports.appId, data.appId))
       await tx.delete(appStoreConnectAuditEvents).where(eq(appStoreConnectAuditEvents.appId, data.appId))
+      await tx.delete(storeProductBindings).where(eq(storeProductBindings.appId, data.appId))
       await tx.delete(products).where(eq(products.appId, data.appId))
       await tx.delete(appUsers).where(eq(appUsers.appId, data.appId))
       await tx.delete(offerings).where(eq(offerings.appId, data.appId))
@@ -797,62 +1068,239 @@ export const deleteAppRecord = createServerFn({ method: 'POST' })
     return { ok: true }
   })
 
-export const upsertSubscriptionRecord = createServerFn({ method: 'POST' })
-  .validator((input: unknown) => subscriptionInputSchema.parse(input))
+export const upsertProductRecord = createServerFn({ method: 'POST' })
+  .validator((input: unknown) => productInputSchema.parse(input))
   .handler(async ({ data }) => {
     await ensureDatabaseReady()
     const currentUser = await getCurrentConsoleUser()
     await requireAccessibleApp(currentUser, data.appId)
 
+    const productId = data.productId ?? productRowId(data.appId, data.productKey)
+    const planId = data.planId ?? productPlanRowId(productId, data.planKey)
     const entitlementId = entitlementRowId(data.appId, data.entitlement)
-    await db
-      .insert(entitlements)
-      .values({
-        appId: data.appId,
-        description: `Access group ${data.entitlement}`,
-        id: entitlementId,
-        key: data.entitlement,
-      })
-      .onConflictDoUpdate({
-        set: {
+    const now = new Date()
+    const priceCents = parsePriceCents(data.price)
+
+    await db.transaction(async (tx) => {
+      await tx
+        .insert(entitlements)
+        .values({
           appId: data.appId,
+          createdAt: now,
+          description: `Access group ${data.entitlement}`,
+          id: entitlementId,
           key: data.entitlement,
-        },
-        target: entitlements.id,
-      })
+          name: data.entitlement,
+          status: 'active',
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          set: {
+            description: `Access group ${data.entitlement}`,
+            key: data.entitlement,
+            name: data.entitlement,
+            status: 'active',
+            updatedAt: now,
+          },
+          target: entitlements.id,
+        })
 
-    if (data.originalIdentifier != null && data.originalIdentifier !== data.identifier) {
-      await db.delete(products).where(eq(products.id, productRowId(data.appId, data.originalIdentifier)))
-    }
-
-    await db
-      .insert(products)
-      .values({
-        activeAppUserCount: 0,
-        appId: data.appId,
-        appStoreId: data.iosId,
-        displayName: data.name,
-        duration: data.duration,
-        entitlementId,
-        id: productRowId(data.appId, data.identifier),
-        identifier: data.identifier,
-        playStoreId: data.androidId ?? '',
-        priceCents: parsePriceCents(data.price),
-        trialEnabled: data.trialOn,
-      })
-      .onConflictDoUpdate({
-        set: {
+      await tx
+        .insert(products)
+        .values({
+          activeAppUserCount: 0,
           appId: data.appId,
-          appStoreId: data.iosId,
-          displayName: data.name,
-          duration: data.duration,
+          createdAt: now,
+          description: data.description,
+          id: productId,
+          key: data.productKey,
+          name: data.name,
+          productType: data.productType,
+          status: data.status,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          set: {
+            description: data.description,
+            key: data.productKey,
+            name: data.name,
+            productType: data.productType,
+            status: data.status,
+            updatedAt: now,
+          },
+          target: products.id,
+        })
+
+      await tx
+        .insert(productEntitlements)
+        .values({
+          createdAt: now,
+          durationIso: null,
           entitlementId,
-          identifier: data.identifier,
-          playStoreId: data.androidId ?? '',
-          priceCents: parsePriceCents(data.price),
-          trialEnabled: data.trialOn,
-        },
-        target: products.id,
-      })
+          grantMode: data.productType === 'non_consumable' ? 'lifetime' : 'while_active',
+          id: productEntitlementRowId(productId, entitlementId),
+          productId,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          set: {
+            grantMode: data.productType === 'non_consumable' ? 'lifetime' : 'while_active',
+            updatedAt: now,
+          },
+          target: [productEntitlements.productId, productEntitlements.entitlementId],
+        })
+
+      await tx
+        .insert(productPlans)
+        .values({
+          billingKind: data.productType === 'subscription' ? 'recurring' : 'one_time',
+          billingPeriodIso: data.productType === 'subscription' ? data.billingPeriod : null,
+          createdAt: now,
+          gracePeriodIso: null,
+          id: planId,
+          key: data.planKey,
+          productId,
+          status: data.status,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          set: {
+            billingKind: data.productType === 'subscription' ? 'recurring' : 'one_time',
+            billingPeriodIso: data.productType === 'subscription' ? data.billingPeriod : null,
+            key: data.planKey,
+            status: data.status,
+            updatedAt: now,
+          },
+          target: productPlans.id,
+        })
+
+      await tx
+        .insert(prices)
+        .values({
+          amountMicros: centsToAmountMicros(priceCents),
+          countryCode: null,
+          createdAt: now,
+          currencyCode: 'USD',
+          endsAt: null,
+          id: priceRowId(planId, 'USD', null),
+          productPlanId: planId,
+          startsAt: null,
+          status: 'active',
+          taxInclusive: null,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          set: {
+            amountMicros: centsToAmountMicros(priceCents),
+            status: 'active',
+            updatedAt: now,
+          },
+          target: [prices.productPlanId, prices.currencyCode, prices.countryCode],
+        })
+
+      if (data.trialOn) {
+        await tx
+          .insert(productOffers)
+          .values({
+            billingPeriodCount: null,
+            createdAt: now,
+            durationIso: 'P7D',
+            eligibility: 'new_customers',
+            endsAt: null,
+            id: productOfferRowId(planId, 'free-trial'),
+            key: 'free-trial',
+            offerType: 'free_trial',
+            priceAmountMicros: null,
+            priceCurrencyCode: null,
+            productPlanId: planId,
+            startsAt: null,
+            status: 'active',
+            updatedAt: now,
+          })
+          .onConflictDoUpdate({
+            set: {
+              durationIso: 'P7D',
+              status: 'active',
+              updatedAt: now,
+            },
+            target: [productOffers.productPlanId, productOffers.key],
+          })
+      } else {
+        await tx.delete(productOffers).where(and(eq(productOffers.productPlanId, planId), eq(productOffers.key, 'free-trial')))
+      }
+
+      if (data.appleProductId != null && data.appleProductId.trim() !== '') {
+        await tx
+          .insert(storeProductBindings)
+          .values({
+            appId: data.appId,
+            appPlatformId: null,
+            bindingStatus: 'linked',
+            createdAt: now,
+            environment: 'production',
+            externalBasePlanId: '',
+            externalPackageName: null,
+            externalProductId: data.appleProductId.trim(),
+            externalSubscriptionGroupId: null,
+            id: storeBindingRowId(planId, 'apple', data.appleProductId.trim(), ''),
+            lastComparedAt: null,
+            lastSnapshotId: null,
+            productId,
+            productPlanId: planId,
+            store: 'apple',
+            storeIntegrationId: null,
+            syncDirection: 'subkit_to_store',
+            updatedAt: now,
+          })
+          .onConflictDoUpdate({
+            set: {
+              bindingStatus: 'linked',
+              externalProductId: data.appleProductId.trim(),
+              productId,
+              productPlanId: planId,
+              updatedAt: now,
+            },
+            target: [storeProductBindings.appId, storeProductBindings.store, storeProductBindings.externalProductId, storeProductBindings.externalBasePlanId, storeProductBindings.environment],
+          })
+      }
+
+      if (data.googleProductId != null && data.googleProductId.trim() !== '') {
+        const googleProductId = data.googleProductId.trim()
+        const googleBasePlanId = data.googleBasePlanId?.trim() ?? ''
+        await tx
+          .insert(storeProductBindings)
+          .values({
+            appId: data.appId,
+            appPlatformId: null,
+            bindingStatus: 'linked',
+            createdAt: now,
+            environment: 'production',
+            externalBasePlanId: googleBasePlanId,
+            externalPackageName: null,
+            externalProductId: googleProductId,
+            externalSubscriptionGroupId: null,
+            id: storeBindingRowId(planId, 'google', googleProductId, googleBasePlanId),
+            lastComparedAt: null,
+            lastSnapshotId: null,
+            productId,
+            productPlanId: planId,
+            store: 'google',
+            storeIntegrationId: null,
+            syncDirection: 'subkit_to_store',
+            updatedAt: now,
+          })
+          .onConflictDoUpdate({
+            set: {
+              bindingStatus: 'linked',
+              externalBasePlanId: googleBasePlanId,
+              externalProductId: googleProductId,
+              productId,
+              productPlanId: planId,
+              updatedAt: now,
+            },
+            target: [storeProductBindings.appId, storeProductBindings.store, storeProductBindings.externalProductId, storeProductBindings.externalBasePlanId, storeProductBindings.environment],
+          })
+      }
+    })
     return { ok: true }
   })

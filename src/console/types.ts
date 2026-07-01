@@ -3,7 +3,8 @@ import type { AppTenant } from '~/domain/apps/types'
 import type { ConsoleRuntimeConfig, ConsoleStats, DashboardSummary } from '~/domain/dashboard/types'
 import type { Entitlement } from '~/domain/entitlements/types'
 import type { Offering } from '~/domain/offerings/types'
-import type { SubscriptionProduct } from '~/domain/subscriptions/types'
+import type { CatalogProduct } from '~/domain/products/types'
+import type { StoreSyncAppSummary } from '~/domain/stores/types'
 import type { ConsoleUser, TenantMemberSummary, WorkspaceTenant } from '~/domain/tenants/types'
 import type { AppStoreConnectConnection } from '~/integrations/app-store-connect/types'
 
@@ -12,7 +13,8 @@ export type View =
   | 'tenantMembers'
   | 'workspaceSettings'
   | 'dashboard'
-  | 'subscriptions'
+  | 'products'
+  | 'stores'
   | 'entitlements'
   | 'offerings'
   | 'appUsers'
@@ -30,7 +32,8 @@ export interface ConsoleData {
   offerings: Offering[]
   runtime: ConsoleRuntimeConfig
   stats: ConsoleStats
-  subscriptions: SubscriptionProduct[]
+  storeSync: StoreSyncAppSummary[]
+  products: CatalogProduct[]
   tenant: WorkspaceTenant
   tenantMembers: TenantMemberSummary[]
 }
@@ -39,5 +42,5 @@ export type PanelState =
   | { kind: 'closed' }
   | { kind: 'newApp' }
   | { kind: 'newTenant' }
-  | { kind: 'subscription'; mode: 'new' | 'edit'; originalIdentifier: string | null; subscription: SubscriptionProduct }
+  | { kind: 'product'; mode: 'new' | 'edit'; product: CatalogProduct }
   | { appUser: AppUser; kind: 'appUser' }

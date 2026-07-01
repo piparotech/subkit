@@ -29,8 +29,9 @@ import { Route as ConsoleTenantSlugAppSlugIndexRouteImport } from './routes/_con
 import { Route as ApiServerEntitlementsCheckRouteImport } from './routes/api.server.entitlements.check'
 import { Route as ApiRuntimeIapReconcileRouteImport } from './routes/api.runtime.iap.reconcile'
 import { Route as ApiRuntimeEntitlementsCheckRouteImport } from './routes/api.runtime.entitlements.check'
-import { Route as ConsoleTenantSlugAppSlugSubscriptionsRouteImport } from './routes/_console.$tenantSlug.$appSlug.subscriptions'
+import { Route as ConsoleTenantSlugAppSlugStoresRouteImport } from './routes/_console.$tenantSlug.$appSlug.stores'
 import { Route as ConsoleTenantSlugAppSlugSettingsRouteImport } from './routes/_console.$tenantSlug.$appSlug.settings'
+import { Route as ConsoleTenantSlugAppSlugProductsRouteImport } from './routes/_console.$tenantSlug.$appSlug.products'
 import { Route as ConsoleTenantSlugAppSlugOfferingsRouteImport } from './routes/_console.$tenantSlug.$appSlug.offerings'
 import { Route as ConsoleTenantSlugAppSlugEntitlementsRouteImport } from './routes/_console.$tenantSlug.$appSlug.entitlements'
 import { Route as ConsoleTenantSlugAppSlugAppUsersRouteImport } from './routes/_console.$tenantSlug.$appSlug.app-users'
@@ -138,16 +139,22 @@ const ApiRuntimeEntitlementsCheckRoute =
     path: '/api/runtime/entitlements/check',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ConsoleTenantSlugAppSlugSubscriptionsRoute =
-  ConsoleTenantSlugAppSlugSubscriptionsRouteImport.update({
-    id: '/subscriptions',
-    path: '/subscriptions',
+const ConsoleTenantSlugAppSlugStoresRoute =
+  ConsoleTenantSlugAppSlugStoresRouteImport.update({
+    id: '/stores',
+    path: '/stores',
     getParentRoute: () => ConsoleTenantSlugAppSlugRoute,
   } as any)
 const ConsoleTenantSlugAppSlugSettingsRoute =
   ConsoleTenantSlugAppSlugSettingsRouteImport.update({
     id: '/settings',
     path: '/settings',
+    getParentRoute: () => ConsoleTenantSlugAppSlugRoute,
+  } as any)
+const ConsoleTenantSlugAppSlugProductsRoute =
+  ConsoleTenantSlugAppSlugProductsRouteImport.update({
+    id: '/products',
+    path: '/products',
     getParentRoute: () => ConsoleTenantSlugAppSlugRoute,
   } as any)
 const ConsoleTenantSlugAppSlugOfferingsRoute =
@@ -188,8 +195,9 @@ export interface FileRoutesByFullPath {
   '/$tenantSlug/$appSlug/app-users': typeof ConsoleTenantSlugAppSlugAppUsersRoute
   '/$tenantSlug/$appSlug/entitlements': typeof ConsoleTenantSlugAppSlugEntitlementsRoute
   '/$tenantSlug/$appSlug/offerings': typeof ConsoleTenantSlugAppSlugOfferingsRoute
+  '/$tenantSlug/$appSlug/products': typeof ConsoleTenantSlugAppSlugProductsRoute
   '/$tenantSlug/$appSlug/settings': typeof ConsoleTenantSlugAppSlugSettingsRoute
-  '/$tenantSlug/$appSlug/subscriptions': typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
+  '/$tenantSlug/$appSlug/stores': typeof ConsoleTenantSlugAppSlugStoresRoute
   '/api/runtime/entitlements/check': typeof ApiRuntimeEntitlementsCheckRoute
   '/api/runtime/iap/reconcile': typeof ApiRuntimeIapReconcileRoute
   '/api/server/entitlements/check': typeof ApiServerEntitlementsCheckRoute
@@ -212,8 +220,9 @@ export interface FileRoutesByTo {
   '/$tenantSlug/$appSlug/app-users': typeof ConsoleTenantSlugAppSlugAppUsersRoute
   '/$tenantSlug/$appSlug/entitlements': typeof ConsoleTenantSlugAppSlugEntitlementsRoute
   '/$tenantSlug/$appSlug/offerings': typeof ConsoleTenantSlugAppSlugOfferingsRoute
+  '/$tenantSlug/$appSlug/products': typeof ConsoleTenantSlugAppSlugProductsRoute
   '/$tenantSlug/$appSlug/settings': typeof ConsoleTenantSlugAppSlugSettingsRoute
-  '/$tenantSlug/$appSlug/subscriptions': typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
+  '/$tenantSlug/$appSlug/stores': typeof ConsoleTenantSlugAppSlugStoresRoute
   '/api/runtime/entitlements/check': typeof ApiRuntimeEntitlementsCheckRoute
   '/api/runtime/iap/reconcile': typeof ApiRuntimeIapReconcileRoute
   '/api/server/entitlements/check': typeof ApiServerEntitlementsCheckRoute
@@ -240,8 +249,9 @@ export interface FileRoutesById {
   '/_console/$tenantSlug/$appSlug/app-users': typeof ConsoleTenantSlugAppSlugAppUsersRoute
   '/_console/$tenantSlug/$appSlug/entitlements': typeof ConsoleTenantSlugAppSlugEntitlementsRoute
   '/_console/$tenantSlug/$appSlug/offerings': typeof ConsoleTenantSlugAppSlugOfferingsRoute
+  '/_console/$tenantSlug/$appSlug/products': typeof ConsoleTenantSlugAppSlugProductsRoute
   '/_console/$tenantSlug/$appSlug/settings': typeof ConsoleTenantSlugAppSlugSettingsRoute
-  '/_console/$tenantSlug/$appSlug/subscriptions': typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
+  '/_console/$tenantSlug/$appSlug/stores': typeof ConsoleTenantSlugAppSlugStoresRoute
   '/api/runtime/entitlements/check': typeof ApiRuntimeEntitlementsCheckRoute
   '/api/runtime/iap/reconcile': typeof ApiRuntimeIapReconcileRoute
   '/api/server/entitlements/check': typeof ApiServerEntitlementsCheckRoute
@@ -268,8 +278,9 @@ export interface FileRouteTypes {
     | '/$tenantSlug/$appSlug/app-users'
     | '/$tenantSlug/$appSlug/entitlements'
     | '/$tenantSlug/$appSlug/offerings'
+    | '/$tenantSlug/$appSlug/products'
     | '/$tenantSlug/$appSlug/settings'
-    | '/$tenantSlug/$appSlug/subscriptions'
+    | '/$tenantSlug/$appSlug/stores'
     | '/api/runtime/entitlements/check'
     | '/api/runtime/iap/reconcile'
     | '/api/server/entitlements/check'
@@ -292,8 +303,9 @@ export interface FileRouteTypes {
     | '/$tenantSlug/$appSlug/app-users'
     | '/$tenantSlug/$appSlug/entitlements'
     | '/$tenantSlug/$appSlug/offerings'
+    | '/$tenantSlug/$appSlug/products'
     | '/$tenantSlug/$appSlug/settings'
-    | '/$tenantSlug/$appSlug/subscriptions'
+    | '/$tenantSlug/$appSlug/stores'
     | '/api/runtime/entitlements/check'
     | '/api/runtime/iap/reconcile'
     | '/api/server/entitlements/check'
@@ -319,8 +331,9 @@ export interface FileRouteTypes {
     | '/_console/$tenantSlug/$appSlug/app-users'
     | '/_console/$tenantSlug/$appSlug/entitlements'
     | '/_console/$tenantSlug/$appSlug/offerings'
+    | '/_console/$tenantSlug/$appSlug/products'
     | '/_console/$tenantSlug/$appSlug/settings'
-    | '/_console/$tenantSlug/$appSlug/subscriptions'
+    | '/_console/$tenantSlug/$appSlug/stores'
     | '/api/runtime/entitlements/check'
     | '/api/runtime/iap/reconcile'
     | '/api/server/entitlements/check'
@@ -486,11 +499,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRuntimeEntitlementsCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_console/$tenantSlug/$appSlug/subscriptions': {
-      id: '/_console/$tenantSlug/$appSlug/subscriptions'
-      path: '/subscriptions'
-      fullPath: '/$tenantSlug/$appSlug/subscriptions'
-      preLoaderRoute: typeof ConsoleTenantSlugAppSlugSubscriptionsRouteImport
+    '/_console/$tenantSlug/$appSlug/stores': {
+      id: '/_console/$tenantSlug/$appSlug/stores'
+      path: '/stores'
+      fullPath: '/$tenantSlug/$appSlug/stores'
+      preLoaderRoute: typeof ConsoleTenantSlugAppSlugStoresRouteImport
       parentRoute: typeof ConsoleTenantSlugAppSlugRoute
     }
     '/_console/$tenantSlug/$appSlug/settings': {
@@ -498,6 +511,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/$tenantSlug/$appSlug/settings'
       preLoaderRoute: typeof ConsoleTenantSlugAppSlugSettingsRouteImport
+      parentRoute: typeof ConsoleTenantSlugAppSlugRoute
+    }
+    '/_console/$tenantSlug/$appSlug/products': {
+      id: '/_console/$tenantSlug/$appSlug/products'
+      path: '/products'
+      fullPath: '/$tenantSlug/$appSlug/products'
+      preLoaderRoute: typeof ConsoleTenantSlugAppSlugProductsRouteImport
       parentRoute: typeof ConsoleTenantSlugAppSlugRoute
     }
     '/_console/$tenantSlug/$appSlug/offerings': {
@@ -540,8 +560,9 @@ interface ConsoleTenantSlugAppSlugRouteChildren {
   ConsoleTenantSlugAppSlugAppUsersRoute: typeof ConsoleTenantSlugAppSlugAppUsersRoute
   ConsoleTenantSlugAppSlugEntitlementsRoute: typeof ConsoleTenantSlugAppSlugEntitlementsRoute
   ConsoleTenantSlugAppSlugOfferingsRoute: typeof ConsoleTenantSlugAppSlugOfferingsRoute
+  ConsoleTenantSlugAppSlugProductsRoute: typeof ConsoleTenantSlugAppSlugProductsRoute
   ConsoleTenantSlugAppSlugSettingsRoute: typeof ConsoleTenantSlugAppSlugSettingsRoute
-  ConsoleTenantSlugAppSlugSubscriptionsRoute: typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
+  ConsoleTenantSlugAppSlugStoresRoute: typeof ConsoleTenantSlugAppSlugStoresRoute
   ConsoleTenantSlugAppSlugIndexRoute: typeof ConsoleTenantSlugAppSlugIndexRoute
 }
 
@@ -553,10 +574,11 @@ const ConsoleTenantSlugAppSlugRouteChildren: ConsoleTenantSlugAppSlugRouteChildr
       ConsoleTenantSlugAppSlugEntitlementsRoute,
     ConsoleTenantSlugAppSlugOfferingsRoute:
       ConsoleTenantSlugAppSlugOfferingsRoute,
+    ConsoleTenantSlugAppSlugProductsRoute:
+      ConsoleTenantSlugAppSlugProductsRoute,
     ConsoleTenantSlugAppSlugSettingsRoute:
       ConsoleTenantSlugAppSlugSettingsRoute,
-    ConsoleTenantSlugAppSlugSubscriptionsRoute:
-      ConsoleTenantSlugAppSlugSubscriptionsRoute,
+    ConsoleTenantSlugAppSlugStoresRoute: ConsoleTenantSlugAppSlugStoresRoute,
     ConsoleTenantSlugAppSlugIndexRoute: ConsoleTenantSlugAppSlugIndexRoute,
   }
 

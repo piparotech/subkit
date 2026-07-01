@@ -1,9 +1,9 @@
 import { AppUserPanel } from '~/domain/app-users/AppUserPanel'
 import { NewAppDialog } from '~/domain/apps/NewAppDialog'
 import { NewTenantDialog } from '~/domain/tenants/NewTenantDialog'
-import { SubscriptionPanel } from '~/domain/subscriptions/SubscriptionPanel'
+import { ProductPanel } from '~/domain/products/ProductPanel'
 import type { AppDraft, AppDraftField } from '~/domain/apps/types'
-import type { EditableSubscriptionTextField } from '~/domain/subscriptions/types'
+import type { EditableCatalogProductTextField } from '~/domain/products/types'
 import type { TenantDraft, TenantDraftField } from '~/domain/tenants/types'
 import type { AppStoreConnectAccessibleApp, AppStoreConnectConnection } from '~/integrations/app-store-connect/types'
 import type { PanelState } from '~/console/types'
@@ -19,9 +19,9 @@ interface PanelsProps {
   onClose: () => void
   onCreateApp: () => void
   onCreateTenant: () => void
-  onSaveSubscription: () => void
-  onSubscriptionFieldChange: (field: EditableSubscriptionTextField, value: string) => void
-  onSubscriptionTrialToggle: () => void
+  onProductFieldChange: (field: EditableCatalogProductTextField, value: string) => void
+  onProductTrialToggle: () => void
+  onSaveProduct: () => void
   onTenantDraftChange: (field: TenantDraftField, value: string) => void
   panel: PanelState
   tenantDraft: TenantDraft
@@ -38,9 +38,9 @@ export function Panels({
   onClose,
   onCreateApp,
   onCreateTenant,
-  onSaveSubscription,
-  onSubscriptionFieldChange,
-  onSubscriptionTrialToggle,
+  onProductFieldChange,
+  onProductTrialToggle,
+  onSaveProduct,
   onTenantDraftChange,
   panel,
   tenantDraft,
@@ -55,14 +55,14 @@ export function Panels({
         onClick={onClose}
         type="button"
       />
-      {panel.kind === 'subscription' ? (
-        <SubscriptionPanel
+      {panel.kind === 'product' ? (
+        <ProductPanel
           mode={panel.mode}
           onClose={onClose}
-          onFieldChange={onSubscriptionFieldChange}
-          onSave={onSaveSubscription}
-          onTrialToggle={onSubscriptionTrialToggle}
-          subscription={panel.subscription}
+          onFieldChange={onProductFieldChange}
+          onSave={onSaveProduct}
+          onTrialToggle={onProductTrialToggle}
+          product={panel.product}
         />
       ) : null}
       {panel.kind === 'appUser' ? <AppUserPanel appUser={panel.appUser} onClose={onClose} /> : null}

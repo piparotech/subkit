@@ -4,20 +4,20 @@ import * as React from 'react'
 import { ActiveView } from '~/console/ActiveView'
 import { listAppStoreConnectApps } from '~/integrations/app-store-connect/server/apps'
 import { emptyAppDraft, emptyTenantDraft, safeInitials, safeTenantId } from '~/console/helpers'
-import { newSubscription } from '~/domain/subscriptions/data'
+import { newCatalogProduct } from '~/domain/products/data'
 import { Panels } from '~/console/Panels'
-import { createAppRecord, createTenantRecord, upsertSubscriptionRecord } from '~/console/server'
+import { createAppRecord, createTenantRecord, upsertProductRecord } from '~/console/server'
 import { ConsoleShell } from '~/console/ConsoleShell'
 import { appRouteParams } from '~/console/routing'
 import { filterAppUsers } from '~/domain/app-users/filters'
 import { createAppFromDraft } from '~/domain/apps/helpers'
 import { filterApps } from '~/domain/apps/filters'
-import { filterSubscriptions } from '~/domain/subscriptions/filters'
+import { filterProducts } from '~/domain/products/filters'
 import type { AppUser } from '~/domain/app-users/types'
 import type { AppDraft, AppDraftField, AppTenant } from '~/domain/apps/types'
 import type { Entitlement } from '~/domain/entitlements/types'
 import type { Offering } from '~/domain/offerings/types'
-import type { EditableSubscriptionTextField, SubscriptionProduct } from '~/domain/subscriptions/types'
+import type { CatalogProduct, EditableCatalogProductTextField } from '~/domain/products/types'
 import type { TenantDraft, TenantDraftField } from '~/domain/tenants/types'
 import type { AppStoreConnectAccessibleApp, AppStoreConnectConnection } from '~/integrations/app-store-connect/types'
 import type { PanelState, View } from '~/console/types'
@@ -28,7 +28,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
   const navigate = useNavigate()
   const currentUser = consoleData.currentUser
   const [apps, setApps] = React.useState<AppTenant[]>(consoleData.apps)
-  const [subscriptions, setSubscriptions] = React.useState<SubscriptionProduct[]>(consoleData.subscriptions)
+  const [products, setProducts] = React.useState<CatalogProduct[]>(consoleData.products)
   const [entitlements, setEntitlements] = React.useState<Entitlement[]>(consoleData.entitlements)
   const [offerings, setOfferings] = React.useState<Offering[]>(consoleData.offerings)
   const [appUsers, setAppUsers] = React.useState<AppUser[]>(consoleData.appUsers)
@@ -45,7 +45,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
 
   React.useEffect(() => {
     setApps(consoleData.apps)
-    setSubscriptions(consoleData.subscriptions)
+    setProducts(consoleData.products)
     setEntitlements(consoleData.entitlements)
     setOfferings(consoleData.offerings)
     setAppUsers(consoleData.appUsers)
@@ -60,9 +60,9 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
   const currentApp = apps.find((app) => app.id === currentAppId) ?? null
   const currentTenant = consoleData.accessibleTenants.find((item) => item.id === (currentApp?.tenantId ?? selectedTenantId)) ?? consoleData.tenant
   const currentConnection = consoleData.appStoreConnectConnections.find((connection) => connection.tenantId === currentTenant.id) ?? null
-  const currentSubscriptions = React.useMemo(
-    () => (currentApp == null ? subscriptions : subscriptions.filter((subscription) => subscription.appId === currentApp.id)),
-    [currentApp, subscriptions],
+  const currentProducts = React.useMemo(
+    () => (currentApp == null ? products : products.filter((product) => product.appId === currentApp.id)),
+    [currentApp, products],
   )
   const currentEntitlements = React.useMemo(
     () => (currentApp == null ? entitlements : entitlements.filter((entitlement) => entitlement.appId === currentApp.id)),
@@ -78,9 +78,9 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
   )
 
   const visibleApps = React.useMemo(() => filterApps(apps, searchQuery), [apps, searchQuery])
-  const visibleSubscriptions = React.useMemo(
-    () => filterSubscriptions(currentSubscriptions, searchQuery),
-    [currentSubscriptions, searchQuery],
+  const visibleProducts = React.useMemo(
+    () => filterProducts(currentProducts, searchQuery),
+    [currentProducts, searchQuery],
   )
   const visibleAppUsers = React.useMemo(
     () => filterAppUsers(currentAppUsers, searchQuery),
@@ -109,22 +109,20 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
       setPanel({ kind: 'newApp' })
       return
     }
-    if (view === 'subscriptions' && currentApp != null) {
+    if (view === 'products' && currentApp != null) {
       setPanel({
-        kind: 'subscription',
+        kind: 'product',
         mode: 'new',
-        originalIdentifier: null,
-        subscription: { ...newSubscription, appId: currentApp.id },
+        product: { ...newCatalogProduct, appId: currentApp.id },
       })
     }
   }
 
-  const openSubscription = (subscription: SubscriptionProduct) => {
+  const openProduct = (product: CatalogProduct) => {
     setPanel({
-      kind: 'subscription',
+      kind: 'product',
       mode: 'edit',
-      originalIdentifier: subscription.identifier,
-      subscription: { ...subscription },
+      product: { ...product },
     })
   }
 
@@ -134,29 +132,30 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
 
   const closePanel = () => setPanel({ kind: 'closed' })
 
-  const updateSubscriptionField = (field: EditableSubscriptionTextField, value: string) => {
+  const updateProductField = (field: EditableCatalogProductTextField, value: string) => {
     setPanel((current) => {
-      if (current.kind !== 'subscription') return current
-      const nextTrial = field === 'trial' ? value : current.subscription.trial
+      if (current.kind !== 'product') return current
+      const nextTrial = field === 'trial' ? value : current.product.trial
       return {
         ...current,
-        subscription: {
-          ...current.subscription,
+        product: {
+          ...current.product,
           [field]: value,
+          billingKind: field === 'productType' && value !== 'subscription' ? 'one_time' : current.product.billingKind,
           trialOn: nextTrial.toLowerCase() !== 'off' && nextTrial.toLowerCase() !== 'no trial',
         },
       }
     })
   }
 
-  const toggleSubscriptionTrial = () => {
+  const toggleProductTrial = () => {
     setPanel((current) => {
-      if (current.kind !== 'subscription') return current
-      const enabled = !current.subscription.trialOn
+      if (current.kind !== 'product') return current
+      const enabled = !current.product.trialOn
       return {
         ...current,
-        subscription: {
-          ...current.subscription,
+        product: {
+          ...current.product,
           trial: enabled ? '7-day free trial' : 'Off',
           trialOn: enabled,
         },
@@ -170,37 +169,42 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
     })
   }
 
-  const saveSubscription = () => {
-    if (panel.kind !== 'subscription') return
-    const saved = panel.subscription
+  const saveProduct = () => {
+    if (panel.kind !== 'product') return
+    const saved = panel.product
     const appId = saved.appId
-    const identifier = saved.identifier.trim()
-    if (!identifier || !appId) return
-    const nextSubscription = { ...saved, identifier, appId }
-    setSubscriptions((current) => {
-      const existingIndex = current.findIndex(
-        (item) => item.appId === appId && (item.identifier === panel.originalIdentifier || item.identifier === identifier),
-      )
-      if (existingIndex === -1) return [...current, nextSubscription]
-      return current.map((item, index) => (index === existingIndex ? nextSubscription : item))
+    const productKey = saved.productKey.trim()
+    const planKey = saved.planKey.trim()
+    if (!productKey || !planKey || !appId) return
+    const nextProduct = { ...saved, appId, planKey, productKey }
+    setProducts((current) => {
+      const existingIndex = current.findIndex((item) => item.appId === appId && item.planId === saved.planId)
+      if (existingIndex === -1) return [...current, nextProduct]
+      return current.map((item, index) => (index === existingIndex ? nextProduct : item))
     })
-    upsertSubscriptionRecord({
+    upsertProductRecord({
       data: {
-        androidId: nextSubscription.androidId || undefined,
         appId,
-        duration: nextSubscription.duration,
-        entitlement: nextSubscription.entitlement,
-        identifier: nextSubscription.identifier,
-        iosId: nextSubscription.iosId,
-        name: nextSubscription.name,
-        originalIdentifier: panel.originalIdentifier,
-        price: nextSubscription.price,
-        trialOn: nextSubscription.trialOn,
+        appleProductId: nextProduct.appleProductId || undefined,
+        billingPeriod: nextProduct.billingPeriod,
+        description: nextProduct.description,
+        entitlement: nextProduct.entitlement,
+        googleBasePlanId: nextProduct.googleBasePlanId || undefined,
+        googleProductId: nextProduct.googleProductId || undefined,
+        name: nextProduct.name,
+        planId: nextProduct.planId || undefined,
+        planKey: nextProduct.planKey,
+        price: nextProduct.price,
+        productId: nextProduct.productId || undefined,
+        productKey: nextProduct.productKey,
+        productType: nextProduct.productType,
+        status: nextProduct.status,
+        trialOn: nextProduct.trialOn,
       },
     })
       .then(refreshConsoleData)
       .catch((error: unknown) => {
-        console.error('Failed to save subscription', error)
+        console.error('Failed to save product', error)
       })
     setPanel({ kind: 'closed' })
   }
@@ -306,7 +310,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
 
   const deleteLocalApp = (id: string) => {
     setApps((current) => current.filter((app) => app.id !== id))
-    setSubscriptions((current) => current.filter((subscription) => subscription.appId !== id))
+    setProducts((current) => current.filter((product) => product.appId !== id))
     setEntitlements((current) => current.filter((entitlement) => entitlement.appId !== id))
     setOfferings((current) => current.filter((offering) => offering.appId !== id))
     setAppUsers((current) => current.filter((appUser) => appUser.appId !== id))
@@ -328,8 +332,8 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
         onSearchQueryChange={setSearchQuery}
         onSelectTenant={selectTenant}
         onToggleSwitcher={() => setSwitcherOpen((open) => !open)}
+        productsCount={currentProducts.length}
         searchQuery={searchQuery}
-        subscriptionsCount={currentSubscriptions.length}
         switcherOpen={switcherOpen}
         view={view}
       >
@@ -343,10 +347,10 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
           offerings={currentOfferings}
           onAppDeleted={deleteLocalApp}
           onOpenAppUser={openAppUser}
-          onOpenSubscription={openSubscription}
+          onOpenProduct={openProduct}
           onRefreshConsoleData={refreshConsoleData}
           appUsers={visibleAppUsers}
-          subscriptions={visibleSubscriptions}
+          products={visibleProducts}
           view={view}
         />
       </ConsoleShell>
@@ -361,14 +365,13 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
         onClose={closePanel}
         onCreateApp={createApp}
         onCreateTenant={createTenant}
-        onSaveSubscription={saveSubscription}
-        onSubscriptionFieldChange={updateSubscriptionField}
+        onProductFieldChange={updateProductField}
+        onProductTrialToggle={toggleProductTrial}
+        onSaveProduct={saveProduct}
         onTenantDraftChange={updateTenantDraft}
-        onSubscriptionTrialToggle={toggleSubscriptionTrial}
         panel={panel}
         tenantDraft={tenantDraft}
       />
     </>
   )
 }
-

@@ -8,6 +8,7 @@ import { EntitlementsIcon } from '~/console/icons/EntitlementsIcon'
 import { OfferingsIcon } from '~/console/icons/OfferingsIcon'
 import { SettingsIcon } from '~/console/icons/SettingsIcon'
 import { SidebarNavLink } from '~/console/components/SidebarNavLink'
+import { StoresIcon } from '~/console/icons/StoresIcon'
 import { SidebarSection } from '~/console/components/SidebarSection'
 import { appRouteParams } from '~/console/routing'
 import { SubscriptionsIcon } from '~/console/icons/SubscriptionsIcon'
@@ -16,11 +17,11 @@ import type { AppTenant } from '~/domain/apps/types'
 export function AppNavigation({
   app,
   onNavigate,
-  subscriptionsCount,
+  productsCount,
 }: {
   app: AppTenant
   onNavigate?: () => void
-  subscriptionsCount: number
+  productsCount: number
 }) {
   const routeParams = appRouteParams(app)
   return (
@@ -45,17 +46,20 @@ export function AppNavigation({
       <SidebarNavLink icon={AppUsersIcon} label="App Users" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/app-users" />
       <SidebarNavLink icon={EntitlementsIcon} label="Entitlements" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/entitlements" />
       <SidebarNavLink
-        count={subscriptionsCount}
-        countLabel={`${subscriptionsCount} store subscriptions`}
+        count={productsCount}
+        countLabel={`${productsCount} catalog products`}
         icon={SubscriptionsIcon}
-        label="Store Subscriptions"
+        label="Products"
         onNavigate={onNavigate}
         params={routeParams}
-        to="/$tenantSlug/$appSlug/subscriptions"
+        to="/$tenantSlug/$appSlug/products"
       />
 
       <SidebarSection label="Catalog" />
       <SidebarNavLink icon={OfferingsIcon} label="Offerings" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/offerings" />
+
+      <SidebarSection label="Stores" />
+      <SidebarNavLink icon={StoresIcon} label="Bindings & Drift" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/stores" />
 
       <SidebarSection label="Admin" />
       <SidebarNavLink icon={SettingsIcon} label="App Settings" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/settings" />

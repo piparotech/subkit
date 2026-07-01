@@ -24,7 +24,7 @@ interface ShellProps {
   tenant: WorkspaceTenant
   view: View
   searchQuery: string
-  subscriptionsCount: number
+  productsCount: number
   onSearchQueryChange: (query: string) => void
   onToggleSwitcher: () => void
   onSelectTenant: (id: string) => void
@@ -49,10 +49,10 @@ export function ConsoleShell({
   onSearchQueryChange,
   onSelectTenant,
   searchQuery,
-  subscriptionsCount,
+  productsCount,
 }: ShellProps) {
-  const showPrimary = (view === 'apps' && canCreateApps) || (view === 'subscriptions' && currentApp != null)
-  const primaryLabel = view === 'apps' ? 'New App' : 'New Subscription'
+  const showPrimary = (view === 'apps' && canCreateApps) || (view === 'products' && currentApp != null)
+  const primaryLabel = view === 'apps' ? 'New App' : 'New Product'
   const currentAppRouteParams = currentApp == null ? null : appRouteParams(currentApp)
 
   return (
@@ -86,7 +86,7 @@ export function ConsoleShell({
           {currentApp == null ? (
             <GlobalNavigation appsCount={apps.length} />
           ) : (
-            <AppNavigation app={currentApp} subscriptionsCount={subscriptionsCount} />
+            <AppNavigation app={currentApp} productsCount={productsCount} />
           )}
         </nav>
 
@@ -172,8 +172,10 @@ function viewLabel(view: View): string {
       return 'Workspace Settings'
     case 'dashboard':
       return 'Dashboard'
-    case 'subscriptions':
-      return 'Subscriptions'
+    case 'products':
+      return 'Products'
+    case 'stores':
+      return 'Stores'
     case 'entitlements':
       return 'Entitlements'
     case 'offerings':
