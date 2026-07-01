@@ -1,17 +1,23 @@
-import type { products } from '~/db/schema'
 import type { AppleCatalogProduct } from '~/server/app-store-connect/client'
 
 import type { AppStoreConnectProductPreview } from '~/integrations/app-store-connect/types'
 
+export interface ApplePreviewLocalProduct {
+  appleProductId: string | null
+  billingPeriod: string | null
+  name: string
+  productKey: string
+}
+
 export function previewProduct(
   appleProduct: AppleCatalogProduct,
-  localProducts: readonly (typeof products.$inferSelect)[],
+  localProducts: readonly ApplePreviewLocalProduct[],
 ): AppStoreConnectProductPreview {
-  const matchingByStoreId = localProducts.filter((product) => product.appStoreId === appleProduct.productId)
-  const matchingByIdentifier = localProducts.filter((product) => product.identifier === appleProduct.productId)
-  const match = matchingByStoreId[0] ?? matchingByIdentifier[0]
+  const matchingByStoreId = localProducts.filter((product) => product.appleProductId === appleProduct.productId)
+  const matchingByKey = localProducts.filter((product) => product.productKey === appleProduct.productId)
+  const match = matchingByStoreId[0] ?? matchingByKey[0]
 
-  if (matchingByStoreId.length + matchingByIdentifier.length > 1) {
+  if (matchingByStoreId.length + matchingByKey.length > 1) {
     return {
       action: 'conflict',
       appleName: appleProduct.name,
@@ -20,9 +26,9 @@ export function previewProduct(
       duration: appleProduct.duration,
       entitlement: appleProduct.entitlementKey,
       kind: appleProduct.kind,
-      localIdentifier: match?.identifier ?? null,
-      localName: match?.displayName ?? null,
-      note: 'Multiple local products reference this Apple product ID.',
+      localIdentifier: match?.productKey ?? null,
+      localName: match?.name ?? null,
+      note: 'Multiple SubKit products reference this Apple product ID.',
     }
   }
 
@@ -37,11 +43,11 @@ export function previewProduct(
       kind: appleProduct.kind,
       localIdentifier: null,
       localName: null,
-      note: 'Create a local product mapped to this Apple product ID. Price stays unset until report/price sync is added.',
+      note: 'Adopt this store product as a SubKit product or bind it to an existing plan.',
     }
   }
 
-  const changed = match.displayName !== appleProduct.name || match.duration !== appleProduct.duration || match.appStoreId !== appleProduct.productId
+  const changed = match.name !== appleProduct.name || match.billingPeriod !== appleProduct.duration || match.appleProductId !== appleProduct.productId
   return {
     action: changed ? 'update' : 'unchanged',
     appleName: appleProduct.name,
@@ -50,8 +56,8 @@ export function previewProduct(
     duration: appleProduct.duration,
     entitlement: appleProduct.entitlementKey,
     kind: appleProduct.kind,
-    localIdentifier: match.identifier,
-    localName: match.displayName,
-    note: changed ? 'Update local name, duration, or App Store product mapping.' : 'Local product already matches the Apple catalogue snapshot.',
+    localIdentifier: match.productKey,
+    localName: match.name,
+    note: changed ? 'SubKit canonical state differs from the Apple catalogue snapshot.' : 'SubKit product already matches the Apple catalogue snapshot.',
   }
 }
