@@ -1,0 +1,30 @@
+{
+  "name": "@piparotech/subkit-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared backend API contracts for SubKit.",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
