@@ -19,8 +19,12 @@ import { Route as ConsoleSettingsRouteImport } from './routes/_console.settings'
 import { Route as ConsoleMembersRouteImport } from './routes/_console.members'
 import { Route as ConsoleAppsRouteImport } from './routes/_console.apps'
 import { Route as ConsoleAppsIndexRouteImport } from './routes/_console.apps.index'
+import { Route as ApiServerProductsRouteImport } from './routes/api.server.products'
+import { Route as ApiServerOfferingsRouteImport } from './routes/api.server.offerings'
+import { Route as ApiServerCustomerInfoRouteImport } from './routes/api.server.customer-info'
 import { Route as ConsoleTenantSlugAppSlugRouteImport } from './routes/_console.$tenantSlug.$appSlug'
 import { Route as ConsoleTenantSlugAppSlugIndexRouteImport } from './routes/_console.$tenantSlug.$appSlug.index'
+import { Route as ApiServerEntitlementsCheckRouteImport } from './routes/api.server.entitlements.check'
 import { Route as ApiRuntimeEntitlementsCheckRouteImport } from './routes/api.runtime.entitlements.check'
 import { Route as ConsoleTenantSlugAppSlugSubscriptionsRouteImport } from './routes/_console.$tenantSlug.$appSlug.subscriptions'
 import { Route as ConsoleTenantSlugAppSlugSettingsRouteImport } from './routes/_console.$tenantSlug.$appSlug.settings'
@@ -77,6 +81,21 @@ const ConsoleAppsIndexRoute = ConsoleAppsIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ConsoleAppsRoute,
 } as any)
+const ApiServerProductsRoute = ApiServerProductsRouteImport.update({
+  id: '/api/server/products',
+  path: '/api/server/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiServerOfferingsRoute = ApiServerOfferingsRouteImport.update({
+  id: '/api/server/offerings',
+  path: '/api/server/offerings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiServerCustomerInfoRoute = ApiServerCustomerInfoRouteImport.update({
+  id: '/api/server/customer-info',
+  path: '/api/server/customer-info',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConsoleTenantSlugAppSlugRoute =
   ConsoleTenantSlugAppSlugRouteImport.update({
     id: '/$tenantSlug/$appSlug',
@@ -88,6 +107,12 @@ const ConsoleTenantSlugAppSlugIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => ConsoleTenantSlugAppSlugRoute,
+  } as any)
+const ApiServerEntitlementsCheckRoute =
+  ApiServerEntitlementsCheckRouteImport.update({
+    id: '/api/server/entitlements/check',
+    path: '/api/server/entitlements/check',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ApiRuntimeEntitlementsCheckRoute =
   ApiRuntimeEntitlementsCheckRouteImport.update({
@@ -136,6 +161,9 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/start': typeof AuthStartRoute
   '/$tenantSlug/$appSlug': typeof ConsoleTenantSlugAppSlugRouteWithChildren
+  '/api/server/customer-info': typeof ApiServerCustomerInfoRoute
+  '/api/server/offerings': typeof ApiServerOfferingsRoute
+  '/api/server/products': typeof ApiServerProductsRoute
   '/apps/': typeof ConsoleAppsIndexRoute
   '/$tenantSlug/$appSlug/app-users': typeof ConsoleTenantSlugAppSlugAppUsersRoute
   '/$tenantSlug/$appSlug/entitlements': typeof ConsoleTenantSlugAppSlugEntitlementsRoute
@@ -143,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/$tenantSlug/$appSlug/settings': typeof ConsoleTenantSlugAppSlugSettingsRoute
   '/$tenantSlug/$appSlug/subscriptions': typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
   '/api/runtime/entitlements/check': typeof ApiRuntimeEntitlementsCheckRoute
+  '/api/server/entitlements/check': typeof ApiServerEntitlementsCheckRoute
   '/$tenantSlug/$appSlug/': typeof ConsoleTenantSlugAppSlugIndexRoute
 }
 export interface FileRoutesByTo {
@@ -153,6 +182,9 @@ export interface FileRoutesByTo {
   '/settings': typeof ConsoleSettingsRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/start': typeof AuthStartRoute
+  '/api/server/customer-info': typeof ApiServerCustomerInfoRoute
+  '/api/server/offerings': typeof ApiServerOfferingsRoute
+  '/api/server/products': typeof ApiServerProductsRoute
   '/apps': typeof ConsoleAppsIndexRoute
   '/$tenantSlug/$appSlug/app-users': typeof ConsoleTenantSlugAppSlugAppUsersRoute
   '/$tenantSlug/$appSlug/entitlements': typeof ConsoleTenantSlugAppSlugEntitlementsRoute
@@ -160,6 +192,7 @@ export interface FileRoutesByTo {
   '/$tenantSlug/$appSlug/settings': typeof ConsoleTenantSlugAppSlugSettingsRoute
   '/$tenantSlug/$appSlug/subscriptions': typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
   '/api/runtime/entitlements/check': typeof ApiRuntimeEntitlementsCheckRoute
+  '/api/server/entitlements/check': typeof ApiServerEntitlementsCheckRoute
   '/$tenantSlug/$appSlug': typeof ConsoleTenantSlugAppSlugIndexRoute
 }
 export interface FileRoutesById {
@@ -174,6 +207,9 @@ export interface FileRoutesById {
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/start': typeof AuthStartRoute
   '/_console/$tenantSlug/$appSlug': typeof ConsoleTenantSlugAppSlugRouteWithChildren
+  '/api/server/customer-info': typeof ApiServerCustomerInfoRoute
+  '/api/server/offerings': typeof ApiServerOfferingsRoute
+  '/api/server/products': typeof ApiServerProductsRoute
   '/_console/apps/': typeof ConsoleAppsIndexRoute
   '/_console/$tenantSlug/$appSlug/app-users': typeof ConsoleTenantSlugAppSlugAppUsersRoute
   '/_console/$tenantSlug/$appSlug/entitlements': typeof ConsoleTenantSlugAppSlugEntitlementsRoute
@@ -181,6 +217,7 @@ export interface FileRoutesById {
   '/_console/$tenantSlug/$appSlug/settings': typeof ConsoleTenantSlugAppSlugSettingsRoute
   '/_console/$tenantSlug/$appSlug/subscriptions': typeof ConsoleTenantSlugAppSlugSubscriptionsRoute
   '/api/runtime/entitlements/check': typeof ApiRuntimeEntitlementsCheckRoute
+  '/api/server/entitlements/check': typeof ApiServerEntitlementsCheckRoute
   '/_console/$tenantSlug/$appSlug/': typeof ConsoleTenantSlugAppSlugIndexRoute
 }
 export interface FileRouteTypes {
@@ -195,6 +232,9 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/auth/start'
     | '/$tenantSlug/$appSlug'
+    | '/api/server/customer-info'
+    | '/api/server/offerings'
+    | '/api/server/products'
     | '/apps/'
     | '/$tenantSlug/$appSlug/app-users'
     | '/$tenantSlug/$appSlug/entitlements'
@@ -202,6 +242,7 @@ export interface FileRouteTypes {
     | '/$tenantSlug/$appSlug/settings'
     | '/$tenantSlug/$appSlug/subscriptions'
     | '/api/runtime/entitlements/check'
+    | '/api/server/entitlements/check'
     | '/$tenantSlug/$appSlug/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -212,6 +253,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/auth/callback'
     | '/auth/start'
+    | '/api/server/customer-info'
+    | '/api/server/offerings'
+    | '/api/server/products'
     | '/apps'
     | '/$tenantSlug/$appSlug/app-users'
     | '/$tenantSlug/$appSlug/entitlements'
@@ -219,6 +263,7 @@ export interface FileRouteTypes {
     | '/$tenantSlug/$appSlug/settings'
     | '/$tenantSlug/$appSlug/subscriptions'
     | '/api/runtime/entitlements/check'
+    | '/api/server/entitlements/check'
     | '/$tenantSlug/$appSlug'
   id:
     | '__root__'
@@ -232,6 +277,9 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/auth/start'
     | '/_console/$tenantSlug/$appSlug'
+    | '/api/server/customer-info'
+    | '/api/server/offerings'
+    | '/api/server/products'
     | '/_console/apps/'
     | '/_console/$tenantSlug/$appSlug/app-users'
     | '/_console/$tenantSlug/$appSlug/entitlements'
@@ -239,6 +287,7 @@ export interface FileRouteTypes {
     | '/_console/$tenantSlug/$appSlug/settings'
     | '/_console/$tenantSlug/$appSlug/subscriptions'
     | '/api/runtime/entitlements/check'
+    | '/api/server/entitlements/check'
     | '/_console/$tenantSlug/$appSlug/'
   fileRoutesById: FileRoutesById
 }
@@ -249,7 +298,11 @@ export interface RootRouteChildren {
   LogoutRoute: typeof LogoutRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthStartRoute: typeof AuthStartRoute
+  ApiServerCustomerInfoRoute: typeof ApiServerCustomerInfoRoute
+  ApiServerOfferingsRoute: typeof ApiServerOfferingsRoute
+  ApiServerProductsRoute: typeof ApiServerProductsRoute
   ApiRuntimeEntitlementsCheckRoute: typeof ApiRuntimeEntitlementsCheckRoute
+  ApiServerEntitlementsCheckRoute: typeof ApiServerEntitlementsCheckRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -324,6 +377,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsoleAppsIndexRouteImport
       parentRoute: typeof ConsoleAppsRoute
     }
+    '/api/server/products': {
+      id: '/api/server/products'
+      path: '/api/server/products'
+      fullPath: '/api/server/products'
+      preLoaderRoute: typeof ApiServerProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/server/offerings': {
+      id: '/api/server/offerings'
+      path: '/api/server/offerings'
+      fullPath: '/api/server/offerings'
+      preLoaderRoute: typeof ApiServerOfferingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/server/customer-info': {
+      id: '/api/server/customer-info'
+      path: '/api/server/customer-info'
+      fullPath: '/api/server/customer-info'
+      preLoaderRoute: typeof ApiServerCustomerInfoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_console/$tenantSlug/$appSlug': {
       id: '/_console/$tenantSlug/$appSlug'
       path: '/$tenantSlug/$appSlug'
@@ -337,6 +411,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$tenantSlug/$appSlug/'
       preLoaderRoute: typeof ConsoleTenantSlugAppSlugIndexRouteImport
       parentRoute: typeof ConsoleTenantSlugAppSlugRoute
+    }
+    '/api/server/entitlements/check': {
+      id: '/api/server/entitlements/check'
+      path: '/api/server/entitlements/check'
+      fullPath: '/api/server/entitlements/check'
+      preLoaderRoute: typeof ApiServerEntitlementsCheckRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/runtime/entitlements/check': {
       id: '/api/runtime/entitlements/check'
@@ -448,7 +529,11 @@ const rootRouteChildren: RootRouteChildren = {
   LogoutRoute: LogoutRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthStartRoute: AuthStartRoute,
+  ApiServerCustomerInfoRoute: ApiServerCustomerInfoRoute,
+  ApiServerOfferingsRoute: ApiServerOfferingsRoute,
+  ApiServerProductsRoute: ApiServerProductsRoute,
   ApiRuntimeEntitlementsCheckRoute: ApiRuntimeEntitlementsCheckRoute,
+  ApiServerEntitlementsCheckRoute: ApiServerEntitlementsCheckRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
