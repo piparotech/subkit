@@ -38,6 +38,7 @@ export function createSubKitIapClient(options: CreateSubKitIapClientOptions): Su
   let sessionId = options.sessionId ?? createSessionId()
   const subscriptions: SubKitPurchaseListenerSubscription[] = []
   let appStateSubscription: { remove(): void } | null = null
+  let startPromise: Promise<void> | null = null
 
   if (options.appUserId != null && options.appUserId.trim() !== '') {
     identity.identify(options.appUserId)
@@ -120,9 +121,25 @@ export function createSubKitIapClient(options: CreateSubKitIapClientOptions): Su
   }
 
   async function start(): Promise<void> {
+    if (startPromise != null) {
+      await startPromise
+      return
+    }
+
+    const pendingStart = startOnce()
+    startPromise = pendingStart
+    try {
+      await pendingStart
+    } catch (error) {
+      if (startPromise === pendingStart) startPromise = null
+      throw error
+    }
+  }
+
+  async function startOnce(): Promise<void> {
     await options.adapterBundle.iap.initConnection()
     const listeners = options.adapterBundle.listeners
-    if (listeners != null && options.iap?.autoSync !== false && options.iap?.syncOnPurchaseEvent !== false) {
+    if (listeners != null && options.iap?.autoSync !== false && options.iap?.syncOnPurchaseEvent !== false && subscriptions.length === 0) {
       subscriptions.push(
         listeners.addPurchaseUpdatedListener((purchase) => {
           coordinator.handlePurchaseEvent(purchase).catch((error: unknown) => {
@@ -158,6 +175,7 @@ export function createSubKitIapClient(options: CreateSubKitIapClientOptions): Su
   }
 
   function stop(): void {
+    startPromise = null
     appStateSubscription?.remove()
     appStateSubscription = null
     while (subscriptions.length > 0) {
