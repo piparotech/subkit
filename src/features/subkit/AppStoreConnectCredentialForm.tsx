@@ -1,9 +1,10 @@
-import { PUIField, PUIInput, type PUIFieldRenderProps } from '@piparo/cn-web'
+import { PUIField, PUIInput } from '@piparo/cn-web'
 import * as React from 'react'
 
+import { inputFieldProps } from './formFieldProps'
 import type { AppStoreConnectCredentialDraft } from './types'
 
-export function CredentialForm({
+export function AppStoreConnectCredentialForm({
   draft,
   hasStoredKey,
   onChange,
@@ -88,12 +89,4 @@ export function CredentialForm({
   )
 }
 
-function inputFieldProps(field: PUIFieldRenderProps) {
-  return {
-    'aria-describedby': field.describedby,
-    'aria-invalid': field.invalid || undefined,
-    disabled: field.disabled,
-    id: field.id,
-  }
-}
 
