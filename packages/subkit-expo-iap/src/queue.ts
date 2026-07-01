@@ -1,6 +1,6 @@
 import type { QueuedPurchase } from '@piparotech/subkit-core'
 
-import type { SubKitIapPurchase } from './types'
+import type { SubKitIapPurchase } from './types.js'
 
 export type QueueStatus = 'pending' | 'verifying' | 'verified' | 'finish_failed' | 'finished' | 'failed'
 
@@ -10,7 +10,7 @@ export interface PurchaseQueueItem extends QueuedPurchase {
 
 export interface PurchaseQueueStore {
   enqueue(purchase: SubKitIapPurchase, appUserId?: string): Promise<PurchaseQueueItem>
-  listPending(): Promise<PurchaseQueueItem[]>
+  listPending(appUserId?: string): Promise<PurchaseQueueItem[]>
   markFailed(id: string, error: string): Promise<void>
   markFinished(id: string): Promise<void>
   markVerified(id: string): Promise<void>
@@ -48,13 +48,14 @@ export function createMemoryPurchaseQueueStore(now: () => number = () => Date.no
         store: purchase.store,
         transactionId: purchase.transactionId,
         updatedAt: timestamp,
-        userId: appUserId,
+        userId: resolvePurchaseQueueUserId(existing, appUserId),
       }
       items.set(id, next)
       return next
     },
-    async listPending() {
-      return [...items.values()].filter((item) => item.status !== 'finished')
+    async listPending(appUserId) {
+      const normalizedAppUserId = normalizeQueueAppUserId(appUserId)
+      return [...items.values()].filter((item) => item.status !== 'finished' && purchaseQueueItemMatchesAppUser(item, normalizedAppUserId))
     },
     async markFailed(id, error) {
       const item = items.get(id)
@@ -72,4 +73,22 @@ export function createMemoryPurchaseQueueStore(now: () => number = () => Date.no
       items.set(id, { ...item, status: 'verified', updatedAt: now() })
     },
   }
+}
+
+export function resolvePurchaseQueueUserId(existing: PurchaseQueueItem | undefined, appUserId: string | undefined): string | undefined {
+  const existingUserId = normalizeQueueAppUserId(existing?.userId)
+  if (existingUserId != null) return existingUserId
+  return normalizeQueueAppUserId(appUserId)
+}
+
+export function purchaseQueueItemMatchesAppUser(item: PurchaseQueueItem, appUserId: string | undefined): boolean {
+  const normalizedAppUserId = normalizeQueueAppUserId(appUserId)
+  if (normalizedAppUserId == null) return true
+  return normalizeQueueAppUserId(item.userId) === normalizedAppUserId
+}
+
+function normalizeQueueAppUserId(appUserId: string | undefined): string | undefined {
+  if (appUserId == null) return undefined
+  const trimmed = appUserId.trim()
+  return trimmed === '' ? undefined : trimmed
 }

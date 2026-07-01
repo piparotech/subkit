@@ -1,5 +1,5 @@
-import type { SubKitIapPurchase } from './types'
-import { createPurchaseQueueId, type PurchaseQueueItem, type PurchaseQueueStore } from './queue'
+import type { SubKitIapPurchase } from './types.js'
+import { createPurchaseQueueId, purchaseQueueItemMatchesAppUser, resolvePurchaseQueueUserId, type PurchaseQueueItem, type PurchaseQueueStore } from './queue.js'
 
 export interface SubKitJsonStorage {
   getItem(key: string): Promise<string | null>
@@ -42,14 +42,14 @@ export function createStoredPurchaseQueueStore(options: StoredPurchaseQueueOptio
         store: purchase.store,
         transactionId: purchase.transactionId,
         updatedAt: timestamp,
-        userId: appUserId,
+        userId: resolvePurchaseQueueUserId(existing, appUserId),
       }
       await writeItems(options.storage, key, upsertItem(items, next).slice(-maxItems))
       return next
     },
-    async listPending() {
+    async listPending(appUserId) {
       const items = await readItems(options.storage, key)
-      return items.filter((item) => item.status !== 'finished')
+      return items.filter((item) => item.status !== 'finished' && purchaseQueueItemMatchesAppUser(item, appUserId))
     },
     async markFailed(id, error) {
       await updateItem(options.storage, key, id, (item) => ({

@@ -1,9 +1,9 @@
 import type { PurchaseSyncReason, PurchaseSyncResult, StoreIdentityHints } from '@piparotech/subkit-core'
 
-import type { SubKitExpoIapAdapter } from './adapter'
-import { normalizePurchaseForReconcile, type SubKitRuntimeClient } from './client'
-import type { PurchaseQueueStore } from './queue'
-import type { SubKitIapPurchase } from './types'
+import type { SubKitExpoIapAdapter } from './adapter.js'
+import { normalizePurchaseForReconcile, type SubKitRuntimeClient } from './client.js'
+import type { PurchaseQueueStore } from './queue.js'
+import type { SubKitIapPurchase } from './types.js'
 
 export interface SubKitIapLogger {
   debug(message: string, context?: unknown): void
@@ -71,7 +71,7 @@ export function createPurchaseSyncCoordinator(options: PurchaseSyncCoordinatorOp
   }
 
   async function drainQueue(reason: PurchaseSyncReason, appUserId: string): Promise<PurchaseSyncResult> {
-    const pending = await options.queue.listPending()
+    const pending = await options.queue.listPending(appUserId)
     const purchases = pending.map((item) => normalizePurchaseForReconcile({
       environment: undefined,
       originalTransactionId: item.originalTransactionId,
