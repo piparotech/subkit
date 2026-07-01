@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { AppRouteView } from '~/features/subkit/RouteViews'
+import { AppRouteView } from '~/features/subkit/AppRouteView'
 
 export const Route = createFileRoute('/_console/$tenantSlug/$appSlug/offerings')({
   component: OfferingsRoute,
