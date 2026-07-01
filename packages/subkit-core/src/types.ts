@@ -60,13 +60,14 @@ export interface CustomerInfo {
 }
 
 export interface StoreProduct {
+  billingPeriod: string | null
   description: string
   displayName: string
-  duration: string
-  entitlementKey: string
-  identifier: string
+  entitlementKeys: string[]
   kind: ProductKind
+  planKey: string
   priceCents: number
+  productKey: string
   storeProductIds: {
     apple?: string
     google?: string

@@ -72,13 +72,14 @@ export const customerInfoSchema = z.strictObject({
 })
 
 export const storeProductSchema = z.strictObject({
+  billingPeriod: z.string().nullable(),
   description: z.string(),
   displayName: z.string(),
-  duration: z.string(),
-  entitlementKey: z.string(),
-  identifier: z.string().min(1),
+  entitlementKeys: z.array(z.string().min(1)),
   kind: productKindSchema,
+  planKey: z.string().min(1),
   priceCents: z.number().int(),
+  productKey: z.string().min(1),
   storeProductIds: z.strictObject({
     apple: z.string().min(1).optional(),
     google: z.string().min(1).optional(),

@@ -81,12 +81,14 @@ export const serverProductsRequestSchema = z.object({
 export type ServerProductsRequest = z.infer<typeof serverProductsRequestSchema>
 
 export const serverProductSchema = z.object({
-  id: z.string().min(1),
+  billingPeriod: z.string().nullable(),
   displayName: z.string().min(1),
-  duration: z.string().min(1),
-  entitlement: z.string().min(1),
-  identifier: z.string().min(1),
+  entitlementKeys: z.array(z.string().min(1)),
+  id: z.string().min(1),
+  planId: z.string().min(1),
+  planKey: z.string().min(1),
   priceCents: z.number().int().nonnegative(),
+  productKey: z.string().min(1),
 })
 export type ServerProduct = z.infer<typeof serverProductSchema>
 
