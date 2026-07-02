@@ -158,20 +158,25 @@ export const iapReconcileResponseSchema = z.strictObject({
   verificationStatus: verificationStatusSchema,
 })
 
-export const runtimeCustomerInfoRequestSchema = z.strictObject({
-  appId: z.string().min(1),
+export const runtimeCustomerInfoRequestSchema = z.object({
   appUserId: z.string().min(1),
 })
 
-export const runtimeOfferingsRequestSchema = z.strictObject({
+export const runtimeCustomerInfoWithAppRequestSchema = runtimeCustomerInfoRequestSchema.extend({
   appId: z.string().min(1),
+})
+
+export const runtimeOfferingsRequestSchema = z.object({
   appUserId: z.string().min(1).optional(),
   placement: z.string().min(1).optional(),
   platform: storePlatformSchema.optional(),
 })
 
-export const iapReconcileRequestSchema = z.strictObject({
+export const runtimeOfferingsWithAppRequestSchema = runtimeOfferingsRequestSchema.extend({
   appId: z.string().min(1),
+})
+
+export const iapReconcileRequestSchema = z.object({
   appUserId: z.string().min(1).optional(),
   installationId: z.string().min(1),
   platform: storePlatformSchema,
@@ -181,13 +186,24 @@ export const iapReconcileRequestSchema = z.strictObject({
   storeIdentities: storeIdentityHintsSchema.optional(),
 })
 
-export const runtimeEntitlementCheckRequestSchema = z.strictObject({
+export const iapReconcileWithAppRequestSchema = iapReconcileRequestSchema.extend({
   appId: z.string().min(1),
+})
+
+export const runtimeEntitlementCheckRequestSchema = z.object({
   appUserId: z.string().min(1),
   entitlement: z.string().min(1),
 })
 
+export const runtimeEntitlementCheckWithAppRequestSchema = runtimeEntitlementCheckRequestSchema.extend({
+  appId: z.string().min(1),
+})
+
 export type RuntimeCustomerInfoRequestInput = z.infer<typeof runtimeCustomerInfoRequestSchema>
+export type RuntimeCustomerInfoWithAppRequestInput = z.infer<typeof runtimeCustomerInfoWithAppRequestSchema>
 export type RuntimeOfferingsRequestInput = z.infer<typeof runtimeOfferingsRequestSchema>
+export type RuntimeOfferingsWithAppRequestInput = z.infer<typeof runtimeOfferingsWithAppRequestSchema>
 export type IapReconcileRequestInput = z.infer<typeof iapReconcileRequestSchema>
+export type IapReconcileWithAppRequestInput = z.infer<typeof iapReconcileWithAppRequestSchema>
 export type RuntimeEntitlementCheckRequestInput = z.infer<typeof runtimeEntitlementCheckRequestSchema>
+export type RuntimeEntitlementCheckWithAppRequestInput = z.infer<typeof runtimeEntitlementCheckWithAppRequestSchema>

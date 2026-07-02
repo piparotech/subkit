@@ -163,14 +163,18 @@ export interface QueuedPurchase {
   anonymousId?: string
   attempts: number
   createdAt: number
+  environment?: StoreEnvironment
   id: string
   lastError?: string
-  originalTransactionId?: string
+  linkedPurchaseToken?: string
   orderId?: string
+  originalTransactionId?: string
+  ownershipType?: 'purchased' | 'family_shared' | 'unknown'
   platform: StorePlatform
   productId: string
   purchaseTime?: number
   purchaseToken?: string
+  quantity?: number
   receipt?: string
   rawPurchase?: unknown
   store: StoreName
@@ -180,19 +184,24 @@ export interface QueuedPurchase {
 }
 
 export interface RuntimeCustomerInfoRequest {
-  appId: string
   appUserId: string
 }
 
-export interface RuntimeOfferingsRequest {
+export interface RuntimeCustomerInfoWithAppRequest extends RuntimeCustomerInfoRequest {
   appId: string
+}
+
+export interface RuntimeOfferingsRequest {
   appUserId?: string
   placement?: string
   platform?: StorePlatform
 }
 
-export interface IapReconcileRequest {
+export interface RuntimeOfferingsWithAppRequest extends RuntimeOfferingsRequest {
   appId: string
+}
+
+export interface IapReconcileRequest {
   appUserId?: string
   installationId: string
   platform: StorePlatform
@@ -202,8 +211,15 @@ export interface IapReconcileRequest {
   storeIdentities?: StoreIdentityHints
 }
 
-export interface RuntimeEntitlementCheckRequest {
+export interface IapReconcileWithAppRequest extends IapReconcileRequest {
   appId: string
+}
+
+export interface RuntimeEntitlementCheckRequest {
   appUserId: string
   entitlement: string
+}
+
+export interface RuntimeEntitlementCheckWithAppRequest extends RuntimeEntitlementCheckRequest {
+  appId: string
 }

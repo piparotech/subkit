@@ -80,6 +80,27 @@ export const serverProductsRequestSchema = z.object({
 })
 export type ServerProductsRequest = z.infer<typeof serverProductsRequestSchema>
 
+export const runtimeSdkKeyScopeSchema = z.enum(['read', 'iap_reconcile'])
+export type RuntimeSdkKeyScope = z.infer<typeof runtimeSdkKeyScopeSchema>
+
+export const serverCreateRuntimeSdkKeyRequestSchema = z.object({
+  appId: z.string().min(1),
+  name: z.string().min(1).max(120).optional(),
+  scopes: z.array(runtimeSdkKeyScopeSchema).min(1).optional(),
+})
+export type ServerCreateRuntimeSdkKeyRequest = z.infer<typeof serverCreateRuntimeSdkKeyRequestSchema>
+
+export const serverCreateRuntimeSdkKeyResponseSchema = z.object({
+  appId: z.string().min(1),
+  createdAt: z.string().min(1),
+  id: z.string().min(1),
+  key: z.string().min(1),
+  keyPrefix: z.string().min(1),
+  name: z.string().min(1),
+  scopes: z.array(runtimeSdkKeyScopeSchema).min(1),
+})
+export type ServerCreateRuntimeSdkKeyResponse = z.infer<typeof serverCreateRuntimeSdkKeyResponseSchema>
+
 export const serverProductSchema = z.object({
   billingPeriod: z.string().nullable(),
   displayName: z.string().min(1),
