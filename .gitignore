@@ -7,4 +7,5 @@ node_modules
 *.sqlite
 *.sqlite-*
 *.sqlite.backup-*
+/data/
 .DS_Store
