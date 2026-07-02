@@ -2,23 +2,22 @@ import { PUICard, PUIText, cn } from '@piparo/cn-web'
 
 import { ActionButton } from '~/components/ui/ActionButton'
 import { AppAvatar } from '~/domain/apps/AppAvatar'
+import { EmptySettingsText } from '~/components/ui/EmptySettingsText'
 import { MetricCard } from '~/components/ui/MetricCard'
 import { toneTextClass } from '~/components/ui/toneClasses'
 import { ToneDot } from '~/components/ui/ToneDot'
 import type { AppTenant } from '~/domain/apps/types'
-import type { ActivityEvent, ConsoleRuntimeConfig, ConsoleStats, Metric, RevenueBar } from '~/domain/dashboard/types'
+import type { ActivityEvent, ConsoleRuntimeConfig, Metric, RevenueBar } from '~/domain/dashboard/types'
 
 export function DashboardView({
   activity,
   app,
-  dbStats,
   metrics,
   revenueBars,
   runtime,
 }: {
   activity: ActivityEvent[]
   app: AppTenant
-  dbStats: ConsoleStats
   metrics: Metric[]
   revenueBars: RevenueBar[]
   runtime: ConsoleRuntimeConfig
@@ -45,18 +44,6 @@ export function DashboardView({
         {metrics.map((metric) => (
           <MetricCard delta={metric.delta} key={metric.label} label={metric.label} tone={metric.tone} value={metric.value} />
         ))}
-      </div>
-
-      <div className="mt-[16px] flex flex-wrap gap-[8px] text-[11.5px] text-[var(--subkit-faint)]">
-        <span className="rounded-[6px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[8px] py-[4px]">
-          DB tenants {dbStats.tenants}
-        </span>
-        <span className="rounded-[6px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[8px] py-[4px]">
-          DB products {dbStats.products}
-        </span>
-        <span className="rounded-[6px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[8px] py-[4px]">
-          DB App Users {dbStats.appUsers}
-        </span>
       </div>
 
       <PUICard className="mt-[16px] rounded-[14px] border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[20px] py-[18px]">
@@ -113,20 +100,30 @@ export function DashboardView({
             <div className="text-[14px] font-semibold">Monthly recurring revenue</div>
             <div className="text-[12px] text-[var(--subkit-faint)]">Last 12 months</div>
           </div>
-          <div className="mt-[20px] flex h-[170px] items-end gap-[8px]">
-            {revenueBars.map((bar, index) => (
-              <div className="flex h-full flex-1 flex-col items-center justify-end gap-[8px]" key={bar.month}>
-                <div
-                  className={cn(
-                    'w-full rounded-t-[5px] rounded-b-[2px] transition-[height] duration-normal',
-                    index === revenueBars.length - 1 ? 'bg-[var(--subkit-accent)]' : 'bg-[var(--subkit-accent-line)]',
-                  )}
-                  style={{ height: bar.height }}
-                />
-                <div className="text-[10px] text-[var(--subkit-faint)]">{bar.month}</div>
-              </div>
-            ))}
-          </div>
+          {revenueBars.length === 0 ? (
+            <div className="mt-[16px]">
+              <EmptySettingsText>No revenue events yet. Revenue bars appear after Sales Report or purchase imports create monthly totals.</EmptySettingsText>
+            </div>
+          ) : (
+            <div className="mt-[20px] flex h-[190px] items-end gap-[8px]">
+              {revenueBars.map((bar, index) => (
+                <div className="flex h-full flex-1 flex-col items-center justify-end gap-[8px]" key={bar.month}>
+                  <div className="font-mono text-[10.5px] font-semibold text-[var(--subkit-dim)]">{bar.value}</div>
+                  <div
+                    aria-label={`${bar.month}: ${bar.value}`}
+                    className={cn(
+                      'w-full rounded-t-[5px] rounded-b-[2px] transition-[height] duration-normal',
+                      index === revenueBars.length - 1 ? 'bg-[var(--subkit-accent)]' : 'bg-[var(--subkit-accent-line)]',
+                    )}
+                    role="img"
+                    style={{ height: bar.height }}
+                    title={`${bar.month}: ${bar.value}`}
+                  />
+                  <div className="text-[10px] text-[var(--subkit-faint)]">{bar.month}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </PUICard>
 
         <PUICard className="rounded-[14px] border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[20px] py-[18px]">

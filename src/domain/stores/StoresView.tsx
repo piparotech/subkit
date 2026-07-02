@@ -35,8 +35,8 @@ export function StoresView({ storeSync }: { storeSync: StoreSyncAppSummary }) {
       <div className="mt-[18px] grid grid-cols-4 gap-[12px] max-lg:grid-cols-2 max-sm:grid-cols-1">
         <StoreMetric label="Apple bindings" value={String(appleBindings)} />
         <StoreMetric label="Google bindings" value={String(googleBindings)} />
-        <StoreMetric label="Open drift" tone={openDriftCount > 0 ? 'warning' : 'success'} value={String(openDriftCount)} />
-        <StoreMetric label="Blocking drift" tone={blockingDriftCount > 0 ? 'destructive' : 'success'} value={String(blockingDriftCount)} />
+        <StoreMetric label="Open drift" statusLabel={openDriftCount > 0 ? 'Review' : 'Clear'} tone={openDriftCount > 0 ? 'warning' : 'success'} value={String(openDriftCount)} />
+        <StoreMetric label="Blocking drift" statusLabel={blockingDriftCount > 0 ? 'Blocked' : 'Clear'} tone={blockingDriftCount > 0 ? 'destructive' : 'success'} value={String(blockingDriftCount)} />
       </div>
 
       <section className="mt-[20px] grid grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)] gap-[16px] max-xl:grid-cols-1">
@@ -218,13 +218,23 @@ export function StoresView({ storeSync }: { storeSync: StoreSyncAppSummary }) {
   )
 }
 
-function StoreMetric({ label, value, tone = 'muted' }: { label: string; value: string; tone?: 'success' | 'warning' | 'muted' | 'destructive' }) {
+function StoreMetric({
+  label,
+  statusLabel,
+  value,
+  tone = 'muted',
+}: {
+  label: string
+  statusLabel?: string
+  value: string
+  tone?: 'success' | 'warning' | 'muted' | 'destructive'
+}) {
   return (
     <div className="rounded-[12px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[14px] py-[13px]">
       <div className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--subkit-faint)]">{label}</div>
       <div className="mt-[6px] flex items-center gap-[8px]">
         <div className="font-mono text-[20px] font-semibold text-[var(--subkit-text)]">{value}</div>
-        <StatusLabel label={tone} tone={tone} />
+        {statusLabel != null ? <StatusLabel label={statusLabel} tone={tone} /> : null}
       </div>
     </div>
   )

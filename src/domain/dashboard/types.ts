@@ -19,6 +19,7 @@ export interface ConsoleStats {
 export interface RevenueBar {
   month: string
   height: string
+  value: string
 }
 
 export interface ActivityEvent {
