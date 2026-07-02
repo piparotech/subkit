@@ -1,17 +1,11 @@
 import { Link } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
 
-import { AppUsersIcon } from '~/console/icons/AppUsersIcon'
 import { AppAvatar } from '~/domain/apps/AppAvatar'
-import { DashboardIcon } from '~/console/icons/DashboardIcon'
-import { EntitlementsIcon } from '~/console/icons/EntitlementsIcon'
-import { OfferingsIcon } from '~/console/icons/OfferingsIcon'
-import { SettingsIcon } from '~/console/icons/SettingsIcon'
 import { SidebarNavLink } from '~/console/components/SidebarNavLink'
-import { StoresIcon } from '~/console/icons/StoresIcon'
 import { SidebarSection } from '~/console/components/SidebarSection'
 import { appRouteParams } from '~/console/routing'
-import { SubscriptionsIcon } from '~/console/icons/SubscriptionsIcon'
+import { appConsoleNavigationSections, consoleViews } from '~/console/views'
 import type { AppTenant } from '~/domain/apps/types'
 
 export function AppNavigation({
@@ -41,28 +35,27 @@ export function AppNavigation({
         <span className="truncate text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--subkit-dim)]">{app.name}</span>
       </div>
 
-      <SidebarSection label="State" />
-      <SidebarNavLink icon={DashboardIcon} label="Overview" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug" />
-      <SidebarNavLink icon={AppUsersIcon} label="App Users" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/app-users" />
-      <SidebarNavLink icon={EntitlementsIcon} label="Entitlements" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/entitlements" />
-
-      <SidebarSection label="Catalog" />
-      <SidebarNavLink
-        count={productsCount}
-        countLabel={`${productsCount} catalog products`}
-        icon={SubscriptionsIcon}
-        label="Products"
-        onNavigate={onNavigate}
-        params={routeParams}
-        to="/$tenantSlug/$appSlug/products"
-      />
-      <SidebarNavLink icon={OfferingsIcon} label="Offerings" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/offerings" />
-
-      <SidebarSection label="Stores" />
-      <SidebarNavLink icon={StoresIcon} label="Store Sync" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/stores" />
-
-      <SidebarSection label="Admin" />
-      <SidebarNavLink icon={SettingsIcon} label="App Settings" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/settings" />
+      {appConsoleNavigationSections.map((section) => (
+        <div key={section.label}>
+          <SidebarSection label={section.label} />
+          {section.views.map((view) => {
+            const definition = consoleViews[view]
+            const count = view === 'products' ? productsCount : undefined
+            return (
+              <SidebarNavLink
+                count={count}
+                countLabel={count == null ? undefined : `${count} catalog products`}
+                icon={definition.icon}
+                key={view}
+                label={definition.navigationLabel}
+                onNavigate={onNavigate}
+                params={routeParams}
+                to={definition.to}
+              />
+            )
+          })}
+        </div>
+      ))}
     </div>
   )
 }

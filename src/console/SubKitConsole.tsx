@@ -1,7 +1,7 @@
 import { useLoaderData, useNavigate, useRouter } from '@tanstack/react-router'
 import * as React from 'react'
 
-import { ActiveView } from '~/console/ActiveView'
+import { AppRouteNotFound } from '~/console/AppRouteNotFound'
 import { listAppStoreConnectApps } from '~/integrations/app-store-connect/server/apps'
 import { emptyAppDraft, emptyTenantDraft, safeInitials, safeTenantId } from '~/console/helpers'
 import { newCatalogProduct } from '~/domain/products/data'
@@ -21,14 +21,30 @@ import type { Offering } from '~/domain/offerings/types'
 import type { CatalogProduct, EditableCatalogProductTextField } from '~/domain/products/types'
 import type { TenantDraft, TenantDraftField, TenantMemberSummary } from '~/domain/tenants/types'
 import type { AppStoreConnectAccessibleApp, AppStoreConnectConnection } from '~/integrations/app-store-connect/types'
-import type { PanelState, View } from '~/console/types'
+import type { PanelState } from '~/console/types'
+import { consoleViewSearchPlaceholder, type AppConsoleView, type AppConsoleViewRenderProps, type ConsoleViewRenderProps, type WorkspaceConsoleView } from '~/console/views'
 
 interface OperationFeedback {
   message: string
   tone: NoticeTone
 }
 
-export function SubKitConsole({ currentAppId, view }: { currentAppId: string | null; view: View }) {
+type SubKitConsoleProps =
+  | {
+      currentAppId: null
+      renderView: (props: ConsoleViewRenderProps) => React.ReactNode
+      scope: 'workspace'
+      view: WorkspaceConsoleView
+    }
+  | {
+      currentAppId: string | null
+      renderView: (props: AppConsoleViewRenderProps) => React.ReactNode
+      scope: 'app'
+      view: AppConsoleView
+    }
+
+export function SubKitConsole(props: SubKitConsoleProps) {
+  const { currentAppId, view } = props
   const consoleData = useLoaderData({ from: '/_console' })
   const router = useRouter()
   const navigate = useNavigate()
@@ -371,6 +387,33 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
     navigate({ to: '/apps' }).catch(reportNavigationError)
   }
 
+  const viewProps: ConsoleViewRenderProps = {
+    appUsers: visibleAppUsers,
+    apps: visibleApps,
+    canCreateApps,
+    consoleData,
+    connection: currentConnection,
+    currentApp,
+    entitlements: currentEntitlements,
+    isFiltering,
+    offerings: currentOfferings,
+    onAppDeleted: deleteLocalApp,
+    onCreateApp: openAppCreator,
+    onOpenAppUser: openAppUser,
+    onOpenProduct: openProduct,
+    onRefreshConsoleData: refreshConsoleData,
+    products: visibleProducts,
+    tenant: currentTenant,
+    tenantMembers: visibleTenantMembers,
+    view,
+  }
+
+  const content = props.scope === 'app'
+    ? currentApp == null
+      ? <AppRouteNotFound apps={visibleApps} />
+      : props.renderView({ ...viewProps, currentApp })
+    : props.renderView(viewProps)
+
   return (
     <>
       <ConsoleShell
@@ -387,7 +430,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
         onSelectTenant={selectTenant}
         onToggleSwitcher={() => setSwitcherOpen((open) => !open)}
         productsCount={currentProducts.length}
-        searchPlaceholder={searchPlaceholderForView(view)}
+        searchPlaceholder={consoleViewSearchPlaceholder(view)}
         searchQuery={searchQuery}
         switcherOpen={switcherOpen}
         view={view}
@@ -397,26 +440,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
             <Notice className="m-0" tone={operationFeedback.tone}>{operationFeedback.message}</Notice>
           </div>
         ) : null}
-        <ActiveView
-          appUsers={visibleAppUsers}
-          apps={visibleApps}
-          canCreateApps={canCreateApps}
-          consoleData={consoleData}
-          connection={currentConnection}
-          currentApp={currentApp}
-          entitlements={currentEntitlements}
-          isFiltering={isFiltering}
-          offerings={currentOfferings}
-          onAppDeleted={deleteLocalApp}
-          onCreateApp={openAppCreator}
-          onOpenAppUser={openAppUser}
-          onOpenProduct={openProduct}
-          onRefreshConsoleData={refreshConsoleData}
-          products={visibleProducts}
-          tenant={currentTenant}
-          tenantMembers={visibleTenantMembers}
-          view={view}
-        />
+        {content}
       </ConsoleShell>
       <Panels
         appDraft={appDraft}
@@ -445,20 +469,6 @@ function readErrorMessage(error: unknown, fallback: string): string {
   return fallback
 }
 
-function searchPlaceholderForView(view: View): string | null {
-  switch (view) {
-    case 'apps':
-      return 'Search apps…'
-    case 'products':
-      return 'Search products, plans, entitlements…'
-    case 'appUsers':
-      return 'Search App Users, countries, entitlements…'
-    case 'tenantMembers':
-      return 'Search workspace members…'
-    default:
-      return null
-  }
-}
 
 function filterTenantMembers(members: TenantMemberSummary[], query: string): TenantMemberSummary[] {
   const normalized = query.trim().toLowerCase()

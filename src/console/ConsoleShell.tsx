@@ -11,6 +11,7 @@ import type { AppTenant } from '~/domain/apps/types'
 import type { ConsoleUser, WorkspaceTenant } from '~/domain/tenants/types'
 import type { View } from '~/console/types'
 import { WorkspaceSwitcher } from '~/console/WorkspaceSwitcher'
+import { consoleViewLabel } from '~/console/views'
 
 interface ShellProps {
   accessibleTenants: WorkspaceTenant[]
@@ -163,7 +164,7 @@ export function ConsoleShell({
             ) : null}
             <BreadcrumbSeparator />
             <span aria-current="page" className="min-w-0 truncate font-semibold text-[var(--subkit-text)]">
-              {viewLabel(view)}
+              {consoleViewLabel(view)}
             </span>
           </nav>
           <div className="flex-1" />
@@ -289,27 +290,3 @@ function BreadcrumbSeparator() {
   )
 }
 
-function viewLabel(view: View): string {
-  switch (view) {
-    case 'apps':
-      return 'Apps'
-    case 'tenantMembers':
-      return 'Workspace Members'
-    case 'workspaceSettings':
-      return 'Workspace Settings'
-    case 'dashboard':
-      return 'Dashboard'
-    case 'products':
-      return 'Products'
-    case 'stores':
-      return 'Stores'
-    case 'entitlements':
-      return 'Entitlements'
-    case 'offerings':
-      return 'Offerings'
-    case 'appUsers':
-      return 'App Users'
-    case 'settings':
-      return 'Settings'
-  }
-}
