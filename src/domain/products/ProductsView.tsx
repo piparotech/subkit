@@ -1,3 +1,4 @@
+import { EmptySettingsText } from '~/components/ui/EmptySettingsText'
 import { SoftTag } from '~/components/ui/SoftTag'
 import { StatusLabel } from '~/components/ui/StatusLabel'
 import { StoreId } from '~/domain/stores/StoreId'
@@ -5,9 +6,11 @@ import type { CatalogProduct } from '~/domain/products/types'
 import { ViewTitle } from '~/components/ui/ViewTitle'
 
 export function ProductsView({
+  isFiltering,
   onOpenProduct,
   products,
 }: {
+  isFiltering: boolean
   onOpenProduct: (product: CatalogProduct) => void
   products: CatalogProduct[]
 }) {
@@ -31,6 +34,15 @@ export function ProductsView({
             <div>Reference</div>
             <div className="text-right">Status</div>
           </div>
+          {products.length === 0 ? (
+            <div className="px-[18px] py-[16px]">
+              <EmptySettingsText>
+                {isFiltering
+                  ? 'No products match this search. Clear the search to see all products for this app.'
+                  : 'No products yet. Create the first SubKit product, then bind Apple or Google store product IDs from the product panel.'}
+              </EmptySettingsText>
+            </div>
+          ) : null}
           {products.map((product) => (
             <button
               className="grid w-full cursor-pointer grid-cols-[1.25fr_0.85fr_0.85fr_1.15fr_1.15fr_0.8fr_0.75fr] items-center gap-[14px] border-b border-[var(--subkit-border)] px-[18px] py-[14px] text-left last:border-b-0 hover:bg-[var(--subkit-panel-2)]"

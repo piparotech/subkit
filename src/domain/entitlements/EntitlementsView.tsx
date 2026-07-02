@@ -1,6 +1,7 @@
 import { PUICard } from '@piparo/cn-web'
 import { Circle } from 'lucide-react'
 
+import { EmptySettingsText } from '~/components/ui/EmptySettingsText'
 import { SoftTag } from '~/components/ui/SoftTag'
 import type { Entitlement } from '~/domain/entitlements/types'
 import { ViewTitle } from '~/components/ui/ViewTitle'
@@ -10,6 +11,11 @@ export function EntitlementsView({ entitlements }: { entitlements: Entitlement[]
     <section className="max-w-[980px] animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
       <ViewTitle description="What a user unlocks. Check entitlements in your app, never product IDs." title="Entitlements" />
       <div className="mt-[20px] flex flex-col gap-[14px]">
+        {entitlements.length === 0 ? (
+          <EmptySettingsText>
+            No entitlements yet. Create a product first; SubKit will create or reuse the entitlement key that your app backend should check.
+          </EmptySettingsText>
+        ) : null}
         {entitlements.map((entitlement) => (
           <PUICard className="rounded-[14px] border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[20px] py-[18px]" key={entitlement.id}>
             <div className="flex items-center gap-[12px]">

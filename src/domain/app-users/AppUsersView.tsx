@@ -1,9 +1,18 @@
+import { EmptySettingsText } from '~/components/ui/EmptySettingsText'
 import { SoftTag } from '~/components/ui/SoftTag'
 import { StatusLabel } from '~/components/ui/StatusLabel'
 import type { AppUser } from '~/domain/app-users/types'
 import { ViewTitle } from '~/components/ui/ViewTitle'
 
-export function AppUsersView({ appUsers, onOpenAppUser }: { appUsers: AppUser[]; onOpenAppUser: (appUser: AppUser) => void }) {
+export function AppUsersView({
+  appUsers,
+  isFiltering,
+  onOpenAppUser,
+}: {
+  appUsers: AppUser[]
+  isFiltering: boolean
+  onOpenAppUser: (appUser: AppUser) => void
+}) {
   return (
     <section className="animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
       <ViewTitle description="End users of this app, identified by App User ID and resolved through SubKit entitlement grants." title="App Users" />
@@ -17,6 +26,15 @@ export function AppUsersView({ appUsers, onOpenAppUser }: { appUsers: AppUser[];
             <div>Source</div>
             <div className="text-right">LTV</div>
           </div>
+          {appUsers.length === 0 ? (
+            <div className="px-[18px] py-[16px]">
+              <EmptySettingsText>
+                {isFiltering
+                  ? 'No App Users match this search. Clear the search to see all App Users for this app.'
+                  : 'No App Users yet. Runtime checks and store imports will create App User records once traffic or purchases arrive.'}
+              </EmptySettingsText>
+            </div>
+          ) : null}
           {appUsers.map((appUser) => (
             <button
               className="grid w-full cursor-pointer grid-cols-[1.5fr_1.2fr_1.25fr_1fr_1fr_0.8fr] items-center gap-[14px] border-b border-[var(--subkit-border)] px-[18px] py-[14px] text-left last:border-b-0 hover:bg-[var(--subkit-panel-2)]"

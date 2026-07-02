@@ -5,6 +5,7 @@ import { ActiveView } from '~/console/ActiveView'
 import { listAppStoreConnectApps } from '~/integrations/app-store-connect/server/apps'
 import { emptyAppDraft, emptyTenantDraft, safeInitials, safeTenantId } from '~/console/helpers'
 import { newCatalogProduct } from '~/domain/products/data'
+import { Notice, type NoticeTone } from '~/components/ui/Notice'
 import { Panels } from '~/console/Panels'
 import { createAppRecord, createTenantRecord, upsertProductRecord } from '~/console/server'
 import { ConsoleShell } from '~/console/ConsoleShell'
@@ -18,9 +19,14 @@ import type { AppDraft, AppDraftField, AppTenant } from '~/domain/apps/types'
 import type { Entitlement } from '~/domain/entitlements/types'
 import type { Offering } from '~/domain/offerings/types'
 import type { CatalogProduct, EditableCatalogProductTextField } from '~/domain/products/types'
-import type { TenantDraft, TenantDraftField } from '~/domain/tenants/types'
+import type { TenantDraft, TenantDraftField, TenantMemberSummary } from '~/domain/tenants/types'
 import type { AppStoreConnectAccessibleApp, AppStoreConnectConnection } from '~/integrations/app-store-connect/types'
 import type { PanelState, View } from '~/console/types'
+
+interface OperationFeedback {
+  message: string
+  tone: NoticeTone
+}
 
 export function SubKitConsole({ currentAppId, view }: { currentAppId: string | null; view: View }) {
   const consoleData = useLoaderData({ from: '/_console' })
@@ -41,6 +47,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
   const [appStoreAppsLoaded, setAppStoreAppsLoaded] = React.useState(false)
   const [appStoreLoadError, setAppStoreLoadError] = React.useState<string | null>(null)
   const [loadingAppStoreApps, setLoadingAppStoreApps] = React.useState(false)
+  const [operationFeedback, setOperationFeedback] = React.useState<OperationFeedback | null>(null)
   const [panel, setPanel] = React.useState<PanelState>({ kind: 'closed' })
 
   React.useEffect(() => {
@@ -60,6 +67,8 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
   const currentApp = apps.find((app) => app.id === currentAppId) ?? null
   const currentTenant = consoleData.accessibleTenants.find((item) => item.id === (currentApp?.tenantId ?? selectedTenantId)) ?? consoleData.tenant
   const currentConnection = consoleData.appStoreConnectConnections.find((connection) => connection.tenantId === currentTenant.id) ?? null
+  const canCreateApps = currentTenant.role === 'admin' || currentTenant.role === 'super_admin'
+  const isFiltering = searchQuery.trim() !== ''
   const currentProducts = React.useMemo(
     () => (currentApp == null ? products : products.filter((product) => product.appId === currentApp.id)),
     [currentApp, products],
@@ -86,9 +95,14 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
     () => filterAppUsers(currentAppUsers, searchQuery),
     [currentAppUsers, searchQuery],
   )
+  const visibleTenantMembers = React.useMemo(
+    () => filterTenantMembers(consoleData.tenantMembers, searchQuery),
+    [consoleData.tenantMembers, searchQuery],
+  )
 
   const reportNavigationError = (error: unknown) => {
     console.error('Failed to navigate SubKit', error)
+    setOperationFeedback({ message: readErrorMessage(error, 'SubKit could not navigate to the requested view.'), tone: 'danger' })
   }
 
   const selectTenant = (id: string) => {
@@ -101,12 +115,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
 
   const primaryAction = () => {
     if (view === 'apps') {
-      setSelectedTenantId(currentTenant.id)
-      setAppDraft(emptyAppDraft)
-      setAppStoreApps([])
-      setAppStoreAppsLoaded(false)
-      setAppStoreLoadError(null)
-      setPanel({ kind: 'newApp' })
+      openAppCreator()
       return
     }
     if (view === 'products' && currentApp != null) {
@@ -116,6 +125,16 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
         product: { ...newCatalogProduct, appId: currentApp.id },
       })
     }
+  }
+
+  const openAppCreator = () => {
+    setSelectedTenantId(currentTenant.id)
+    setAppDraft(emptyAppDraft)
+    setAppStoreApps([])
+    setAppStoreAppsLoaded(false)
+    setAppStoreLoadError(null)
+    setOperationFeedback(null)
+    setPanel({ kind: 'newApp' })
   }
 
   const openProduct = (product: CatalogProduct) => {
@@ -166,6 +185,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
   const refreshConsoleData = () => {
     router.invalidate().catch((error: unknown) => {
       console.error('Failed to refresh SubKit data', error)
+      setOperationFeedback({ message: readErrorMessage(error, 'SubKit saved the change, but could not refresh the console data.'), tone: 'warning' })
     })
   }
 
@@ -175,13 +195,21 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
     const appId = saved.appId
     const productKey = saved.productKey.trim()
     const planKey = saved.planKey.trim()
-    if (!productKey || !planKey || !appId) return
+    if (!productKey || !planKey || !appId) {
+      setOperationFeedback({ message: 'Product key and plan key are required before saving a product.', tone: 'warning' })
+      return
+    }
+
+    const previousProducts = products
     const nextProduct = { ...saved, appId, planKey, productKey }
     setProducts((current) => {
       const existingIndex = current.findIndex((item) => item.appId === appId && item.planId === saved.planId)
       if (existingIndex === -1) return [...current, nextProduct]
       return current.map((item, index) => (index === existingIndex ? nextProduct : item))
     })
+    setPanel({ kind: 'closed' })
+    setOperationFeedback(null)
+
     upsertProductRecord({
       data: {
         appId,
@@ -202,11 +230,15 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
         trialOn: nextProduct.trialOn,
       },
     })
-      .then(refreshConsoleData)
+      .then(() => {
+        setOperationFeedback({ message: `${nextProduct.name || nextProduct.productKey} saved in SubKit.`, tone: 'success' })
+        refreshConsoleData()
+      })
       .catch((error: unknown) => {
         console.error('Failed to save product', error)
+        setProducts(previousProducts)
+        setOperationFeedback({ message: readErrorMessage(error, 'Product could not be saved. Your local preview was rolled back.'), tone: 'danger' })
       })
-    setPanel({ kind: 'closed' })
   }
 
   const updateAppDraft = (field: AppDraftField, value: string) => {
@@ -245,7 +277,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
         setAppStoreAppsLoaded(true)
       })
       .catch((error: unknown) => {
-        setAppStoreLoadError(error instanceof Error ? error.message : 'Failed to load App Store Connect apps')
+        setAppStoreLoadError(readErrorMessage(error, 'Failed to load App Store Connect apps'))
         setAppStoreAppsLoaded(true)
       })
       .finally(() => setLoadingAppStoreApps(false))
@@ -258,11 +290,20 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
   }, [appStoreAppsLoaded, loadAppStoreApps, loadingAppStoreApps, panel.kind])
 
   const createApp = () => {
-    const app = createAppFromDraft(appDraft, apps.length, currentTenant.id)
+    let app: AppTenant
+    try {
+      app = createAppFromDraft(appDraft, apps.length, currentTenant.id)
+    } catch (error: unknown) {
+      setOperationFeedback({ message: readErrorMessage(error, 'Select an App Store Connect app before creating it in SubKit.'), tone: 'warning' })
+      return
+    }
+
     setApps((current) => [...current, app])
-    navigate({ params: appRouteParams(app), to: '/$tenantSlug/$appSlug' }).catch(reportNavigationError)
     setPanel({ kind: 'closed' })
     setAppDraft(emptyAppDraft)
+    setOperationFeedback({ message: `Creating ${app.name} in this workspace…`, tone: 'info' })
+
+    navigate({ params: appRouteParams(app), to: '/$tenantSlug/$appSlug' }).catch(reportNavigationError)
     createAppRecord({
       data: {
         appleAppId: app.appleAppId ?? '',
@@ -274,31 +315,44 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
         tenantId: currentTenant.id,
       },
     })
-      .then(refreshConsoleData)
+      .then(() => {
+        setOperationFeedback({ message: `${app.name} was created. Next step: sync the catalog from App Settings.`, tone: 'success' })
+        refreshConsoleData()
+      })
       .catch((error: unknown) => {
         console.error('Failed to create app', error)
+        setApps((current) => current.filter((item) => item.id !== app.id))
+        setOperationFeedback({ message: readErrorMessage(error, `${app.name} could not be created. The optimistic app card was rolled back.`), tone: 'danger' })
+        navigate({ to: '/apps' }).catch(reportNavigationError)
       })
   }
 
   const createTenant = () => {
     const normalizedId = safeTenantId(tenantDraft.id || tenantDraft.name)
-    if (!normalizedId || !tenantDraft.name.trim()) return
+    if (!normalizedId || !tenantDraft.name.trim()) {
+      setOperationFeedback({ message: 'Workspace name and ID are required.', tone: 'warning' })
+      return
+    }
+
+    const workspaceName = tenantDraft.name.trim()
     createTenantRecord({
       data: {
         color: tenantDraft.color,
         id: normalizedId,
-        initials: tenantDraft.initials.trim() || safeInitials(tenantDraft.name),
-        name: tenantDraft.name.trim(),
+        initials: tenantDraft.initials.trim() || safeInitials(workspaceName),
+        name: workspaceName,
       },
     })
       .then((result) => {
         setSelectedTenantId(result.id)
         setPanel({ kind: 'closed' })
         setTenantDraft(emptyTenantDraft)
+        setOperationFeedback({ message: `${workspaceName} workspace created.`, tone: 'success' })
         refreshConsoleData()
       })
       .catch((error: unknown) => {
-        console.error('Failed to create tenant', error)
+        console.error('Failed to create workspace', error)
+        setOperationFeedback({ message: readErrorMessage(error, 'Workspace could not be created.'), tone: 'danger' })
       })
   }
 
@@ -324,7 +378,7 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
         currentApp={currentApp}
         currentUser={currentUser}
         accessibleTenants={consoleData.accessibleTenants}
-        canCreateApps={currentTenant.role === 'admin' || currentTenant.role === 'super_admin'}
+        canCreateApps={canCreateApps}
         canCreateTenants={currentUser.canCreateTenants}
         tenant={currentTenant}
         onNewTenant={openTenantCreator}
@@ -333,24 +387,34 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
         onSelectTenant={selectTenant}
         onToggleSwitcher={() => setSwitcherOpen((open) => !open)}
         productsCount={currentProducts.length}
+        searchPlaceholder={searchPlaceholderForView(view)}
         searchQuery={searchQuery}
         switcherOpen={switcherOpen}
         view={view}
       >
+        {operationFeedback != null ? (
+          <div className="px-[32px] pt-[16px] max-md:px-[18px]">
+            <Notice className="m-0" tone={operationFeedback.tone}>{operationFeedback.message}</Notice>
+          </div>
+        ) : null}
         <ActiveView
+          appUsers={visibleAppUsers}
           apps={visibleApps}
+          canCreateApps={canCreateApps}
           consoleData={consoleData}
           connection={currentConnection}
           currentApp={currentApp}
-          tenant={currentTenant}
           entitlements={currentEntitlements}
+          isFiltering={isFiltering}
           offerings={currentOfferings}
           onAppDeleted={deleteLocalApp}
+          onCreateApp={openAppCreator}
           onOpenAppUser={openAppUser}
           onOpenProduct={openProduct}
           onRefreshConsoleData={refreshConsoleData}
-          appUsers={visibleAppUsers}
           products={visibleProducts}
+          tenant={currentTenant}
+          tenantMembers={visibleTenantMembers}
           view={view}
         />
       </ConsoleShell>
@@ -374,4 +438,33 @@ export function SubKitConsole({ currentAppId, view }: { currentAppId: string | n
       />
     </>
   )
+}
+
+function readErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim() !== '') return error.message
+  return fallback
+}
+
+function searchPlaceholderForView(view: View): string | null {
+  switch (view) {
+    case 'apps':
+      return 'Search apps…'
+    case 'products':
+      return 'Search products, plans, entitlements…'
+    case 'appUsers':
+      return 'Search App Users, countries, entitlements…'
+    case 'tenantMembers':
+      return 'Search workspace members…'
+    default:
+      return null
+  }
+}
+
+function filterTenantMembers(members: TenantMemberSummary[], query: string): TenantMemberSummary[] {
+  const normalized = query.trim().toLowerCase()
+  if (normalized === '') return members
+  return members.filter((member) => {
+    const searchable = [member.name, member.email ?? '', member.userId, member.organization, member.role, member.globalRole]
+    return searchable.some((value) => value.toLowerCase().includes(normalized))
+  })
 }

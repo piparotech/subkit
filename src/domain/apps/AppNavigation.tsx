@@ -45,6 +45,8 @@ export function AppNavigation({
       <SidebarNavLink icon={DashboardIcon} label="Overview" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug" />
       <SidebarNavLink icon={AppUsersIcon} label="App Users" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/app-users" />
       <SidebarNavLink icon={EntitlementsIcon} label="Entitlements" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/entitlements" />
+
+      <SidebarSection label="Catalog" />
       <SidebarNavLink
         count={productsCount}
         countLabel={`${productsCount} catalog products`}
@@ -54,12 +56,10 @@ export function AppNavigation({
         params={routeParams}
         to="/$tenantSlug/$appSlug/products"
       />
-
-      <SidebarSection label="Catalog" />
       <SidebarNavLink icon={OfferingsIcon} label="Offerings" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/offerings" />
 
       <SidebarSection label="Stores" />
-      <SidebarNavLink icon={StoresIcon} label="Bindings & Drift" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/stores" />
+      <SidebarNavLink icon={StoresIcon} label="Store Sync" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/stores" />
 
       <SidebarSection label="Admin" />
       <SidebarNavLink icon={SettingsIcon} label="App Settings" onNavigate={onNavigate} params={routeParams} to="/$tenantSlug/$appSlug/settings" />

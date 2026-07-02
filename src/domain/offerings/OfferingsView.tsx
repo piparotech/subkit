@@ -1,5 +1,6 @@
 import { PUICard } from '@piparo/cn-web'
 
+import { EmptySettingsText } from '~/components/ui/EmptySettingsText'
 import { SoftTag } from '~/components/ui/SoftTag'
 import type { Offering } from '~/domain/offerings/types'
 import { ViewTitle } from '~/components/ui/ViewTitle'
@@ -9,6 +10,11 @@ export function OfferingsView({ offerings }: { offerings: Offering[] }) {
     <section className="max-w-[1080px] animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
       <ViewTitle description="The set of packages shown on a paywall. Change pricing without an app release." title="Offerings" />
       <div className="mt-[20px] flex flex-col gap-[16px]">
+        {offerings.length === 0 ? (
+          <EmptySettingsText>
+            No offerings yet. Offerings group products into the packages your paywall can request without shipping an app release.
+          </EmptySettingsText>
+        ) : null}
         {offerings.map((offering) => (
           <PUICard className="rounded-[14px] border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[20px] py-[18px]" key={offering.id}>
             <div className="mb-[16px] flex items-center gap-[10px] max-md:flex-wrap">

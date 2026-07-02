@@ -22,7 +22,7 @@ export function WorkspaceSwitcher({
   return (
     <div className="absolute left-[14px] right-[14px] top-[54px] z-40 animate-[subkit-drop-in_140ms_ease] rounded-[12px] border border-[var(--subkit-border-2)] bg-[var(--subkit-panel)] p-[6px] shadow-[0_12px_32px_-8px_rgba(20,20,40,0.18)]">
       <div className="px-[8px] pb-[4px] pt-[6px] text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--subkit-faint)]">
-        Tenants
+        Workspaces
       </div>
       {tenants.map((item) => (
         <button
@@ -71,7 +71,7 @@ export function WorkspaceSwitcher({
           onClick={onNewTenant}
           type="button"
         >
-          Create tenant
+          Create workspace
         </button>
       ) : null}
     </div>

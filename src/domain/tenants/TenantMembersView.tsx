@@ -9,10 +9,12 @@ import type { TenantMemberSummary, TenantRole, WorkspaceTenant } from '~/domain/
 import { ViewTitle } from '~/components/ui/ViewTitle'
 
 export function TenantMembersView({
+  isFiltering,
   onRefreshConsoleData,
   tenant,
   tenantMembers,
 }: {
+  isFiltering: boolean
   onRefreshConsoleData: () => void
   tenant: WorkspaceTenant
   tenantMembers: TenantMemberSummary[]
@@ -33,7 +35,7 @@ export function TenantMembersView({
         onRefreshConsoleData()
       })
       .catch((error: unknown) => {
-        setFeedback(error instanceof Error ? error.message : 'Tenant member operation failed')
+        setFeedback(error instanceof Error ? error.message : 'Workspace member operation failed')
       })
       .finally(() => setBusy(null))
   }
@@ -57,15 +59,15 @@ export function TenantMembersView({
   const removeMember = (member: TenantMemberSummary) => {
     runTask(`remove-member-${member.userId}`, async () => {
       await removeTenantMember({ data: { tenantId: tenant.id, userId: member.userId } })
-      return `${member.name} no longer has tenant access.`
+      return `${member.name} no longer has workspace access.`
     })
   }
 
   return (
     <section className="max-w-[1080px] animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
       <ViewTitle
-        description="Invite existing console users into this tenant and choose whether they are Admins or Developers."
-        title="Tenant Members"
+        description="Invite existing console users into this workspace and choose whether they are Admins or Developers."
+        title="Workspace Members"
       />
 
       <div className="mt-[20px] rounded-[14px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] p-[20px]">
@@ -81,13 +83,15 @@ export function TenantMembersView({
           <RoleSelect disabled={busy != null || !canManageTenant} onChange={setMemberRole} value={memberRole} />
           <ActionButton disabled={busy != null || !canManageTenant || memberEmail.trim() === ''} label="Invite user" onPress={inviteMember} tone="primary" />
         </div>
-        {!canManageTenant ? <Notice>Only tenant Admins and SuperAdmins can invite or change tenant members.</Notice> : null}
+        {!canManageTenant ? <Notice tone="warning">Only workspace Admins and SuperAdmins can invite or change workspace members.</Notice> : null}
         {feedback != null ? <Notice>{feedback}</Notice> : null}
       </div>
 
       <div className="mt-[16px] overflow-hidden rounded-[14px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)]">
         {tenantMemberRows.length === 0 ? (
-          <div className="px-[16px] py-[14px] text-[13px] text-[var(--subkit-faint)]">No tenant members yet.</div>
+          <div className="px-[16px] py-[14px] text-[13px] text-[var(--subkit-faint)]">
+            {isFiltering ? 'No workspace members match this search.' : 'No workspace members yet.'}
+          </div>
         ) : (
           tenantMemberRows.map((member) => (
             <div className="grid grid-cols-[1fr_auto_auto] items-center gap-[10px] border-b border-[var(--subkit-border)] px-[16px] py-[13px] text-[12px] last:border-b-0 max-md:grid-cols-1" key={member.userId}>

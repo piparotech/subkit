@@ -9,7 +9,7 @@ export function GlobalNavigation({ appsCount, onNavigate }: { appsCount: number;
     <div>
       <SidebarSection label="Workspace" />
       <SidebarNavLink count={appsCount} countLabel={`${appsCount} apps`} icon={AppsIcon} label="Apps" onNavigate={onNavigate} to="/apps" />
-      <SidebarNavLink icon={AppUsersIcon} label="Workspace Users" onNavigate={onNavigate} to="/members" />
+      <SidebarNavLink icon={AppUsersIcon} label="Workspace Members" onNavigate={onNavigate} to="/members" />
       <SidebarNavLink icon={SettingsIcon} label="Workspace Settings" onNavigate={onNavigate} to="/settings" />
     </div>
   )

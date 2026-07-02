@@ -13,50 +13,69 @@ import type { AppTenant } from '~/domain/apps/types'
 import type { CatalogProduct } from '~/domain/products/types'
 import type { Entitlement } from '~/domain/entitlements/types'
 import type { Offering } from '~/domain/offerings/types'
+import type { TenantMemberSummary } from '~/domain/tenants/types'
 import type { AppStoreConnectConnection } from '~/integrations/app-store-connect/types'
 import type { ConsoleData, View } from '~/console/types'
 import { WorkspaceSettingsView } from '~/integrations/app-store-connect/WorkspaceSettingsView'
 
 export function ActiveView({
+  appUsers,
   apps,
+  canCreateApps,
   connection,
   consoleData,
   currentApp,
   tenant,
+  tenantMembers,
   entitlements,
+  isFiltering,
   offerings,
   onAppDeleted,
+  onCreateApp,
   onOpenAppUser,
   onOpenProduct,
   onRefreshConsoleData,
-  appUsers,
   products,
   view,
 }: {
+  appUsers: AppUser[]
   apps: AppTenant[]
+  canCreateApps: boolean
   connection: AppStoreConnectConnection | null
   consoleData: ConsoleData
   currentApp: AppTenant | null
   tenant: ConsoleData['tenant']
+  tenantMembers: TenantMemberSummary[]
   entitlements: Entitlement[]
+  isFiltering: boolean
   offerings: Offering[]
   onAppDeleted: (id: string) => void
+  onCreateApp: () => void
   onOpenAppUser: (appUser: AppUser) => void
   onOpenProduct: (product: CatalogProduct) => void
   onRefreshConsoleData: () => void
-  appUsers: AppUser[]
   products: CatalogProduct[]
   view: View
 }) {
   if (view === 'tenantMembers') {
-    return <TenantMembersView onRefreshConsoleData={onRefreshConsoleData} tenant={tenant} tenantMembers={consoleData.tenantMembers} />
+    return <TenantMembersView isFiltering={isFiltering} onRefreshConsoleData={onRefreshConsoleData} tenant={tenant} tenantMembers={tenantMembers} />
   }
 
   if (view === 'workspaceSettings') {
     return <WorkspaceSettingsView connection={connection} onRefreshConsoleData={onRefreshConsoleData} tenant={tenant} />
   }
 
-  if (view === 'apps') return <AppsView apps={apps} />
+  if (view === 'apps') {
+    return (
+      <AppsView
+        apps={apps}
+        canCreateApps={canCreateApps}
+        connection={connection}
+        isFiltering={isFiltering}
+        onCreateApp={onCreateApp}
+      />
+    )
+  }
 
   if (currentApp == null) return <AppRouteNotFound apps={apps} />
 
@@ -68,7 +87,6 @@ export function ActiveView({
         <DashboardView
           activity={dashboard.activity}
           app={currentApp}
-          dbStats={consoleData.stats}
           metrics={dashboard.metrics}
           revenueBars={dashboard.revenueBars}
           runtime={consoleData.runtime}
@@ -76,7 +94,7 @@ export function ActiveView({
       )
     }
     case 'products':
-      return <ProductsView onOpenProduct={onOpenProduct} products={products} />
+      return <ProductsView isFiltering={isFiltering} onOpenProduct={onOpenProduct} products={products} />
     case 'stores': {
       const storeSync = consoleData.storeSync.find((item) => item.appId === currentApp.id)
       if (storeSync == null) throw new Error('Store sync data missing for selected app')
@@ -87,7 +105,7 @@ export function ActiveView({
     case 'offerings':
       return <OfferingsView offerings={offerings} />
     case 'appUsers':
-      return <AppUsersView appUsers={appUsers} onOpenAppUser={onOpenAppUser} />
+      return <AppUsersView appUsers={appUsers} isFiltering={isFiltering} onOpenAppUser={onOpenAppUser} />
     case 'settings':
       return (
         <AppSettingsView
