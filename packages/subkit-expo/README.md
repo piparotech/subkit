@@ -298,6 +298,8 @@ const queue = createStoredPurchaseQueueStore({
 
 If you do not pass `queue`, the SDK uses an in-memory queue. Unfinished subscription and non-consumable transactions are redelivered by the stores, so the in-memory queue is acceptable for subscription-only apps, tests, and prototypes. On restart it loses rejected/failed markers, retry counts, user attribution, and any iOS consumable purchase that was not reconciled yet. If you sell consumables or want stable retry behavior across restarts, use the stored queue. If your app has stricter local-data requirements, provide an encrypted storage implementation with the same `getItem` / `setItem` / `removeItem` shape.
 
+A fully custom `queue` must implement the complete `PurchaseQueueStore` interface: `enqueue`, `enqueueMany`, `listPending`, `markFailed`, `markFinished`, `markRejected`, and `markVerified`. The sync coordinator drains all available store purchases through `enqueueMany`, so implementations should persist a batch with a single storage write instead of one write per purchase.
+
 ## Automatic sync
 
 The SDK can sync purchases automatically:
