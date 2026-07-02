@@ -32,12 +32,13 @@ export function NewAppDialog({
         aria-modal="true"
         className="w-[620px] max-w-full overflow-hidden rounded-[16px] bg-[var(--subkit-panel)] shadow-[0_24px_60px_-16px_rgba(20,20,50,0.4)] animate-[subkit-pop-in_180ms_ease]"
         role="dialog"
+        tabIndex={-1}
       >
         <div className="px-[24px] pt-[20px]">
           <PUIText as="h2" className="text-[18px] font-bold" variant="title3">
             Create iOS app
           </PUIText>
-          <div className="mt-[4px] text-[13px] text-[var(--subkit-dim)]">Select an app from App Store Connect using the tenant API key.</div>
+          <div className="mt-[4px] text-[13px] text-[var(--subkit-dim)]">Select an app from App Store Connect using the workspace API key.</div>
         </div>
         <div className="px-[24px] py-[18px]">
           <NewAppForm

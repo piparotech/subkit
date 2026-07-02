@@ -23,10 +23,12 @@ export function ProductPanel({
     <aside
       aria-label={mode === 'new' ? 'New product' : `Edit ${product.name}`}
       className="fixed bottom-0 right-0 top-0 z-[90] flex w-[520px] animate-[subkit-slide-in_220ms_cubic-bezier(.2,.7,.2,1)] flex-col bg-[var(--subkit-panel)] shadow-[-16px_0_40px_-16px_rgba(20,20,50,0.28)] max-sm:left-0 max-sm:w-auto"
+      aria-modal="true"
       role="dialog"
+      tabIndex={-1}
     >
       <PanelHeader
-        kicker={mode === 'new' ? 'New catalog product' : 'Edit catalog product'}
+        kicker={mode === 'new' ? 'New product' : 'Edit product'}
         onClose={onClose}
         title={mode === 'new' ? 'New product' : product.name || 'Product'}
       />

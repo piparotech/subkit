@@ -16,20 +16,21 @@ export function NewTenantDialog({
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center p-[24px]">
       <div
-        aria-label="Create tenant"
+        aria-label="Create workspace"
         aria-modal="true"
         className="w-[520px] max-w-full overflow-hidden rounded-[16px] bg-[var(--subkit-panel)] shadow-[0_24px_60px_-16px_rgba(20,20,50,0.4)] animate-[subkit-pop-in_180ms_ease]"
         role="dialog"
+        tabIndex={-1}
       >
         <div className="px-[24px] pt-[20px]">
           <PUIText as="h2" className="text-[18px] font-bold" variant="title3">
-            Create tenant
+            Create workspace
           </PUIText>
-          <div className="mt-[4px] text-[13px] text-[var(--subkit-dim)]">Admins are assigned to tenants they create automatically.</div>
+          <div className="mt-[4px] text-[13px] text-[var(--subkit-dim)]">Admins are assigned to workspaces they create automatically.</div>
         </div>
         <div className="flex flex-col gap-[12px] px-[24px] py-[18px]">
           <label className="flex flex-col gap-[6px] text-[12.5px] font-semibold text-[var(--subkit-text)]">
-            Tenant name
+            Workspace name
             <input
               className="rounded-[9px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[11px] py-[9px] font-sans text-[13px] text-[var(--subkit-text)] outline-none"
               onChange={(event) => onChange('name', event.target.value)}
@@ -38,7 +39,7 @@ export function NewTenantDialog({
             />
           </label>
           <label className="flex flex-col gap-[6px] text-[12.5px] font-semibold text-[var(--subkit-text)]">
-            Tenant ID
+            Workspace ID
             <input
               className="rounded-[9px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[11px] py-[9px] font-mono text-[13px] text-[var(--subkit-text)] outline-none"
               onChange={(event) => onChange('id', event.target.value)}
@@ -68,7 +69,7 @@ export function NewTenantDialog({
         </div>
         <div className="flex justify-end gap-[10px] border-t border-[var(--subkit-border)] px-[24px] py-[16px]">
           <PUIButton className="rounded-[9px]" label="Cancel" onPress={onClose} variant="outline" />
-          <PUIButton className="rounded-[9px]" disabled={draft.name.trim() === '' || draft.id.trim() === ''} label="Create tenant" onPress={onCreate} />
+          <PUIButton className="rounded-[9px]" disabled={draft.name.trim() === '' || draft.id.trim() === ''} label="Create workspace" onPress={onCreate} />
         </div>
       </div>
     </div>

@@ -14,7 +14,9 @@ export function AppUserPanel({ appUser, onClose }: { appUser: AppUser; onClose: 
     <aside
       aria-label={`App User ${appUser.appUserId}`}
       className="fixed bottom-0 right-0 top-0 z-[90] flex w-[500px] animate-[subkit-slide-in_220ms_cubic-bezier(.2,.7,.2,1)] flex-col bg-[var(--subkit-panel)] shadow-[-16px_0_40px_-16px_rgba(20,20,50,0.28)] max-sm:left-0 max-sm:w-auto"
+      aria-modal="true"
       role="dialog"
+      tabIndex={-1}
     >
       <div className="flex items-start gap-[12px] border-b border-[var(--subkit-border)] px-[22px] py-[18px]">
         <div className="min-w-0 flex-1">
