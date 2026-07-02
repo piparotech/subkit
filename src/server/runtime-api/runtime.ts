@@ -13,10 +13,9 @@ import {
   type RejectedPurchase,
   type RuntimeCustomerInfoWithAppRequestInput,
   type RuntimeOfferingsWithAppRequestInput,
-  type RuntimeSdkKeyScope,
+  type RuntimeOfferingsResponse,
   type ServerCreateRuntimeSdkKeyRequest,
   type ServerCreateRuntimeSdkKeyResponse,
-  type RuntimeOfferingsResponse,
   type StoreIdentityHints,
   type StoreName,
 } from '@piparotech/subkit-core'
@@ -26,7 +25,6 @@ import { db } from '~/db/client'
 import { ensureDatabaseReady } from '~/db/setup'
 import { parseServerEnv } from '~/server/env'
 import {
-  appRuntimeSdkKeys,
   appUserStoreIdentities,
   appUsers,
   apps,
@@ -91,30 +89,20 @@ interface RuntimeOfferingRow {
   trialEnabled: boolean
 }
 
-export type RuntimeAuthResult = { appId: string; keyId: string; ok: true } | { ok: false; response: Response }
+export type RuntimeAuthResult = { appId: string; ok: true } | { ok: false; response: Response }
 
-const ALL_RUNTIME_SDK_KEY_SCOPES: readonly RuntimeSdkKeyScope[] = ['read', 'iap_reconcile']
 const RUNTIME_SDK_KEY_PREFIX = 'sk_rt_'
 
-export async function authorizeRuntimeRequest(request: Request, requiredScope: RuntimeSdkKeyScope = 'read'): Promise<RuntimeAuthResult> {
+export async function authorizeRuntimeRequest(request: Request): Promise<RuntimeAuthResult> {
   await ensureDatabaseReady()
   const sdkKey = readBearerToken(request)
   if (sdkKey == null) return { ok: false, response: Response.json({ error: 'Unauthorized' }, { status: 401 }) }
 
   const keyHash = hashRuntimeSdkKey(sdkKey)
-  const [runtimeKey] = await db
-    .select({ appId: appRuntimeSdkKeys.appId, id: appRuntimeSdkKeys.id, scopes: appRuntimeSdkKeys.scopes })
-    .from(appRuntimeSdkKeys)
-    .innerJoin(apps, eq(apps.id, appRuntimeSdkKeys.appId))
-    .where(and(eq(appRuntimeSdkKeys.keyHash, keyHash), eq(appRuntimeSdkKeys.status, 'active')))
-    .limit(1)
+  const [app] = await db.select({ appId: apps.id }).from(apps).where(eq(apps.runtimeSdkKeyHash, keyHash)).limit(1)
 
-  if (runtimeKey == null || !hasRuntimeScope(runtimeKey.scopes, requiredScope)) {
-    return { ok: false, response: Response.json({ error: 'Unauthorized' }, { status: 401 }) }
-  }
-
-  await db.update(appRuntimeSdkKeys).set({ lastUsedAt: new Date() }).where(eq(appRuntimeSdkKeys.id, runtimeKey.id))
-  return { appId: runtimeKey.appId, keyId: runtimeKey.id, ok: true }
+  if (app == null) return { ok: false, response: Response.json({ error: 'Unauthorized' }, { status: 401 }) }
+  return { appId: app.appId, ok: true }
 }
 
 export async function createRuntimeSdkKey(input: ServerCreateRuntimeSdkKeyRequest): Promise<ServerCreateRuntimeSdkKeyResponse> {
@@ -122,28 +110,8 @@ export async function createRuntimeSdkKey(input: ServerCreateRuntimeSdkKeyReques
   await assertAppExists(input.appId)
 
   const key = createRuntimeSdkKeySecret()
-  const now = new Date()
-  const row = {
-    appId: input.appId,
-    createdAt: now,
-    id: createRuntimeSdkKeyId(),
-    keyHash: hashRuntimeSdkKey(key),
-    keyPrefix: key.slice(0, 12),
-    name: input.name?.trim() || 'Default runtime SDK key',
-    scopes: input.scopes == null ? [...ALL_RUNTIME_SDK_KEY_SCOPES] : [...new Set(input.scopes)],
-    status: 'active' as const,
-  }
-
-  await db.insert(appRuntimeSdkKeys).values(row)
-  return {
-    appId: row.appId,
-    createdAt: now.toISOString(),
-    id: row.id,
-    key,
-    keyPrefix: row.keyPrefix,
-    name: row.name,
-    scopes: row.scopes,
-  }
+  await db.update(apps).set({ runtimeSdkKeyHash: hashRuntimeSdkKey(key) }).where(eq(apps.id, input.appId))
+  return { appId: input.appId, key }
 }
 
 export function hashRuntimeSdkKey(sdkKey: string): string {
@@ -818,10 +786,6 @@ function rejectPurchase(purchase: NormalizedStorePurchase, code: RejectedPurchas
   return { code, message, store: purchase.store, storeProductId: purchase.storeProductId, transactionId: purchase.transactionId ?? purchase.purchaseToken ?? null }
 }
 
-function createRuntimeSdkKeyId(): string {
-  return `rtk_${randomBytes(16).toString('base64url')}`
-}
-
 function runtimeAppUserId(appId: string, appUserId: string): string {
   return `${appId}:user:${encodeURIComponent(appUserId)}`
 }
@@ -849,10 +813,6 @@ function stableUuid(value: string): string {
 
 function createRuntimeSdkKeySecret(): string {
   return `${RUNTIME_SDK_KEY_PREFIX}${randomBytes(32).toString('base64url')}`
-}
-
-function hasRuntimeScope(scopes: unknown, requiredScope: RuntimeSdkKeyScope): boolean {
-  return Array.isArray(scopes) && scopes.every((scope) => typeof scope === 'string') && scopes.includes(requiredScope)
 }
 
 function runtimeSdkKeyPepper(): string {

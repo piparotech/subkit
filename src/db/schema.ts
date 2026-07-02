@@ -75,41 +75,27 @@ export const authEvents = sqliteTable('auth_events', {
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
 })
 
-export const apps = sqliteTable('apps', {
-  id: text('id').primaryKey(),
-  tenantId: text('tenant_id')
-    .notNull()
-    .references(() => tenants.id, { onDelete: 'cascade' }),
-  name: text('name').notNull(),
-  initials: text('initials').notNull(),
-  color: text('color').notNull(),
-  bundleId: text('bundle_id').notNull().default(''),
-  appleAppId: text('apple_app_id'),
-  iosBundleId: text('ios_bundle_id'),
-  androidPackageName: text('android_package_name'),
-  status: text('status', { enum: ['setup', 'live', 'beta', 'inactive'] }).notNull().default('setup'),
-  monthlyRevenueCents: integer('monthly_revenue_cents').notNull().default(0),
-  activeAppUserCount: integer('active_app_user_count').notNull().default(0),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
-})
-
-export const appRuntimeSdkKeys = sqliteTable(
-  'app_runtime_sdk_keys',
+export const apps = sqliteTable(
+  'apps',
   {
     id: text('id').primaryKey(),
-    appId: text('app_id')
+    tenantId: text('tenant_id')
       .notNull()
-      .references(() => apps.id, { onDelete: 'cascade' }),
-    keyHash: text('key_hash').notNull(),
-    keyPrefix: text('key_prefix').notNull(),
+      .references(() => tenants.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
-    scopes: text('scopes', { mode: 'json' }).$type<string[]>().notNull(),
-    status: text('status', { enum: ['active', 'revoked'] }).notNull().default('active'),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
-    lastUsedAt: integer('last_used_at', { mode: 'timestamp_ms' }),
-    revokedAt: integer('revoked_at', { mode: 'timestamp_ms' }),
+    initials: text('initials').notNull(),
+    color: text('color').notNull(),
+    bundleId: text('bundle_id').notNull().default(''),
+    appleAppId: text('apple_app_id'),
+    iosBundleId: text('ios_bundle_id'),
+    androidPackageName: text('android_package_name'),
+    runtimeSdkKeyHash: text('runtime_sdk_key_hash'),
+    status: text('status', { enum: ['setup', 'live', 'beta', 'inactive'] }).notNull().default('setup'),
+    monthlyRevenueCents: integer('monthly_revenue_cents').notNull().default(0),
+    activeAppUserCount: integer('active_app_user_count').notNull().default(0),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
   },
-  (table) => [uniqueIndex('app_runtime_sdk_keys_key_hash_unique').on(table.keyHash)],
+  (table) => [uniqueIndex('apps_runtime_sdk_key_hash_unique').on(table.runtimeSdkKeyHash)],
 )
 
 export const appPlatforms = sqliteTable(

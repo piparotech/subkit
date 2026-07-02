@@ -8,7 +8,7 @@ export const Route = createFileRoute('/api/runtime/iap/reconcile')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const auth = await authorizeRuntimeRequest(request, 'iap_reconcile')
+        const auth = await authorizeRuntimeRequest(request)
         if (!auth.ok) return auth.response
 
         try {
