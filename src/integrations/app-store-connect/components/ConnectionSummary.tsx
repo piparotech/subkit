@@ -14,7 +14,7 @@ export function ConnectionSummary({ connection }: { connection: AppStoreConnectC
         <StatusLabel label={connection.status.replaceAll('_', ' ')} tone={connectionStatusTone(connection.status)} />
       </div>
       <div className="mt-[12px] grid grid-cols-2 gap-[8px] text-[12px] max-sm:grid-cols-1">
-        <ConnectionFact label="Scope" value="Tenant" />
+        <ConnectionFact label="Scope" value="Workspace" />
         <ConnectionFact label="Vendor Number" value={connection.vendorNumber ?? 'Missing'} />
         <ConnectionFact label="Private key" value={connection.keyFingerprint == null ? 'Missing' : `sha256:${connection.keyFingerprint}`} />
       </div>

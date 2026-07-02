@@ -90,7 +90,7 @@ function section(
 
 async function requireApp(user: AuthUser, appId: string): Promise<typeof apps.$inferSelect> {
   const [app] = await db.select().from(apps).where(eq(apps.id, appId)).limit(1)
-  if (app == null) throw new Error('App does not belong to an accessible tenant')
+  if (app == null) throw new Error('App does not belong to an accessible workspace')
   await requireTenantAccess(user, app.tenantId)
   return app
 }
@@ -101,7 +101,7 @@ async function requireCredential(tenantId: string): Promise<typeof appStoreConne
     .from(appStoreConnectCredentials)
     .where(eq(appStoreConnectCredentials.tenantId, tenantId))
     .limit(1)
-  if (!credential) throw new Error('No tenant App Store Connect credential is configured')
+  if (!credential) throw new Error('No workspace App Store Connect credential is configured')
   if (credential.status === 'deleted') throw new Error('App Store Connect credential was deleted')
   return credential
 }

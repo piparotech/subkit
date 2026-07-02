@@ -14,6 +14,7 @@ import { CapabilityList } from '~/integrations/app-store-connect/components/Capa
 import { ConnectionSummary } from '~/integrations/app-store-connect/components/ConnectionSummary'
 import { credentialDraftFromConnection } from '~/integrations/app-store-connect/credentialDraftFromConnection'
 import { EmptySettingsText } from '~/components/ui/EmptySettingsText'
+import { Notice, type NoticeTone } from '~/components/ui/Notice'
 import { SettingsCard } from '~/components/ui/SettingsCard'
 import type { WorkspaceTenant } from '~/domain/tenants/types'
 import type {
@@ -26,7 +27,7 @@ import { ViewTitle } from '~/components/ui/ViewTitle'
 
 function formatTenantSyncResult(result: AppStoreConnectTenantSyncResult): string {
   const sales = result.salesReport == null ? '' : ` Sales Report ${result.salesReport.reportDate}: ${result.salesReport.status}.`
-  return `${result.appsFound} apps found, ${result.appsCreated} created, ${result.appsUpdated} updated, ${result.appsSynced} catalogues synced, ${result.appsFailed} failed. Products: ${result.productsCreated} created, ${result.productsUpdated} updated, ${result.productsUnchanged} unchanged, ${result.productsConflicts} conflicts.${sales}`
+  return `${result.appsFound} apps found, ${result.appsCreated} created, ${result.appsUpdated} updated, ${result.appsSynced} catalogs synced, ${result.appsFailed} failed. Products: ${result.productsCreated} created, ${result.productsUpdated} updated, ${result.productsUnchanged} unchanged, ${result.productsConflicts} conflicts.${sales}`
 }
 
 export function WorkspaceSettingsView({
@@ -40,7 +41,7 @@ export function WorkspaceSettingsView({
 }) {
   const [draft, setDraft] = React.useState<AppStoreConnectCredentialDraft>(() => credentialDraftFromConnection(connection))
   const [busy, setBusy] = React.useState<string | null>(null)
-  const [feedback, setFeedback] = React.useState<string | null>(null)
+  const [feedback, setFeedback] = React.useState<{ message: string; tone: NoticeTone } | null>(null)
   const [accessibleApps, setAccessibleApps] = React.useState<AppStoreConnectAccessibleApp[]>([])
   const canManageTenant = tenant.role === 'admin' || tenant.role === 'super_admin'
 
@@ -59,11 +60,11 @@ export function WorkspaceSettingsView({
     setFeedback(null)
     task()
       .then((message) => {
-        setFeedback(message)
+        setFeedback({ message, tone: 'success' })
         onRefreshConsoleData()
       })
       .catch((error: unknown) => {
-        setFeedback(error instanceof Error ? error.message : 'App Store Connect operation failed')
+        setFeedback({ message: error instanceof Error ? error.message : 'App Store Connect operation failed', tone: 'danger' })
       })
       .finally(() => setBusy(null))
   }
@@ -100,23 +101,23 @@ export function WorkspaceSettingsView({
   return (
     <section className="max-w-[1080px] animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
       <ViewTitle
-        description="Tenant-wide App Store Connect access used to list and connect iOS apps."
+        description="Workspace-wide App Store Connect access used to list and connect iOS apps."
         title="Workspace Settings"
       />
 
       <div className="mt-[20px] grid grid-cols-[1.15fr_0.85fr] gap-[16px] max-lg:grid-cols-1">
         <SettingsCard
-          description="Upload one App Store Connect API key for this tenant. Saving immediately imports accessible iOS apps, subscription products, IAPs, and the latest Sales Report when a Vendor Number is set."
-          title="Tenant App Store Connect key"
+          description="Upload one App Store Connect API key for this workspace. Saving immediately imports accessible iOS apps, subscription products, IAPs, and the latest Sales Report when a Vendor Number is set."
+          title="Workspace App Store Connect key"
         >
           <AppStoreConnectCredentialForm draft={draft} hasStoredKey={connection?.hasPrivateKey ?? false} onChange={updateDraft} />
           <div className="flex flex-wrap gap-[8px]">
             <ActionButton disabled={busy != null || !canManageTenant} label={busy === 'save' ? 'Saving & syncing…' : connection == null ? 'Save, validate & sync key' : 'Save, rotate & sync key'} onPress={saveCredential} tone="primary" />
             <ActionButton disabled={busy != null} label="List accessible apps" onPress={listAccessibleApps} />
             <ActionButton disabled={busy != null || connection == null || !canManageTenant} label="Run preflight" onPress={validateCredential} />
-            <ActionButton disabled={busy != null || connection == null || !canManageTenant} label="Delete tenant key" onPress={deleteCredential} tone="danger" />
+            <ActionButton disabled={busy != null || connection == null || !canManageTenant} label="Delete workspace key" onPress={deleteCredential} tone="danger" />
           </div>
-          {feedback != null ? <div className="rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]">{feedback}</div> : null}
+          {feedback != null ? <Notice className="m-0" tone={feedback.tone}>{feedback.message}</Notice> : null}
           {accessibleApps.length > 0 ? <AccessibleAppList apps={accessibleApps} /> : null}
         </SettingsCard>
 

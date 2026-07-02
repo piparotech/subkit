@@ -354,7 +354,7 @@ function capabilityMeta(key: AppStoreConnectCapabilityKey): { description: strin
     case 'app_metadata':
       return { description: 'Read app versions, metadata, and release state.', label: 'Metadata & releases' }
     case 'subscription_catalog':
-      return { description: 'Read subscription groups and in-app purchases.', label: 'Subscription catalogue' }
+      return { description: 'Read subscription groups and in-app purchases.', label: 'Subscription catalog' }
     case 'sales_reports':
       return { description: 'Download Sales and Trends reports with a Vendor Number.', label: 'Sales reports' }
     case 'testflight_builds':

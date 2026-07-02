@@ -322,7 +322,7 @@ function revenueBarsForEvents(events: readonly typeof purchaseEvents.$inferSelec
   const maxRevenue = Math.max(...values.map(([, cents]) => cents))
   if (!Number.isFinite(maxRevenue) || maxRevenue <= 0) return []
 
-  return values.map(([month, cents]) => ({ month, height: `${Math.max(1, Math.round((cents * 100) / maxRevenue))}%` }))
+  return values.map(([month, cents]) => ({ height: `${Math.max(1, Math.round((cents * 100) / maxRevenue))}%`, month, value: formatCurrency(cents) }))
 }
 
 function appPlatformLabels(appleAppId: string | null, iosBundleId: string | null, bundleId: string, androidPackageName: string | null): Platform[] {
@@ -407,7 +407,7 @@ async function assertTenantKeepsAdmin(tenantId: string, excludedUserId: string):
     .from(userTenants)
     .where(and(eq(userTenants.tenantId, tenantId), eq(userTenants.role, 'admin')))
   const remainingAdmins = adminRows.filter((member) => member.userId !== excludedUserId)
-  if (remainingAdmins.length === 0) throw new Error('Tenant needs at least one admin')
+  if (remainingAdmins.length === 0) throw new Error('Workspace needs at least one admin')
 }
 
 function toConsoleUser(user: AuthUser, canCreateNewTenants: boolean): ConsoleUser {
@@ -440,7 +440,7 @@ function normalizeTenantId(id: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-  if (!normalized) throw new Error('Tenant id is required')
+  if (!normalized) throw new Error('Workspace id is required')
   return normalized
 }
 
@@ -548,7 +548,7 @@ export const getSubKitConsoleData = createServerFn({ method: 'GET' }).handler(as
   }
 
   const tenant: WorkspaceTenant = activeTenant == null
-    ? { color: 'oklch(0.62 0.17 152)', id: 'none', initials: '—', name: 'No tenant access', role: 'developer' }
+    ? { color: 'oklch(0.62 0.17 152)', id: 'none', initials: '—', name: 'No workspace access', role: 'developer' }
     : toWorkspaceTenant(activeTenant, roleForTenant(roleByTenantId, activeTenant.id))
   const accessibleTenants = accessibleTenantRows.map((tenantRow) => toWorkspaceTenant(tenantRow, roleForTenant(roleByTenantId, tenantRow.id)))
   const appStoreConnectConnectionsFiltered = appStoreConnectConnections.filter((connection) => connection != null)
@@ -989,7 +989,7 @@ export const removeTenantMember = createServerFn({ method: 'POST' })
     await ensureDatabaseReady()
     const currentUser = await getCurrentConsoleUser()
     await requireTenantRole(currentUser, data.tenantId, ['admin'])
-    if (!canRemoveTenantMember(currentUser, data.userId)) throw new Error('Admins cannot remove their own tenant access')
+    if (!canRemoveTenantMember(currentUser, data.userId)) throw new Error('Admins cannot remove their own workspace access')
     await assertTenantKeepsAdmin(data.tenantId, data.userId)
 
     await db.delete(userTenants).where(and(eq(userTenants.tenantId, data.tenantId), eq(userTenants.userId, data.userId)))
@@ -1003,7 +1003,7 @@ export const createAppRecord = createServerFn({ method: 'POST' })
     const currentUser = await getCurrentConsoleUser()
     await requireTenantRole(currentUser, data.tenantId, ['admin'])
     if (!data.id.startsWith(`${data.tenantId}:`)) {
-      throw new Error('Cannot create apps outside the requested tenant')
+      throw new Error('Cannot create apps outside the requested workspace')
     }
 
     await db

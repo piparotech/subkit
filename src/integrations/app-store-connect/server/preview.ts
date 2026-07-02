@@ -58,6 +58,6 @@ export function previewProduct(
     kind: appleProduct.kind,
     localIdentifier: match.productKey,
     localName: match.name,
-    note: changed ? 'SubKit canonical state differs from the Apple catalogue snapshot.' : 'SubKit product already matches the Apple catalogue snapshot.',
+    note: changed ? 'SubKit canonical state differs from the Apple catalog snapshot.' : 'SubKit product already matches the Apple catalog snapshot.',
   }
 }

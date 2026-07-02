@@ -11,6 +11,7 @@ import {
 } from '~/integrations/app-store-connect/server/actions'
 import { EmptySettingsText } from '~/components/ui/EmptySettingsText'
 import { MonitoringSnapshot } from '~/integrations/app-store-connect/components/MonitoringSnapshot'
+import { Notice, type NoticeTone } from '~/components/ui/Notice'
 import { ProductPreviewTable } from '~/integrations/app-store-connect/components/ProductPreviewTable'
 import { SalesReportHistory } from '~/integrations/app-store-connect/components/SalesReportHistory'
 import { deleteAppRecord } from '~/console/server'
@@ -31,7 +32,7 @@ export function AppSettingsView({
   onRefreshConsoleData: () => void
 }) {
   const [busy, setBusy] = React.useState<string | null>(null)
-  const [feedback, setFeedback] = React.useState<string | null>(null)
+  const [feedback, setFeedback] = React.useState<{ message: string; tone: NoticeTone } | null>(null)
   const [preview, setPreview] = React.useState<AppStoreConnectProductPreview[]>([])
   const [monitoring, setMonitoring] = React.useState<AppStoreConnectMonitorSnapshot | null>(null)
   const [reportDate, setReportDate] = React.useState('')
@@ -49,11 +50,11 @@ export function AppSettingsView({
     setFeedback(null)
     task()
       .then((message) => {
-        setFeedback(message)
+        setFeedback({ message, tone: 'success' })
         onRefreshConsoleData()
       })
       .catch((error: unknown) => {
-        setFeedback(error instanceof Error ? error.message : 'App Store Connect operation failed')
+        setFeedback({ message: error instanceof Error ? error.message : 'App Store Connect operation failed', tone: 'danger' })
       })
       .finally(() => setBusy(null))
   }
@@ -62,7 +63,7 @@ export function AppSettingsView({
     runTask('preview', async () => {
       const result = await previewAppStoreConnectProducts({ data: { appId: app.id } })
       setPreview(result)
-      return `${result.length} Apple catalogue products compared with local products.`
+      return `${result.length} Apple catalog products compared with local products.`
     })
   }
 
@@ -109,7 +110,7 @@ export function AppSettingsView({
         onAppDeleted(app.id)
       })
       .catch((error: unknown) => {
-        setFeedback(error instanceof Error ? error.message : 'App could not be deleted')
+        setFeedback({ message: error instanceof Error ? error.message : 'App could not be deleted', tone: 'danger' })
         setBusy(null)
       })
   }
@@ -118,16 +119,16 @@ export function AppSettingsView({
     <section className="max-w-[1080px] animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
       <ViewTitle description={`App-specific App Store Connect workflows for ${app.name}. Workspace credentials live in Workspace Settings.`} title="App Settings" />
 
-      {feedback != null ? <div className="mt-[16px] rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]">{feedback}</div> : null}
+      {feedback != null ? <Notice className="mb-[16px] mt-[16px]" tone={feedback.tone}>{feedback.message}</Notice> : null}
 
       <div className="grid grid-cols-[1fr_1fr] gap-[16px] max-lg:grid-cols-1">
-        <SettingsCard description="Fetch Apple subscriptions and IAPs, compare them with local products, then create or update local SubKit products. App Store Connect is never mutated." title="Subscription catalogue sync">
+        <SettingsCard description="Fetch Apple subscriptions and IAPs, compare them with local products, then create or update local SubKit products. App Store Connect is never mutated." title="Subscription catalog sync">
           <div className="flex flex-wrap gap-[8px]">
-            <ActionButton disabled={busy != null || connection == null || connection.status === 'deleted'} label={busy === 'catalog-sync' ? 'Syncing catalogue…' : 'Sync from App Store Connect'} onPress={syncCatalog} tone="primary" />
+            <ActionButton disabled={busy != null || connection == null || connection.status === 'deleted'} label={busy === 'catalog-sync' ? 'Syncing catalog…' : 'Sync from App Store Connect'} onPress={syncCatalog} tone="primary" />
             <ActionButton disabled={busy != null || connection == null || connection.status === 'deleted'} label="Preview only" onPress={previewProducts} />
             <ActionButton disabled={busy != null || preview.length === 0} label="Import preview" onPress={importProducts} />
           </div>
-          {preview.length > 0 ? <ProductPreviewTable preview={preview} /> : <EmptySettingsText>No sync preview yet. Syncing reads Apple catalogue data and updates local SubKit records only.</EmptySettingsText>}
+          {preview.length > 0 ? <ProductPreviewTable preview={preview} /> : <EmptySettingsText>No sync preview yet. Syncing reads Apple catalog data and updates local SubKit records only.</EmptySettingsText>}
         </SettingsCard>
 
         <SettingsCard description="Download the latest daily Sales & Trends report. Raw imports are kept separate from derived metrics." title="Sales report sync">

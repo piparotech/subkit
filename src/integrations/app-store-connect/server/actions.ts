@@ -124,7 +124,7 @@ export const saveAppStoreConnectCredential = createServerFn({ method: 'POST' })
       action: existing ? 'credential.updated' : 'credential.created',
       appId: null,
       credentialId,
-      detail: 'Tenant credential metadata saved; private key redacted.',
+      detail: 'Workspace credential metadata saved; private key redacted.',
       tenantId: data.tenantId,
       userId: currentUser.id,
     })
@@ -191,7 +191,7 @@ export const previewAppStoreConnectProducts = createServerFn({ method: 'POST' })
       action: 'products.previewed',
       appId: data.appId,
       credentialId: credential.id,
-      detail: `${preview.length} Apple catalogue products compared locally.`,
+      detail: `${preview.length} Apple catalog products compared locally.`,
       tenantId: app.tenantId,
       userId: currentUser.id,
     })
@@ -211,7 +211,7 @@ export const importAppStoreConnectProductPreview = createServerFn({ method: 'POS
       action: 'products.imported',
       appId: data.appId,
       credentialId: credential.id,
-      detail: `${result.created} created, ${result.updated} updated, ${result.skipped} skipped from Apple catalogue preview.`,
+      detail: `${result.created} created, ${result.updated} updated, ${result.skipped} skipped from Apple catalog preview.`,
       tenantId: app.tenantId,
       userId: currentUser.id,
     })
@@ -230,7 +230,7 @@ export const syncAppStoreConnectCatalog = createServerFn({ method: 'POST' })
       action: 'products.synced',
       appId: data.appId,
       credentialId: credential.id,
-      detail: `${result.created} created, ${result.updated} updated, ${result.unchanged} unchanged, ${result.conflicts} conflicts from Apple catalogue sync.`,
+      detail: `${result.created} created, ${result.updated} updated, ${result.unchanged} unchanged, ${result.conflicts} conflicts from Apple catalog sync.`,
       tenantId: app.tenantId,
       userId: currentUser.id,
     })
@@ -306,7 +306,7 @@ async function validateTenantCredential(user: AuthUser, tenantId: string): Promi
     action: 'credential.validated',
     appId: null,
     credentialId: credential.id,
-    detail: `Tenant validation completed with status ${result.status}.`,
+    detail: `Workspace validation completed with status ${result.status}.`,
     tenantId,
     userId: user.id,
   })
@@ -327,14 +327,14 @@ async function requireActiveAppleCredential(user: AuthUser, appId: string): Prom
 
 async function requireApp(user: AuthUser, appId: string): Promise<typeof apps.$inferSelect> {
   const [app] = await db.select().from(apps).where(eq(apps.id, appId)).limit(1)
-  if (app == null) throw new Error('App does not belong to an accessible tenant')
+  if (app == null) throw new Error('App does not belong to an accessible workspace')
   await requireTenantAccess(user, app.tenantId)
   return app
 }
 
 async function requireCredential(tenantId: string): Promise<typeof appStoreConnectCredentials.$inferSelect> {
   const credential = await findCredential(tenantId)
-  if (!credential) throw new Error('No tenant App Store Connect credential is configured')
+  if (!credential) throw new Error('No workspace App Store Connect credential is configured')
   return credential
 }
 

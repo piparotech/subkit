@@ -10,13 +10,13 @@ export type TenantRole = 'admin' | 'developer'
 
 export class TenantAccessRequiredError extends Error {
   constructor() {
-    super('Tenant access required')
+    super('Workspace access required')
   }
 }
 
 export class TenantRoleRequiredError extends Error {
   constructor() {
-    super('Tenant role required')
+    super('Workspace role required')
   }
 }
 
