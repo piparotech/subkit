@@ -1,5 +1,5 @@
-export { authorizeRuntimeRequest, getRuntimeCustomerInfo, listRuntimeOfferings, reconcileRuntimeIap } from '~/server/runtime-api/runtime'
-export { checkRuntimeEntitlement, runtimeEntitlementCheckInputSchema } from '~/server/runtime-api/entitlements'
+export { authorizeRuntimeRequest, createRuntimeSdkKey, getRuntimeCustomerInfo, listRuntimeOfferings, reconcileRuntimeIap } from '~/server/runtime-api/runtime'
+export { checkRuntimeEntitlement } from '~/server/runtime-api/entitlements'
 export { authorizeServerApiRequest } from '~/server/runtime-api/serverApiAuth'
 export { jsonApiError, jsonApiErrorFromThrown, jsonUnknownApiError, SubKitServerApiError } from '~/server/runtime-api/errors'
 export { getServerCustomerInfo } from '~/server/runtime-api/customerInfo'

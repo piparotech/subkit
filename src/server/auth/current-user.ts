@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull, or } from 'drizzle-orm'
+import { and, eq, gt, isNull } from 'drizzle-orm'
 
 import { authEvents, authSessions, tenants, users, userTenants } from '~/db/schema'
 import { db } from '~/db/client'
@@ -54,16 +54,16 @@ export async function getRequiredCurrentUser(): Promise<AuthUser> {
 }
 
 export async function findOrCreateUserFromClaims(claims: OidcClaims, identityProvider: string): Promise<AuthUser> {
-  const email = normalizeEmail(claims.email)
-  const loginName = claims.preferred_username ?? claims.login_name ?? email
-  const existing = await findUserByClaims(claims.sub, email)
+  const verifiedEmail = claims.email_verified === true ? normalizeEmail(claims.email) : undefined
+  const loginName = claims.preferred_username ?? claims.login_name ?? verifiedEmail
+  const existing = await findUserByClaims(claims.sub)
   const now = new Date()
 
   if (existing) {
     const [updated] = await db
       .update(users)
       .set({
-        email: email ?? existing.email,
+        email: verifiedEmail ?? existing.email,
         globalRole: existing.globalRole,
         identityProvider,
         lastLoginAt: now,
@@ -81,21 +81,21 @@ export async function findOrCreateUserFromClaims(claims: OidcClaims, identityPro
     return toAuthUser(updated)
   }
 
-  if (!email) throw new Error('Verified email claim is required for new users')
+  if (!verifiedEmail) throw new Error('Verified email claim is required for new users')
 
   const [created] = await db
     .insert(users)
     .values({
       createdAt: now,
-      email,
+      email: verifiedEmail,
       id: `usr_${sha256Hex(claims.sub).slice(0, 24)}`,
       globalRole: 'user',
       identityProvider,
       initials: createInitials(readDisplayName(claims)),
       lastLoginAt: now,
       name: readDisplayName(claims),
-      operator: email.endsWith('@piparo.tech'),
-      organization: email.endsWith('@piparo.tech') ? 'piparo.tech' : 'External',
+      operator: verifiedEmail.endsWith('@piparo.tech'),
+      organization: verifiedEmail.endsWith('@piparo.tech') ? 'piparo.tech' : 'External',
       zitadelLoginName: loginName,
       zitadelSubject: claims.sub,
     })
@@ -156,9 +156,8 @@ function shouldGrantDefaultTenantAccess(user: typeof users.$inferSelect): boolea
   return user.operator || email?.endsWith('@piparo.tech') === true
 }
 
-async function findUserByClaims(zitadelSubject: string, email?: string) {
-  const predicates = email ? or(eq(users.zitadelSubject, zitadelSubject), eq(users.email, email)) : eq(users.zitadelSubject, zitadelSubject)
-  const [user] = await db.select().from(users).where(and(predicates, isNull(users.disabledAt))).limit(1)
+async function findUserByClaims(zitadelSubject: string) {
+  const [user] = await db.select().from(users).where(and(eq(users.zitadelSubject, zitadelSubject), isNull(users.disabledAt))).limit(1)
   return user
 }
 

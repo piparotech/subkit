@@ -1,17 +1,21 @@
-import { createHash } from 'node:crypto'
+import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto'
 
 import {
   type CustomerEntitlement,
   type CustomerInfo,
-  type IapReconcileRequestInput,
+  type IapReconcileWithAppRequestInput,
   type NormalizedStorePurchase,
   type Offering,
   type ProductKind,
+  createPurchaseQueueId,
   type PurchaseOwnershipConflict,
   type PurchaseSyncResult,
   type RejectedPurchase,
-  type RuntimeCustomerInfoRequestInput,
-  type RuntimeOfferingsRequestInput,
+  type RuntimeCustomerInfoWithAppRequestInput,
+  type RuntimeOfferingsWithAppRequestInput,
+  type RuntimeSdkKeyScope,
+  type ServerCreateRuntimeSdkKeyRequest,
+  type ServerCreateRuntimeSdkKeyResponse,
   type RuntimeOfferingsResponse,
   type StoreIdentityHints,
   type StoreName,
@@ -20,7 +24,9 @@ import { and, eq, inArray } from 'drizzle-orm'
 
 import { db } from '~/db/client'
 import { ensureDatabaseReady } from '~/db/setup'
+import { parseServerEnv } from '~/server/env'
 import {
+  appRuntimeSdkKeys,
   appUserStoreIdentities,
   appUsers,
   apps,
@@ -38,7 +44,6 @@ import {
   storeProductBindings,
   storePurchaseOwnerships,
 } from '~/db/schema'
-import { parseServerEnv } from '~/server/env'
 
 type AppUserRow = typeof appUsers.$inferSelect
 type ProductRow = typeof products.$inferSelect
@@ -46,6 +51,8 @@ type ProductPlanRow = typeof productPlans.$inferSelect
 type StoreProductBindingRow = typeof storeProductBindings.$inferSelect
 type EntitlementGrantStatus = typeof entitlementGrants.$inferSelect.status
 type RuntimeStore = typeof storePurchaseOwnerships.$inferSelect.store
+
+const RUNTIME_IAP_VALIDATION_PENDING_NOTE = 'SubKit runtime IAP reconcile · validation pending'
 
 interface RuntimeAppUserContext {
   appUser: AppUserRow
@@ -84,28 +91,82 @@ interface RuntimeOfferingRow {
   trialEnabled: boolean
 }
 
-export function authorizeRuntimeRequest(request: Request): Response | null {
-  const key = parseServerEnv(process.env).SUBKIT_RUNTIME_READ_API_KEY
-  if (key == null) {
-    return Response.json({ error: 'Runtime API key is not configured' }, { status: 503 })
+export type RuntimeAuthResult = { appId: string; keyId: string; ok: true } | { ok: false; response: Response }
+
+const ALL_RUNTIME_SDK_KEY_SCOPES: readonly RuntimeSdkKeyScope[] = ['read', 'iap_reconcile']
+const RUNTIME_SDK_KEY_PREFIX = 'sk_rt_'
+
+export async function authorizeRuntimeRequest(request: Request, requiredScope: RuntimeSdkKeyScope = 'read'): Promise<RuntimeAuthResult> {
+  await ensureDatabaseReady()
+  const sdkKey = readBearerToken(request)
+  if (sdkKey == null) return { ok: false, response: Response.json({ error: 'Unauthorized' }, { status: 401 }) }
+
+  const keyHash = hashRuntimeSdkKey(sdkKey)
+  const [runtimeKey] = await db
+    .select({ appId: appRuntimeSdkKeys.appId, id: appRuntimeSdkKeys.id, scopes: appRuntimeSdkKeys.scopes })
+    .from(appRuntimeSdkKeys)
+    .innerJoin(apps, eq(apps.id, appRuntimeSdkKeys.appId))
+    .where(and(eq(appRuntimeSdkKeys.keyHash, keyHash), eq(appRuntimeSdkKeys.status, 'active')))
+    .limit(1)
+
+  if (runtimeKey == null || !hasRuntimeScope(runtimeKey.scopes, requiredScope)) {
+    return { ok: false, response: Response.json({ error: 'Unauthorized' }, { status: 401 }) }
   }
 
-  const header = request.headers.get('authorization')
-  if (header !== `Bearer ${key}`) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  return null
+  await db.update(appRuntimeSdkKeys).set({ lastUsedAt: new Date() }).where(eq(appRuntimeSdkKeys.id, runtimeKey.id))
+  return { appId: runtimeKey.appId, keyId: runtimeKey.id, ok: true }
 }
 
-export async function getRuntimeCustomerInfo(input: RuntimeCustomerInfoRequestInput): Promise<CustomerInfo> {
+export async function createRuntimeSdkKey(input: ServerCreateRuntimeSdkKeyRequest): Promise<ServerCreateRuntimeSdkKeyResponse> {
+  await ensureDatabaseReady()
+  await assertAppExists(input.appId)
+
+  const key = createRuntimeSdkKeySecret()
+  const now = new Date()
+  const row = {
+    appId: input.appId,
+    createdAt: now,
+    id: createRuntimeSdkKeyId(),
+    keyHash: hashRuntimeSdkKey(key),
+    keyPrefix: key.slice(0, 12),
+    name: input.name?.trim() || 'Default runtime SDK key',
+    scopes: input.scopes == null ? [...ALL_RUNTIME_SDK_KEY_SCOPES] : [...new Set(input.scopes)],
+    status: 'active' as const,
+  }
+
+  await db.insert(appRuntimeSdkKeys).values(row)
+  return {
+    appId: row.appId,
+    createdAt: now.toISOString(),
+    id: row.id,
+    key,
+    keyPrefix: row.keyPrefix,
+    name: row.name,
+    scopes: row.scopes,
+  }
+}
+
+export function hashRuntimeSdkKey(sdkKey: string): string {
+  return createHmac('sha256', runtimeSdkKeyPepper()).update(sdkKey).digest('hex')
+}
+
+function readBearerToken(request: Request): string | null {
+  const header = request.headers.get('authorization')
+  if (header == null) return null
+  const prefix = 'Bearer '
+  if (!header.startsWith(prefix)) return null
+  const token = header.slice(prefix.length).trim()
+  return token === '' ? null : token
+}
+
+export async function getRuntimeCustomerInfo(input: RuntimeCustomerInfoWithAppRequestInput): Promise<CustomerInfo> {
   await ensureDatabaseReady()
   await assertAppExists(input.appId)
   const { appUser } = await getOrCreateRuntimeAppUser(input.appId, input.appUserId)
   return buildCustomerInfo(input.appId, appUser)
 }
 
-export async function listRuntimeOfferings(input: RuntimeOfferingsRequestInput): Promise<RuntimeOfferingsResponse> {
+export async function listRuntimeOfferings(input: RuntimeOfferingsWithAppRequestInput): Promise<RuntimeOfferingsResponse> {
   await ensureDatabaseReady()
   await assertAppExists(input.appId)
 
@@ -199,7 +260,7 @@ export async function listRuntimeOfferings(input: RuntimeOfferingsRequestInput):
   }
 }
 
-export async function reconcileRuntimeIap(input: IapReconcileRequestInput): Promise<PurchaseSyncResult> {
+export async function reconcileRuntimeIap(input: IapReconcileWithAppRequestInput): Promise<PurchaseSyncResult> {
   await ensureDatabaseReady()
   await assertAppExists(input.appId)
 
@@ -423,6 +484,7 @@ async function buildCustomerInfo(appId: string, appUser: AppUserRow): Promise<Cu
       startsAt: entitlementGrants.startsAt,
       status: entitlementGrants.status,
       revokedAt: entitlementGrants.revokedAt,
+      note: entitlementGrants.note,
       createdAt: entitlementGrants.createdAt,
     })
     .from(entitlementGrants)
@@ -432,8 +494,7 @@ async function buildCustomerInfo(appId: string, appUser: AppUserRow): Promise<Cu
 
   const entitlementsByKey: Record<string, CustomerEntitlement> = {}
   for (const grant of [...grantRows].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())) {
-    if (entitlementsByKey[grant.entitlementKey] != null) continue
-    entitlementsByKey[grant.entitlementKey] = {
+    const entitlement: CustomerEntitlement = {
       active: isGrantCurrentlyEffective(grant),
       entitlementKey: grant.entitlementKey,
       expiresAt: grant.expiresAt,
@@ -441,8 +502,11 @@ async function buildCustomerInfo(appId: string, appUser: AppUserRow): Promise<Cu
       source: grant.source,
       startsAt: grant.startsAt,
       status: grant.status,
-      verifiedAt: checkedAt,
+      verifiedAt: isGrantValidationPending(grant) ? null : checkedAt,
     }
+    const existing = entitlementsByKey[grant.entitlementKey]
+    if (existing != null && (existing.active || !entitlement.active)) continue
+    entitlementsByKey[grant.entitlementKey] = entitlement
   }
 
   const ownershipRows = await db
@@ -535,7 +599,7 @@ async function upsertEntitlementGrant(input: {
       entitlementId: input.entitlementId,
       expiresAt: null,
       id: input.grantId,
-      note: 'SubKit runtime IAP reconcile · validation pending',
+      note: RUNTIME_IAP_VALIDATION_PENDING_NOTE,
       ownershipSource: input.ownershipSource,
       productId: input.productId,
       productPlanId: input.productPlanId,
@@ -552,7 +616,7 @@ async function upsertEntitlementGrant(input: {
   await db
     .update(entitlementGrants)
     .set({
-      note: 'SubKit runtime IAP reconcile · validation pending',
+      note: RUNTIME_IAP_VALIDATION_PENDING_NOTE,
       ownershipSource: input.ownershipSource,
       productId: input.productId,
       productPlanId: input.productPlanId,
@@ -592,7 +656,7 @@ async function insertRuntimeEvent(appId: string, appUserId: string | null, owner
     appUserId,
     createdAt: new Date(),
     detail,
-    id: `rre_${sha256Hex(`${appId}:${store}:${action}:${detail}:${Date.now()}`).slice(0, 24)}`,
+    id: `rre_${randomUUID()}`,
     store,
     storePurchaseOwnershipId: ownershipId,
   })
@@ -719,7 +783,8 @@ function amountMicrosToCents(value: number | null): number {
   return Math.round(value / 10_000)
 }
 
-function isGrantCurrentlyEffective(grant: { expiresAt: string | null; revokedAt: Date | null; startsAt: string; status: EntitlementGrantStatus }): boolean {
+function isGrantCurrentlyEffective(grant: { expiresAt: string | null; note?: string | null; revokedAt: Date | null; startsAt: string; status: EntitlementGrantStatus }): boolean {
+  if (isGrantValidationPending(grant)) return false
   if (grant.status !== 'active' && grant.status !== 'trialing' && grant.status !== 'billing_retry') return false
   if (grant.revokedAt != null) return false
   const now = Date.now()
@@ -728,6 +793,10 @@ function isGrantCurrentlyEffective(grant: { expiresAt: string | null; revokedAt:
   if (grant.expiresAt == null) return true
   const expiresAt = Date.parse(grant.expiresAt)
   return !Number.isFinite(expiresAt) || expiresAt > now
+}
+
+function isGrantValidationPending(grant: { note?: string | null }): boolean {
+  return grant.note === RUNTIME_IAP_VALIDATION_PENDING_NOTE
 }
 
 function toRuntimeStore(store: StoreName): RuntimeStore {
@@ -749,6 +818,10 @@ function rejectPurchase(purchase: NormalizedStorePurchase, code: RejectedPurchas
   return { code, message, store: purchase.store, storeProductId: purchase.storeProductId, transactionId: purchase.transactionId ?? purchase.purchaseToken ?? null }
 }
 
+function createRuntimeSdkKeyId(): string {
+  return `rtk_${randomBytes(16).toString('base64url')}`
+}
+
 function runtimeAppUserId(appId: string, appUserId: string): string {
   return `${appId}:user:${encodeURIComponent(appUserId)}`
 }
@@ -766,13 +839,25 @@ function purchaseEventId(appId: string, store: RuntimeStore, transactionId: stri
 }
 
 function purchaseQueueId(purchase: NormalizedStorePurchase): string {
-  const id = purchase.transactionId ?? purchase.originalTransactionId ?? purchase.purchaseToken ?? purchase.orderId ?? purchase.storeProductId
-  return `${purchase.store}:${id}`
+  return createPurchaseQueueId(purchase)
 }
 
 function stableUuid(value: string): string {
   const hex = sha256Hex(value)
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`
+}
+
+function createRuntimeSdkKeySecret(): string {
+  return `${RUNTIME_SDK_KEY_PREFIX}${randomBytes(32).toString('base64url')}`
+}
+
+function hasRuntimeScope(scopes: unknown, requiredScope: RuntimeSdkKeyScope): boolean {
+  return Array.isArray(scopes) && scopes.every((scope) => typeof scope === 'string') && scopes.includes(requiredScope)
+}
+
+function runtimeSdkKeyPepper(): string {
+  const env = parseServerEnv(process.env)
+  return env.SECRET_ENCRYPTION_KEY ?? env.SESSION_SECRET
 }
 
 function sha256Hex(value: string): string {

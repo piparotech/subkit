@@ -1,18 +1,13 @@
+import type { RuntimeEntitlementCheckWithAppRequestInput } from '@piparotech/subkit-core'
 import { and, eq } from 'drizzle-orm'
-import { z } from 'zod'
 
 import { db } from '~/db/client'
 import { ensureDatabaseReady } from '~/db/setup'
 import { appUsers, apps, entitlementGrants, entitlements, products } from '~/db/schema'
 
-export const runtimeEntitlementCheckInputSchema = z.object({
-  appId: z.string().min(1),
-  appUserId: z.string().min(1),
-  entitlement: z.string().min(1),
-})
-
-type RuntimeEntitlementCheckInput = z.infer<typeof runtimeEntitlementCheckInputSchema>
 type RuntimeGrantStatus = typeof entitlementGrants.$inferSelect.status
+
+const RUNTIME_IAP_VALIDATION_PENDING_NOTE = 'SubKit runtime IAP reconcile · validation pending'
 
 interface RuntimeGrantResult {
   entitlement: string
@@ -35,7 +30,7 @@ export interface RuntimeEntitlementCheckResult {
   status: RuntimeGrantStatus | 'not_found'
 }
 
-export async function checkRuntimeEntitlement(input: RuntimeEntitlementCheckInput): Promise<RuntimeEntitlementCheckResult> {
+export async function checkRuntimeEntitlement(input: RuntimeEntitlementCheckWithAppRequestInput): Promise<RuntimeEntitlementCheckResult> {
   await ensureDatabaseReady()
   const checkedAt = new Date().toISOString()
   const baseResult = {
@@ -47,21 +42,21 @@ export async function checkRuntimeEntitlement(input: RuntimeEntitlementCheckInpu
     status: 'not_found',
   } satisfies Omit<RuntimeEntitlementCheckResult, 'allowed' | 'reason'>
 
-  const [app] = await db.select({ id: apps.id }).from(apps).where(eq(apps.id, input.appId)).limit(1)
+  const [[app], [appUser], [entitlement]] = await Promise.all([
+    db.select({ id: apps.id }).from(apps).where(eq(apps.id, input.appId)).limit(1),
+    db
+      .select({ id: appUsers.id })
+      .from(appUsers)
+      .where(and(eq(appUsers.appId, input.appId), eq(appUsers.appUserId, input.appUserId)))
+      .limit(1),
+    db
+      .select({ id: entitlements.id, key: entitlements.key })
+      .from(entitlements)
+      .where(and(eq(entitlements.appId, input.appId), eq(entitlements.key, input.entitlement)))
+      .limit(1),
+  ])
   if (app == null) return { ...baseResult, allowed: false, reason: 'app_not_found' }
-
-  const [appUser] = await db
-    .select({ id: appUsers.id })
-    .from(appUsers)
-    .where(and(eq(appUsers.appId, input.appId), eq(appUsers.appUserId, input.appUserId)))
-    .limit(1)
   if (appUser == null) return { ...baseResult, allowed: false, reason: 'app_user_not_found' }
-
-  const [entitlement] = await db
-    .select({ id: entitlements.id, key: entitlements.key })
-    .from(entitlements)
-    .where(and(eq(entitlements.appId, input.appId), eq(entitlements.key, input.entitlement)))
-    .limit(1)
   if (entitlement == null) return { ...baseResult, allowed: false, reason: 'entitlement_not_found' }
 
   const grantRows = await db
@@ -71,6 +66,7 @@ export async function checkRuntimeEntitlement(input: RuntimeEntitlementCheckInpu
       id: entitlementGrants.id,
       productIdentifier: products.key,
       revokedAt: entitlementGrants.revokedAt,
+      note: entitlementGrants.note,
       source: entitlementGrants.source,
       startsAt: entitlementGrants.startsAt,
       status: entitlementGrants.status,
@@ -114,10 +110,12 @@ export async function checkRuntimeEntitlement(input: RuntimeEntitlementCheckInpu
 
 function isGrantCurrentlyEffective(grant: {
   expiresAt: string | null
+  note?: string | null
   revokedAt: Date | null
   startsAt: string
   status: RuntimeGrantStatus
 }): boolean {
+  if (grant.note === RUNTIME_IAP_VALIDATION_PENDING_NOTE) return false
   if (grant.status !== 'active' && grant.status !== 'trialing' && grant.status !== 'billing_retry') return false
   if (grant.revokedAt != null) return false
 

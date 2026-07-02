@@ -16,23 +16,29 @@ export const serverEnvSchema = z.object({
   SESSION_COOKIE_NAME: requiredNonEmptyString,
   SECRET_ENCRYPTION_KEY: optionalSecret,
   SESSION_SECRET: z.string().min(16),
-  SUBKIT_RUNTIME_READ_API_KEY: optionalSecret,
   SUBKIT_SERVER_API_KEY: optionalSecret,
   ZITADEL_MICROSOFT_IDP_ID: requiredNonEmptyString.optional(),
 })
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>
 
+let cachedProcessEnv: ServerEnv | null = null
 let developmentEnvLoaded = false
 
 export function parseServerEnv(env: NodeJS.ProcessEnv): ServerEnv {
+  const isProcessEnv = env === process.env
+  if (isProcessEnv && cachedProcessEnv != null) return cachedProcessEnv
+
   loadDevelopmentEnvFile()
-  return serverEnvSchema.parse(env)
+  const parsed = serverEnvSchema.parse(env)
+  if (isProcessEnv) cachedProcessEnv = parsed
+  return parsed
 }
 
 function loadDevelopmentEnvFile(): void {
   if (developmentEnvLoaded) return
   developmentEnvLoaded = true
+  if (process.env.NODE_ENV === 'production') return
 
   try {
     process.loadEnvFile('.env.development')

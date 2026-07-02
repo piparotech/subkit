@@ -19,6 +19,7 @@ import { Route as ConsoleSettingsRouteImport } from './routes/_console.settings'
 import { Route as ConsoleMembersRouteImport } from './routes/_console.members'
 import { Route as ConsoleAppsRouteImport } from './routes/_console.apps'
 import { Route as ConsoleAppsIndexRouteImport } from './routes/_console.apps.index'
+import { Route as ApiServerRuntimeSdkKeysRouteImport } from './routes/api.server.runtime-sdk-keys'
 import { Route as ApiServerProductsRouteImport } from './routes/api.server.products'
 import { Route as ApiServerOfferingsRouteImport } from './routes/api.server.offerings'
 import { Route as ApiServerCustomerInfoRouteImport } from './routes/api.server.customer-info'
@@ -84,6 +85,11 @@ const ConsoleAppsIndexRoute = ConsoleAppsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ConsoleAppsRoute,
+} as any)
+const ApiServerRuntimeSdkKeysRoute = ApiServerRuntimeSdkKeysRouteImport.update({
+  id: '/api/server/runtime-sdk-keys',
+  path: '/api/server/runtime-sdk-keys',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiServerProductsRoute = ApiServerProductsRouteImport.update({
   id: '/api/server/products',
@@ -191,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/api/server/customer-info': typeof ApiServerCustomerInfoRoute
   '/api/server/offerings': typeof ApiServerOfferingsRoute
   '/api/server/products': typeof ApiServerProductsRoute
+  '/api/server/runtime-sdk-keys': typeof ApiServerRuntimeSdkKeysRoute
   '/apps/': typeof ConsoleAppsIndexRoute
   '/$tenantSlug/$appSlug/app-users': typeof ConsoleTenantSlugAppSlugAppUsersRoute
   '/$tenantSlug/$appSlug/entitlements': typeof ConsoleTenantSlugAppSlugEntitlementsRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/api/server/customer-info': typeof ApiServerCustomerInfoRoute
   '/api/server/offerings': typeof ApiServerOfferingsRoute
   '/api/server/products': typeof ApiServerProductsRoute
+  '/api/server/runtime-sdk-keys': typeof ApiServerRuntimeSdkKeysRoute
   '/apps': typeof ConsoleAppsIndexRoute
   '/$tenantSlug/$appSlug/app-users': typeof ConsoleTenantSlugAppSlugAppUsersRoute
   '/$tenantSlug/$appSlug/entitlements': typeof ConsoleTenantSlugAppSlugEntitlementsRoute
@@ -245,6 +253,7 @@ export interface FileRoutesById {
   '/api/server/customer-info': typeof ApiServerCustomerInfoRoute
   '/api/server/offerings': typeof ApiServerOfferingsRoute
   '/api/server/products': typeof ApiServerProductsRoute
+  '/api/server/runtime-sdk-keys': typeof ApiServerRuntimeSdkKeysRoute
   '/_console/apps/': typeof ConsoleAppsIndexRoute
   '/_console/$tenantSlug/$appSlug/app-users': typeof ConsoleTenantSlugAppSlugAppUsersRoute
   '/_console/$tenantSlug/$appSlug/entitlements': typeof ConsoleTenantSlugAppSlugEntitlementsRoute
@@ -274,6 +283,7 @@ export interface FileRouteTypes {
     | '/api/server/customer-info'
     | '/api/server/offerings'
     | '/api/server/products'
+    | '/api/server/runtime-sdk-keys'
     | '/apps/'
     | '/$tenantSlug/$appSlug/app-users'
     | '/$tenantSlug/$appSlug/entitlements'
@@ -299,6 +309,7 @@ export interface FileRouteTypes {
     | '/api/server/customer-info'
     | '/api/server/offerings'
     | '/api/server/products'
+    | '/api/server/runtime-sdk-keys'
     | '/apps'
     | '/$tenantSlug/$appSlug/app-users'
     | '/$tenantSlug/$appSlug/entitlements'
@@ -327,6 +338,7 @@ export interface FileRouteTypes {
     | '/api/server/customer-info'
     | '/api/server/offerings'
     | '/api/server/products'
+    | '/api/server/runtime-sdk-keys'
     | '/_console/apps/'
     | '/_console/$tenantSlug/$appSlug/app-users'
     | '/_console/$tenantSlug/$appSlug/entitlements'
@@ -352,6 +364,7 @@ export interface RootRouteChildren {
   ApiServerCustomerInfoRoute: typeof ApiServerCustomerInfoRoute
   ApiServerOfferingsRoute: typeof ApiServerOfferingsRoute
   ApiServerProductsRoute: typeof ApiServerProductsRoute
+  ApiServerRuntimeSdkKeysRoute: typeof ApiServerRuntimeSdkKeysRoute
   ApiRuntimeEntitlementsCheckRoute: typeof ApiRuntimeEntitlementsCheckRoute
   ApiRuntimeIapReconcileRoute: typeof ApiRuntimeIapReconcileRoute
   ApiServerEntitlementsCheckRoute: typeof ApiServerEntitlementsCheckRoute
@@ -428,6 +441,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/apps/'
       preLoaderRoute: typeof ConsoleAppsIndexRouteImport
       parentRoute: typeof ConsoleAppsRoute
+    }
+    '/api/server/runtime-sdk-keys': {
+      id: '/api/server/runtime-sdk-keys'
+      path: '/api/server/runtime-sdk-keys'
+      fullPath: '/api/server/runtime-sdk-keys'
+      preLoaderRoute: typeof ApiServerRuntimeSdkKeysRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/server/products': {
       id: '/api/server/products'
@@ -616,6 +636,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiServerCustomerInfoRoute: ApiServerCustomerInfoRoute,
   ApiServerOfferingsRoute: ApiServerOfferingsRoute,
   ApiServerProductsRoute: ApiServerProductsRoute,
+  ApiServerRuntimeSdkKeysRoute: ApiServerRuntimeSdkKeysRoute,
   ApiRuntimeEntitlementsCheckRoute: ApiRuntimeEntitlementsCheckRoute,
   ApiRuntimeIapReconcileRoute: ApiRuntimeIapReconcileRoute,
   ApiServerEntitlementsCheckRoute: ApiServerEntitlementsCheckRoute,

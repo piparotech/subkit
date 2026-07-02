@@ -1,5 +1,7 @@
 export { createSubKitError, isRetryableSubKitErrorCode, subKitApiErrorResponseSchema, subKitErrorCodeSchema } from './errors.js'
 export type { CreateSubKitErrorInput, SubKitApiErrorResponse, SubKitErrorCode, SubKitErrorShape } from './errors.js'
+export { createPurchaseQueueId } from './purchaseIds.js'
+export type { PurchaseQueueIdentifierInput } from './purchaseIds.js'
 export {
   customerEntitlementSchema,
   customerInfoFreshnessSchema,
@@ -10,6 +12,7 @@ export {
   finishableTransactionSchema,
   iapReconcileRequestSchema,
   iapReconcileResponseSchema,
+  iapReconcileWithAppRequestSchema,
   normalizedStorePurchaseSchema,
   offeringPackageSchema,
   offeringSchema,
@@ -18,8 +21,11 @@ export {
   purchaseSyncReasonSchema,
   rejectedPurchaseSchema,
   runtimeCustomerInfoRequestSchema,
+  runtimeCustomerInfoWithAppRequestSchema,
   runtimeEntitlementCheckRequestSchema,
+  runtimeEntitlementCheckWithAppRequestSchema,
   runtimeOfferingsRequestSchema,
+  runtimeOfferingsWithAppRequestSchema,
   runtimeOfferingsResponseSchema,
   storeEnvironmentSchema,
   storeIdentityHintsSchema,
@@ -30,9 +36,13 @@ export {
 } from './schemas.js'
 export type {
   IapReconcileRequestInput,
+  IapReconcileWithAppRequestInput,
   RuntimeCustomerInfoRequestInput,
+  RuntimeCustomerInfoWithAppRequestInput,
   RuntimeEntitlementCheckRequestInput,
+  RuntimeEntitlementCheckWithAppRequestInput,
   RuntimeOfferingsRequestInput,
+  RuntimeOfferingsWithAppRequestInput,
 } from './schemas.js'
 export * from './server-contracts.js'
 export type {
@@ -44,6 +54,7 @@ export type {
   EntitlementStatus,
   FinishableTransaction,
   IapReconcileRequest,
+  IapReconcileWithAppRequest,
   NormalizedStorePurchase,
   Offering,
   OfferingPackage,
@@ -57,8 +68,11 @@ export type {
   QueuedPurchase,
   RejectedPurchase,
   RuntimeCustomerInfoRequest,
+  RuntimeCustomerInfoWithAppRequest,
   RuntimeEntitlementCheckRequest,
+  RuntimeEntitlementCheckWithAppRequest,
   RuntimeOfferingsRequest,
+  RuntimeOfferingsWithAppRequest,
   RuntimeOfferingsResponse,
   StoreEnvironment,
   StoreIdentityHints,

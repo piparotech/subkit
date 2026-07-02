@@ -41,9 +41,10 @@ export function jsonApiErrorFromThrown(error: unknown): Response {
     return jsonApiError({ code: error.code, details: error.details, message: error.message, status: error.status })
   }
 
-  if (error instanceof Error) {
-    return jsonApiError({ code: 'invalid_request', message: error.message, status: 400 })
+  if (error instanceof SyntaxError) {
+    return jsonApiError({ code: 'invalid_request', message: 'Invalid JSON request body', status: 400 })
   }
 
+  console.error('SubKit runtime API failed', error)
   return jsonUnknownApiError()
 }

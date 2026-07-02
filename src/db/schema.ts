@@ -1,4 +1,4 @@
-import { integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 export const tenants = sqliteTable('tenants', {
   id: text('id').primaryKey(),
@@ -61,7 +61,10 @@ export const authSessions = sqliteTable(
     userAgent: text('user_agent'),
     ipHash: text('ip_hash'),
   },
-  (table) => [uniqueIndex('auth_sessions_token_hash_unique').on(table.tokenHash)],
+  (table) => [
+    uniqueIndex('auth_sessions_token_hash_unique').on(table.tokenHash),
+    index('auth_sessions_user_expires_idx').on(table.userId, table.expiresAt),
+  ],
 )
 
 export const authEvents = sqliteTable('auth_events', {
@@ -89,6 +92,25 @@ export const apps = sqliteTable('apps', {
   activeAppUserCount: integer('active_app_user_count').notNull().default(0),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
 })
+
+export const appRuntimeSdkKeys = sqliteTable(
+  'app_runtime_sdk_keys',
+  {
+    id: text('id').primaryKey(),
+    appId: text('app_id')
+      .notNull()
+      .references(() => apps.id, { onDelete: 'cascade' }),
+    keyHash: text('key_hash').notNull(),
+    keyPrefix: text('key_prefix').notNull(),
+    name: text('name').notNull(),
+    scopes: text('scopes', { mode: 'json' }).$type<string[]>().notNull(),
+    status: text('status', { enum: ['active', 'revoked'] }).notNull().default('active'),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull().$defaultFn(() => new Date()),
+    lastUsedAt: integer('last_used_at', { mode: 'timestamp_ms' }),
+    revokedAt: integer('revoked_at', { mode: 'timestamp_ms' }),
+  },
+  (table) => [uniqueIndex('app_runtime_sdk_keys_key_hash_unique').on(table.keyHash)],
+)
 
 export const appPlatforms = sqliteTable(
   'app_platforms',
@@ -173,33 +195,44 @@ export const appStoreConnectCapabilities = sqliteTable(
   (table) => [uniqueIndex('app_store_connect_capabilities_credential_key_unique').on(table.credentialId, table.key)],
 )
 
-export const appStoreConnectSalesReports = sqliteTable('app_store_connect_sales_reports', {
-  id: text('id').primaryKey(),
-  credentialId: text('credential_id')
-    .notNull()
-    .references(() => appStoreConnectCredentials.id, { onDelete: 'cascade' }),
-  appId: text('app_id').references(() => apps.id, { onDelete: 'cascade' }),
-  vendorNumber: text('vendor_number').notNull(),
-  reportDate: text('report_date').notNull(),
-  status: text('status', { enum: ['imported', 'failed'] }).notNull(),
-  rowCount: integer('row_count').notNull().default(0),
-  rawText: text('raw_text'),
-  errorDetail: text('error_detail'),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
-})
+export const appStoreConnectSalesReports = sqliteTable(
+  'app_store_connect_sales_reports',
+  {
+    id: text('id').primaryKey(),
+    credentialId: text('credential_id')
+      .notNull()
+      .references(() => appStoreConnectCredentials.id, { onDelete: 'cascade' }),
+    appId: text('app_id').references(() => apps.id, { onDelete: 'cascade' }),
+    vendorNumber: text('vendor_number').notNull(),
+    reportDate: text('report_date').notNull(),
+    status: text('status', { enum: ['imported', 'failed'] }).notNull(),
+    rowCount: integer('row_count').notNull().default(0),
+    rawText: text('raw_text'),
+    errorDetail: text('error_detail'),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (table) => [index('app_store_connect_sales_reports_credential_created_idx').on(table.credentialId, table.createdAt)],
+)
 
-export const appStoreConnectAuditEvents = sqliteTable('app_store_connect_audit_events', {
-  id: text('id').primaryKey(),
-  tenantId: text('tenant_id')
-    .notNull()
-    .references(() => tenants.id, { onDelete: 'cascade' }),
-  appId: text('app_id').references(() => apps.id, { onDelete: 'cascade' }),
-  credentialId: text('credential_id').references(() => appStoreConnectCredentials.id, { onDelete: 'set null' }),
-  actorUserId: text('actor_user_id').references(() => users.id, { onDelete: 'set null' }),
-  action: text('action').notNull(),
-  detail: text('detail').notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
-})
+export const appStoreConnectAuditEvents = sqliteTable(
+  'app_store_connect_audit_events',
+  {
+    id: text('id').primaryKey(),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    appId: text('app_id').references(() => apps.id, { onDelete: 'cascade' }),
+    credentialId: text('credential_id').references(() => appStoreConnectCredentials.id, { onDelete: 'set null' }),
+    actorUserId: text('actor_user_id').references(() => users.id, { onDelete: 'set null' }),
+    action: text('action').notNull(),
+    detail: text('detail').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (table) => [
+    index('app_store_connect_audit_events_credential_created_idx').on(table.credentialId, table.createdAt),
+    index('app_store_connect_audit_events_tenant_created_idx').on(table.tenantId, table.createdAt),
+  ],
+)
 
 export const entitlements = sqliteTable(
   'entitlements',
@@ -533,34 +566,38 @@ export const appUserStoreIdentities = sqliteTable(
   ],
 )
 
-export const entitlementGrants = sqliteTable('entitlement_grants', {
-  id: text('id').primaryKey(),
-  appId: text('app_id')
-    .notNull()
-    .references(() => apps.id, { onDelete: 'cascade' }),
-  appUserId: text('app_user_id')
-    .notNull()
-    .references(() => appUsers.id, { onDelete: 'cascade' }),
-  entitlementId: text('entitlement_id')
-    .notNull()
-    .references(() => entitlements.id, { onDelete: 'cascade' }),
-  productId: text('product_id').references(() => products.id, { onDelete: 'set null' }),
-  productPlanId: text('product_plan_id').references(() => productPlans.id, { onDelete: 'set null' }),
-  storeProductBindingId: text('store_product_binding_id').references(() => storeProductBindings.id, { onDelete: 'set null' }),
-  storePurchaseId: text('store_purchase_id'),
-  ownershipSource: text('ownership_source', {
-    enum: ['direct_app_user', 'app_account_token', 'obfuscated_account_id', 'claimed_restore', 'manual_admin', 'unowned'],
-  })
-    .notNull()
-    .default('direct_app_user'),
-  source: text('source', { enum: ['apple', 'google', 'voucher', 'promo', 'manual', 'lifetime', 'migration'] }).notNull(),
-  status: text('status', { enum: ['active', 'trialing', 'billing_retry', 'expired', 'revoked'] }).notNull(),
-  startsAt: text('starts_at').notNull(),
-  expiresAt: text('expires_at'),
-  revokedAt: integer('revoked_at', { mode: 'timestamp_ms' }),
-  note: text('note'),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
-})
+export const entitlementGrants = sqliteTable(
+  'entitlement_grants',
+  {
+    id: text('id').primaryKey(),
+    appId: text('app_id')
+      .notNull()
+      .references(() => apps.id, { onDelete: 'cascade' }),
+    appUserId: text('app_user_id')
+      .notNull()
+      .references(() => appUsers.id, { onDelete: 'cascade' }),
+    entitlementId: text('entitlement_id')
+      .notNull()
+      .references(() => entitlements.id, { onDelete: 'cascade' }),
+    productId: text('product_id').references(() => products.id, { onDelete: 'set null' }),
+    productPlanId: text('product_plan_id').references(() => productPlans.id, { onDelete: 'set null' }),
+    storeProductBindingId: text('store_product_binding_id').references(() => storeProductBindings.id, { onDelete: 'set null' }),
+    storePurchaseId: text('store_purchase_id'),
+    ownershipSource: text('ownership_source', {
+      enum: ['direct_app_user', 'app_account_token', 'obfuscated_account_id', 'claimed_restore', 'manual_admin', 'unowned'],
+    })
+      .notNull()
+      .default('direct_app_user'),
+    source: text('source', { enum: ['apple', 'google', 'voucher', 'promo', 'manual', 'lifetime', 'migration'] }).notNull(),
+    status: text('status', { enum: ['active', 'trialing', 'billing_retry', 'expired', 'revoked'] }).notNull(),
+    startsAt: text('starts_at').notNull(),
+    expiresAt: text('expires_at'),
+    revokedAt: integer('revoked_at', { mode: 'timestamp_ms' }),
+    note: text('note'),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  },
+  (table) => [index('entitlement_grants_app_user_idx').on(table.appId, table.appUserId)],
+)
 
 export const storePurchaseOwnerships = sqliteTable(
   'store_purchase_ownerships',
@@ -596,6 +633,7 @@ export const storePurchaseOwnerships = sqliteTable(
   (table) => [
     uniqueIndex('store_purchase_ownerships_store_original_unique').on(table.appId, table.store, table.originalTransactionId),
     uniqueIndex('store_purchase_ownerships_store_transaction_unique').on(table.appId, table.store, table.transactionId),
+    index('store_purchase_ownerships_app_user_idx').on(table.appId, table.appUserId),
   ],
 )
 
