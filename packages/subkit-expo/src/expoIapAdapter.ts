@@ -131,7 +131,9 @@ function normalizePurchase(purchase: Purchase): SubKitIapPurchase {
     ownershipType: readStringProperty(purchase, 'ownershipTypeIOS') === 'FAMILY_SHARED' ? 'family_shared' : 'purchased',
     productId: purchase.productId,
     purchaseToken: purchase.purchaseToken ?? undefined,
+    quantity: purchase.quantity,
     raw: purchase,
+    receipt: purchase.purchaseToken ?? undefined,
     store: purchase.store === 'google' ? 'google_play' : 'apple_app_store',
     transactionDate: purchase.transactionDate,
     transactionId: purchase.transactionId ?? undefined,
@@ -144,9 +146,13 @@ function isExpoPurchase(value: unknown): value is Purchase {
 }
 
 function readStringProperty(value: unknown, key: string): string | null {
-  if (typeof value !== 'object' || value === null || !(key in value)) return null
-  const recordValue = value[key as keyof typeof value]
+  if (!isRecord(value)) return null
+  const recordValue = value[key]
   return typeof recordValue === 'string' ? recordValue : null
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
 }
 
 export type { SubKitPurchaseListenerSubscription }

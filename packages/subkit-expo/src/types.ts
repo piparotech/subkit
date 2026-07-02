@@ -17,11 +17,15 @@ export interface SubKitIapProduct {
 
 export interface SubKitIapPurchase {
   environment?: 'sandbox' | 'production' | 'unknown'
+  linkedPurchaseToken?: string
+  orderId?: string
   originalTransactionId?: string
   ownershipType?: 'purchased' | 'family_shared' | 'unknown'
   productId: string
   purchaseToken?: string
+  quantity?: number
   raw: unknown
+  receipt?: string
   store: SubKitIapStore
   transactionDate?: number
   transactionId?: string
@@ -43,8 +47,7 @@ export interface SubKitSyncOptions {
 }
 
 export interface SubKitExpoIapConfig {
-  apiBaseUrl: string
-  appId: string
+  apiBaseUrl?: string
   appUserId?: string
   iap?: {
     autoSync?: boolean

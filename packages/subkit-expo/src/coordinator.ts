@@ -1,8 +1,8 @@
-import type { PurchaseSyncReason, PurchaseSyncResult, StoreIdentityHints } from '@piparotech/subkit-core'
+import type { PurchaseOwnershipConflict, PurchaseSyncReason, PurchaseSyncResult, RejectedPurchase, StoreIdentityHints } from '@piparotech/subkit-core'
 
 import type { SubKitExpoIapAdapter } from './adapter.js'
 import { normalizePurchaseForReconcile, type SubKitRuntimeClient } from './client.js'
-import type { PurchaseQueueStore } from './queue.js'
+import type { PurchaseQueueItem, PurchaseQueueStore } from './queue.js'
 import type { SubKitIapPurchase } from './types.js'
 
 export interface SubKitIapLogger {
@@ -30,13 +30,13 @@ export interface PurchaseSyncCoordinator {
 }
 
 export function createPurchaseSyncCoordinator(options: PurchaseSyncCoordinatorOptions): PurchaseSyncCoordinator {
-  let syncInProgress = false
   let lastForegroundSyncAt = 0
+  let syncChain: Promise<PurchaseSyncResult | null> = Promise.resolve(null)
   const foregroundMinIntervalMs = options.foregroundMinIntervalMs ?? 15 * 60 * 1000
 
   async function syncPurchases(input: { force?: boolean; reason: PurchaseSyncReason }): Promise<PurchaseSyncResult | null> {
-    const appUserId = options.appUserId()
-    if (appUserId == null || appUserId.trim() === '') {
+    const appUserId = normalizeAppUserId(options.appUserId())
+    if (appUserId == null) {
       options.logger?.debug('Skipping SubKit IAP sync without app user id', { reason: input.reason })
       return null
     }
@@ -46,10 +46,7 @@ export function createPurchaseSyncCoordinator(options: PurchaseSyncCoordinatorOp
       return null
     }
 
-    if (syncInProgress) return null
-    syncInProgress = true
-
-    try {
+    return enqueueSync(async () => {
       await options.iap.initConnection()
       const availablePurchases = await options.iap.getAvailablePurchases()
       for (const purchase of availablePurchases) {
@@ -58,30 +55,26 @@ export function createPurchaseSyncCoordinator(options: PurchaseSyncCoordinatorOp
       const result = await drainQueue(input.reason, appUserId)
       if (input.reason === 'foreground') lastForegroundSyncAt = now
       return result
-    } finally {
-      syncInProgress = false
-    }
+    })
   }
 
   async function handlePurchaseEvent(purchase: SubKitIapPurchase): Promise<PurchaseSyncResult | null> {
-    const appUserId = options.appUserId()
+    const appUserId = normalizeAppUserId(options.appUserId())
     await options.queue.enqueue(purchase, appUserId)
-    if (appUserId == null || appUserId.trim() === '') return null
-    return drainQueue('purchase_event', appUserId)
+    if (appUserId == null) return null
+    return enqueueSync(() => drainQueue('purchase_event', appUserId))
+  }
+
+  function enqueueSync(task: () => Promise<PurchaseSyncResult | null>): Promise<PurchaseSyncResult | null> {
+    const previous = syncChain.catch(() => null)
+    const next = previous.then(task)
+    syncChain = next.catch(() => null)
+    return next
   }
 
   async function drainQueue(reason: PurchaseSyncReason, appUserId: string): Promise<PurchaseSyncResult> {
     const pending = await options.queue.listPending(appUserId)
-    const purchases = pending.map((item) => normalizePurchaseForReconcile({
-      environment: undefined,
-      originalTransactionId: item.originalTransactionId,
-      productId: item.productId,
-      purchaseToken: item.purchaseToken,
-      raw: item.rawPurchase,
-      store: item.store,
-      transactionDate: item.purchaseTime,
-      transactionId: item.transactionId,
-    }))
+    const purchases = pending.map((item) => normalizePurchaseForReconcile(queueItemToPurchase(item)))
 
     const result = await options.runtime.reconcile({
       appUserId,
@@ -93,6 +86,16 @@ export function createPurchaseSyncCoordinator(options: PurchaseSyncCoordinatorOp
       storeIdentities: options.storeIdentityHints(),
     })
 
+    for (const rejected of result.rejectedPurchases) {
+      const item = findQueueItemForRejectedPurchase(pending, rejected)
+      if (item != null) await options.queue.markRejected(item.id, rejected.message)
+    }
+
+    for (const conflict of result.conflicts) {
+      const item = findQueueItemForOwnershipConflict(pending, conflict)
+      if (item != null) await options.queue.markRejected(item.id, conflict.reason)
+    }
+
     for (const transaction of result.finishableTransactions) {
       const item = pending.find((candidate) => candidate.id === transaction.purchaseId)
       if (item == null) continue
@@ -100,15 +103,7 @@ export function createPurchaseSyncCoordinator(options: PurchaseSyncCoordinatorOp
       try {
         await options.iap.finishTransaction({
           isConsumable: transaction.isConsumable,
-          purchase: {
-            originalTransactionId: item.originalTransactionId,
-            productId: item.productId,
-            purchaseToken: item.purchaseToken,
-            raw: item.rawPurchase,
-            store: item.store,
-            transactionDate: item.purchaseTime,
-            transactionId: item.transactionId,
-          },
+          purchase: queueItemToPurchase(item),
         })
         await options.queue.markFinished(item.id)
       } catch (error) {
@@ -122,4 +117,40 @@ export function createPurchaseSyncCoordinator(options: PurchaseSyncCoordinatorOp
   }
 
   return { handlePurchaseEvent, syncPurchases }
+}
+
+function queueItemToPurchase(item: PurchaseQueueItem): SubKitIapPurchase {
+  return {
+    environment: item.environment,
+    linkedPurchaseToken: item.linkedPurchaseToken,
+    orderId: item.orderId,
+    originalTransactionId: item.originalTransactionId,
+    ownershipType: item.ownershipType,
+    productId: item.productId,
+    purchaseToken: item.purchaseToken,
+    quantity: item.quantity,
+    raw: item.rawPurchase,
+    receipt: item.receipt,
+    store: item.store,
+    transactionDate: item.purchaseTime,
+    transactionId: item.transactionId,
+  }
+}
+
+function findQueueItemForRejectedPurchase(items: readonly PurchaseQueueItem[], rejected: RejectedPurchase): PurchaseQueueItem | undefined {
+  return items.find((item) => item.store === rejected.store && item.productId === rejected.storeProductId && queueItemTransactionIdentifier(item) === rejected.transactionId)
+}
+
+function findQueueItemForOwnershipConflict(items: readonly PurchaseQueueItem[], conflict: PurchaseOwnershipConflict): PurchaseQueueItem | undefined {
+  return items.find((item) => item.store === conflict.store && item.productId === conflict.storeProductId && queueItemTransactionIdentifier(item) === conflict.transactionId)
+}
+
+function queueItemTransactionIdentifier(item: PurchaseQueueItem): string | null {
+  return item.transactionId ?? item.purchaseToken ?? item.orderId ?? null
+}
+
+function normalizeAppUserId(appUserId: string | undefined): string | undefined {
+  if (appUserId == null) return undefined
+  const trimmed = appUserId.trim()
+  return trimmed === '' ? undefined : trimmed
 }

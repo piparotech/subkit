@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "vite dev",
-    "build": "pnpm --filter @piparotech/subkit-core build && pnpm --filter @piparotech/subkit-node build && pnpm --filter @piparotech/subkit-expo-iap build && vite build && tsc --noEmit",
+    "build": "pnpm --filter @piparotech/subkit-core build && pnpm --filter @piparotech/subkit-node build && pnpm --filter @piparotech/subkit-expo build && vite build && tsc --noEmit",
     "preview": "vite preview",
     "start": "node .output/server/index.mjs",
     "typecheck": "tsc --noEmit",

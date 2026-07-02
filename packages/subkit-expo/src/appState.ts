@@ -1,3 +1,5 @@
+import { AppState, type AppStateStatus } from 'react-native'
+
 export type SubKitAppState = 'active' | 'background' | 'inactive' | 'unknown'
 
 export interface SubKitAppStateSubscription {
@@ -17,6 +19,20 @@ export interface SubKitAppStateSyncOptions {
   minBackgroundDurationMs?: number
   now?: () => number
   onBecameActive(): Promise<void>
+}
+
+export function createReactNativeAppStateSource(): SubKitAppStateSource {
+  return {
+    getCurrentState() {
+      return normalizeReactNativeAppState(AppState.currentState)
+    },
+    subscribe(listener) {
+      const subscription = AppState.addEventListener('change', (state) => {
+        listener(normalizeReactNativeAppState(state))
+      })
+      return { remove: () => subscription.remove() }
+    },
+  }
 }
 
 export function createSubKitAppStateSync(options: SubKitAppStateSyncOptions): { start(): SubKitAppStateSubscription } {
@@ -39,4 +55,11 @@ export function createSubKitAppStateSync(options: SubKitAppStateSyncOptions): { 
       })
     },
   }
+}
+
+function normalizeReactNativeAppState(state: AppStateStatus): SubKitAppState {
+  if (state === 'active') return 'active'
+  if (state === 'background') return 'background'
+  if (state === 'inactive') return 'inactive'
+  return 'unknown'
 }
