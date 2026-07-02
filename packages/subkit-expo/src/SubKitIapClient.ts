@@ -242,6 +242,7 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
       await pendingStart
     } catch (error) {
       if (startPromise === pendingStart) startPromise = null
+      publishSubKitCustomerInfoError(error, subKitClient)
       throw error
     }
   }
