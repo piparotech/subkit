@@ -49,9 +49,7 @@ export function createPurchaseSyncCoordinator(options: PurchaseSyncCoordinatorOp
     return enqueueSync(async () => {
       await options.iap.initConnection()
       const availablePurchases = await options.iap.getAvailablePurchases()
-      for (const purchase of availablePurchases) {
-        await options.queue.enqueue(purchase, appUserId)
-      }
+      await options.queue.enqueueMany(availablePurchases, appUserId)
       const result = await drainQueue(input.reason, appUserId)
       if (input.reason === 'foreground') lastForegroundSyncAt = now
       return result

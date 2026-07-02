@@ -106,6 +106,30 @@ test('stored queue keeps the first associated app user when the same purchase is
   assert.equal((await queue.listPending('user_b')).length, 0)
 })
 
+test('stored queue enqueueMany persists many purchases with a single storage write', async () => {
+  const values = new Map()
+  let writes = 0
+  const queue = createStoredPurchaseQueueStore({
+    storage: {
+      async getItem(key) {
+        return values.get(key) ?? null
+      },
+      async removeItem(key) {
+        values.delete(key)
+      },
+      async setItem(key, value) {
+        writes += 1
+        values.set(key, value)
+      },
+    },
+  })
+
+  await queue.enqueueMany([userAPurchase, userBPurchase], 'user_a')
+
+  assert.equal(writes, 1)
+  assert.equal((await queue.listPending('user_a')).length, 2)
+})
+
 test('MMKV adapter exposes the async JSON storage shape used by the stored queue', async () => {
   const values = new Map()
   const storage = createMmkvJsonStorage({

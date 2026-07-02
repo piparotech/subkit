@@ -1,5 +1,5 @@
 import type { SubKitIapPurchase } from './types.js'
-import { createPurchaseQueueId, purchaseQueueItemMatchesAppUser, resolvePurchaseQueueUserId, type PurchaseQueueItem, type PurchaseQueueStore, type QueueStatus } from './queue.js'
+import { buildPurchaseQueueItem, createPurchaseQueueId, purchaseQueueItemMatchesAppUser, type PurchaseQueueItem, type PurchaseQueueStore, type QueueStatus } from './queue.js'
 
 export interface SubKitJsonStorage {
   getItem(key: string): Promise<string | null>
@@ -41,38 +41,31 @@ export function createStoredPurchaseQueueStore(options: StoredPurchaseQueueOptio
   const maxItems = options.maxItems ?? 100
   const now = options.now ?? (() => Date.now())
 
-  return {
-    async enqueue(purchase, appUserId) {
-      const items = await readItems(options.storage, key)
+  async function enqueueItems(purchases: readonly SubKitIapPurchase[], appUserId: string | undefined): Promise<PurchaseQueueItem[]> {
+    if (purchases.length === 0) return []
+    let items = await readItems(options.storage, key)
+    const timestamp = now()
+    const enqueued: PurchaseQueueItem[] = []
+    for (const purchase of purchases) {
       const id = createPurchaseQueueId(purchase)
       const existing = items.find((item) => item.id === id)
-      const timestamp = now()
-      const next: PurchaseQueueItem = {
-        anonymousId: undefined,
-        attempts: existing?.attempts ?? 0,
-        createdAt: existing?.createdAt ?? timestamp,
-        environment: purchase.environment,
-        id,
-        lastError: existing?.lastError,
-        linkedPurchaseToken: purchase.linkedPurchaseToken,
-        orderId: purchase.orderId,
-        originalTransactionId: purchase.originalTransactionId,
-        ownershipType: purchase.ownershipType,
-        platform: purchase.store === 'apple_app_store' ? 'ios' : 'android',
-        productId: purchase.productId,
-        purchaseTime: purchase.transactionDate,
-        purchaseToken: purchase.purchaseToken,
-        quantity: purchase.quantity,
-        rawPurchase: purchase.raw,
-        receipt: purchase.receipt,
-        status: existing?.status === 'finished' ? 'finished' : 'pending',
-        store: purchase.store,
-        transactionId: purchase.transactionId,
-        updatedAt: timestamp,
-        userId: resolvePurchaseQueueUserId(existing, appUserId),
-      }
-      await writeItems(options.storage, key, keepNewestUnfinished(upsertItem(items, next), maxItems))
-      return next
+      const next = buildPurchaseQueueItem(purchase, existing, appUserId, timestamp)
+      items = upsertItem(items, next)
+      enqueued.push(next)
+    }
+    await writeItems(options.storage, key, keepNewestUnfinished(items, maxItems))
+    return enqueued
+  }
+
+  return {
+    async enqueue(purchase, appUserId) {
+      const enqueued = await enqueueItems([purchase], appUserId)
+      const item = enqueued[0]
+      if (item == null) throw new Error('Failed to enqueue purchase')
+      return item
+    },
+    async enqueueMany(purchases, appUserId) {
+      return enqueueItems(purchases, appUserId)
     },
     async listPending(appUserId) {
       const items = await readItems(options.storage, key)
@@ -220,7 +213,7 @@ function readNumber(value: Record<string, unknown>, key: string): number | undef
 
 function readQueueStatus(value: Record<string, unknown>, key: string): QueueStatus | undefined {
   const field = readString(value, key)
-  if (field === 'pending' || field === 'verifying' || field === 'verified' || field === 'finish_failed' || field === 'finished' || field === 'failed') return field
+  if (field === 'pending' || field === 'verified' || field === 'finish_failed' || field === 'finished' || field === 'failed') return field
   return undefined
 }
 
