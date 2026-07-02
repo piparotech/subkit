@@ -63,3 +63,4 @@ Prefer keeping new feature-scoped raw styling behind semantic CSS variables/clas
 - If committing, use Angular-style Conventional Commits: `type(scope): subject`.
 - Preferred types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
 - Keep the subject imperative, lowercase, and without a trailing period.
+- After the subject line, explain in detail why the change is needed; focus the commit body on motivation and context, not just what changed.

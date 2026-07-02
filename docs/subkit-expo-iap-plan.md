@@ -91,12 +91,12 @@ Inhalt:
 
 Keine React-Native-, Expo- oder Server-Credential-Imports.
 
-### `packages/subkit-expo-iap`
+### `packages/subkit-expo`
 
 Expo-/React-Native-SDK über `expo-iap`.
 
 ```txt
-packages/subkit-expo-iap/
+packages/subkit-expo/
   package.json
   src/index.ts
   src/SubKitIapClient.ts
@@ -124,7 +124,7 @@ MVP bleibt private, trotzdem bleiben Core und Expo-Adapter getrennt:
 
 - `@piparotech/subkit-core` enthält nur plattformneutrale Contracts: Types, Zod-Schemas, Error-Codes und DTOs.
 - `@piparotech/subkit-core` kann von Server, Web Console, Tests und Native SDK importiert werden.
-- `@piparotech/subkit-expo-iap` importiert Expo-/React-Native-/`expo-iap`-Code und darf deshalb nicht versehentlich in TanStack Server, Node oder Web Console landen.
+- `@piparotech/subkit-expo` importiert Expo-/React-Native-/`expo-iap`-Code und darf deshalb nicht versehentlich in TanStack Server, Node oder Web Console landen.
 - Die Trennung verhindert Metro-/Node-Bundling-Probleme und reduziert das Risiko, serverseitige Validation- oder Credential-Module in die Mobile-App zu ziehen.
 - Core kann zuerst stabilisiert und getestet werden; Native SDK und Store-Adapter bleiben austauschbar.
 
@@ -1285,7 +1285,7 @@ Package-Namen für MVP:
 
 ```txt
 @piparotech/subkit-core
-@piparotech/subkit-expo-iap
+@piparotech/subkit-expo
 ```
 
 Regeln:
