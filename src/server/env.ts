@@ -31,8 +31,30 @@ export function parseServerEnv(env: NodeJS.ProcessEnv): ServerEnv {
 
   loadDevelopmentEnvFile()
   const parsed = serverEnvSchema.parse(env)
+  assertProductionSecrets(parsed)
   if (isProcessEnv) cachedProcessEnv = parsed
   return parsed
+}
+
+/**
+ * Key material for encrypting stored secrets (for example App Store Connect
+ * private keys) and for hashing runtime SDK keys.
+ *
+ * Outside development this must be SECRET_ENCRYPTION_KEY: falling back to
+ * SESSION_SECRET would silently re-key all encrypted secrets whenever the
+ * session secret is rotated.
+ */
+export function resolveSecretEncryptionKey(env: ServerEnv): string {
+  return env.SECRET_ENCRYPTION_KEY ?? env.SESSION_SECRET
+}
+
+function assertProductionSecrets(env: ServerEnv): void {
+  if (process.env.NODE_ENV !== 'production') return
+  if (env.SECRET_ENCRYPTION_KEY == null) {
+    throw new Error(
+      'SECRET_ENCRYPTION_KEY must be set in production. The development-only fallback to SESSION_SECRET would break all encrypted store credentials when the session secret rotates.',
+    )
+  }
 }
 
 function loadDevelopmentEnvFile(): void {

@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto'
 
-import { parseServerEnv } from './env'
+import { parseServerEnv, resolveSecretEncryptionKey } from './env'
 
 interface EncryptedSecret {
   authTag: string
@@ -10,7 +10,7 @@ interface EncryptedSecret {
 
 function encryptionKey(): Buffer {
   const env = parseServerEnv(process.env)
-  return createHash('sha256').update(env.SECRET_ENCRYPTION_KEY ?? env.SESSION_SECRET).digest()
+  return createHash('sha256').update(resolveSecretEncryptionKey(env)).digest()
 }
 
 export function fingerprintSecret(value: string): string {

@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '~/db/client'
 import { ensureDatabaseReady } from '~/db/setup'
 import { apps } from '~/db/schema'
-import { parseServerEnv } from '~/server/env'
+import { parseServerEnv, resolveSecretEncryptionKey } from '~/server/env'
 
 import { assertAppExists } from './runtime-shared'
 
@@ -54,5 +54,5 @@ function createRuntimeSdkKeySecret(): string {
 
 function runtimeSdkKeyPepper(): string {
   const env = parseServerEnv(process.env)
-  return env.SECRET_ENCRYPTION_KEY ?? env.SESSION_SECRET
+  return resolveSecretEncryptionKey(env)
 }
