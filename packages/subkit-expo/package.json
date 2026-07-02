@@ -1,0 +1,42 @@
+{
+  "name": "@piparotech/subkit-expo",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "description": "Private SubKit Expo IAP SDK skeleton with automatic purchase sync.",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "development": "./src/index.ts",
+      "import": "./dist/index.js"
+    },
+    "./expo-iap": {
+      "types": "./dist/expoIapAdapter.d.ts",
+      "development": "./src/expoIapAdapter.ts",
+      "import": "./dist/expoIapAdapter.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "pnpm --filter @piparotech/subkit-core build && pnpm run build && node --loader ./test/expo-rn-loader.mjs --test test/*.test.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@piparotech/subkit-core": "workspace:*"
+  },
+  "peerDependencies": {
+    "expo": "*",
+    "expo-iap": "*",
+    "react": ">=18",
+    "react-native": "*"
+  },
+  "devDependencies": {
+    "@types/react": "catalog:",
+    "react": "catalog:",
+    "typescript": "catalog:"
+  }
+}
