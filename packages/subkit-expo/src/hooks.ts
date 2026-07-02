@@ -71,10 +71,11 @@ export function useSubKitEntitlement(entitlementKey: string, options: UseSubKitE
     if (!snapshot.clientConfigured) return
 
     const refreshIfOlderThanMs = sanitizeRefreshIfOlderThanMs(options.refreshIfOlderThanMs)
-    if (snapshot.customerInfo != null && snapshot.lastUpdatedAt != null && snapshot.state === 'ready' && Date.now() - snapshot.lastUpdatedAt <= refreshIfOlderThanMs) return
+    const freshnessAnchor = snapshot.state === 'error' ? snapshot.lastRefreshAttemptAt : snapshot.lastUpdatedAt
+    if (freshnessAnchor != null && Date.now() - freshnessAnchor <= refreshIfOlderThanMs) return
 
     refreshSubKitCustomerInfo().catch(() => undefined)
-  }, [options.enabled, options.refreshIfOlderThanMs, options.refreshOnMount, snapshot.clientConfigured, snapshot.customerInfo, snapshot.lastUpdatedAt, snapshot.state])
+  }, [options.enabled, options.refreshIfOlderThanMs, options.refreshOnMount, snapshot.clientConfigured, snapshot.lastRefreshAttemptAt, snapshot.lastUpdatedAt, snapshot.state])
 
   return useMemo(() => {
     const entitlement = snapshot.customerInfo?.entitlements[entitlementKey] ?? null

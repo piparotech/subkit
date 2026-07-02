@@ -8,6 +8,7 @@ export interface SubKitCustomerInfoSnapshot {
   clientConfigured: boolean
   customerInfo: CustomerInfo | null
   error: Error | null
+  lastRefreshAttemptAt: number | null
   lastUpdatedAt: number | null
   state: SubKitCustomerInfoState
   version: number
@@ -23,6 +24,7 @@ let snapshot: SubKitCustomerInfoSnapshot = {
   clientConfigured: false,
   customerInfo: null,
   error: null,
+  lastRefreshAttemptAt: null,
   lastUpdatedAt: null,
   state: 'unconfigured',
   version: 0,
@@ -35,6 +37,7 @@ export function configureSubKitCustomerInfoState(client: SubKitIapClient): void 
     clientConfigured: true,
     customerInfo: null,
     error: null,
+    lastRefreshAttemptAt: null,
     lastUpdatedAt: null,
     state: 'idle',
   })
@@ -80,6 +83,7 @@ export async function refreshSubKitCustomerInfo(): Promise<CustomerInfo | null> 
 
   updateSnapshot({
     error: null,
+    lastRefreshAttemptAt: Date.now(),
     state: snapshot.customerInfo == null ? 'loading' : 'refreshing',
   })
 
