@@ -2,7 +2,7 @@ import { createPurchaseQueueId, type QueuedPurchase } from '@piparotech/subkit-c
 
 import type { SubKitIapPurchase } from './types.js'
 
-export type QueueStatus = 'pending' | 'verifying' | 'verified' | 'finish_failed' | 'finished' | 'failed'
+export type QueueStatus = 'pending' | 'verified' | 'finish_failed' | 'finished' | 'failed'
 
 export interface PurchaseQueueItem extends QueuedPurchase {
   status: QueueStatus
@@ -10,6 +10,7 @@ export interface PurchaseQueueItem extends QueuedPurchase {
 
 export interface PurchaseQueueStore {
   enqueue(purchase: SubKitIapPurchase, appUserId?: string): Promise<PurchaseQueueItem>
+  enqueueMany(purchases: readonly SubKitIapPurchase[], appUserId?: string): Promise<PurchaseQueueItem[]>
   listPending(appUserId?: string): Promise<PurchaseQueueItem[]>
   markFailed(id: string, error: string): Promise<void>
   markFinished(id: string): Promise<void>
@@ -19,40 +20,50 @@ export interface PurchaseQueueStore {
 
 const MAX_QUEUE_ATTEMPTS = 3
 
+export function buildPurchaseQueueItem(purchase: SubKitIapPurchase, existing: PurchaseQueueItem | undefined, appUserId: string | undefined, timestamp: number): PurchaseQueueItem {
+  return {
+    anonymousId: undefined,
+    attempts: existing?.attempts ?? 0,
+    createdAt: existing?.createdAt ?? timestamp,
+    environment: purchase.environment,
+    id: createPurchaseQueueId(purchase),
+    lastError: existing?.lastError,
+    linkedPurchaseToken: purchase.linkedPurchaseToken,
+    orderId: purchase.orderId,
+    originalTransactionId: purchase.originalTransactionId,
+    ownershipType: purchase.ownershipType,
+    platform: purchase.store === 'apple_app_store' ? 'ios' : 'android',
+    productId: purchase.productId,
+    purchaseTime: purchase.transactionDate,
+    purchaseToken: purchase.purchaseToken,
+    quantity: purchase.quantity,
+    rawPurchase: purchase.raw,
+    receipt: purchase.receipt,
+    status: existing?.status === 'finished' ? 'finished' : 'pending',
+    store: purchase.store,
+    transactionId: purchase.transactionId,
+    updatedAt: timestamp,
+    userId: resolvePurchaseQueueUserId(existing, appUserId),
+  }
+}
+
 export function createMemoryPurchaseQueueStore(now: () => number = () => Date.now()): PurchaseQueueStore {
   const items = new Map<string, PurchaseQueueItem>()
 
+  function upsert(purchase: SubKitIapPurchase, appUserId: string | undefined, timestamp: number): PurchaseQueueItem {
+    const id = createPurchaseQueueId(purchase)
+    const next = buildPurchaseQueueItem(purchase, items.get(id), appUserId, timestamp)
+    items.set(id, next)
+    return next
+  }
+
   return {
     async enqueue(purchase, appUserId) {
-      const id = createPurchaseQueueId(purchase)
-      const existing = items.get(id)
+      return upsert(purchase, appUserId, now())
+    },
+    async enqueueMany(purchases, appUserId) {
       const timestamp = now()
-      const next: PurchaseQueueItem = {
-        anonymousId: undefined,
-        attempts: existing == null ? 0 : existing.attempts,
-        createdAt: existing?.createdAt ?? timestamp,
-        environment: purchase.environment,
-        id,
-        lastError: existing?.lastError,
-        linkedPurchaseToken: purchase.linkedPurchaseToken,
-        orderId: purchase.orderId,
-        originalTransactionId: purchase.originalTransactionId,
-        ownershipType: purchase.ownershipType,
-        platform: purchase.store === 'apple_app_store' ? 'ios' : 'android',
-        productId: purchase.productId,
-        purchaseTime: purchase.transactionDate,
-        purchaseToken: purchase.purchaseToken,
-        quantity: purchase.quantity,
-        rawPurchase: purchase.raw,
-        receipt: purchase.receipt,
-        status: existing?.status === 'finished' ? 'finished' : 'pending',
-        store: purchase.store,
-        transactionId: purchase.transactionId,
-        updatedAt: timestamp,
-        userId: resolvePurchaseQueueUserId(existing, appUserId),
-      }
-      items.set(id, next)
-      return next
+      return purchases.map((purchase) => upsert(purchase, appUserId, timestamp))
     },
     async listPending(appUserId) {
       const normalizedAppUserId = normalizeQueueAppUserId(appUserId)

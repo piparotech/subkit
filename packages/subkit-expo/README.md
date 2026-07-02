@@ -262,12 +262,13 @@ Advanced options:
 
 `createStoredPurchaseQueueStore({ storage })` creates a durable local queue for purchase events that still need to be sent to SubKit and finished in the store.
 
-Why this matters:
+Apple and Google already redeliver unfinished non-consumable and subscription transactions on later syncs, so the stores themselves keep those purchases durable. The stored queue matters for the state the stores do not keep for you:
 
-- the user can buy while the network is flaky
-- the app can be killed between purchase completion and server reconcile
-- SubKit may verify the purchase, but finishing the transaction in Apple/Google can fail temporarily
-- purchase listener events can arrive before your app is ready to sync them
+- iOS consumables: the SDK reads active items only, so a consumable purchase event that is lost before reconcile would not come back from the store. The durable queue preserves it across app restarts.
+- rejected and failed state: purchases rejected by SubKit or repeatedly failing to finish are remembered and are not re-sent or retried forever.
+- retry attempts: finish retries are capped per purchase instead of restarting from zero after every app launch.
+- user attribution: a queued purchase stays bound to the app user that first observed it, even across restarts and identity switches.
+- purchase listener events can arrive before your app is ready to sync them; the queue holds them until identity and network are available.
 
 The queue stores pending purchases locally and retries them on later syncs. A transaction is only finished after SubKit's runtime API says it is finishable.
 
@@ -295,7 +296,7 @@ const queue = createStoredPurchaseQueueStore({
 });
 ```
 
-If you do not pass `queue`, the SDK uses an in-memory queue. That is useful for tests and prototypes, but pending purchases are lost when the app restarts. For production apps, prefer the stored queue. If your app has stricter local-data requirements, provide an encrypted storage implementation with the same `getItem` / `setItem` / `removeItem` shape.
+If you do not pass `queue`, the SDK uses an in-memory queue. Unfinished subscription and non-consumable transactions are redelivered by the stores, so the in-memory queue is acceptable for subscription-only apps, tests, and prototypes. On restart it loses rejected/failed markers, retry counts, user attribution, and any iOS consumable purchase that was not reconciled yet. If you sell consumables or want stable retry behavior across restarts, use the stored queue. If your app has stricter local-data requirements, provide an encrypted storage implementation with the same `getItem` / `setItem` / `removeItem` shape.
 
 ## Automatic sync
 
