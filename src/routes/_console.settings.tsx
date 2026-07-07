@@ -2,15 +2,14 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { WorkspaceRouteView } from '~/console/WorkspaceRouteView'
 import { WorkspaceSettingsView } from '~/integrations/app-store-connect/WorkspaceSettingsView'
-import { consoleRouteData, type ConsoleViewRenderProps } from '~/console/views'
+import type { ConsoleViewRenderProps } from '~/console/types'
 
 export const Route = createFileRoute('/_console/settings')({
   component: WorkspaceSettingsRoute,
-  staticData: consoleRouteData('workspaceSettings'),
 })
 
 function WorkspaceSettingsRoute() {
-  return <WorkspaceRouteView renderView={renderWorkspaceSettingsView} />
+  return <WorkspaceRouteView renderView={renderWorkspaceSettingsView} title="Workspace Settings" />
 }
 
 function renderWorkspaceSettingsView({ connection, onRefreshConsoleData, tenant }: ConsoleViewRenderProps) {

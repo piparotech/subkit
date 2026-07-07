@@ -2,17 +2,28 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { AppRouteView } from '~/console/AppRouteView'
 import { ProductsView } from '~/domain/products/ProductsView'
-import { consoleRouteData, type AppConsoleViewRenderProps } from '~/console/views'
+import type { AppConsoleViewRenderProps, ConsoleActionContext } from '~/console/types'
 
 export const Route = createFileRoute('/_console/$tenantSlug/$appSlug/products')({
   component: ProductsRoute,
-  staticData: consoleRouteData('products'),
 })
 
 function ProductsRoute() {
-  return <AppRouteView renderView={renderProductsView} />
+  return (
+    <AppRouteView
+      primaryAction={newProductPrimaryAction}
+      renderView={renderProductsView}
+      searchPlaceholder="Search products, plans, entitlements…"
+      title="Products"
+    />
+  )
 }
 
 function renderProductsView({ isFiltering, onOpenProduct, products }: AppConsoleViewRenderProps) {
   return <ProductsView isFiltering={isFiltering} onOpenProduct={onOpenProduct} products={products} />
+}
+
+function newProductPrimaryAction({ currentApp, openProductCreator }: ConsoleActionContext) {
+  if (currentApp == null) return null
+  return { label: 'New Product', onPress: openProductCreator }
 }

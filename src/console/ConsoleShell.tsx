@@ -9,21 +9,19 @@ import { MiniAppAvatar } from '~/domain/apps/MiniAppAvatar'
 import { appRouteParams } from '~/console/routing'
 import type { AppTenant } from '~/domain/apps/types'
 import type { ConsoleUser, WorkspaceTenant } from '~/domain/tenants/types'
-import type { View } from '~/console/types'
+import type { ConsolePrimaryAction } from '~/console/types'
 import { WorkspaceSwitcher } from '~/console/WorkspaceSwitcher'
-import { consoleViewLabel } from '~/console/views'
 
 interface ShellProps {
   accessibleTenants: WorkspaceTenant[]
   apps: AppTenant[]
-  canCreateApps: boolean
   canCreateTenants: boolean
   children: React.ReactNode
   currentApp: AppTenant | null
   currentUser: ConsoleUser
   switcherOpen: boolean
   tenant: WorkspaceTenant
-  view: View
+  title: string
   searchPlaceholder: string | null
   searchQuery: string
   productsCount: number
@@ -31,23 +29,22 @@ interface ShellProps {
   onToggleSwitcher: () => void
   onSelectTenant: (id: string) => void
   onNewTenant: () => void
-  onPrimaryAction: () => void
+  primaryAction: ConsolePrimaryAction | null
 }
 
 export function ConsoleShell({
   accessibleTenants,
   apps,
-  canCreateApps,
   canCreateTenants,
   children,
   currentApp,
   currentUser,
   switcherOpen,
   tenant,
-  view,
+  title,
   onToggleSwitcher,
   onNewTenant,
-  onPrimaryAction,
+  primaryAction,
   onSearchQueryChange,
   onSelectTenant,
   searchPlaceholder,
@@ -55,8 +52,6 @@ export function ConsoleShell({
   productsCount,
 }: ShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false)
-  const showPrimary = (view === 'apps' && canCreateApps) || (view === 'products' && currentApp != null)
-  const primaryLabel = view === 'apps' ? 'New App' : 'New Product'
   const currentAppRouteParams = currentApp == null ? null : appRouteParams(currentApp)
   const showSearch = searchPlaceholder != null
 
@@ -164,7 +159,7 @@ export function ConsoleShell({
             ) : null}
             <BreadcrumbSeparator />
             <span aria-current="page" className="min-w-0 truncate font-semibold text-[var(--subkit-text)]">
-              {consoleViewLabel(view)}
+              {title}
             </span>
           </nav>
           <div className="flex-1" />
@@ -181,12 +176,12 @@ export function ConsoleShell({
               />
             </label>
           ) : null}
-          {showPrimary ? (
+          {primaryAction != null ? (
             <PUIButton
               addonStart={<Plus aria-hidden className="size-[14px]" strokeWidth={2} />}
               className="min-h-[36px] rounded-[9px] px-[14px] py-[9px] text-[13px] font-semibold shadow-sm"
-              label={primaryLabel}
-              onPress={onPrimaryAction}
+              label={primaryAction.label}
+              onPress={primaryAction.onPress}
               size="sm"
             />
           ) : null}

@@ -1,12 +1,27 @@
 import type { ReactNode } from 'react'
 
 import { SubKitConsole } from '~/console/SubKitConsole'
-import { isWorkspaceConsoleView, useActiveConsoleView, type ConsoleViewRenderProps } from '~/console/views'
+import type { ConsolePrimaryActionFactory, ConsoleViewRenderProps } from '~/console/types'
 
-export function WorkspaceRouteView({ renderView }: { renderView: (props: ConsoleViewRenderProps) => ReactNode }) {
-  const view = useActiveConsoleView()
-
-  if (!isWorkspaceConsoleView(view)) throw new Error(`${view} is not a workspace console route`)
-
-  return <SubKitConsole currentAppId={null} renderView={renderView} scope="workspace" view={view} />
+export function WorkspaceRouteView({
+  primaryAction,
+  renderView,
+  searchPlaceholder,
+  title,
+}: {
+  primaryAction?: ConsolePrimaryActionFactory
+  renderView: (props: ConsoleViewRenderProps) => ReactNode
+  searchPlaceholder?: string | null
+  title: string
+}) {
+  return (
+    <SubKitConsole
+      currentAppId={null}
+      primaryAction={primaryAction}
+      renderView={renderView}
+      scope="workspace"
+      searchPlaceholder={searchPlaceholder}
+      title={title}
+    />
+  )
 }

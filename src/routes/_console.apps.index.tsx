@@ -2,15 +2,21 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { AppsView } from '~/domain/apps/AppsView'
 import { WorkspaceRouteView } from '~/console/WorkspaceRouteView'
-import { consoleRouteData, type ConsoleViewRenderProps } from '~/console/views'
+import type { ConsoleActionContext, ConsoleViewRenderProps } from '~/console/types'
 
 export const Route = createFileRoute('/_console/apps/')({
   component: AppsRoute,
-  staticData: consoleRouteData('apps'),
 })
 
 function AppsRoute() {
-  return <WorkspaceRouteView renderView={renderAppsView} />
+  return (
+    <WorkspaceRouteView
+      primaryAction={newAppPrimaryAction}
+      renderView={renderAppsView}
+      searchPlaceholder="Search apps…"
+      title="Apps"
+    />
+  )
 }
 
 function renderAppsView({ apps, canCreateApps, connection, isFiltering, onCreateApp }: ConsoleViewRenderProps) {
@@ -23,4 +29,9 @@ function renderAppsView({ apps, canCreateApps, connection, isFiltering, onCreate
       onCreateApp={onCreateApp}
     />
   )
+}
+
+function newAppPrimaryAction({ canCreateApps, openAppCreator }: ConsoleActionContext) {
+  if (!canCreateApps) return null
+  return { label: 'New App', onPress: openAppCreator }
 }

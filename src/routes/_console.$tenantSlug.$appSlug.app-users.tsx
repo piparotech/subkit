@@ -2,15 +2,20 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { AppRouteView } from '~/console/AppRouteView'
 import { AppUsersView } from '~/domain/app-users/AppUsersView'
-import { consoleRouteData, type AppConsoleViewRenderProps } from '~/console/views'
+import type { AppConsoleViewRenderProps } from '~/console/types'
 
 export const Route = createFileRoute('/_console/$tenantSlug/$appSlug/app-users')({
   component: AppUsersRoute,
-  staticData: consoleRouteData('appUsers'),
 })
 
 function AppUsersRoute() {
-  return <AppRouteView renderView={renderAppUsersView} />
+  return (
+    <AppRouteView
+      renderView={renderAppUsersView}
+      searchPlaceholder="Search App Users, countries, entitlements…"
+      title="App Users"
+    />
+  )
 }
 
 function renderAppUsersView({ appUsers, isFiltering, onOpenAppUser }: AppConsoleViewRenderProps) {

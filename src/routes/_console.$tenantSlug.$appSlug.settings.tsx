@@ -2,15 +2,14 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { AppRouteView } from '~/console/AppRouteView'
 import { AppSettingsView } from '~/integrations/app-store-connect/AppSettingsView'
-import { consoleRouteData, type AppConsoleViewRenderProps } from '~/console/views'
+import type { AppConsoleViewRenderProps } from '~/console/types'
 
 export const Route = createFileRoute('/_console/$tenantSlug/$appSlug/settings')({
   component: SettingsRoute,
-  staticData: consoleRouteData('settings'),
 })
 
 function SettingsRoute() {
-  return <AppRouteView renderView={renderSettingsView} />
+  return <AppRouteView title="Settings" renderView={renderSettingsView} />
 }
 
 function renderSettingsView({ connection, currentApp, onAppDeleted, onRefreshConsoleData }: AppConsoleViewRenderProps) {

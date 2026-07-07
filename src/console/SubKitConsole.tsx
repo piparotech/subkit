@@ -21,8 +21,7 @@ import type { Offering } from '~/domain/offerings/types'
 import type { CatalogProduct, EditableCatalogProductTextField } from '~/domain/products/types'
 import type { TenantDraft, TenantDraftField, TenantMemberSummary } from '~/domain/tenants/types'
 import type { AppStoreConnectAccessibleApp, AppStoreConnectConnection } from '~/integrations/app-store-connect/types'
-import type { PanelState } from '~/console/types'
-import { consoleViewSearchPlaceholder, type AppConsoleView, type AppConsoleViewRenderProps, type ConsoleViewRenderProps, type WorkspaceConsoleView } from '~/console/views'
+import type { AppConsoleViewRenderProps, ConsolePrimaryActionFactory, ConsoleViewRenderProps, PanelState } from '~/console/types'
 
 interface OperationFeedback {
   message: string
@@ -32,19 +31,23 @@ interface OperationFeedback {
 type SubKitConsoleProps =
   | {
       currentAppId: null
+      primaryAction?: ConsolePrimaryActionFactory
       renderView: (props: ConsoleViewRenderProps) => React.ReactNode
       scope: 'workspace'
-      view: WorkspaceConsoleView
+      searchPlaceholder?: string | null
+      title: string
     }
   | {
       currentAppId: string | null
+      primaryAction?: ConsolePrimaryActionFactory
       renderView: (props: AppConsoleViewRenderProps) => React.ReactNode
       scope: 'app'
-      view: AppConsoleView
+      searchPlaceholder?: string | null
+      title: string
     }
 
 export function SubKitConsole(props: SubKitConsoleProps) {
-  const { currentAppId, view } = props
+  const { currentAppId } = props
   const consoleData = useLoaderData({ from: '/_console' })
   const router = useRouter()
   const navigate = useNavigate()
@@ -78,7 +81,7 @@ export function SubKitConsole(props: SubKitConsoleProps) {
     setSearchQuery('')
     setSwitcherOpen(false)
     setPanel({ kind: 'closed' })
-  }, [currentAppId, view])
+  }, [currentAppId, props.title])
 
   const currentApp = apps.find((app) => app.id === currentAppId) ?? null
   const currentTenant = consoleData.accessibleTenants.find((item) => item.id === (currentApp?.tenantId ?? selectedTenantId)) ?? consoleData.tenant
@@ -129,20 +132,6 @@ export function SubKitConsole(props: SubKitConsoleProps) {
     }
   }
 
-  const primaryAction = () => {
-    if (view === 'apps') {
-      openAppCreator()
-      return
-    }
-    if (view === 'products' && currentApp != null) {
-      setPanel({
-        kind: 'product',
-        mode: 'new',
-        product: { ...newCatalogProduct, appId: currentApp.id },
-      })
-    }
-  }
-
   const openAppCreator = () => {
     setSelectedTenantId(currentTenant.id)
     setAppDraft(emptyAppDraft)
@@ -151,6 +140,15 @@ export function SubKitConsole(props: SubKitConsoleProps) {
     setAppStoreLoadError(null)
     setOperationFeedback(null)
     setPanel({ kind: 'newApp' })
+  }
+
+  const openProductCreator = () => {
+    if (currentApp == null) return
+    setPanel({
+      kind: 'product',
+      mode: 'new',
+      product: { ...newCatalogProduct, appId: currentApp.id },
+    })
   }
 
   const openProduct = (product: CatalogProduct) => {
@@ -405,8 +403,14 @@ export function SubKitConsole(props: SubKitConsoleProps) {
     products: visibleProducts,
     tenant: currentTenant,
     tenantMembers: visibleTenantMembers,
-    view,
   }
+
+  const primaryAction = props.primaryAction?.({
+    canCreateApps,
+    currentApp,
+    openAppCreator,
+    openProductCreator,
+  }) ?? null
 
   const content = props.scope === 'app'
     ? currentApp == null
@@ -421,19 +425,18 @@ export function SubKitConsole(props: SubKitConsoleProps) {
         currentApp={currentApp}
         currentUser={currentUser}
         accessibleTenants={consoleData.accessibleTenants}
-        canCreateApps={canCreateApps}
         canCreateTenants={currentUser.canCreateTenants}
         tenant={currentTenant}
         onNewTenant={openTenantCreator}
-        onPrimaryAction={primaryAction}
+        primaryAction={primaryAction}
         onSearchQueryChange={setSearchQuery}
         onSelectTenant={selectTenant}
         onToggleSwitcher={() => setSwitcherOpen((open) => !open)}
         productsCount={currentProducts.length}
-        searchPlaceholder={consoleViewSearchPlaceholder(view)}
+        searchPlaceholder={props.searchPlaceholder ?? null}
         searchQuery={searchQuery}
         switcherOpen={switcherOpen}
-        view={view}
+        title={props.title}
       >
         {operationFeedback != null ? (
           <div className="px-[32px] pt-[16px] max-md:px-[18px]">
