@@ -1,0 +1,17 @@
+node_modules/
+.output/
+.tanstack/
+dist/
+build/
+coverage/
+.pi/
+
+# Generated / machine-managed artifacts
+pnpm-lock.yaml
+*.tsbuildinfo
+subscription-console.sqlite
+packages/*/dist/
+
+# Environment / local data
+.env*
+data/
