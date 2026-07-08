@@ -1,13 +1,14 @@
-import type { CustomerEntitlement, CustomerInfo, EntitlementStatus } from '@piparotech/subkit-core'
 import { useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
+
+import type { CustomerEntitlement, CustomerInfo, EntitlementStatus } from '@piparotech/subkit-core'
 
 import { client } from './SubKitIapClient.js'
 import type { SubKitIapLogger } from './coordinator.js'
 import {
+  type SubKitCustomerInfoState,
   getSubKitCustomerInfoSnapshot,
   refreshSubKitCustomerInfo,
   subscribeSubKitCustomerInfo,
-  type SubKitCustomerInfoState,
 } from './subKitState.js'
 
 const DEFAULT_REFRESH_IF_OLDER_THAN_MS = 60_000
@@ -44,7 +45,8 @@ export function useSubKitIapAutoSync(options: UseSubKitIapAutoSyncOptions = {}):
   loggerRef.current = options.logger
 
   useEffect(() => {
-    if (options.enabled === false || options.syncOnMount === false || didSyncOnMountRef.current) return
+    if (options.enabled === false || options.syncOnMount === false || didSyncOnMountRef.current)
+      return
     didSyncOnMountRef.current = true
 
     async function runSync(): Promise<void> {
@@ -57,7 +59,10 @@ export function useSubKitIapAutoSync(options: UseSubKitIapAutoSyncOptions = {}):
   }, [options.enabled, options.syncOnMount])
 }
 
-export function useSubKitEntitlement(entitlementKey: string, options: UseSubKitEntitlementOptions = {}): UseSubKitEntitlementResult {
+export function useSubKitEntitlement(
+  entitlementKey: string,
+  options: UseSubKitEntitlementOptions = {},
+): UseSubKitEntitlementResult {
   const snapshot = useSyncExternalStore(
     subscribeSubKitCustomerInfo,
     getSubKitCustomerInfoSnapshot,
@@ -71,11 +76,20 @@ export function useSubKitEntitlement(entitlementKey: string, options: UseSubKitE
     if (!snapshot.clientConfigured) return
 
     const refreshIfOlderThanMs = sanitizeRefreshIfOlderThanMs(options.refreshIfOlderThanMs)
-    const freshnessAnchor = snapshot.state === 'error' ? snapshot.lastRefreshAttemptAt : snapshot.lastUpdatedAt
+    const freshnessAnchor =
+      snapshot.state === 'error' ? snapshot.lastRefreshAttemptAt : snapshot.lastUpdatedAt
     if (freshnessAnchor != null && Date.now() - freshnessAnchor <= refreshIfOlderThanMs) return
 
     refreshSubKitCustomerInfo().catch(() => undefined)
-  }, [options.enabled, options.refreshIfOlderThanMs, options.refreshOnMount, snapshot.clientConfigured, snapshot.lastRefreshAttemptAt, snapshot.lastUpdatedAt, snapshot.state])
+  }, [
+    options.enabled,
+    options.refreshIfOlderThanMs,
+    options.refreshOnMount,
+    snapshot.clientConfigured,
+    snapshot.lastRefreshAttemptAt,
+    snapshot.lastUpdatedAt,
+    snapshot.state,
+  ])
 
   return useMemo(() => {
     const entitlement = snapshot.customerInfo?.entitlements[entitlementKey] ?? null

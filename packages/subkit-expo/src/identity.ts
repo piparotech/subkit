@@ -10,7 +10,9 @@ export interface PurchaseIdentityFields {
   obfuscatedProfileId?: string
 }
 
-export async function buildPurchaseIdentityFields(provider: StoreIdentityHintProvider): Promise<PurchaseIdentityFields> {
+export async function buildPurchaseIdentityFields(
+  provider: StoreIdentityHintProvider,
+): Promise<PurchaseIdentityFields> {
   const hints = await provider.getStoreIdentityHints()
   return {
     appAccountToken: hints?.apple?.appAccountToken,

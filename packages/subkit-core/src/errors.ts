@@ -58,5 +58,10 @@ export function createSubKitError(input: CreateSubKitErrorInput): SubKitErrorSha
 }
 
 export function isRetryableSubKitErrorCode(code: SubKitErrorCode): boolean {
-  return code === 'network' || code === 'rate_limited' || code === 'service_unavailable' || code === 'server_error'
+  return (
+    code === 'network' ||
+    code === 'rate_limited' ||
+    code === 'service_unavailable' ||
+    code === 'server_error'
+  )
 }

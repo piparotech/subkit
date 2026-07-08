@@ -1,4 +1,4 @@
-import { createPurchaseQueueId, type QueuedPurchase } from '@piparotech/subkit-core'
+import { type QueuedPurchase, createPurchaseQueueId } from '@piparotech/subkit-core'
 
 import type { SubKitIapPurchase } from './types.js'
 
@@ -10,7 +10,10 @@ export interface PurchaseQueueItem extends QueuedPurchase {
 
 export interface PurchaseQueueStore {
   enqueue(purchase: SubKitIapPurchase, appUserId?: string): Promise<PurchaseQueueItem>
-  enqueueMany(purchases: readonly SubKitIapPurchase[], appUserId?: string): Promise<PurchaseQueueItem[]>
+  enqueueMany(
+    purchases: readonly SubKitIapPurchase[],
+    appUserId?: string,
+  ): Promise<PurchaseQueueItem[]>
   listPending(appUserId?: string): Promise<PurchaseQueueItem[]>
   markFailed(id: string, error: string): Promise<void>
   markFinished(id: string): Promise<void>
@@ -20,7 +23,12 @@ export interface PurchaseQueueStore {
 
 const MAX_QUEUE_ATTEMPTS = 3
 
-export function buildPurchaseQueueItem(purchase: SubKitIapPurchase, existing: PurchaseQueueItem | undefined, appUserId: string | undefined, timestamp: number): PurchaseQueueItem {
+export function buildPurchaseQueueItem(
+  purchase: SubKitIapPurchase,
+  existing: PurchaseQueueItem | undefined,
+  appUserId: string | undefined,
+  timestamp: number,
+): PurchaseQueueItem {
   return {
     anonymousId: undefined,
     attempts: existing?.attempts ?? 0,
@@ -47,10 +55,16 @@ export function buildPurchaseQueueItem(purchase: SubKitIapPurchase, existing: Pu
   }
 }
 
-export function createMemoryPurchaseQueueStore(now: () => number = () => Date.now()): PurchaseQueueStore {
+export function createMemoryPurchaseQueueStore(
+  now: () => number = () => Date.now(),
+): PurchaseQueueStore {
   const items = new Map<string, PurchaseQueueItem>()
 
-  function upsert(purchase: SubKitIapPurchase, appUserId: string | undefined, timestamp: number): PurchaseQueueItem {
+  function upsert(
+    purchase: SubKitIapPurchase,
+    appUserId: string | undefined,
+    timestamp: number,
+  ): PurchaseQueueItem {
     const id = createPurchaseQueueId(purchase)
     const next = buildPurchaseQueueItem(purchase, items.get(id), appUserId, timestamp)
     items.set(id, next)
@@ -67,13 +81,22 @@ export function createMemoryPurchaseQueueStore(now: () => number = () => Date.no
     },
     async listPending(appUserId) {
       const normalizedAppUserId = normalizeQueueAppUserId(appUserId)
-      return [...items.values()].filter((item) => isDrainedQueueStatus(item) && purchaseQueueItemMatchesAppUser(item, normalizedAppUserId))
+      return [...items.values()].filter(
+        (item) =>
+          isDrainedQueueStatus(item) && purchaseQueueItemMatchesAppUser(item, normalizedAppUserId),
+      )
     },
     async markFailed(id, error) {
       const item = items.get(id)
       if (item == null) return
       const attempts = item.attempts + 1
-      items.set(id, { ...item, attempts, lastError: error, status: attempts >= MAX_QUEUE_ATTEMPTS ? 'failed' : 'finish_failed', updatedAt: now() })
+      items.set(id, {
+        ...item,
+        attempts,
+        lastError: error,
+        status: attempts >= MAX_QUEUE_ATTEMPTS ? 'failed' : 'finish_failed',
+        updatedAt: now(),
+      })
     },
     async markFinished(id) {
       const item = items.get(id)
@@ -83,7 +106,16 @@ export function createMemoryPurchaseQueueStore(now: () => number = () => Date.no
     async markRejected(id, error) {
       const item = items.get(id)
       if (item == null) return
-      items.set(id, stripSensitiveFinishedFields({ ...item, attempts: item.attempts + 1, lastError: error, status: 'failed', updatedAt: now() }))
+      items.set(
+        id,
+        stripSensitiveFinishedFields({
+          ...item,
+          attempts: item.attempts + 1,
+          lastError: error,
+          status: 'failed',
+          updatedAt: now(),
+        }),
+      )
     },
     async markVerified(id) {
       const item = items.get(id)
@@ -93,13 +125,19 @@ export function createMemoryPurchaseQueueStore(now: () => number = () => Date.no
   }
 }
 
-export function resolvePurchaseQueueUserId(existing: PurchaseQueueItem | undefined, appUserId: string | undefined): string | undefined {
+export function resolvePurchaseQueueUserId(
+  existing: PurchaseQueueItem | undefined,
+  appUserId: string | undefined,
+): string | undefined {
   const existingUserId = normalizeQueueAppUserId(existing?.userId)
   if (existingUserId != null) return existingUserId
   return normalizeQueueAppUserId(appUserId)
 }
 
-export function purchaseQueueItemMatchesAppUser(item: PurchaseQueueItem, appUserId: string | undefined): boolean {
+export function purchaseQueueItemMatchesAppUser(
+  item: PurchaseQueueItem,
+  appUserId: string | undefined,
+): boolean {
   const normalizedAppUserId = normalizeQueueAppUserId(appUserId)
   if (normalizedAppUserId == null) return true
   const itemUserId = normalizeQueueAppUserId(item.userId)
@@ -113,7 +151,9 @@ function normalizeQueueAppUserId(appUserId: string | undefined): string | undefi
 }
 
 function isDrainedQueueStatus(item: PurchaseQueueItem): boolean {
-  return item.status !== 'finished' && item.status !== 'failed' && item.attempts < MAX_QUEUE_ATTEMPTS
+  return (
+    item.status !== 'finished' && item.status !== 'failed' && item.attempts < MAX_QUEUE_ATTEMPTS
+  )
 }
 
 function stripSensitiveFinishedFields(item: PurchaseQueueItem): PurchaseQueueItem {

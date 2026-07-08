@@ -1,6 +1,12 @@
 import { z } from 'zod'
 
-export const serverGrantStatusSchema = z.enum(['active', 'trialing', 'billing_retry', 'expired', 'revoked'])
+export const serverGrantStatusSchema = z.enum([
+  'active',
+  'trialing',
+  'billing_retry',
+  'expired',
+  'revoked',
+])
 export type ServerGrantStatus = z.infer<typeof serverGrantStatusSchema>
 
 export const serverEntitlementCheckReasonSchema = z.enum([
@@ -83,13 +89,17 @@ export type ServerProductsRequest = z.infer<typeof serverProductsRequestSchema>
 export const serverCreateRuntimeSdkKeyRequestSchema = z.object({
   appId: z.string().min(1),
 })
-export type ServerCreateRuntimeSdkKeyRequest = z.infer<typeof serverCreateRuntimeSdkKeyRequestSchema>
+export type ServerCreateRuntimeSdkKeyRequest = z.infer<
+  typeof serverCreateRuntimeSdkKeyRequestSchema
+>
 
 export const serverCreateRuntimeSdkKeyResponseSchema = z.object({
   appId: z.string().min(1),
   key: z.string().min(1),
 })
-export type ServerCreateRuntimeSdkKeyResponse = z.infer<typeof serverCreateRuntimeSdkKeyResponseSchema>
+export type ServerCreateRuntimeSdkKeyResponse = z.infer<
+  typeof serverCreateRuntimeSdkKeyResponseSchema
+>
 
 export const serverProductSchema = z.object({
   billingPeriod: z.string().nullable(),

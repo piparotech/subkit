@@ -1,5 +1,12 @@
+import {
+  type PurchaseQueueItem,
+  type PurchaseQueueStore,
+  type QueueStatus,
+  buildPurchaseQueueItem,
+  createPurchaseQueueId,
+  purchaseQueueItemMatchesAppUser,
+} from './queue.js'
 import type { SubKitIapPurchase } from './types.js'
-import { buildPurchaseQueueItem, createPurchaseQueueId, purchaseQueueItemMatchesAppUser, type PurchaseQueueItem, type PurchaseQueueStore, type QueueStatus } from './queue.js'
 
 export interface SubKitJsonStorage {
   getItem(key: string): Promise<string | null>
@@ -36,12 +43,17 @@ export interface StoredPurchaseQueueOptions {
 
 const MAX_QUEUE_ATTEMPTS = 3
 
-export function createStoredPurchaseQueueStore(options: StoredPurchaseQueueOptions): PurchaseQueueStore {
+export function createStoredPurchaseQueueStore(
+  options: StoredPurchaseQueueOptions,
+): PurchaseQueueStore {
   const key = options.key ?? 'subkit:iap:purchase-queue:v1'
   const maxItems = options.maxItems ?? 100
   const now = options.now ?? (() => Date.now())
 
-  async function enqueueItems(purchases: readonly SubKitIapPurchase[], appUserId: string | undefined): Promise<PurchaseQueueItem[]> {
+  async function enqueueItems(
+    purchases: readonly SubKitIapPurchase[],
+    appUserId: string | undefined,
+  ): Promise<PurchaseQueueItem[]> {
     if (purchases.length === 0) return []
     let items = await readItems(options.storage, key)
     const timestamp = now()
@@ -69,7 +81,9 @@ export function createStoredPurchaseQueueStore(options: StoredPurchaseQueueOptio
     },
     async listPending(appUserId) {
       const items = await readItems(options.storage, key)
-      return items.filter((item) => isDrainedQueueStatus(item) && purchaseQueueItemMatchesAppUser(item, appUserId))
+      return items.filter(
+        (item) => isDrainedQueueStatus(item) && purchaseQueueItemMatchesAppUser(item, appUserId),
+      )
     },
     async markFailed(id, error) {
       await updateItem(options.storage, key, id, (item) => {
@@ -84,13 +98,27 @@ export function createStoredPurchaseQueueStore(options: StoredPurchaseQueueOptio
       })
     },
     async markFinished(id) {
-      await updateItem(options.storage, key, id, (item) => stripSensitiveFinishedFields({ ...item, status: 'finished', updatedAt: now() }))
+      await updateItem(options.storage, key, id, (item) =>
+        stripSensitiveFinishedFields({ ...item, status: 'finished', updatedAt: now() }),
+      )
     },
     async markRejected(id, error) {
-      await updateItem(options.storage, key, id, (item) => stripSensitiveFinishedFields({ ...item, attempts: item.attempts + 1, lastError: error, status: 'failed', updatedAt: now() }))
+      await updateItem(options.storage, key, id, (item) =>
+        stripSensitiveFinishedFields({
+          ...item,
+          attempts: item.attempts + 1,
+          lastError: error,
+          status: 'failed',
+          updatedAt: now(),
+        }),
+      )
     },
     async markVerified(id) {
-      await updateItem(options.storage, key, id, (item) => ({ ...item, status: 'verified', updatedAt: now() }))
+      await updateItem(options.storage, key, id, (item) => ({
+        ...item,
+        status: 'verified',
+        updatedAt: now(),
+      }))
     },
   }
 }
@@ -115,7 +143,11 @@ async function readItems(storage: SubKitJsonStorage, key: string): Promise<Purch
   }
 }
 
-async function writeItems(storage: SubKitJsonStorage, key: string, items: readonly PurchaseQueueItem[]): Promise<void> {
+async function writeItems(
+  storage: SubKitJsonStorage,
+  key: string,
+  items: readonly PurchaseQueueItem[],
+): Promise<void> {
   if (items.length === 0) {
     await storage.removeItem(key)
     return
@@ -123,17 +155,32 @@ async function writeItems(storage: SubKitJsonStorage, key: string, items: readon
   await storage.setItem(key, JSON.stringify(items))
 }
 
-async function updateItem(storage: SubKitJsonStorage, key: string, id: string, update: (item: PurchaseQueueItem) => PurchaseQueueItem): Promise<void> {
+async function updateItem(
+  storage: SubKitJsonStorage,
+  key: string,
+  id: string,
+  update: (item: PurchaseQueueItem) => PurchaseQueueItem,
+): Promise<void> {
   const items = await readItems(storage, key)
-  await writeItems(storage, key, items.map((item) => (item.id === id ? update(item) : item)))
+  await writeItems(
+    storage,
+    key,
+    items.map((item) => (item.id === id ? update(item) : item)),
+  )
 }
 
-function upsertItem(items: readonly PurchaseQueueItem[], next: PurchaseQueueItem): PurchaseQueueItem[] {
+function upsertItem(
+  items: readonly PurchaseQueueItem[],
+  next: PurchaseQueueItem,
+): PurchaseQueueItem[] {
   const withoutNext = items.filter((item) => item.id !== next.id)
   return [...withoutNext, next]
 }
 
-function keepNewestUnfinished(items: readonly PurchaseQueueItem[], maxItems: number): PurchaseQueueItem[] {
+function keepNewestUnfinished(
+  items: readonly PurchaseQueueItem[],
+  maxItems: number,
+): PurchaseQueueItem[] {
   if (items.length <= maxItems) return [...items]
   const unfinished = items.filter((item) => item.status !== 'finished')
   const finished = items.filter((item) => item.status === 'finished')
@@ -141,7 +188,9 @@ function keepNewestUnfinished(items: readonly PurchaseQueueItem[], maxItems: num
 }
 
 function isDrainedQueueStatus(item: PurchaseQueueItem): boolean {
-  return item.status !== 'finished' && item.status !== 'failed' && item.attempts < MAX_QUEUE_ATTEMPTS
+  return (
+    item.status !== 'finished' && item.status !== 'failed' && item.attempts < MAX_QUEUE_ATTEMPTS
+  )
 }
 
 function stripSensitiveFinishedFields(item: PurchaseQueueItem): PurchaseQueueItem {
@@ -213,17 +262,30 @@ function readNumber(value: Record<string, unknown>, key: string): number | undef
 
 function readQueueStatus(value: Record<string, unknown>, key: string): QueueStatus | undefined {
   const field = readString(value, key)
-  if (field === 'pending' || field === 'verified' || field === 'finish_failed' || field === 'finished' || field === 'failed') return field
+  if (
+    field === 'pending' ||
+    field === 'verified' ||
+    field === 'finish_failed' ||
+    field === 'finished' ||
+    field === 'failed'
+  )
+    return field
   return undefined
 }
 
-function readStoreEnvironment(value: Record<string, unknown>, key: string): PurchaseQueueItem['environment'] {
+function readStoreEnvironment(
+  value: Record<string, unknown>,
+  key: string,
+): PurchaseQueueItem['environment'] {
   const field = readString(value, key)
   if (field === 'sandbox' || field === 'production' || field === 'unknown') return field
   return undefined
 }
 
-function readOwnershipType(value: Record<string, unknown>, key: string): PurchaseQueueItem['ownershipType'] {
+function readOwnershipType(
+  value: Record<string, unknown>,
+  key: string,
+): PurchaseQueueItem['ownershipType'] {
   const field = readString(value, key)
   if (field === 'purchased' || field === 'family_shared' || field === 'unknown') return field
   return undefined

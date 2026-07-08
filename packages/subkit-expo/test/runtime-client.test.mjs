@@ -1,7 +1,10 @@
 import { strict as assert } from 'node:assert'
 import test from 'node:test'
 
-import { runtimeCustomerInfoRequestSchema, iapReconcileRequestSchema } from '@piparotech/subkit-core'
+import {
+  iapReconcileRequestSchema,
+  runtimeCustomerInfoRequestSchema,
+} from '@piparotech/subkit-core'
 
 import { SubKitRuntimeClient } from '../dist/client.js'
 
@@ -30,23 +33,29 @@ function parseRequestBody(request) {
 }
 
 test('runtime request schemas ignore legacy appId fields for backwards compatibility', () => {
-  assert.deepEqual(runtimeCustomerInfoRequestSchema.parse({ appId: 'legacy_app', appUserId: 'user_123' }), { appUserId: 'user_123' })
-  assert.deepEqual(iapReconcileRequestSchema.parse({
-    appId: 'legacy_app',
-    appUserId: 'user_123',
-    installationId: 'install_123',
-    platform: 'ios',
-    purchases: [],
-    reason: 'app_start',
-    sessionId: 'session_123',
-  }), {
-    appUserId: 'user_123',
-    installationId: 'install_123',
-    platform: 'ios',
-    purchases: [],
-    reason: 'app_start',
-    sessionId: 'session_123',
-  })
+  assert.deepEqual(
+    runtimeCustomerInfoRequestSchema.parse({ appId: 'legacy_app', appUserId: 'user_123' }),
+    { appUserId: 'user_123' },
+  )
+  assert.deepEqual(
+    iapReconcileRequestSchema.parse({
+      appId: 'legacy_app',
+      appUserId: 'user_123',
+      installationId: 'install_123',
+      platform: 'ios',
+      purchases: [],
+      reason: 'app_start',
+      sessionId: 'session_123',
+    }),
+    {
+      appUserId: 'user_123',
+      installationId: 'install_123',
+      platform: 'ios',
+      purchases: [],
+      reason: 'app_start',
+      sessionId: 'session_123',
+    },
+  )
 })
 
 test('runtime client omits appId from customer info requests', async () => {
@@ -58,7 +67,10 @@ test('runtime client omits appId from customer info requests', async () => {
   }
 
   try {
-    const client = new SubKitRuntimeClient({ apiBaseUrl: 'https://subkit.example.com', sdkKey: 'runtime_public_key' })
+    const client = new SubKitRuntimeClient({
+      apiBaseUrl: 'https://subkit.example.com',
+      sdkKey: 'runtime_public_key',
+    })
     await client.getCustomerInfo('user_123')
   } finally {
     globalThis.fetch = previousFetch
@@ -78,14 +90,20 @@ test('runtime client omits appId from offerings requests', async () => {
   }
 
   try {
-    const client = new SubKitRuntimeClient({ apiBaseUrl: 'https://subkit.example.com', sdkKey: 'runtime_public_key' })
+    const client = new SubKitRuntimeClient({
+      apiBaseUrl: 'https://subkit.example.com',
+      sdkKey: 'runtime_public_key',
+    })
     await client.getOfferings({ appUserId: 'user_123', platform: 'ios' })
   } finally {
     globalThis.fetch = previousFetch
   }
 
   assert.equal(requests.length, 1)
-  assert.deepEqual(parseRequestBody(requests[0].request), { appUserId: 'user_123', platform: 'ios' })
+  assert.deepEqual(parseRequestBody(requests[0].request), {
+    appUserId: 'user_123',
+    platform: 'ios',
+  })
 })
 
 test('runtime client omits appId from reconcile requests', async () => {
@@ -105,7 +123,10 @@ test('runtime client omits appId from reconcile requests', async () => {
   }
 
   try {
-    const client = new SubKitRuntimeClient({ apiBaseUrl: 'https://subkit.example.com', sdkKey: 'runtime_public_key' })
+    const client = new SubKitRuntimeClient({
+      apiBaseUrl: 'https://subkit.example.com',
+      sdkKey: 'runtime_public_key',
+    })
     await client.reconcile({
       appUserId: 'user_123',
       installationId: 'install_123',

@@ -1,4 +1,8 @@
-import { serverCustomerInfoResponseSchema, type ServerCustomerInfoRequest, type ServerCustomerInfoResponse } from '@piparotech/subkit-core'
+import {
+  type ServerCustomerInfoRequest,
+  type ServerCustomerInfoResponse,
+  serverCustomerInfoResponseSchema,
+} from '@piparotech/subkit-core'
 
 import type { HttpClient } from './HttpClient.js'
 import type { SubKitRequestOptions } from './requestOptions.js'
@@ -17,7 +21,10 @@ export class CustomersClient {
     this.http = options.http
   }
 
-  getCustomerInfo(input: Omit<ServerCustomerInfoRequest, 'appId'> & { appId?: string }, options: SubKitRequestOptions = {}): Promise<ServerCustomerInfoResponse> {
+  getCustomerInfo(
+    input: Omit<ServerCustomerInfoRequest, 'appId'> & { appId?: string },
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerCustomerInfoResponse> {
     return this.http.post('/api/server/customer-info', {
       ...options,
       body: {

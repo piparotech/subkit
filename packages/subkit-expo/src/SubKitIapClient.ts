@@ -1,15 +1,45 @@
-import type { CustomerInfo, Offering, PurchaseResult, PurchaseSyncResult, RuntimeOfferingsResponse, StoreIdentityHints } from '@piparotech/subkit-core'
 import { Platform } from 'react-native'
 
-import type { SubKitExpoIapAdapter, SubKitIapAdapterBundle, SubKitPurchaseListenerSubscription } from './adapter.js'
-import { createReactNativeAppStateSource, createSubKitAppStateSync, type SubKitAppStateSource } from './appState.js'
+import type {
+  CustomerInfo,
+  Offering,
+  PurchaseResult,
+  PurchaseSyncResult,
+  RuntimeOfferingsResponse,
+  StoreIdentityHints,
+} from '@piparotech/subkit-core'
+
+import type {
+  SubKitExpoIapAdapter,
+  SubKitIapAdapterBundle,
+  SubKitPurchaseListenerSubscription,
+} from './adapter.js'
+import {
+  type SubKitAppStateSource,
+  createReactNativeAppStateSource,
+  createSubKitAppStateSync,
+} from './appState.js'
 import { SubKitRuntimeClient } from './client.js'
+import {
+  type PurchaseSyncCoordinator,
+  type SubKitIapLogger,
+  createPurchaseSyncCoordinator,
+} from './coordinator.js'
 import { normalizeIapError } from './errors.js'
-import { createPurchaseSyncCoordinator, type PurchaseSyncCoordinator, type SubKitIapLogger } from './coordinator.js'
 import { MemoryIdentityStore } from './identity.js'
-import { createMemoryPurchaseQueueStore, type PurchaseQueueStore } from './queue.js'
-import { configureSubKitCustomerInfoState, publishSubKitCustomerInfo, publishSubKitCustomerInfoError } from './subKitState.js'
-import type { SubKitExpoIapConfig, SubKitIapPlatform, SubKitIapPurchase, SubKitPurchaseRequest, SubKitSyncOptions } from './types.js'
+import { type PurchaseQueueStore, createMemoryPurchaseQueueStore } from './queue.js'
+import {
+  configureSubKitCustomerInfoState,
+  publishSubKitCustomerInfo,
+  publishSubKitCustomerInfoError,
+} from './subKitState.js'
+import type {
+  SubKitExpoIapConfig,
+  SubKitIapPlatform,
+  SubKitIapPurchase,
+  SubKitPurchaseRequest,
+  SubKitSyncOptions,
+} from './types.js'
 
 export interface ConfigureSubKitOptions extends SubKitExpoIapConfig {
   adapterBundle?: SubKitIapAdapterBundle
@@ -98,7 +128,8 @@ const unconfiguredClientTarget: SubKitIapClient = {
 
 export const client = new Proxy(unconfiguredClientTarget, {
   get(_target, property, receiver) {
-    if (property === 'then' || typeof property === 'symbol') return Reflect.get(unconfiguredClientTarget, property, receiver)
+    if (property === 'then' || typeof property === 'symbol')
+      return Reflect.get(unconfiguredClientTarget, property, receiver)
     const configuredClient = configuredSubKitClient
     if (configuredClient == null) throwSubKitNotConfiguredError()
     return Reflect.get(configuredClient, property, receiver)
@@ -112,7 +143,10 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   const appStateSource = options.appStateSource ?? createReactNativeAppStateSource()
   const iapOptions = resolveSubKitIapOptions(options.iap)
   const platform = options.platform ?? detectSubKitIapPlatform()
-  const runtime = new SubKitRuntimeClient({ apiBaseUrl: options.apiBaseUrl ?? DEFAULT_SUBKIT_API_BASE_URL, sdkKey: options.sdkKey })
+  const runtime = new SubKitRuntimeClient({
+    apiBaseUrl: options.apiBaseUrl ?? DEFAULT_SUBKIT_API_BASE_URL,
+    sdkKey: options.sdkKey,
+  })
   const identity = new MemoryIdentityStore()
   const queue = options.queue ?? createMemoryPurchaseQueueStore()
   let customerInfo: CustomerInfo | null = null
@@ -146,7 +180,9 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
     return info
   }
 
-  async function internalSyncPurchases(input: SubKitSyncOptions): Promise<PurchaseSyncResult | null> {
+  async function internalSyncPurchases(
+    input: SubKitSyncOptions,
+  ): Promise<PurchaseSyncResult | null> {
     const result = await coordinator.syncPurchases(input)
     if (result != null) setCustomerInfo(result.customerInfo)
     return result
@@ -174,13 +210,20 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   async function getCustomerInfo(appUserId?: string): Promise<CustomerInfo> {
     return publishCustomerInfoErrorOnFailure(async () => {
       const resolvedAppUserId = appUserId ?? identity.appUserId
-      if (resolvedAppUserId == null || resolvedAppUserId.trim() === '') throw new Error('SubKit appUserId is required')
+      if (resolvedAppUserId == null || resolvedAppUserId.trim() === '')
+        throw new Error('SubKit appUserId is required')
       return setCustomerInfo(await runtime.getCustomerInfo(resolvedAppUserId))
     })
   }
 
-  async function getOfferings(input: { placement?: string } = {}): Promise<RuntimeOfferingsResponse> {
-    const offerings = await runtime.getOfferings({ appUserId: identity.appUserId, placement: input.placement, platform })
+  async function getOfferings(
+    input: { placement?: string } = {},
+  ): Promise<RuntimeOfferingsResponse> {
+    const offerings = await runtime.getOfferings({
+      appUserId: identity.appUserId,
+      placement: input.placement,
+      platform,
+    })
     if (input.placement == null) offeringsCache = offerings
     return offerings
   }
@@ -188,18 +231,42 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   async function purchasePackage(packageId: string): Promise<PurchaseResult> {
     const appUserId = identity.appUserId
     if (appUserId == null || appUserId.trim() === '') {
-      return { error: { code: 'missing_identity', message: 'SubKit appUserId is required before purchase', retryable: false }, status: 'failed' }
+      return {
+        error: {
+          code: 'missing_identity',
+          message: 'SubKit appUserId is required before purchase',
+          retryable: false,
+        },
+        status: 'failed',
+      }
     }
 
     const offerings = offeringsCache ?? (await getOfferings())
     const selected = findOfferingPackage(offerings.all, packageId)
     if (selected == null) {
-      return { error: { code: 'product_unavailable', message: `SubKit package ${packageId} is unavailable`, retryable: false }, status: 'failed' }
+      return {
+        error: {
+          code: 'product_unavailable',
+          message: `SubKit package ${packageId} is unavailable`,
+          retryable: false,
+        },
+        status: 'failed',
+      }
     }
 
-    const productId = platform === 'ios' ? selected.product.storeProductIds.apple : selected.product.storeProductIds.google
+    const productId =
+      platform === 'ios'
+        ? selected.product.storeProductIds.apple
+        : selected.product.storeProductIds.google
     if (productId == null || productId.trim() === '') {
-      return { error: { code: 'product_unavailable', message: `SubKit package ${packageId} has no ${platform} store product`, retryable: false }, status: 'failed' }
+      return {
+        error: {
+          code: 'product_unavailable',
+          message: `SubKit package ${packageId} has no ${platform} store product`,
+          retryable: false,
+        },
+        status: 'failed',
+      }
     }
 
     const hints = customerInfo?.storeIdentityHints ?? currentIdentityHints(identity)
@@ -250,7 +317,12 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   async function startOnce(): Promise<void> {
     await adapterBundle.iap.initConnection()
     const listeners = adapterBundle.listeners
-    if (listeners != null && iapOptions.autoSync && iapOptions.syncOnPurchaseEvent && subscriptions.length === 0) {
+    if (
+      listeners != null &&
+      iapOptions.autoSync &&
+      iapOptions.syncOnPurchaseEvent &&
+      subscriptions.length === 0
+    ) {
       subscriptions.push(
         listeners.addPurchaseUpdatedListener((purchase) => {
           handlePurchaseEvent(purchase).catch((error: unknown) => {
@@ -297,7 +369,9 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
     })
   }
 
-  async function publishCustomerInfoErrorOnFailure<Result>(operation: () => Promise<Result>): Promise<Result> {
+  async function publishCustomerInfoErrorOnFailure<Result>(
+    operation: () => Promise<Result>,
+  ): Promise<Result> {
     try {
       return await operation()
     } catch (error) {
@@ -320,9 +394,14 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   return subKitClient
 }
 
-function findOfferingPackage(offerings: readonly Offering[], packageId: string): Offering['packages'][number] | null {
+function findOfferingPackage(
+  offerings: readonly Offering[],
+  packageId: string,
+): Offering['packages'][number] | null {
   for (const offering of offerings) {
-    const found = offering.packages.find((item) => item.identifier === packageId || item.label === packageId)
+    const found = offering.packages.find(
+      (item) => item.identifier === packageId || item.label === packageId,
+    )
     if (found != null) return found
   }
   return null
@@ -332,7 +411,10 @@ function currentIdentityHints(identity: MemoryIdentityStore): StoreIdentityHints
   return identity.storeIdentityHints
 }
 
-async function startConfiguredSubKitClient(nextClient: SubKitIapClient, logger: SubKitIapLogger | undefined): Promise<void> {
+async function startConfiguredSubKitClient(
+  nextClient: SubKitIapClient,
+  logger: SubKitIapLogger | undefined,
+): Promise<void> {
   try {
     await nextClient.start()
   } catch (error) {
@@ -359,11 +441,14 @@ function createSubKitNotConfiguredError(): Error {
 function resolveSubKitIapOptions(options: ConfigureSubKitOptions['iap']): ResolvedSubKitIapOptions {
   return {
     autoSync: options?.autoSync ?? DEFAULT_SUBKIT_IAP_OPTIONS.autoSync,
-    foregroundMinIntervalMs: options?.foregroundMinIntervalMs ?? DEFAULT_SUBKIT_IAP_OPTIONS.foregroundMinIntervalMs,
-    sessionResumeThresholdMs: options?.sessionResumeThresholdMs ?? DEFAULT_SUBKIT_IAP_OPTIONS.sessionResumeThresholdMs,
+    foregroundMinIntervalMs:
+      options?.foregroundMinIntervalMs ?? DEFAULT_SUBKIT_IAP_OPTIONS.foregroundMinIntervalMs,
+    sessionResumeThresholdMs:
+      options?.sessionResumeThresholdMs ?? DEFAULT_SUBKIT_IAP_OPTIONS.sessionResumeThresholdMs,
     syncOnAppStart: options?.syncOnAppStart ?? DEFAULT_SUBKIT_IAP_OPTIONS.syncOnAppStart,
     syncOnForeground: options?.syncOnForeground ?? DEFAULT_SUBKIT_IAP_OPTIONS.syncOnForeground,
-    syncOnPurchaseEvent: options?.syncOnPurchaseEvent ?? DEFAULT_SUBKIT_IAP_OPTIONS.syncOnPurchaseEvent,
+    syncOnPurchaseEvent:
+      options?.syncOnPurchaseEvent ?? DEFAULT_SUBKIT_IAP_OPTIONS.syncOnPurchaseEvent,
   }
 }
 
@@ -379,11 +464,19 @@ function validateConfigureSubKitOptions(options: ConfigureSubKitOptions): void {
   const apiBaseUrl = options.apiBaseUrl ?? DEFAULT_SUBKIT_API_BASE_URL
   try {
     const parsed = new URL(apiBaseUrl)
-    if (parsed.protocol !== 'https:' && parsed.hostname !== 'localhost' && parsed.hostname !== '127.0.0.1') {
+    if (
+      parsed.protocol !== 'https:' &&
+      parsed.hostname !== 'localhost' &&
+      parsed.hostname !== '127.0.0.1'
+    ) {
       throw new Error('SubKit apiBaseUrl must use HTTPS outside local development')
     }
   } catch (error) {
-    if (error instanceof Error && error.message === 'SubKit apiBaseUrl must use HTTPS outside local development') throw error
+    if (
+      error instanceof Error &&
+      error.message === 'SubKit apiBaseUrl must use HTTPS outside local development'
+    )
+      throw error
     throw new Error('SubKit apiBaseUrl must be a valid URL')
   }
 }
@@ -404,7 +497,11 @@ function purchaseResultFromIapError(error: unknown): PurchaseResult {
 function isCancelledIapError(code: string | undefined, message: string): boolean {
   const normalizedCode = code?.toLowerCase() ?? ''
   const normalizedMessage = message.toLowerCase()
-  return normalizedCode.includes('cancel') || normalizedMessage.includes('cancel') || normalizedCode === 'user_cancelled'
+  return (
+    normalizedCode.includes('cancel') ||
+    normalizedMessage.includes('cancel') ||
+    normalizedCode === 'user_cancelled'
+  )
 }
 
 function createLazyExpoIapAdapterBundle(): SubKitIapAdapterBundle {
@@ -455,10 +552,14 @@ function createLazyExpoIapAdapterBundle(): SubKitIapAdapterBundle {
     iap,
     listeners: {
       addPurchaseErrorListener(listener) {
-        return createLazyListenerSubscription(loadBundle, (bundle) => bundle.listeners?.addPurchaseErrorListener(listener))
+        return createLazyListenerSubscription(loadBundle, (bundle) =>
+          bundle.listeners?.addPurchaseErrorListener(listener),
+        )
       },
       addPurchaseUpdatedListener(listener) {
-        return createLazyListenerSubscription(loadBundle, (bundle) => bundle.listeners?.addPurchaseUpdatedListener(listener))
+        return createLazyListenerSubscription(loadBundle, (bundle) =>
+          bundle.listeners?.addPurchaseUpdatedListener(listener),
+        )
       },
     },
   }

@@ -1,5 +1,6 @@
-import { subKitApiErrorResponseSchema, type SubKitErrorCode } from '@piparotech/subkit-core'
-import { z, type ZodType } from 'zod'
+import { type ZodType, z } from 'zod'
+
+import { type SubKitErrorCode, subKitApiErrorResponseSchema } from '@piparotech/subkit-core'
 
 import { SubKitApiError } from './errors.js'
 import type { SubKitRequestOptions } from './requestOptions.js'
@@ -34,7 +35,10 @@ export class HttpClient {
     this.userAgent = options.userAgent
   }
 
-  async post<ResponseBody>(path: string, options: PostOptions<ResponseBody>): Promise<ResponseBody> {
+  async post<ResponseBody>(
+    path: string,
+    options: PostOptions<ResponseBody>,
+  ): Promise<ResponseBody> {
     const timeoutMs = options.timeoutMs ?? this.timeoutMs
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), timeoutMs)
@@ -67,9 +71,18 @@ export class HttpClient {
     } catch (error) {
       if (error instanceof SubKitApiError) throw error
       if (isAbortError(error)) {
-        throw new SubKitApiError({ code: 'network', message: 'SubKit API request timed out', status: 0 })
+        throw new SubKitApiError({
+          code: 'network',
+          message: 'SubKit API request timed out',
+          status: 0,
+        })
       }
-      throw new SubKitApiError({ code: 'network', details: safeErrorMessage(error), message: 'SubKit API request failed', status: 0 })
+      throw new SubKitApiError({
+        code: 'network',
+        details: safeErrorMessage(error),
+        message: 'SubKit API request failed',
+        status: 0,
+      })
     } finally {
       clearTimeout(timeout)
     }
@@ -120,7 +133,12 @@ function createApiError(status: number, payload: unknown): SubKitApiError {
     return new SubKitApiError({ code: mapStatusToCode(status), message: legacy.data.error, status })
   }
 
-  return new SubKitApiError({ code: mapStatusToCode(status), details: payload, message: `SubKit API request failed with status ${status}`, status })
+  return new SubKitApiError({
+    code: mapStatusToCode(status),
+    details: payload,
+    message: `SubKit API request failed with status ${status}`,
+    status,
+  })
 }
 
 function mapStatusToCode(status: number): SubKitErrorCode {

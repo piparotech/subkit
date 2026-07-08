@@ -6,7 +6,13 @@ export class SubKitApiError extends Error {
   readonly requestId: string | null
   readonly status: number
 
-  constructor(input: { code: SubKitErrorCode; details?: unknown; message: string; requestId?: string | null; status: number }) {
+  constructor(input: {
+    code: SubKitErrorCode
+    details?: unknown
+    message: string
+    requestId?: string | null
+    status: number
+  }) {
     super(input.message)
     this.name = 'SubKitApiError'
     this.code = input.code

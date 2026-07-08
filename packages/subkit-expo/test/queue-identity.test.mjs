@@ -29,7 +29,9 @@ function createRuntimeRecorder() {
       async reconcile(input) {
         calls.push(input)
         return {
-          acceptedPurchases: input.purchases.map((purchase) => purchase.transactionId ?? purchase.storeProductId),
+          acceptedPurchases: input.purchases.map(
+            (purchase) => purchase.transactionId ?? purchase.storeProductId,
+          ),
           checkedAt: '2026-07-01T00:00:00.000Z',
           conflicts: [],
           customerInfo: {
@@ -173,7 +175,10 @@ test('purchase sync coordinator does not reconcile one user pending purchase as 
 
   assert.equal(calls.length, 2)
   assert.equal(calls[0].appUserId, 'user_a')
-  assert.deepEqual(calls[0].purchases.map((purchase) => purchase.transactionId), ['tx_user_a'])
+  assert.deepEqual(
+    calls[0].purchases.map((purchase) => purchase.transactionId),
+    ['tx_user_a'],
+  )
   assert.equal(calls[1].appUserId, 'user_b')
   assert.deepEqual(calls[1].purchases, [])
 })
@@ -208,7 +213,14 @@ test('purchase sync coordinator finishes transactions using the shared queue pur
             purchases: [],
             unclaimedPurchases: [],
           },
-          finishableTransactions: [{ isConsumable: true, purchaseId, store: 'apple_app_store', transactionId: 'tx_user_a' }],
+          finishableTransactions: [
+            {
+              isConsumable: true,
+              purchaseId,
+              store: 'apple_app_store',
+              transactionId: 'tx_user_a',
+            },
+          ],
           rejectedPurchases: [],
           verificationStatus: 'accepted_unverified',
         }
@@ -279,7 +291,15 @@ test('purchase sync coordinator marks rejected purchases as failed instead of re
             unclaimedPurchases: [],
           },
           finishableTransactions: [],
-          rejectedPurchases: [{ code: 'invalid_purchase', message: 'invalid', store: 'apple_app_store', storeProductId: 'pro_monthly', transactionId: 'tx_user_a' }],
+          rejectedPurchases: [
+            {
+              code: 'invalid_purchase',
+              message: 'invalid',
+              store: 'apple_app_store',
+              storeProductId: 'pro_monthly',
+              transactionId: 'tx_user_a',
+            },
+          ],
           verificationStatus: 'failed',
         }
       },

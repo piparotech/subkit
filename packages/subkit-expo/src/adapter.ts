@@ -1,4 +1,9 @@
-import type { SubKitIapProduct, SubKitIapProductType, SubKitIapPurchase, SubKitPurchaseRequest } from './types.js'
+import type {
+  SubKitIapProduct,
+  SubKitIapProductType,
+  SubKitIapPurchase,
+  SubKitPurchaseRequest,
+} from './types.js'
 
 export interface SubKitExpoIapAdapter {
   endConnection?(): Promise<void>
@@ -16,7 +21,9 @@ export interface SubKitPurchaseListenerSubscription {
 
 export interface SubKitPurchaseListenerAdapter {
   addPurchaseErrorListener(listener: (error: unknown) => void): SubKitPurchaseListenerSubscription
-  addPurchaseUpdatedListener(listener: (purchase: SubKitIapPurchase) => void): SubKitPurchaseListenerSubscription
+  addPurchaseUpdatedListener(
+    listener: (purchase: SubKitIapPurchase) => void,
+  ): SubKitPurchaseListenerSubscription
 }
 
 export interface SubKitIapAdapterBundle {
