@@ -1,0 +1,20 @@
+export default {
+  semi: false,
+  singleQuote: true,
+  trailingComma: 'all',
+  printWidth: 100,
+  tabWidth: 2,
+  useTabs: false,
+  plugins: ['@trivago/prettier-plugin-sort-imports', 'prettier-plugin-tailwindcss'],
+  importOrder: [
+    '^react$',
+    '^@tanstack/(.*)$',
+    '<THIRD_PARTY_MODULES>',
+    '^@piparo/(.*)$',
+    '^@piparotech/(.*)$',
+    '^[./]',
+  ],
+  importOrderSeparation: true,
+  importOrderSortSpecifiers: true,
+  importOrderSideEffects: false,
+}
