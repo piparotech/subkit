@@ -1,9 +1,20 @@
-import type { CustomerEntitlement, CustomerInfo, RuntimeCustomerInfoWithAppRequestInput, StoreIdentityHints } from '@piparotech/subkit-core'
 import { and, eq } from 'drizzle-orm'
-
 import { db } from '~/db/client'
+import {
+  appUserStoreIdentities,
+  entitlementGrants,
+  entitlements,
+  products,
+  storePurchaseOwnerships,
+} from '~/db/schema'
 import { ensureDatabaseReady } from '~/db/setup'
-import { appUserStoreIdentities, entitlementGrants, entitlements, products, storePurchaseOwnerships } from '~/db/schema'
+
+import type {
+  CustomerEntitlement,
+  CustomerInfo,
+  RuntimeCustomerInfoWithAppRequestInput,
+  StoreIdentityHints,
+} from '@piparotech/subkit-core'
 
 import { getOrCreateRuntimeAppUser } from './runtime-app-users'
 import {
@@ -15,7 +26,9 @@ import {
   stableUuid,
 } from './runtime-shared'
 
-export async function getRuntimeCustomerInfo(input: RuntimeCustomerInfoWithAppRequestInput): Promise<CustomerInfo> {
+export async function getRuntimeCustomerInfo(
+  input: RuntimeCustomerInfoWithAppRequestInput,
+): Promise<CustomerInfo> {
   await ensureDatabaseReady()
   await assertAppExists(input.appId)
   const { appUser } = await getOrCreateRuntimeAppUser(input.appId, input.appUserId)
@@ -42,7 +55,9 @@ export async function buildCustomerInfo(appId: string, appUser: AppUserRow): Pro
     .where(and(eq(entitlementGrants.appId, appId), eq(entitlementGrants.appUserId, appUser.id)))
 
   const entitlementsByKey: Record<string, CustomerEntitlement> = {}
-  for (const grant of [...grantRows].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())) {
+  for (const grant of [...grantRows].sort(
+    (left, right) => right.createdAt.getTime() - left.createdAt.getTime(),
+  )) {
     const entitlement: CustomerEntitlement = {
       active: isGrantCurrentlyEffective(grant),
       entitlementKey: grant.entitlementKey,
@@ -61,7 +76,12 @@ export async function buildCustomerInfo(appId: string, appUser: AppUserRow): Pro
   const ownershipRows = await db
     .select()
     .from(storePurchaseOwnerships)
-    .where(and(eq(storePurchaseOwnerships.appId, appId), eq(storePurchaseOwnerships.appUserId, appUser.id)))
+    .where(
+      and(
+        eq(storePurchaseOwnerships.appId, appId),
+        eq(storePurchaseOwnerships.appUserId, appUser.id),
+      ),
+    )
 
   const storeIdentityHints = await getOrCreateStoreIdentityHints(appId, appUser)
 
@@ -85,23 +105,46 @@ export async function buildCustomerInfo(appId: string, appUser: AppUserRow): Pro
   }
 }
 
-export function emptyCustomerInfo(appId: string, appUserId: string, checkedAt: string): CustomerInfo {
-  return { appId, appUserId, checkedAt, entitlements: {}, freshness: 'fresh', purchases: [], unclaimedPurchases: [] }
+export function emptyCustomerInfo(
+  appId: string,
+  appUserId: string,
+  checkedAt: string,
+): CustomerInfo {
+  return {
+    appId,
+    appUserId,
+    checkedAt,
+    entitlements: {},
+    freshness: 'fresh',
+    purchases: [],
+    unclaimedPurchases: [],
+  }
 }
 
-async function getOrCreateStoreIdentityHints(appId: string, appUser: AppUserRow): Promise<StoreIdentityHints> {
+async function getOrCreateStoreIdentityHints(
+  appId: string,
+  appUser: AppUserRow,
+): Promise<StoreIdentityHints> {
   const now = new Date()
   const appleId = `${appId}:${appUser.id}:apple`
   const googleId = `${appId}:${appUser.id}:google`
   const existingRows = await db
     .select()
     .from(appUserStoreIdentities)
-    .where(and(eq(appUserStoreIdentities.appId, appId), eq(appUserStoreIdentities.appUserId, appUser.id)))
+    .where(
+      and(
+        eq(appUserStoreIdentities.appId, appId),
+        eq(appUserStoreIdentities.appUserId, appUser.id),
+      ),
+    )
 
   const existingApple = existingRows.find((row) => row.store === 'apple')
   const existingGoogle = existingRows.find((row) => row.store === 'google')
-  const appleToken = existingApple?.appAccountToken ?? stableUuid(`${appId}:apple:${appUser.appUserId}`)
-  const googleAccountId = existingGoogle?.obfuscatedAccountId ?? sha256Hex(`${appId}:google:${appUser.appUserId}`).slice(0, 64)
+  const appleToken =
+    existingApple?.appAccountToken ?? stableUuid(`${appId}:apple:${appUser.appUserId}`)
+  const googleAccountId =
+    existingGoogle?.obfuscatedAccountId ??
+    sha256Hex(`${appId}:google:${appUser.appUserId}`).slice(0, 64)
 
   if (existingApple == null) {
     await db.insert(appUserStoreIdentities).values({
@@ -116,7 +159,10 @@ async function getOrCreateStoreIdentityHints(appId: string, appUser: AppUserRow)
       store: 'apple',
     })
   } else {
-    await db.update(appUserStoreIdentities).set({ lastSeenAt: now }).where(eq(appUserStoreIdentities.id, existingApple.id))
+    await db
+      .update(appUserStoreIdentities)
+      .set({ lastSeenAt: now })
+      .where(eq(appUserStoreIdentities.id, existingApple.id))
   }
 
   if (existingGoogle == null) {
@@ -132,7 +178,10 @@ async function getOrCreateStoreIdentityHints(appId: string, appUser: AppUserRow)
       store: 'google',
     })
   } else {
-    await db.update(appUserStoreIdentities).set({ lastSeenAt: now }).where(eq(appUserStoreIdentities.id, existingGoogle.id))
+    await db
+      .update(appUserStoreIdentities)
+      .set({ lastSeenAt: now })
+      .where(eq(appUserStoreIdentities.id, existingGoogle.id))
   }
 
   return {

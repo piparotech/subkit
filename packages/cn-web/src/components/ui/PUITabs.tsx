@@ -1,5 +1,6 @@
-import * as TabsPrimitive from '@radix-ui/react-tabs'
 import * as React from 'react'
+
+import * as TabsPrimitive from '@radix-ui/react-tabs'
 
 import { cn } from '../../lib/utils'
 import { type PUITabsProps } from './PUITabs.types'
@@ -36,7 +37,7 @@ export function PUITabs({
       <TabsPrimitive.List
         aria-disabled={disabled || undefined}
         className={cn(
-          'relative flex items-stretch gap-1 border-b border-border',
+          'border-border relative flex items-stretch gap-1 border-b',
           disabled && 'pointer-events-none opacity-50',
         )}
       >
@@ -44,11 +45,11 @@ export function PUITabs({
           <TabsPrimitive.Trigger
             className={cn(
               'group relative inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap',
-              'px-3 pb-2.5 pt-2 text-subheadline font-medium transition-colors motion-reduce:transition-none',
+              'text-subheadline px-3 pt-2 pb-2.5 font-medium transition-colors motion-reduce:transition-none',
               'text-muted-foreground hover:text-foreground',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+              'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset',
               'disabled:pointer-events-none disabled:opacity-50',
-              'data-[state=active]:font-semibold data-[state=active]:text-foreground',
+              'data-[state=active]:text-foreground data-[state=active]:font-semibold',
             )}
             disabled={disabled || item.disabled}
             key={item.value}
@@ -63,8 +64,8 @@ export function PUITabs({
             <span
               aria-hidden
               className={cn(
-                'pointer-events-none absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary',
-                'opacity-0 transition-opacity duration-fast motion-reduce:transition-none',
+                'bg-primary pointer-events-none absolute inset-x-0 -bottom-px h-0.5 rounded-full',
+                'duration-fast opacity-0 transition-opacity motion-reduce:transition-none',
                 'group-data-[state=active]:opacity-100',
               )}
             />
@@ -74,7 +75,7 @@ export function PUITabs({
       {items.map((item) => (
         <TabsPrimitive.Content
           className={cn(
-            'text-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            'text-body text-foreground focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
             'data-[state=active]:animate-in data-[state=active]:fade-in-0 motion-reduce:animate-none',
           )}
           key={item.value}
@@ -87,7 +88,9 @@ export function PUITabs({
   )
 }
 
-export interface PUITabsListProps extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> {
+export interface PUITabsListProps extends React.ComponentPropsWithoutRef<
+  typeof TabsPrimitive.List
+> {
   /** When true, the whole strip is dimmed and non-interactive. */
   disabled?: boolean
 }
@@ -107,7 +110,7 @@ export const PUITabsList = React.forwardRef<
       ref={ref}
       aria-disabled={disabled || undefined}
       className={cn(
-        'relative flex items-stretch gap-1 border-b border-border',
+        'border-border relative flex items-stretch gap-1 border-b',
         disabled && 'pointer-events-none opacity-50',
         className,
       )}
@@ -116,8 +119,7 @@ export const PUITabsList = React.forwardRef<
   )
 })
 
-export interface PUITabProps
-  extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> {
+export interface PUITabProps extends React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger> {
   /** Optional leading glyph slot rendered before the children. */
   icon?: React.ReactNode
 }
@@ -137,11 +139,11 @@ export const PUITab = React.forwardRef<
       ref={ref}
       className={cn(
         'group relative inline-flex min-h-11 items-center justify-center gap-2 whitespace-nowrap',
-        'px-3 pb-2.5 pt-2 text-subheadline font-medium transition-colors motion-reduce:transition-none',
+        'text-subheadline px-3 pt-2 pb-2.5 font-medium transition-colors motion-reduce:transition-none',
         'text-muted-foreground hover:text-foreground',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+        'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset',
         'disabled:pointer-events-none disabled:opacity-50',
-        'data-[state=active]:font-semibold data-[state=active]:text-foreground',
+        'data-[state=active]:text-foreground data-[state=active]:font-semibold',
         className,
       )}
       {...props}
@@ -155,8 +157,8 @@ export const PUITab = React.forwardRef<
       <span
         aria-hidden
         className={cn(
-          'pointer-events-none absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary',
-          'opacity-0 transition-opacity duration-fast motion-reduce:transition-none',
+          'bg-primary pointer-events-none absolute inset-x-0 -bottom-px h-0.5 rounded-full',
+          'duration-fast opacity-0 transition-opacity motion-reduce:transition-none',
           'group-data-[state=active]:opacity-100',
         )}
       />
@@ -178,7 +180,7 @@ export const PUITabPanel = React.forwardRef<
     <TabsPrimitive.Content
       ref={ref}
       className={cn(
-        'text-body text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'text-body text-foreground focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
         'data-[state=active]:animate-in data-[state=active]:fade-in-0 motion-reduce:animate-none',
         className,
       )}

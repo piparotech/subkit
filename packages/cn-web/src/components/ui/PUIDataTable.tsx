@@ -1,16 +1,17 @@
-import { ChevronDown, ChevronsUpDown, ChevronUp, Inbox } from 'lucide-react'
 import * as React from 'react'
+
+import { ChevronDown, ChevronUp, ChevronsUpDown, Inbox } from 'lucide-react'
 
 import { cn } from '../../lib/utils'
 import { PUIButton } from './PUIButton'
-import { PUIEmptyState } from './PUIEmptyState'
-import { PUISkeleton } from './PUISkeleton'
 import {
   type PUIDataTableAlign,
   type PUIDataTableColumn,
   type PUIDataTableProps,
   type PUIDataTableSort,
 } from './PUIDataTable.types'
+import { PUIEmptyState } from './PUIEmptyState'
+import { PUISkeleton } from './PUISkeleton'
 
 export type {
   PUIDataTableAlign,
@@ -139,17 +140,22 @@ export function PUIDataTable<TRow>({
   const skeletonRows = loadingRows ?? pageSize ?? 5
   const isEmpty = !loading && sortedData.length === 0
   const rangeStart = paginate && pageSize != null ? (safePage - 1) * pageSize + 1 : 1
-  const rangeEnd = paginate && pageSize != null ? rangeStart + pageRows.length - 1 : sortedData.length
+  const rangeEnd =
+    paginate && pageSize != null ? rangeStart + pageRows.length - 1 : sortedData.length
 
   return (
     <div className={cn('w-full', className)}>
       <div
         className={cn(
-          'w-full overflow-auto rounded-xl border border-border bg-card',
+          'border-border bg-card w-full overflow-auto rounded-xl border',
           stickyHeader && 'max-h-[28rem]',
         )}
       >
-        <table aria-describedby={statusId} aria-labelledby={captionId} className="w-full border-collapse text-start">
+        <table
+          aria-describedby={statusId}
+          aria-labelledby={captionId}
+          className="w-full border-collapse text-start"
+        >
           <caption className={cn('px-4 pt-3 text-start', hideCaption && 'sr-only')} id={captionId}>
             {caption}
           </caption>
@@ -161,7 +167,7 @@ export function PUIDataTable<TRow>({
             </colgroup>
           ) : null}
           <thead>
-            <tr className="border-b border-border">
+            <tr className="border-border border-b">
               {columns.map((column) => {
                 const align = column.align ?? 'start'
                 const isActive = sort?.columnKey === column.key
@@ -177,17 +183,17 @@ export function PUIDataTable<TRow>({
                     key={column.key}
                     aria-sort={ariaSort}
                     className={cn(
-                      'whitespace-nowrap px-4 py-3 text-label font-medium uppercase tracking-wide text-muted-foreground',
+                      'text-label text-muted-foreground px-4 py-3 font-medium tracking-wide whitespace-nowrap uppercase',
                       ALIGN_CELL[align],
-                      stickyHeader && 'sticky top-0 z-10 bg-card',
+                      stickyHeader && 'bg-card sticky top-0 z-10',
                     )}
                     scope="col"
                   >
                     {column.sortable ? (
                       <button
                         className={cn(
-                          'inline-flex min-h-11 w-full items-center gap-1.5 text-label font-medium uppercase tracking-wide transition-colors duration-fast motion-reduce:transition-none',
-                          'hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+                          'text-label duration-fast inline-flex min-h-11 w-full items-center gap-1.5 font-medium tracking-wide uppercase transition-colors motion-reduce:transition-none',
+                          'hover:text-foreground focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset',
                           isActive ? 'text-foreground' : 'text-muted-foreground',
                           ALIGN_HEADER_BUTTON[align],
                         )}
@@ -218,7 +224,7 @@ export function PUIDataTable<TRow>({
               Array.from({ length: skeletonRows }).map((_, rowIndex) => (
                 <tr
                   key={`skeleton-${rowIndex}`}
-                  className={cn(rowIndex > 0 && 'border-t border-border')}
+                  className={cn(rowIndex > 0 && 'border-border border-t')}
                 >
                   {columns.map((column) => (
                     <td key={column.key} className="px-4 py-3">
@@ -233,7 +239,7 @@ export function PUIDataTable<TRow>({
                   {emptyState ?? (
                     <PUIEmptyState
                       description="There is nothing to show here yet."
-                      icon={<Inbox aria-hidden className="size-8 text-muted-foreground" />}
+                      icon={<Inbox aria-hidden className="text-muted-foreground size-8" />}
                       title="No data"
                     />
                   )}
@@ -246,8 +252,8 @@ export function PUIDataTable<TRow>({
                   <tr
                     key={key}
                     className={cn(
-                      'transition-colors duration-fast motion-reduce:transition-none hover:bg-muted',
-                      rowIndex > 0 && 'border-t border-border',
+                      'duration-fast hover:bg-muted transition-colors motion-reduce:transition-none',
+                      rowIndex > 0 && 'border-border border-t',
                       zebra && rowIndex % 2 === 1 && 'bg-muted/40',
                     )}
                   >
@@ -257,7 +263,7 @@ export function PUIDataTable<TRow>({
                         <td
                           key={column.key}
                           className={cn(
-                            'px-4 py-3 align-middle text-subheadline text-card-foreground',
+                            'text-subheadline text-card-foreground px-4 py-3 align-middle',
                             ALIGN_CELL[align],
                           )}
                         >
@@ -298,7 +304,7 @@ export function PUIDataTable<TRow>({
               size="sm"
               variant="outline"
             />
-            <span aria-hidden className="px-1 text-footnote text-muted-foreground">
+            <span aria-hidden className="text-footnote text-muted-foreground px-1">
               {safePage} / {pageCount}
             </span>
             <PUIButton

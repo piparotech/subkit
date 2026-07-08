@@ -1,5 +1,6 @@
-import { ChevronDown } from 'lucide-react'
 import * as React from 'react'
+
+import { ChevronDown } from 'lucide-react'
 
 import { cn } from '../../lib/utils'
 import { PUIText } from './PUIText'
@@ -89,9 +90,9 @@ export function PUIDropdown({
   }
 
   const triggerContent = trigger ?? (
-    <span className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-4 py-2.5 transition-colors duration-fast motion-reduce:transition-none hover:bg-muted">
+    <span className="border-border bg-background duration-fast hover:bg-muted inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border px-4 py-2.5 transition-colors motion-reduce:transition-none">
       <PUIText variant="callout">{triggerLabel}</PUIText>
-      <ChevronDown aria-hidden className="size-4 text-muted-foreground" />
+      <ChevronDown aria-hidden className="text-muted-foreground size-4" />
     </span>
   )
 
@@ -100,7 +101,7 @@ export function PUIDropdown({
       <button
         aria-expanded={open}
         aria-haspopup="menu"
-        className="inline-flex rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+        className="focus-visible:ring-ring inline-flex rounded-lg focus-visible:ring-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50"
         disabled={disabled}
         onClick={() => (open ? close() : setOpen(true))}
         type="button"
@@ -109,7 +110,7 @@ export function PUIDropdown({
       </button>
       {open ? (
         <div
-          className="absolute left-0 z-50 mt-1 min-w-56 overflow-hidden rounded-md border border-border bg-popover py-1 text-popover-foreground shadow-md"
+          className="border-border bg-popover text-popover-foreground absolute left-0 z-50 mt-1 min-w-56 overflow-hidden rounded-md border py-1 shadow-md"
           onKeyDown={onMenuKeyDown}
           role="menu"
         >
@@ -118,7 +119,7 @@ export function PUIDropdown({
               key={item.value}
               className={cn(
                 'flex min-h-11 w-full items-center gap-2.5 px-3 py-2 text-left transition-colors motion-reduce:transition-none',
-                'focus-visible:outline-none hover:bg-muted focus:bg-muted',
+                'hover:bg-muted focus:bg-muted focus-visible:outline-none',
                 item.destructive ? 'text-destructive' : 'text-popover-foreground',
               )}
               onClick={() => select(item.value)}

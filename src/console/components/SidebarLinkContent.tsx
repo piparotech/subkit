@@ -16,7 +16,10 @@ export function SidebarLinkContent({
       <Icon aria-hidden className="size-[16px] shrink-0" />
       <span className="flex-1 truncate">{children}</span>
       {count != null ? (
-        <span aria-label={countLabel} className="rounded-[999px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[6px] py-[1px] font-mono text-[10.5px] text-[var(--subkit-faint)]">
+        <span
+          aria-label={countLabel}
+          className="rounded-[999px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[6px] py-[1px] font-mono text-[10.5px] text-[var(--subkit-faint)]"
+        >
           {count}
         </span>
       ) : null}

@@ -1,8 +1,16 @@
-import { cn } from '@piparo/cn-web'
-
 import { GhostBox } from '~/components/ui/GhostBox'
 
-export function AppUserFact({ label, mono = false, value }: { label: string; mono?: boolean; value: string }) {
+import { cn } from '@piparo/cn-web'
+
+export function AppUserFact({
+  label,
+  mono = false,
+  value,
+}: {
+  label: string
+  mono?: boolean
+  value: string
+}) {
   return (
     <GhostBox>
       <div className="text-[11.5px] text-[var(--subkit-faint)]">{label}</div>

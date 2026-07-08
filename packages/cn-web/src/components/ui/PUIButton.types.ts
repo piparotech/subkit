@@ -9,12 +9,7 @@ import { type ReactNode } from 'react'
  * `destructive`.
  */
 export type PUIButtonVariant =
-  | 'default'
-  | 'secondary'
-  | 'destructive'
-  | 'outline'
-  | 'ghost'
-  | 'onBrand'
+  'default' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'onBrand'
 
 /** `icon` is a square size for icon-only buttons (`h-11 w-11`). `xs` is Uber xSmall (inline/supporting). */
 export type PUIButtonSize = 'default' | 'sm' | 'lg' | 'icon' | 'xs'

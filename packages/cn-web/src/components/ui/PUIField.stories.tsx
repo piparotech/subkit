@@ -1,11 +1,17 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
+
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import { PUIField, PUIForm } from './PUIField'
 import { PUIInput } from './PUIInput'
 import { PUISelect } from './PUISelect'
 
-function FieldWithInput(props: { label: string; hint?: string; error?: string; disabled?: boolean }) {
+function FieldWithInput(props: {
+  label: string
+  hint?: string
+  error?: string
+  disabled?: boolean
+}) {
   const [value, setValue] = useState('')
   return (
     <PUIField {...props}>

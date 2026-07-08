@@ -1,4 +1,5 @@
-export type AppStoreConnectConnectionStatus = 'connected' | 'needs_attention' | 'invalid' | 'deleted'
+export type AppStoreConnectConnectionStatus =
+  'connected' | 'needs_attention' | 'invalid' | 'deleted'
 export type AppStoreConnectCapabilityStatus = 'available' | 'missing' | 'unknown'
 export type AppStoreConnectProductSyncAction = 'create' | 'update' | 'unchanged' | 'conflict'
 

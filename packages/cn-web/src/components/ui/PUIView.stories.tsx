@@ -35,7 +35,7 @@ export const Variants: Story = {
       <PUIView className="rounded-lg p-4" variant="muted">
         <PUIText>muted</PUIText>
       </PUIView>
-      <PUIView className="rounded-lg border border-border p-4" variant="card">
+      <PUIView className="border-border rounded-lg border p-4" variant="card">
         <PUIText>card</PUIText>
       </PUIView>
     </div>

@@ -1,5 +1,4 @@
 import { desc, eq } from 'drizzle-orm'
-
 import { db } from '~/db/client'
 import {
   appStoreConnectAuditEvents,
@@ -7,15 +6,26 @@ import {
   appStoreConnectCredentials,
   appStoreConnectSalesReports,
 } from '~/db/schema'
+import type {
+  AppStoreConnectCapability,
+  AppStoreConnectConnection,
+} from '~/integrations/app-store-connect/types'
 
-import type { AppStoreConnectCapability, AppStoreConnectConnection } from '~/integrations/app-store-connect/types'
-
-export async function readAppStoreConnectConnectionForTenant(tenantId: string): Promise<AppStoreConnectConnection | null> {
-  const [credential] = await db.select().from(appStoreConnectCredentials).where(eq(appStoreConnectCredentials.tenantId, tenantId)).limit(1)
+export async function readAppStoreConnectConnectionForTenant(
+  tenantId: string,
+): Promise<AppStoreConnectConnection | null> {
+  const [credential] = await db
+    .select()
+    .from(appStoreConnectCredentials)
+    .where(eq(appStoreConnectCredentials.tenantId, tenantId))
+    .limit(1)
   if (credential == null) return null
 
   const [capabilityRows, reportRows, auditRows] = await Promise.all([
-    db.select().from(appStoreConnectCapabilities).where(eq(appStoreConnectCapabilities.credentialId, credential.id)),
+    db
+      .select()
+      .from(appStoreConnectCapabilities)
+      .where(eq(appStoreConnectCapabilities.credentialId, credential.id)),
     db
       .select({
         createdAt: appStoreConnectSalesReports.createdAt,
@@ -61,10 +71,12 @@ export async function readAppStoreConnectConnectionForTenant(tenantId: string): 
     hasPrivateKey: credential.privateKeyCiphertext != null,
     id: credential.id,
     issuerId: credential.issuerId,
-    keyFingerprint: credential.privateKeySha256 == null ? null : credential.privateKeySha256.slice(0, 16),
+    keyFingerprint:
+      credential.privateKeySha256 == null ? null : credential.privateKeySha256.slice(0, 16),
     keyId: credential.keyId,
     lastError: credential.lastError,
-    lastValidatedAt: credential.lastValidatedAt == null ? null : formatDateTime(credential.lastValidatedAt),
+    lastValidatedAt:
+      credential.lastValidatedAt == null ? null : formatDateTime(credential.lastValidatedAt),
     salesReports: reportRows.map((report) => ({
       createdAt: formatDateTime(report.createdAt),
       errorDetail: report.errorDetail,

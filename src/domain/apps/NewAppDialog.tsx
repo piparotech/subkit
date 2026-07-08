@@ -1,8 +1,11 @@
-import { PUIButton, PUIText } from '@piparo/cn-web'
-
 import { NewAppForm } from '~/domain/apps/NewAppForm'
 import type { AppDraft, AppDraftField } from '~/domain/apps/types'
-import type { AppStoreConnectAccessibleApp, AppStoreConnectConnection } from '~/integrations/app-store-connect/types'
+import type {
+  AppStoreConnectAccessibleApp,
+  AppStoreConnectConnection,
+} from '~/integrations/app-store-connect/types'
+
+import { PUIButton, PUIText } from '@piparo/cn-web'
 
 export function NewAppDialog({
   appStoreApps,
@@ -30,7 +33,7 @@ export function NewAppDialog({
       <div
         aria-label="Create app"
         aria-modal="true"
-        className="w-[620px] max-w-full overflow-hidden rounded-[16px] bg-[var(--subkit-panel)] shadow-[0_24px_60px_-16px_rgba(20,20,50,0.4)] animate-[subkit-pop-in_180ms_ease]"
+        className="w-[620px] max-w-full animate-[subkit-pop-in_180ms_ease] overflow-hidden rounded-[16px] bg-[var(--subkit-panel)] shadow-[0_24px_60px_-16px_rgba(20,20,50,0.4)]"
         role="dialog"
         tabIndex={-1}
       >
@@ -38,7 +41,9 @@ export function NewAppDialog({
           <PUIText as="h2" className="text-[18px] font-bold" variant="title3">
             Create iOS app
           </PUIText>
-          <div className="mt-[4px] text-[13px] text-[var(--subkit-dim)]">Select an app from App Store Connect using the workspace API key.</div>
+          <div className="mt-[4px] text-[13px] text-[var(--subkit-dim)]">
+            Select an app from App Store Connect using the workspace API key.
+          </div>
         </div>
         <div className="px-[24px] py-[18px]">
           <NewAppForm
@@ -53,7 +58,12 @@ export function NewAppDialog({
         </div>
         <div className="flex justify-end gap-[10px] border-t border-[var(--subkit-border)] px-[24px] py-[16px]">
           <PUIButton className="rounded-[9px]" label="Cancel" onPress={onClose} variant="outline" />
-          <PUIButton className="rounded-[9px]" disabled={draft.appleAppId.trim() === ''} label="Create app" onPress={onCreate} />
+          <PUIButton
+            className="rounded-[9px]"
+            disabled={draft.appleAppId.trim() === ''}
+            label="Create app"
+            onPress={onCreate}
+          />
         </div>
       </div>
     </div>

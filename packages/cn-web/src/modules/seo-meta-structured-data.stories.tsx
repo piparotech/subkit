@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import {
   PUIBadge,
   PUIButton,
@@ -24,6 +22,7 @@ import {
   resolveSeoConfig,
   websiteLd,
 } from '@/lib/seo-meta-structured-data'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import { seededPages, seededSeoConfig, seededSitemapEntries } from './mock-seo-meta-structured-data'
 

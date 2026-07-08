@@ -1,9 +1,8 @@
 import { createServerFn } from '@tanstack/react-start'
+
 import { and, eq } from 'drizzle-orm'
 import { z } from 'zod'
-
 import { db } from '~/db/client'
-import { ensureDatabaseReady } from '~/db/setup'
 import {
   entitlements,
   prices,
@@ -13,6 +12,7 @@ import {
   products,
   storeProductBindings,
 } from '~/db/schema'
+import { ensureDatabaseReady } from '~/db/setup'
 
 import { getCurrentConsoleUser, requireAccessibleApp } from './access'
 import { centsToAmountMicros } from './format'
@@ -50,7 +50,11 @@ function productPlanRowId(productId: string, planKey: string): string {
   return `${productId}:plan:${planKey}`
 }
 
-function priceRowId(productPlanId: string, currencyCode: string, countryCode: string | null): string {
+function priceRowId(
+  productPlanId: string,
+  currencyCode: string,
+  countryCode: string | null,
+): string {
   return `${productPlanId}:price:${currencyCode}:${countryCode ?? 'global'}`
 }
 
@@ -58,7 +62,12 @@ function productEntitlementRowId(productId: string, entitlementId: string): stri
   return `${productId}:entitlement:${entitlementId}`
 }
 
-function storeBindingRowId(productPlanId: string, store: 'apple' | 'google', externalProductId: string, basePlanId: string): string {
+function storeBindingRowId(
+  productPlanId: string,
+  store: 'apple' | 'google',
+  externalProductId: string,
+  basePlanId: string,
+): string {
   return `${productPlanId}:binding:${store}:${externalProductId}:${basePlanId || 'default'}`
 }
 
@@ -228,7 +237,9 @@ export const upsertProductRecord = createServerFn({ method: 'POST' })
             target: [productOffers.productPlanId, productOffers.key],
           })
       } else {
-        await tx.delete(productOffers).where(and(eq(productOffers.productPlanId, planId), eq(productOffers.key, 'free-trial')))
+        await tx
+          .delete(productOffers)
+          .where(and(eq(productOffers.productPlanId, planId), eq(productOffers.key, 'free-trial')))
       }
 
       if (data.appleProductId != null && data.appleProductId.trim() !== '') {
@@ -262,7 +273,13 @@ export const upsertProductRecord = createServerFn({ method: 'POST' })
               productPlanId: planId,
               updatedAt: now,
             },
-            target: [storeProductBindings.appId, storeProductBindings.store, storeProductBindings.externalProductId, storeProductBindings.externalBasePlanId, storeProductBindings.environment],
+            target: [
+              storeProductBindings.appId,
+              storeProductBindings.store,
+              storeProductBindings.externalProductId,
+              storeProductBindings.externalBasePlanId,
+              storeProductBindings.environment,
+            ],
           })
       }
 
@@ -300,7 +317,13 @@ export const upsertProductRecord = createServerFn({ method: 'POST' })
               productPlanId: planId,
               updatedAt: now,
             },
-            target: [storeProductBindings.appId, storeProductBindings.store, storeProductBindings.externalProductId, storeProductBindings.externalBasePlanId, storeProductBindings.environment],
+            target: [
+              storeProductBindings.appId,
+              storeProductBindings.store,
+              storeProductBindings.externalProductId,
+              storeProductBindings.externalBasePlanId,
+              storeProductBindings.environment,
+            ],
           })
       }
     })

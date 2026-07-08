@@ -1,7 +1,5 @@
 import { useCallback, useId, useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import { PUIBadge, PUIButton, PUILinkText, PUISwitch, PUIText } from '@/components/ui'
 import {
   type ConsentCategory,
@@ -14,6 +12,7 @@ import {
   isDecided,
   rejectAll,
 } from '@/lib/consent-management'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import { DEMO_SDKS, createMockConsentStore, createMockGateManager } from './mock-consent-management'
 

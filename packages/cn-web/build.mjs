@@ -11,8 +11,8 @@
 //
 // Host is REGISTRY_URL (default https://cn.piparo.tech/r/) so the registry is re-targetable; the
 // source is never mutated.
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from 'node:fs'
-import { join, basename, dirname } from 'node:path'
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { basename, dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = dirname(fileURLToPath(import.meta.url))
@@ -33,14 +33,17 @@ const kebab = (name) =>
 let nativeMeta = {}
 try {
   const nat = JSON.parse(readFileSync(join(ROOT, '../cn-native/registry.json'), 'utf8'))
-  nativeMeta = Object.fromEntries(nat.items.map((i) => [i.name, { title: i.title, description: i.description }]))
+  nativeMeta = Object.fromEntries(
+    nat.items.map((i) => [i.name, { title: i.title, description: i.description }]),
+  )
 } catch {
   // cn-native registry.json optional
 }
 
 // Descriptions for web-only items that have no cn-native twin.
 const WEB_DESC = {
-  'pui-data-table': 'Sortable, paginated data table with typed column defs, loading/empty states and row actions.',
+  'pui-data-table':
+    'Sortable, paginated data table with typed column defs, loading/empty states and row actions.',
 }
 
 // npm packages that are runtime deps when imported (react-dom is a peer added implicitly by react).
@@ -83,16 +86,29 @@ items.push({
   title: 'PUI Utils',
   description: 'Token-aware className merge (cn) for PUI web components.',
   dependencies: ['clsx', 'tailwind-merge'],
-  files: [{ src: join(SRC, 'lib/utils.ts'), out: 'utils.ts', target: 'components/ui/utils.ts', type: 'registry:lib' }],
+  files: [
+    {
+      src: join(SRC, 'lib/utils.ts'),
+      out: 'utils.ts',
+      target: 'components/ui/utils.ts',
+      type: 'registry:lib',
+    },
+  ],
 })
 items.push({
   name: 'pui-display-scale',
   type: 'registry:hook',
   title: 'PUI Display Scale',
-  description: 'ADR 0022 web display scaling: useDisplayScale / useApplyDisplayScale drive --ui-scale.',
+  description:
+    'ADR 0022 web display scaling: useDisplayScale / useApplyDisplayScale drive --ui-scale.',
   dependencies: ['react'],
   files: [
-    { src: join(SRC, 'lib/useDisplayScale.ts'), out: 'useDisplayScale.ts', target: 'components/ui/useDisplayScale.ts', type: 'registry:hook' },
+    {
+      src: join(SRC, 'lib/useDisplayScale.ts'),
+      out: 'useDisplayScale.ts',
+      target: 'components/ui/useDisplayScale.ts',
+      type: 'registry:hook',
+    },
   ],
 })
 
@@ -104,9 +120,24 @@ items.push({
   description: 'Tailwind v4 entry: token CSS vars + the shared @theme mapping + tw-animate-css.',
   dependencies: ['tailwindcss', 'tw-animate-css'],
   files: [
-    { src: join(SRC, 'index.css'), out: 'index.css', target: 'app/index.css', type: 'registry:style' },
-    { src: join(SRC, 'piparo-theme.css'), out: 'piparo-theme.css', target: 'app/piparo-theme.css', type: 'registry:style' },
-    { src: join(SRC, 'theme.css'), out: 'theme.css', target: 'app/theme.css', type: 'registry:style' },
+    {
+      src: join(SRC, 'index.css'),
+      out: 'index.css',
+      target: 'app/index.css',
+      type: 'registry:style',
+    },
+    {
+      src: join(SRC, 'piparo-theme.css'),
+      out: 'piparo-theme.css',
+      target: 'app/piparo-theme.css',
+      type: 'registry:style',
+    },
+    {
+      src: join(SRC, 'theme.css'),
+      out: 'theme.css',
+      target: 'app/theme.css',
+      type: 'registry:style',
+    },
   ],
 })
 
@@ -116,12 +147,21 @@ for (const file of componentFiles) {
   const code = readFileSync(join(UI, file), 'utf8')
   const { npm, deps } = parse(code)
   const itemName = kebab(name)
-  const files = [{ src: join(UI, file), out: file, target: `components/ui/${file}`, type: 'registry:ui' }]
+  const files = [
+    { src: join(UI, file), out: file, target: `components/ui/${file}`, type: 'registry:ui' },
+  ]
   const typesFile = `${name}.types.ts`
   if (existsSync(join(UI, typesFile))) {
-    files.push({ src: join(UI, typesFile), out: typesFile, target: `components/ui/${typesFile}`, type: 'registry:ui' })
+    files.push({
+      src: join(UI, typesFile),
+      out: typesFile,
+      target: `components/ui/${typesFile}`,
+      type: 'registry:ui',
+    })
     // a co-located .types may import sibling component types; not a separate registry dep
-    for (const m of readFileSync(join(UI, typesFile), 'utf8').matchAll(/from\s+['"]([^'"]+)['"]/g)) {
+    for (const m of readFileSync(join(UI, typesFile), 'utf8').matchAll(
+      /from\s+['"]([^'"]+)['"]/g,
+    )) {
       if (isNpm(m[1])) npm.add(m[1])
     }
   }
@@ -145,7 +185,10 @@ const ownNames = new Set(items.map((i) => i.name))
 // Flatten relative imports to './<basename>'; keep local token CSS imports pointed at copied files.
 const flatten = (code) =>
   code
-    .replace(/(from\s+['"])(\.\.?\/[^'"]+)(['"])/g, (_m, pre, spec, post) => `${pre}./${basename(spec)}${post}`)
+    .replace(
+      /(from\s+['"])(\.\.?\/[^'"]+)(['"])/g,
+      (_m, pre, spec, post) => `${pre}./${basename(spec)}${post}`,
+    )
     .replace(/(@import\s+['"])\.\/piparo-theme\.css(['"])/g, '$1./piparo-theme.css$2')
     .replace(/(@import\s+['"])\.\/theme\.css(['"])/g, '$1./theme.css$2')
 

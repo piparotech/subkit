@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 import { AppRouteView } from '~/console/AppRouteView'
-import { DashboardView } from '~/domain/dashboard/DashboardView'
 import type { AppConsoleViewRenderProps } from '~/console/types'
+import { DashboardView } from '~/domain/dashboard/DashboardView'
 
 export const Route = createFileRoute('/_console/$tenantSlug/$appSlug/')({
   component: DashboardRoute,

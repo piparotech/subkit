@@ -1,14 +1,26 @@
-import type { StoreIdentityHints } from '@piparotech/subkit-core'
 import { and, eq } from 'drizzle-orm'
-
 import { db } from '~/db/client'
 import { appUserStoreIdentities, appUsers } from '~/db/schema'
 
-import { type AppUserRow, type RuntimeAppUserContext, type RuntimeStore, runtimeAppUserId } from './runtime-shared'
+import type { StoreIdentityHints } from '@piparotech/subkit-core'
 
-export async function getOrCreateRuntimeAppUser(appId: string, appUserId: string): Promise<RuntimeAppUserContext> {
+import {
+  type AppUserRow,
+  type RuntimeAppUserContext,
+  type RuntimeStore,
+  runtimeAppUserId,
+} from './runtime-shared'
+
+export async function getOrCreateRuntimeAppUser(
+  appId: string,
+  appUserId: string,
+): Promise<RuntimeAppUserContext> {
   const now = new Date()
-  const [existing] = await db.select().from(appUsers).where(and(eq(appUsers.appId, appId), eq(appUsers.appUserId, appUserId))).limit(1)
+  const [existing] = await db
+    .select()
+    .from(appUsers)
+    .where(and(eq(appUsers.appId, appId), eq(appUsers.appUserId, appUserId)))
+    .limit(1)
   if (existing != null) {
     await db.update(appUsers).set({ lastSeenAt: now }).where(eq(appUsers.id, existing.id))
     return { appUser: { ...existing, lastSeenAt: now }, created: false }
@@ -27,8 +39,13 @@ export async function getOrCreateRuntimeAppUser(appId: string, appUserId: string
   return { appUser, created: true }
 }
 
-export async function resolveRuntimeAppUser(appId: string, appUserId: string | undefined, storeIdentities: StoreIdentityHints | undefined): Promise<RuntimeAppUserContext | null> {
-  if (appUserId != null && appUserId.trim() !== '') return getOrCreateRuntimeAppUser(appId, appUserId)
+export async function resolveRuntimeAppUser(
+  appId: string,
+  appUserId: string | undefined,
+  storeIdentities: StoreIdentityHints | undefined,
+): Promise<RuntimeAppUserContext | null> {
+  if (appUserId != null && appUserId.trim() !== '')
+    return getOrCreateRuntimeAppUser(appId, appUserId)
 
   const appleToken = storeIdentities?.apple?.appAccountToken
   if (appleToken != null && appleToken.trim() !== '') {
@@ -45,7 +62,11 @@ export async function resolveRuntimeAppUser(appId: string, appUserId: string | u
   return null
 }
 
-async function findRuntimeAppUserByStoreIdentity(appId: string, store: RuntimeStore, identifier: string): Promise<RuntimeAppUserContext | null> {
+async function findRuntimeAppUserByStoreIdentity(
+  appId: string,
+  store: RuntimeStore,
+  identifier: string,
+): Promise<RuntimeAppUserContext | null> {
   const [row] = await db
     .select({ appUser: appUsers })
     .from(appUserStoreIdentities)
@@ -54,7 +75,9 @@ async function findRuntimeAppUserByStoreIdentity(appId: string, store: RuntimeSt
       and(
         eq(appUserStoreIdentities.appId, appId),
         eq(appUserStoreIdentities.store, store),
-        store === 'apple' ? eq(appUserStoreIdentities.appAccountToken, identifier) : eq(appUserStoreIdentities.obfuscatedAccountId, identifier),
+        store === 'apple'
+          ? eq(appUserStoreIdentities.appAccountToken, identifier)
+          : eq(appUserStoreIdentities.obfuscatedAccountId, identifier),
       ),
     )
     .limit(1)

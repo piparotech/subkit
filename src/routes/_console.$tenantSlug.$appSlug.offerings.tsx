@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 import { AppRouteView } from '~/console/AppRouteView'
-import { OfferingsView } from '~/domain/offerings/OfferingsView'
 import type { AppConsoleViewRenderProps } from '~/console/types'
+import { OfferingsView } from '~/domain/offerings/OfferingsView'
 
 export const Route = createFileRoute('/_console/$tenantSlug/$appSlug/offerings')({
   component: OfferingsRoute,

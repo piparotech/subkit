@@ -29,7 +29,12 @@ export function StoreMapping({
         placeholder="App Store product ID"
         value={value}
       />
-      <PUIInput className="font-mono" onChange={(event) => onPriceChange(event.target.value)} placeholder="Price" value={price} />
+      <PUIInput
+        className="font-mono"
+        onChange={(event) => onPriceChange(event.target.value)}
+        placeholder="Price"
+        value={price}
+      />
     </div>
   )
 }

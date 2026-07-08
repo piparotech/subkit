@@ -1,8 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Clock, Sparkles } from 'lucide-react'
-
 import {
   PUIBadge,
   PUIButton,
@@ -20,6 +17,8 @@ import {
   readMarker,
   runPipeline,
 } from '@/lib/i18n-translation-pipeline'
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { Clock, Sparkles } from 'lucide-react'
 
 import {
   DEMO_BATCH_SIZE,

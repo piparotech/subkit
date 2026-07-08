@@ -4,7 +4,11 @@ import { ensureDatabaseReady } from '~/db/setup'
 import { findOrCreateUserFromClaims } from '~/server/auth/current-user'
 import { redirectResponse } from '~/server/auth/http'
 import { exchangeCodeForClaims } from '~/server/auth/oidc'
-import { clearAuthCookies, getLoginChallengeSession, setAuthenticatedSession } from '~/server/auth/session'
+import {
+  clearAuthCookies,
+  getLoginChallengeSession,
+  setAuthenticatedSession,
+} from '~/server/auth/session'
 
 export const Route = createFileRoute('/auth/callback')({
   server: {
@@ -27,7 +31,12 @@ export const Route = createFileRoute('/auth/callback')({
           return redirectToLogin(url.origin, 'invalid_state')
         }
 
-        if (!challenge.codeVerifier || !challenge.nonce || !challenge.method || !challenge.returnTo) {
+        if (
+          !challenge.codeVerifier ||
+          !challenge.nonce ||
+          !challenge.method ||
+          !challenge.returnTo
+        ) {
           await clearAuthCookies()
           return redirectToLogin(url.origin, 'expired')
         }

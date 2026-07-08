@@ -1,7 +1,5 @@
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import {
   PUIAvatar,
   PUIBadge,
@@ -21,6 +19,7 @@ import {
   emptyProfile,
   validateField,
 } from '@/lib/profile-basic'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import {
   MOCK_BASE_URL,

@@ -1,6 +1,5 @@
 import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
-
 import { parseServerEnv } from '~/server/env'
 
 import * as schema from './schema'

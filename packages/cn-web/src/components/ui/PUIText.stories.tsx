@@ -51,7 +51,10 @@ export const Tones: Story = {
   render: () => (
     <div className="flex flex-col items-start gap-2">
       {TONES.map((tone) => (
-        <span key={tone} className={tone === 'inverse' ? 'rounded-md bg-foreground p-2' : undefined}>
+        <span
+          key={tone}
+          className={tone === 'inverse' ? 'bg-foreground rounded-md p-2' : undefined}
+        >
           <PUIText tone={tone}>{tone}</PUIText>
         </span>
       ))}

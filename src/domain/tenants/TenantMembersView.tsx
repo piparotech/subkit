@@ -1,12 +1,13 @@
-import { PUIInput } from '@piparo/cn-web'
 import * as React from 'react'
 
 import { ActionButton } from '~/components/ui/ActionButton'
 import { Notice } from '~/components/ui/Notice'
-import { RoleSelect } from '~/domain/tenants/RoleSelect'
-import { inviteTenantMember, removeTenantMember, updateTenantMemberRole } from '~/console/server'
-import type { TenantMemberSummary, TenantRole, WorkspaceTenant } from '~/domain/tenants/types'
 import { ViewTitle } from '~/components/ui/ViewTitle'
+import { inviteTenantMember, removeTenantMember, updateTenantMemberRole } from '~/console/server'
+import { RoleSelect } from '~/domain/tenants/RoleSelect'
+import type { TenantMemberSummary, TenantRole, WorkspaceTenant } from '~/domain/tenants/types'
+
+import { PUIInput } from '@piparo/cn-web'
 
 export function TenantMembersView({
   isFiltering,
@@ -80,10 +81,23 @@ export function TenantMembersView({
             type="email"
             value={memberEmail}
           />
-          <RoleSelect disabled={busy != null || !canManageTenant} onChange={setMemberRole} value={memberRole} />
-          <ActionButton disabled={busy != null || !canManageTenant || memberEmail.trim() === ''} label="Invite user" onPress={inviteMember} tone="primary" />
+          <RoleSelect
+            disabled={busy != null || !canManageTenant}
+            onChange={setMemberRole}
+            value={memberRole}
+          />
+          <ActionButton
+            disabled={busy != null || !canManageTenant || memberEmail.trim() === ''}
+            label="Invite user"
+            onPress={inviteMember}
+            tone="primary"
+          />
         </div>
-        {!canManageTenant ? <Notice tone="warning">Only workspace Admins and SuperAdmins can invite or change workspace members.</Notice> : null}
+        {!canManageTenant ? (
+          <Notice tone="warning">
+            Only workspace Admins and SuperAdmins can invite or change workspace members.
+          </Notice>
+        ) : null}
         {feedback != null ? <Notice>{feedback}</Notice> : null}
       </div>
 
@@ -94,14 +108,32 @@ export function TenantMembersView({
           </div>
         ) : (
           tenantMemberRows.map((member) => (
-            <div className="grid grid-cols-[1fr_auto_auto] items-center gap-[10px] border-b border-[var(--subkit-border)] px-[16px] py-[13px] text-[12px] last:border-b-0 max-md:grid-cols-1" key={member.userId}>
+            <div
+              className="grid grid-cols-[1fr_auto_auto] items-center gap-[10px] border-b border-[var(--subkit-border)] px-[16px] py-[13px] text-[12px] last:border-b-0 max-md:grid-cols-1"
+              key={member.userId}
+            >
               <div className="min-w-0">
-                <div className="truncate font-semibold text-[var(--subkit-text)]">{member.name}</div>
-                <div className="truncate font-mono text-[11.5px] text-[var(--subkit-faint)]">{member.email ?? member.userId}</div>
-                <div className="mt-[2px] truncate text-[11px] text-[var(--subkit-faint)]">{member.organization} · added {member.createdAt}</div>
+                <div className="truncate font-semibold text-[var(--subkit-text)]">
+                  {member.name}
+                </div>
+                <div className="truncate font-mono text-[11.5px] text-[var(--subkit-faint)]">
+                  {member.email ?? member.userId}
+                </div>
+                <div className="mt-[2px] truncate text-[11px] text-[var(--subkit-faint)]">
+                  {member.organization} · added {member.createdAt}
+                </div>
               </div>
-              <RoleSelect disabled={busy != null || !canManageTenant || member.globalRole === 'super_admin'} onChange={(role) => changeMemberRole(member, role)} value={member.role} />
-              <ActionButton disabled={busy != null || !canManageTenant || member.globalRole === 'super_admin'} label="Remove" onPress={() => removeMember(member)} tone="danger" />
+              <RoleSelect
+                disabled={busy != null || !canManageTenant || member.globalRole === 'super_admin'}
+                onChange={(role) => changeMemberRole(member, role)}
+                value={member.role}
+              />
+              <ActionButton
+                disabled={busy != null || !canManageTenant || member.globalRole === 'super_admin'}
+                label="Remove"
+                onPress={() => removeMember(member)}
+                tone="danger"
+              />
             </div>
           ))
         )}
@@ -109,4 +141,3 @@ export function TenantMembersView({
     </section>
   )
 }
-

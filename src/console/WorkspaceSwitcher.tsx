@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router'
 
+import { appRouteParams } from '~/console/routing'
 import { AppAvatar } from '~/domain/apps/AppAvatar'
 import { MiniAppAvatar } from '~/domain/apps/MiniAppAvatar'
-import { appRouteParams } from '~/console/routing'
 import type { AppTenant } from '~/domain/apps/types'
 import type { WorkspaceTenant } from '~/domain/tenants/types'
 
@@ -20,8 +20,8 @@ export function WorkspaceSwitcher({
   tenants: WorkspaceTenant[]
 }) {
   return (
-    <div className="absolute left-[14px] right-[14px] top-[54px] z-40 animate-[subkit-drop-in_140ms_ease] rounded-[12px] border border-[var(--subkit-border-2)] bg-[var(--subkit-panel)] p-[6px] shadow-[0_12px_32px_-8px_rgba(20,20,40,0.18)]">
-      <div className="px-[8px] pb-[4px] pt-[6px] text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--subkit-faint)]">
+    <div className="absolute top-[54px] right-[14px] left-[14px] z-40 animate-[subkit-drop-in_140ms_ease] rounded-[12px] border border-[var(--subkit-border-2)] bg-[var(--subkit-panel)] p-[6px] shadow-[0_12px_32px_-8px_rgba(20,20,40,0.18)]">
+      <div className="px-[8px] pt-[6px] pb-[4px] text-[10.5px] font-semibold tracking-[0.06em] text-[var(--subkit-faint)] uppercase">
         Workspaces
       </div>
       {tenants.map((item) => (
@@ -34,12 +34,14 @@ export function WorkspaceSwitcher({
           <MiniAppAvatar color={item.color} initials={item.initials} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-[12.5px] font-semibold">{item.name}</div>
-            <div className="truncate text-[10.5px] text-[var(--subkit-faint)]">{item.role === 'super_admin' ? 'SuperAdmin access' : item.role}</div>
+            <div className="truncate text-[10.5px] text-[var(--subkit-faint)]">
+              {item.role === 'super_admin' ? 'SuperAdmin access' : item.role}
+            </div>
           </div>
         </button>
       ))}
       <div className="mx-[4px] my-[5px] h-px bg-[var(--subkit-border)]" />
-      <div className="px-[8px] pb-[4px] pt-[4px] text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[var(--subkit-faint)]">
+      <div className="px-[8px] pt-[4px] pb-[4px] text-[10.5px] font-semibold tracking-[0.06em] text-[var(--subkit-faint)] uppercase">
         Switch app
       </div>
       {apps.slice(0, 8).map((app) => (
@@ -53,7 +55,9 @@ export function WorkspaceSwitcher({
           <AppAvatar app={app} size="sm" />
           <span className="min-w-0 flex-1 text-[13px] font-medium">
             <span className="block truncate">{app.name}</span>
-            <span className="block truncate text-[10.5px] font-normal text-[var(--subkit-faint)]">{app.tenantId}</span>
+            <span className="block truncate text-[10.5px] font-normal text-[var(--subkit-faint)]">
+              {app.tenantId}
+            </span>
           </span>
         </Link>
       ))}

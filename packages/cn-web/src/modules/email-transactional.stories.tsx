@@ -1,7 +1,5 @@
 import { type ReactNode, useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import {
   PUIBadge,
   PUIButton,
@@ -21,6 +19,7 @@ import {
   resolveLocale,
   templates,
 } from '@/lib/email-transactional'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import {
   FALLBACK_LOCALE,
@@ -114,8 +113,7 @@ function MailPreview({ templateId, locale }: { templateId: TemplateId; locale: s
 // --- outbox: every transport attempt, the way the platform's send log records it -------------------
 
 type OutboxEntry = { key: number } & (
-  | { outcome: TriggerResponse }
-  | { error: string; templateId: TemplateId }
+  { outcome: TriggerResponse } | { error: string; templateId: TemplateId }
 )
 
 function OutcomeBadge({ status }: { status: TriggerResponse['status'] }) {

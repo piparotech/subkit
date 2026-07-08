@@ -13,14 +13,19 @@ export function initialsForName(name: string): string {
   const clean = name.trim()
   if (!clean) throw new Error('App name is required')
   const parts = clean.split(/\s+/).filter(Boolean)
-  if (parts.length === 1) return parts[0]?.slice(0, 2).toUpperCase() ?? clean.slice(0, 2).toUpperCase()
+  if (parts.length === 1)
+    return parts[0]?.slice(0, 2).toUpperCase() ?? clean.slice(0, 2).toUpperCase()
   return parts
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('')
 }
 
-export function createAppFromDraft(draft: AppDraft, existingCount: number, tenantId: string): AppTenant {
+export function createAppFromDraft(
+  draft: AppDraft,
+  existingCount: number,
+  tenantId: string,
+): AppTenant {
   const name = draft.name.trim()
   const appleAppId = draft.appleAppId.trim()
   const bundleId = draft.bundleId.trim()

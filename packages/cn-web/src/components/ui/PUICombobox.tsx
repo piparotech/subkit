@@ -1,5 +1,6 @@
-import { Check, ChevronDown, X } from 'lucide-react'
 import * as React from 'react'
+
+import { Check, ChevronDown, X } from 'lucide-react'
 
 import { cn } from '../../lib/utils'
 import { type PUIComboboxOption, type PUIComboboxProps } from './PUICombobox.types'
@@ -125,8 +126,8 @@ export function PUICombobox({
     <div ref={rootRef} className={cn('relative', className)}>
       <div
         className={cn(
-          'flex min-h-11 w-full items-center gap-2 rounded-md border border-border bg-background px-3',
-          'focus-within:ring-2 focus-within:ring-ring',
+          'border-border bg-background flex min-h-11 w-full items-center gap-2 rounded-md border px-3',
+          'focus-within:ring-ring focus-within:ring-2',
           disabled && 'cursor-not-allowed opacity-50',
         )}
       >
@@ -137,9 +138,11 @@ export function PUICombobox({
           aria-controls={open ? listboxId : undefined}
           aria-expanded={open}
           autoComplete="off"
-          className="w-full bg-transparent text-subheadline text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
+          className="text-subheadline text-foreground placeholder:text-muted-foreground w-full bg-transparent outline-none disabled:cursor-not-allowed"
           disabled={disabled}
-          placeholder={open ? (searchPlaceholder ?? 'Search…') : (selected?.label ?? placeholder ?? '')}
+          placeholder={
+            open ? (searchPlaceholder ?? 'Search…') : (selected?.label ?? placeholder ?? '')
+          }
           role="combobox"
           type="text"
           value={open ? query : ''}
@@ -150,7 +153,7 @@ export function PUICombobox({
         {selected && !disabled ? (
           <button
             aria-label="Clear selection"
-            className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-ring flex size-6 shrink-0 items-center justify-center rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
             onClick={clear}
             onMouseDown={(event) => event.preventDefault()}
             type="button"
@@ -158,7 +161,7 @@ export function PUICombobox({
             <X aria-hidden className="size-4" />
           </button>
         ) : null}
-        <ChevronDown aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+        <ChevronDown aria-hidden className="text-muted-foreground size-4 shrink-0" />
       </div>
       <span aria-live="polite" className="sr-only" id={countId} role="status">
         {open ? `${filtered.length} ${filtered.length === 1 ? 'result' : 'results'}` : ''}
@@ -166,12 +169,12 @@ export function PUICombobox({
       {open ? (
         <ul
           ref={listRef}
-          className="absolute z-overlay mt-1 max-h-[min(18rem,40vh)] w-full overflow-auto rounded-md border border-border bg-background py-1 shadow-md"
+          className="z-overlay border-border bg-background absolute mt-1 max-h-[min(18rem,40vh)] w-full overflow-auto rounded-md border py-1 shadow-md"
           id={listboxId}
           role="listbox"
         >
           {filtered.length === 0 ? (
-            <li className="px-3 py-2.5 text-subheadline text-muted-foreground" role="presentation">
+            <li className="text-subheadline text-muted-foreground px-3 py-2.5" role="presentation">
               No results
             </li>
           ) : (
@@ -183,9 +186,9 @@ export function PUICombobox({
                   key={option.value}
                   aria-selected={isSelected}
                   className={cn(
-                    'flex min-h-11 cursor-pointer items-center justify-between gap-2 px-3 py-2.5 text-subheadline text-foreground',
+                    'text-subheadline text-foreground flex min-h-11 cursor-pointer items-center justify-between gap-2 px-3 py-2.5',
                     isActive && 'bg-accent text-accent-foreground',
-                    isSelected && 'bg-accent font-medium text-accent-foreground',
+                    isSelected && 'bg-accent text-accent-foreground font-medium',
                   )}
                   id={optionId(index)}
                   role="option"

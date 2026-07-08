@@ -1,8 +1,8 @@
 import * as React from 'react'
 
 import { cn } from '../../lib/utils'
-import { PUIText } from './PUIText'
 import { type PUIStateBlockSlots } from './PUIStateBlock.types'
+import { PUIText } from './PUIText'
 
 export type { PUIStateBlockSlots } from './PUIStateBlock.types'
 
@@ -37,15 +37,21 @@ export const PUIStateBlock = React.forwardRef<HTMLDivElement, PUIStateBlockProps
     return (
       <div
         ref={ref}
-        className={cn('flex flex-col items-center gap-md px-xxl py-xxxl text-center', className)}
+        className={cn('gap-md px-xxl py-xxxl flex flex-col items-center text-center', className)}
         role={role}
       >
-        {icon != null ? <div className="mb-xxs flex items-center justify-center">{icon}</div> : null}
-        <Heading className={cn('text-title-3 font-semibold text-foreground', titleClassName)}>
+        {icon != null ? (
+          <div className="mb-xxs flex items-center justify-center">{icon}</div>
+        ) : null}
+        <Heading className={cn('text-title-3 text-foreground font-semibold', titleClassName)}>
           {title}
         </Heading>
         {description != null ? (
-          <PUIText className={cn('block max-w-popover-lg', descriptionClassName)} tone="muted" variant="callout">
+          <PUIText
+            className={cn('max-w-popover-lg block', descriptionClassName)}
+            tone="muted"
+            variant="callout"
+          >
             {description}
           </PUIText>
         ) : null}

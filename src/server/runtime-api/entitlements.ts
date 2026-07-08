@@ -1,9 +1,9 @@
-import type { RuntimeEntitlementCheckWithAppRequestInput } from '@piparotech/subkit-core'
 import { and, eq } from 'drizzle-orm'
-
 import { db } from '~/db/client'
-import { ensureDatabaseReady } from '~/db/setup'
 import { appUsers, apps, entitlementGrants, entitlements, products } from '~/db/schema'
+import { ensureDatabaseReady } from '~/db/setup'
+
+import type { RuntimeEntitlementCheckWithAppRequestInput } from '@piparotech/subkit-core'
 
 type RuntimeGrantStatus = typeof entitlementGrants.$inferSelect.status
 
@@ -26,11 +26,14 @@ export interface RuntimeEntitlementCheckResult {
   checkedAt: string
   entitlement: string
   grants: RuntimeGrantResult[]
-  reason: 'allowed' | 'app_not_found' | 'app_user_not_found' | 'entitlement_not_found' | 'no_active_grant'
+  reason:
+    'allowed' | 'app_not_found' | 'app_user_not_found' | 'entitlement_not_found' | 'no_active_grant'
   status: RuntimeGrantStatus | 'not_found'
 }
 
-export async function checkRuntimeEntitlement(input: RuntimeEntitlementCheckWithAppRequestInput): Promise<RuntimeEntitlementCheckResult> {
+export async function checkRuntimeEntitlement(
+  input: RuntimeEntitlementCheckWithAppRequestInput,
+): Promise<RuntimeEntitlementCheckResult> {
   await ensureDatabaseReady()
   const checkedAt = new Date().toISOString()
   const baseResult = {
@@ -75,9 +78,17 @@ export async function checkRuntimeEntitlement(input: RuntimeEntitlementCheckWith
     .from(entitlementGrants)
     .innerJoin(entitlements, eq(entitlementGrants.entitlementId, entitlements.id))
     .leftJoin(products, eq(entitlementGrants.productId, products.id))
-    .where(and(eq(entitlementGrants.appId, input.appId), eq(entitlementGrants.appUserId, appUser.id), eq(entitlementGrants.entitlementId, entitlement.id)))
+    .where(
+      and(
+        eq(entitlementGrants.appId, input.appId),
+        eq(entitlementGrants.appUserId, appUser.id),
+        eq(entitlementGrants.entitlementId, entitlement.id),
+      ),
+    )
 
-  const sortedGrants = [...grantRows].sort((left, right) => right.createdAt.getTime() - left.createdAt.getTime())
+  const sortedGrants = [...grantRows].sort(
+    (left, right) => right.createdAt.getTime() - left.createdAt.getTime(),
+  )
   const grants: RuntimeGrantResult[] = sortedGrants.map((grant) => ({
     entitlement: grant.entitlementKey,
     expiresAt: grant.expiresAt,
@@ -116,7 +127,8 @@ function isGrantCurrentlyEffective(grant: {
   status: RuntimeGrantStatus
 }): boolean {
   if (grant.note === RUNTIME_IAP_VALIDATION_PENDING_NOTE) return false
-  if (grant.status !== 'active' && grant.status !== 'trialing' && grant.status !== 'billing_retry') return false
+  if (grant.status !== 'active' && grant.status !== 'trialing' && grant.status !== 'billing_retry')
+    return false
   if (grant.revokedAt != null) return false
 
   const now = Date.now()

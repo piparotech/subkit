@@ -4,17 +4,12 @@ import { cn } from '../../lib/utils'
 
 /** Parity prop with native. Web has no haptics engine, so this is accepted but inert. */
 export type PUIHaptic =
-  | 'light'
-  | 'medium'
-  | 'heavy'
-  | 'success'
-  | 'warning'
-  | 'error'
-  | 'selection'
-  | false
+  'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' | 'selection' | false
 
-export interface PUIPressableProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
+export interface PUIPressableProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'onClick'
+> {
   onPress?: React.MouseEventHandler<HTMLButtonElement>
   disabled?: boolean
   /** Apply an active press-scale on press. Default true (motion-reduce gated). */
@@ -50,10 +45,11 @@ export const PUIPressable = React.forwardRef<HTMLButtonElement, PUIPressableProp
       disabled={disabled}
       onClick={onPress}
       className={cn(
-        'inline-flex min-h-11 min-w-11 select-none items-center justify-center transition-transform duration-fast ease-standard',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        'duration-fast ease-standard inline-flex min-h-11 min-w-11 items-center justify-center transition-transform select-none',
+        'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
         'disabled:pointer-events-none disabled:opacity-50',
-        scaleOnPress && 'active:scale-press motion-reduce:transition-none motion-reduce:active:scale-100',
+        scaleOnPress &&
+          'active:scale-press motion-reduce:transition-none motion-reduce:active:scale-100',
         className,
       )}
       {...props}

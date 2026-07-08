@@ -18,7 +18,7 @@ export function PUISkeleton({ className, label, ...props }: PUISkeletonProps) {
     <div
       aria-busy
       aria-label={label}
-      className={cn('animate-pulse rounded-md bg-muted motion-reduce:animate-none', className)}
+      className={cn('bg-muted animate-pulse rounded-md motion-reduce:animate-none', className)}
       role="status"
       {...props}
     />

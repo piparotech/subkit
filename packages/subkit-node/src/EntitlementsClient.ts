@@ -1,4 +1,8 @@
-import { serverEntitlementCheckResponseSchema, type ServerEntitlementCheckRequest, type ServerEntitlementCheckResponse } from '@piparotech/subkit-core'
+import {
+  type ServerEntitlementCheckRequest,
+  type ServerEntitlementCheckResponse,
+  serverEntitlementCheckResponseSchema,
+} from '@piparotech/subkit-core'
 
 import type { HttpClient } from './HttpClient.js'
 import type { SubKitRequestOptions } from './requestOptions.js'
@@ -17,7 +21,10 @@ export class EntitlementsClient {
     this.http = options.http
   }
 
-  check(input: Omit<ServerEntitlementCheckRequest, 'appId'> & { appId?: string }, options: SubKitRequestOptions = {}): Promise<ServerEntitlementCheckResponse> {
+  check(
+    input: Omit<ServerEntitlementCheckRequest, 'appId'> & { appId?: string },
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerEntitlementCheckResponse> {
     return this.http.post('/api/server/entitlements/check', {
       ...options,
       body: {

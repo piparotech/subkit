@@ -1,6 +1,5 @@
 import { createPublicKey, verify } from 'node:crypto'
 import type { JsonWebKey as NodeJsonWebKey } from 'node:crypto'
-
 import { z } from 'zod'
 
 import { requireOidcConfig } from './config'
@@ -132,7 +131,8 @@ async function verifyIdToken(idToken: string, expectedNonce: string): Promise<Oi
   const config = requireOidcConfig()
   const [encodedHeader, encodedPayload, encodedSignature] = idToken.split('.')
 
-  if (!encodedHeader || !encodedPayload || !encodedSignature) throw new Error('Invalid ID token format')
+  if (!encodedHeader || !encodedPayload || !encodedSignature)
+    throw new Error('Invalid ID token format')
 
   const header = parseJsonObject(base64UrlDecode(encodedHeader).toString('utf8'))
   const payload = parseJsonObject(base64UrlDecode(encodedPayload).toString('utf8'))
@@ -165,7 +165,10 @@ async function verifyIdToken(idToken: string, expectedNonce: string): Promise<Oi
   return claims
 }
 
-async function enrichClaimsFromUserInfo(idTokenClaims: OidcClaims, accessToken: string): Promise<OidcClaims> {
+async function enrichClaimsFromUserInfo(
+  idTokenClaims: OidcClaims,
+  accessToken: string,
+): Promise<OidcClaims> {
   const discovery = await getDiscovery()
   if (!discovery.userinfo_endpoint) return idTokenClaims
 
@@ -221,7 +224,8 @@ async function getJwks(): Promise<Jwk[]> {
 
 function getIdentityProviderScope(method: AuthMethod): string | undefined {
   const config = requireOidcConfig()
-  if (method === 'microsoft' && config.microsoftIdpId) return `urn:zitadel:iam:org:idp:id:${config.microsoftIdpId}`
+  if (method === 'microsoft' && config.microsoftIdpId)
+    return `urn:zitadel:iam:org:idp:id:${config.microsoftIdpId}`
   return undefined
 }
 
@@ -281,7 +285,10 @@ function readRequiredNumberProperty(value: Record<string, unknown>, property: st
   return result
 }
 
-function readBooleanProperty(value: Record<string, unknown>, property: string): boolean | undefined {
+function readBooleanProperty(
+  value: Record<string, unknown>,
+  property: string,
+): boolean | undefined {
   const result = value[property]
   return typeof result === 'boolean' ? result : undefined
 }

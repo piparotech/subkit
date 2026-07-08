@@ -1,5 +1,6 @@
-import { Loader2 } from 'lucide-react'
 import * as React from 'react'
+
+import { Loader2 } from 'lucide-react'
 
 import { cn } from '../../lib/utils'
 
@@ -35,7 +36,9 @@ export function PUISpinner({ size = 'md', tone = 'default', label }: PUISpinnerP
       aria-busy={label != null ? true : undefined}
       role="status"
     >
-      <Loader2 className={cn('animate-spin motion-reduce:animate-none', SIZES[size], TONES[tone])} />
+      <Loader2
+        className={cn('animate-spin motion-reduce:animate-none', SIZES[size], TONES[tone])}
+      />
       {label != null ? <span className="sr-only">{label}</span> : null}
     </span>
   )

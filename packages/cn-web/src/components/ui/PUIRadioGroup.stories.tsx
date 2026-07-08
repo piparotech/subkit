@@ -78,29 +78,24 @@ const speedTiers = [
     value: 'fast',
     label: 'Fast',
     description: 'Funded in minutes. 12-month term at the highest rate.',
-    leading: <Zap aria-hidden className="size-5 text-foreground" />,
+    leading: <Zap aria-hidden className="text-foreground size-5" />,
   },
   {
     value: 'normal',
     label: 'Normal',
     description: 'Funded within a day. 24-month term, balanced rate.',
-    leading: <Rabbit aria-hidden className="size-5 text-foreground" />,
+    leading: <Rabbit aria-hidden className="text-foreground size-5" />,
   },
   {
     value: 'slow',
     label: 'Slow',
     description: 'Funded in a few days. 36-month term at the lowest rate.',
-    leading: <Snail aria-hidden className="size-5 text-foreground" />,
+    leading: <Snail aria-hidden className="text-foreground size-5" />,
   },
 ]
 
 export const TileWithLeadingIcon: Story = {
   render: () => (
-    <Controlled
-      label="Repayment speed"
-      options={speedTiers}
-      value="normal"
-      variant="tile"
-    />
+    <Controlled label="Repayment speed" options={speedTiers} value="normal" variant="tile" />
   ),
 }

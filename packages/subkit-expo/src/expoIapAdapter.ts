@@ -1,4 +1,8 @@
 import {
+  type Product,
+  type ProductOrSubscription,
+  type ProductSubscription,
+  type Purchase,
   endConnection,
   fetchProducts,
   finishTransaction,
@@ -8,14 +12,20 @@ import {
   purchaseUpdatedListener,
   requestPurchase,
   restorePurchases,
-  type Product,
-  type ProductOrSubscription,
-  type ProductSubscription,
-  type Purchase,
 } from 'expo-iap'
 
-import type { SubKitExpoIapAdapter, SubKitIapAdapterBundle, SubKitPurchaseListenerAdapter, SubKitPurchaseListenerSubscription } from './adapter.js'
-import type { SubKitIapProduct, SubKitIapProductType, SubKitIapPurchase, SubKitPurchaseRequest } from './types.js'
+import type {
+  SubKitExpoIapAdapter,
+  SubKitIapAdapterBundle,
+  SubKitPurchaseListenerAdapter,
+  SubKitPurchaseListenerSubscription,
+} from './adapter.js'
+import type {
+  SubKitIapProduct,
+  SubKitIapProductType,
+  SubKitIapPurchase,
+  SubKitPurchaseRequest,
+} from './types.js'
 
 export function createExpoIapAdapter(): SubKitIapAdapterBundle {
   const iap: SubKitExpoIapAdapter = {
@@ -71,7 +81,9 @@ export async function endExpoIapConnection(): Promise<void> {
   await endConnection()
 }
 
-function toExpoPurchaseRequest(input: SubKitPurchaseRequest): Parameters<typeof requestPurchase>[0] {
+function toExpoPurchaseRequest(
+  input: SubKitPurchaseRequest,
+): Parameters<typeof requestPurchase>[0] {
   if (input.productType === 'subs') {
     return {
       request: {
@@ -83,7 +95,10 @@ function toExpoPurchaseRequest(input: SubKitPurchaseRequest): Parameters<typeof 
           obfuscatedAccountId: input.obfuscatedAccountId,
           obfuscatedProfileId: input.obfuscatedProfileId,
           skus: [input.productId],
-          subscriptionOffers: input.offerToken == null ? undefined : [{ offerToken: input.offerToken, sku: input.productId }],
+          subscriptionOffers:
+            input.offerToken == null
+              ? undefined
+              : [{ offerToken: input.offerToken, sku: input.productId }],
         },
       },
       type: 'subs',
@@ -107,11 +122,17 @@ function toExpoPurchaseRequest(input: SubKitPurchaseRequest): Parameters<typeof 
   }
 }
 
-function normalizeProducts(products: readonly ProductOrSubscription[], fallbackType: SubKitIapProductType): SubKitIapProduct[] {
+function normalizeProducts(
+  products: readonly ProductOrSubscription[],
+  fallbackType: SubKitIapProductType,
+): SubKitIapProduct[] {
   return products.map((product) => normalizeProduct(product, fallbackType))
 }
 
-function normalizeProduct(product: Product | ProductSubscription, fallbackType: SubKitIapProductType): SubKitIapProduct {
+function normalizeProduct(
+  product: Product | ProductSubscription,
+  fallbackType: SubKitIapProductType,
+): SubKitIapProduct {
   return {
     currency: product.currency,
     description: product.description,
@@ -126,9 +147,18 @@ function normalizeProduct(product: Product | ProductSubscription, fallbackType: 
 
 function normalizePurchase(purchase: Purchase): SubKitIapPurchase {
   return {
-    environment: readStringProperty(purchase, 'environmentIOS') === 'production' ? 'production' : readStringProperty(purchase, 'environmentIOS') === 'sandbox' ? 'sandbox' : 'unknown',
-    originalTransactionId: readStringProperty(purchase, 'originalTransactionIdentifierIOS') ?? undefined,
-    ownershipType: readStringProperty(purchase, 'ownershipTypeIOS') === 'FAMILY_SHARED' ? 'family_shared' : 'purchased',
+    environment:
+      readStringProperty(purchase, 'environmentIOS') === 'production'
+        ? 'production'
+        : readStringProperty(purchase, 'environmentIOS') === 'sandbox'
+          ? 'sandbox'
+          : 'unknown',
+    originalTransactionId:
+      readStringProperty(purchase, 'originalTransactionIdentifierIOS') ?? undefined,
+    ownershipType:
+      readStringProperty(purchase, 'ownershipTypeIOS') === 'FAMILY_SHARED'
+        ? 'family_shared'
+        : 'purchased',
     productId: purchase.productId,
     purchaseToken: purchase.purchaseToken ?? undefined,
     quantity: purchase.quantity,
@@ -139,7 +169,6 @@ function normalizePurchase(purchase: Purchase): SubKitIapPurchase {
     transactionId: purchase.transactionId ?? undefined,
   }
 }
-
 
 function isExpoPurchase(value: unknown): value is Purchase {
   return typeof value === 'object' && value !== null && 'productId' in value && 'store' in value

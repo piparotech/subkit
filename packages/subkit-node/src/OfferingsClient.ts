@@ -1,4 +1,8 @@
-import { serverOfferingsResponseSchema, type ServerOfferingsRequest, type ServerOfferingsResponse } from '@piparotech/subkit-core'
+import {
+  type ServerOfferingsRequest,
+  type ServerOfferingsResponse,
+  serverOfferingsResponseSchema,
+} from '@piparotech/subkit-core'
 
 import type { HttpClient } from './HttpClient.js'
 import type { SubKitRequestOptions } from './requestOptions.js'
@@ -17,7 +21,10 @@ export class OfferingsClient {
     this.http = options.http
   }
 
-  list(input: Omit<ServerOfferingsRequest, 'appId'> & { appId?: string } = {}, options: SubKitRequestOptions = {}): Promise<ServerOfferingsResponse> {
+  list(
+    input: Omit<ServerOfferingsRequest, 'appId'> & { appId?: string } = {},
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerOfferingsResponse> {
     return this.http.post('/api/server/offerings', {
       ...options,
       body: {

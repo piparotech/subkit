@@ -99,7 +99,7 @@ export function PUIPopover({
         <div
           aria-modal={false}
           className={cn(
-            'absolute z-overlay min-w-55 max-w-xs rounded-xl border border-border bg-card p-3 text-card-foreground shadow-md outline-none',
+            'z-overlay border-border bg-card text-card-foreground absolute max-w-xs min-w-55 rounded-xl border p-3 shadow-md outline-none',
             SIDE_CLASSES[side],
             className,
           )}

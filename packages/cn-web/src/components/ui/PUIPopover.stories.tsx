@@ -1,5 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
 import * as React from 'react'
+
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import { PUIButton } from './PUIButton'
 import { PUIPopover, type PUIPopoverProps } from './PUIPopover'
@@ -19,9 +20,9 @@ function Controlled({ side }: Partial<PUIPopoverProps>) {
         }
       >
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-semibold leading-none tracking-tight">Dimensions</p>
-          <div className="h-px w-full bg-border" />
-          <p className="text-sm text-muted-foreground">Set the width and height of the layer.</p>
+          <p className="text-sm leading-none font-semibold tracking-tight">Dimensions</p>
+          <div className="bg-border h-px w-full" />
+          <p className="text-muted-foreground text-sm">Set the width and height of the layer.</p>
           <PUIButton className="self-end" onPress={() => setOpen(false)} size="sm">
             Apply
           </PUIButton>

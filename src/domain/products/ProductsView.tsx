@@ -1,9 +1,9 @@
 import { EmptySettingsText } from '~/components/ui/EmptySettingsText'
 import { SoftTag } from '~/components/ui/SoftTag'
 import { StatusLabel } from '~/components/ui/StatusLabel'
-import { StoreId } from '~/domain/stores/StoreId'
-import type { CatalogProduct } from '~/domain/products/types'
 import { ViewTitle } from '~/components/ui/ViewTitle'
+import type { CatalogProduct } from '~/domain/products/types'
+import { StoreId } from '~/domain/stores/StoreId'
 
 export function ProductsView({
   isFiltering,
@@ -21,11 +21,12 @@ export function ProductsView({
         title="Products"
       />
       <div className="mt-[14px] rounded-[12px] border border-[var(--subkit-accent-line)] bg-[var(--subkit-accent-soft)] px-[14px] py-[11px] text-[12.5px] leading-[1.45] text-[var(--subkit-accent-d)]">
-        Products define what SubKit intends to sell or grant. Apple and Google product IDs are store bindings, not the canonical source.
+        Products define what SubKit intends to sell or grant. Apple and Google product IDs are store
+        bindings, not the canonical source.
       </div>
       <div className="mt-[20px] overflow-hidden rounded-[14px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] max-lg:overflow-x-auto">
         <div className="min-w-[1080px]">
-          <div className="grid grid-cols-[1.25fr_0.85fr_0.85fr_1.15fr_1.15fr_0.8fr_0.75fr] gap-[14px] border-b border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[18px] py-[12px] text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--subkit-faint)]">
+          <div className="grid grid-cols-[1.25fr_0.85fr_0.85fr_1.15fr_1.15fr_0.8fr_0.75fr] gap-[14px] border-b border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[18px] py-[12px] text-[11px] font-semibold tracking-[0.04em] text-[var(--subkit-faint)] uppercase">
             <div>Product</div>
             <div>Type</div>
             <div>Grants</div>
@@ -66,7 +67,16 @@ export function ProductsView({
               <StoreId platform="Android" value={googleBindingLabel(product)} />
               <div className="font-mono text-[13.5px] font-semibold">{product.price}</div>
               <div className="flex justify-end">
-                <StatusLabel label={product.status} tone={product.status === 'active' ? 'success' : product.status === 'draft' ? 'warning' : 'muted'} />
+                <StatusLabel
+                  label={product.status}
+                  tone={
+                    product.status === 'active'
+                      ? 'success'
+                      : product.status === 'draft'
+                        ? 'warning'
+                        : 'muted'
+                  }
+                />
               </div>
             </button>
           ))}

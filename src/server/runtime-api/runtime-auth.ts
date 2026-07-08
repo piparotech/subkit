@@ -1,12 +1,14 @@
-import { createHmac, randomBytes } from 'node:crypto'
-
-import type { ServerCreateRuntimeSdkKeyRequest, ServerCreateRuntimeSdkKeyResponse } from '@piparotech/subkit-core'
 import { eq } from 'drizzle-orm'
-
+import { createHmac, randomBytes } from 'node:crypto'
 import { db } from '~/db/client'
-import { ensureDatabaseReady } from '~/db/setup'
 import { apps } from '~/db/schema'
+import { ensureDatabaseReady } from '~/db/setup'
 import { parseServerEnv, resolveSecretEncryptionKey } from '~/server/env'
+
+import type {
+  ServerCreateRuntimeSdkKeyRequest,
+  ServerCreateRuntimeSdkKeyResponse,
+} from '@piparotech/subkit-core'
 
 import { assertAppExists } from './runtime-shared'
 
@@ -17,21 +19,32 @@ const RUNTIME_SDK_KEY_PREFIX = 'sk_rt_'
 export async function authorizeRuntimeRequest(request: Request): Promise<RuntimeAuthResult> {
   await ensureDatabaseReady()
   const sdkKey = readBearerToken(request)
-  if (sdkKey == null) return { ok: false, response: Response.json({ error: 'Unauthorized' }, { status: 401 }) }
+  if (sdkKey == null)
+    return { ok: false, response: Response.json({ error: 'Unauthorized' }, { status: 401 }) }
 
   const keyHash = hashRuntimeSdkKey(sdkKey)
-  const [app] = await db.select({ appId: apps.id }).from(apps).where(eq(apps.runtimeSdkKeyHash, keyHash)).limit(1)
+  const [app] = await db
+    .select({ appId: apps.id })
+    .from(apps)
+    .where(eq(apps.runtimeSdkKeyHash, keyHash))
+    .limit(1)
 
-  if (app == null) return { ok: false, response: Response.json({ error: 'Unauthorized' }, { status: 401 }) }
+  if (app == null)
+    return { ok: false, response: Response.json({ error: 'Unauthorized' }, { status: 401 }) }
   return { appId: app.appId, ok: true }
 }
 
-export async function createRuntimeSdkKey(input: ServerCreateRuntimeSdkKeyRequest): Promise<ServerCreateRuntimeSdkKeyResponse> {
+export async function createRuntimeSdkKey(
+  input: ServerCreateRuntimeSdkKeyRequest,
+): Promise<ServerCreateRuntimeSdkKeyResponse> {
   await ensureDatabaseReady()
   await assertAppExists(input.appId)
 
   const key = createRuntimeSdkKeySecret()
-  await db.update(apps).set({ runtimeSdkKeyHash: hashRuntimeSdkKey(key) }).where(eq(apps.id, input.appId))
+  await db
+    .update(apps)
+    .set({ runtimeSdkKeyHash: hashRuntimeSdkKey(key) })
+    .where(eq(apps.id, input.appId))
   return { appId: input.appId, key }
 }
 

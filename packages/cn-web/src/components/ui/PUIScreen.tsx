@@ -28,7 +28,7 @@ export const PUIScreen = React.forwardRef<HTMLDivElement, PUIScreenProps>(
     <div
       ref={ref}
       className={cn(
-        'mx-auto w-full max-w-2xl bg-background',
+        'bg-background mx-auto w-full max-w-2xl',
         padded && 'px-4 py-4',
         scroll && 'overflow-y-auto',
         className,

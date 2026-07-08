@@ -1,8 +1,8 @@
 import * as React from 'react'
 
 import { cn } from '../../lib/utils'
-import { OPTICAL_CENTER_RATIO } from './PUIText'
 import { type PUISegmentedControlOwnProps } from './PUISegmentedControl.types'
+import { OPTICAL_CENTER_RATIO } from './PUIText'
 
 export type { PUISegmentedControlOwnProps, PUISegmentedOption } from './PUISegmentedControl.types'
 

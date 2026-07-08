@@ -1,8 +1,11 @@
-import { cn } from '@piparo/cn-web'
 import { LoaderCircle } from 'lucide-react'
-
 import type { AppDraft, AppDraftField } from '~/domain/apps/types'
-import type { AppStoreConnectAccessibleApp, AppStoreConnectConnection } from '~/integrations/app-store-connect/types'
+import type {
+  AppStoreConnectAccessibleApp,
+  AppStoreConnectConnection,
+} from '~/integrations/app-store-connect/types'
+
+import { cn } from '@piparo/cn-web'
 
 export function NewAppForm({
   apps,
@@ -30,13 +33,18 @@ export function NewAppForm({
           className="flex items-center gap-[9px] rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]"
           role="status"
         >
-          <LoaderCircle aria-hidden className="subkit-ignore-reduced-motion size-[16px] animate-spin text-[var(--subkit-accent)]" strokeWidth={2} />
+          <LoaderCircle
+            aria-hidden
+            className="subkit-ignore-reduced-motion size-[16px] animate-spin text-[var(--subkit-accent)]"
+            strokeWidth={2}
+          />
           <span>Syncing App Store Connect apps…</span>
         </div>
       ) : null}
       {needsTenantKey ? (
         <div className="rounded-[10px] border border-[color-mix(in_oklch,var(--subkit-amber)_40%,var(--subkit-border))] bg-[color-mix(in_oklch,var(--subkit-amber)_9%,white)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]">
-          Configure the workspace App Store Connect key in Workspace Settings before creating an iOS app.
+          Configure the workspace App Store Connect key in Workspace Settings before creating an iOS
+          app.
         </div>
       ) : null}
       {error != null ? (
@@ -67,17 +75,24 @@ export function NewAppForm({
               type="button"
             >
               <span className="min-w-0">
-                <span className="block truncate text-[13px] font-semibold text-[var(--subkit-text)]">{app.name}</span>
-                <span className="mt-[2px] block truncate font-mono text-[11.5px] text-[var(--subkit-faint)]">{app.bundleId || 'No bundle ID returned'}</span>
+                <span className="block truncate text-[13px] font-semibold text-[var(--subkit-text)]">
+                  {app.name}
+                </span>
+                <span className="mt-[2px] block truncate font-mono text-[11.5px] text-[var(--subkit-faint)]">
+                  {app.bundleId || 'No bundle ID returned'}
+                </span>
               </span>
-              <span className="font-mono text-[11px] text-[var(--subkit-faint)]">{app.appleAppId}</span>
+              <span className="font-mono text-[11px] text-[var(--subkit-faint)]">
+                {app.appleAppId}
+              </span>
             </button>
           ))}
         </div>
       ) : null}
       {draft.appleAppId !== '' ? (
         <div className="rounded-[11px] border border-[var(--subkit-accent-line)] bg-[var(--subkit-accent-soft)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-accent-d)]">
-          Selected <strong>{draft.name}</strong> · <span className="font-mono">{draft.bundleId || draft.appleAppId}</span>
+          Selected <strong>{draft.name}</strong> ·{' '}
+          <span className="font-mono">{draft.bundleId || draft.appleAppId}</span>
         </div>
       ) : null}
     </div>

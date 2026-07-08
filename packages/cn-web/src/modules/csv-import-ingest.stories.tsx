@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import { PUIBadge, PUIButton, PUISegmentedControl, PUISelect, PUIText } from '@/components/ui'
 import {
   type ColumnMapping,
@@ -16,6 +14,7 @@ import {
   suggestMapping,
   upsertableRows,
 } from '@/lib/csv-import-ingest'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import {
   PRODUCT_TARGET,

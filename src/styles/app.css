@@ -6,10 +6,6 @@
 @source '../integrations/**/*.{ts,tsx}';
 @source '../../packages/cn-web/src/**/*.{ts,tsx}';
 
-
-
-
-
 @theme inline {
   --font-sans: 'Hanken Grotesk', var(--font-family-sans);
   --font-mono: 'JetBrains Mono', var(--font-family-mono);
@@ -188,7 +184,10 @@ body {
   color: var(--subkit-text);
   padding: 14px;
   text-decoration: none;
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .subkit-login-option:hover {

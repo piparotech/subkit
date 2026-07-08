@@ -1,9 +1,10 @@
-import { serverOfferingsRequestSchema } from '@piparotech/subkit-core'
 import { createFileRoute } from '@tanstack/react-router'
 
 import { authorizeServerApiRequest } from '~/server/runtime-api'
 import { jsonApiError, jsonApiErrorFromThrown } from '~/server/runtime-api'
 import { listServerOfferings } from '~/server/runtime-api'
+
+import { serverOfferingsRequestSchema } from '@piparotech/subkit-core'
 
 export const Route = createFileRoute('/api/server/offerings')({
   server: {
@@ -15,7 +16,12 @@ export const Route = createFileRoute('/api/server/offerings')({
         try {
           const payload = serverOfferingsRequestSchema.safeParse(await request.json())
           if (!payload.success) {
-            return jsonApiError({ code: 'validation_failed', details: payload.error.issues, message: 'Invalid offerings request', status: 400 })
+            return jsonApiError({
+              code: 'validation_failed',
+              details: payload.error.issues,
+              message: 'Invalid offerings request',
+              status: 400,
+            })
           }
 
           const result = await listServerOfferings(payload.data)

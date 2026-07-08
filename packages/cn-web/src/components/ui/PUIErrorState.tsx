@@ -25,7 +25,16 @@ export interface PUIErrorStateProps extends PUIStateBlockSlots {
  */
 export const PUIErrorState = React.forwardRef<HTMLDivElement, PUIErrorStateProps>(
   (
-    { icon, title, description, action, assertive = false, titleClassName, descriptionClassName, className },
+    {
+      icon,
+      title,
+      description,
+      action,
+      assertive = false,
+      titleClassName,
+      descriptionClassName,
+      className,
+    },
     ref,
   ) => (
     <PUIStateBlock

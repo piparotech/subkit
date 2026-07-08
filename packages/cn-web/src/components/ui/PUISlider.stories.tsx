@@ -1,5 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
+
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import { PUISlider } from './PUISlider'
 
@@ -24,7 +25,7 @@ function Controlled({ step, disabled }: { step?: number; disabled?: boolean }) {
   const [value, setValue] = useState(40)
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-sm text-foreground">{Math.round(value)}</span>
+      <span className="text-foreground text-sm">{Math.round(value)}</span>
       <PUISlider disabled={disabled} onValueChange={setValue} step={step} value={value} />
     </div>
   )

@@ -1,13 +1,12 @@
 import { eq } from 'drizzle-orm'
-
 import { db } from '~/db/client'
 import { appStoreConnectCredentials, apps } from '~/db/schema'
+import type { AppStoreConnectTenantSyncResult } from '~/integrations/app-store-connect/types'
 import {
-  getAllAppStoreConnectResources,
   type AppStoreConnectCredentials,
   type AppStoreConnectResource,
+  getAllAppStoreConnectResources,
 } from '~/server/app-store-connect/client'
-import type { AppStoreConnectTenantSyncResult } from '~/integrations/app-store-connect/types'
 
 import { syncAppStoreConnectCatalogForApp } from './sync-catalog'
 import { syncAppStoreConnectSalesReportSnapshot } from './sync-reports'
@@ -58,13 +57,19 @@ export async function syncTenantAppStoreConnectData({
 
   const localApps = await db.select().from(apps).where(eq(apps.tenantId, tenantId))
   const existingById = new Map(localApps.map((app) => [app.id, app]))
-  const existingByAppleAppId = new Map(localApps.flatMap((app) => (app.appleAppId == null ? [] : [[app.appleAppId, app]])))
+  const existingByAppleAppId = new Map(
+    localApps.flatMap((app) => (app.appleAppId == null ? [] : [[app.appleAppId, app]])),
+  )
 
   for (const appleApp of appleApps) {
     const generatedAppId = appRowId(tenantId, appleApp.appleAppId)
-    const existingApp = existingByAppleAppId.get(appleApp.appleAppId) ?? existingById.get(generatedAppId)
+    const existingApp =
+      existingByAppleAppId.get(appleApp.appleAppId) ?? existingById.get(generatedAppId)
     const appId = existingApp?.id ?? generatedAppId
-    const color = existingApp?.color ?? appColors[(localApps.length + result.appsCreated) % appColors.length] ?? appColors[0]
+    const color =
+      existingApp?.color ??
+      appColors[(localApps.length + result.appsCreated) % appColors.length] ??
+      appColors[0]
     const initials = initialsForName(appleApp.name)
 
     await db
@@ -99,7 +104,12 @@ export async function syncTenantAppStoreConnectData({
     else result.appsUpdated += 1
 
     try {
-      const catalog = await syncAppStoreConnectCatalogForApp({ appleAppId: appleApp.appleAppId, appId, credentials, userId })
+      const catalog = await syncAppStoreConnectCatalogForApp({
+        appleAppId: appleApp.appleAppId,
+        appId,
+        credentials,
+        userId,
+      })
       result.appsSynced += 1
       result.productsConflicts += catalog.conflicts
       result.productsCreated += catalog.created
@@ -151,7 +161,9 @@ export async function syncTenantAppStoreConnectData({
   return result
 }
 
-async function fetchAccessibleAppleApps(credentials: AppStoreConnectCredentials): Promise<AppleAppSummary[]> {
+async function fetchAccessibleAppleApps(
+  credentials: AppStoreConnectCredentials,
+): Promise<AppleAppSummary[]> {
   const resources = await getAllAppStoreConnectResources(credentials, '/v1/apps?limit=200')
   return resources.map(toAppleAppSummary)
 }

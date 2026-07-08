@@ -1,8 +1,9 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Activity, Bell, Settings } from 'lucide-react'
 import { useState } from 'react'
 
-import { PUITabs, type PUITabItem, type PUITabsProps } from './PUITabs'
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { Activity, Bell, Settings } from 'lucide-react'
+
+import { type PUITabItem, PUITabs, type PUITabsProps } from './PUITabs'
 
 const items: PUITabItem[] = [
   {
@@ -18,14 +19,30 @@ const items: PUITabItem[] = [
   {
     value: 'settings',
     label: 'Settings',
-    content: 'Profile, notifications and danger-zone controls. Changes save the moment you make them.',
+    content:
+      'Profile, notifications and danger-zone controls. Changes save the moment you make them.',
   },
 ]
 
 const iconItems: PUITabItem[] = [
-  { value: 'overview', label: 'Overview', icon: <Activity className="size-4" />, content: items[0].content },
-  { value: 'alerts', label: 'Alerts', icon: <Bell className="size-4" />, content: items[1].content },
-  { value: 'settings', label: 'Settings', icon: <Settings className="size-4" />, content: items[2].content },
+  {
+    value: 'overview',
+    label: 'Overview',
+    icon: <Activity className="size-4" />,
+    content: items[0].content,
+  },
+  {
+    value: 'alerts',
+    label: 'Alerts',
+    icon: <Bell className="size-4" />,
+    content: items[1].content,
+  },
+  {
+    value: 'settings',
+    label: 'Settings',
+    icon: <Settings className="size-4" />,
+    content: items[2].content,
+  },
 ]
 
 const meta = {
@@ -62,11 +79,7 @@ export const DisabledTab: Story = {
   render: () => (
     <PUITabs
       defaultValue="overview"
-      items={[
-        items[0],
-        { ...items[1], disabled: true },
-        items[2],
-      ]}
+      items={[items[0], { ...items[1], disabled: true }, items[2]]}
     />
   ),
 }

@@ -1,20 +1,19 @@
 import { createServerFn } from '@tanstack/react-start'
+
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-
 import { db } from '~/db/client'
-import { ensureDatabaseReady } from '~/db/setup'
-import { getRequiredCurrentUser } from '~/server/auth/current-user'
-import { requireTenantAccess } from '~/server/auth/tenant-access'
 import { appStoreConnectCredentials } from '~/db/schema'
+import { ensureDatabaseReady } from '~/db/setup'
+import type { AppStoreConnectAccessibleApp } from '~/integrations/app-store-connect/types'
 import {
-  getAppStoreConnectResourcePage,
   type AppStoreConnectCredentials,
   type AppStoreConnectResource,
+  getAppStoreConnectResourcePage,
 } from '~/server/app-store-connect/client'
+import { getRequiredCurrentUser } from '~/server/auth/current-user'
+import { requireTenantAccess } from '~/server/auth/tenant-access'
 import { decryptSecret } from '~/server/secrets'
-
-import type { AppStoreConnectAccessibleApp } from '~/integrations/app-store-connect/types'
 
 const listAppsInputSchema = z.object({
   issuerId: z.string().optional(),
@@ -34,9 +33,15 @@ export const listAppStoreConnectApps = createServerFn({ method: 'POST' })
     return resources.map(toAccessibleApp)
   })
 
-async function credentialsFromInputOrStored(data: z.infer<typeof listAppsInputSchema>): Promise<AppStoreConnectCredentials> {
+async function credentialsFromInputOrStored(
+  data: z.infer<typeof listAppsInputSchema>,
+): Promise<AppStoreConnectCredentials> {
   if (data.keyId?.trim() && data.issuerId?.trim() && data.privateKey?.trim()) {
-    return { issuerId: data.issuerId.trim(), keyId: data.keyId.trim(), privateKey: data.privateKey.trim() }
+    return {
+      issuerId: data.issuerId.trim(),
+      keyId: data.keyId.trim(),
+      privateKey: data.privateKey.trim(),
+    }
   }
 
   const [credential] = await db
@@ -44,8 +49,13 @@ async function credentialsFromInputOrStored(data: z.infer<typeof listAppsInputSc
     .from(appStoreConnectCredentials)
     .where(eq(appStoreConnectCredentials.tenantId, data.tenantId))
     .limit(1)
-  if (!credential) throw new Error('Save or paste App Store Connect key details before listing apps')
-  if (credential.privateKeyCiphertext == null || credential.privateKeyIv == null || credential.privateKeyAuthTag == null) {
+  if (!credential)
+    throw new Error('Save or paste App Store Connect key details before listing apps')
+  if (
+    credential.privateKeyCiphertext == null ||
+    credential.privateKeyIv == null ||
+    credential.privateKeyAuthTag == null
+  ) {
     throw new Error('Private key material is missing; paste a new .p8 key before listing apps')
   }
   return {

@@ -24,7 +24,7 @@ export const PUICard = React.forwardRef<HTMLDivElement, PUICardProps>(
     const body =
       artwork != null ? (
         <div className="relative">
-          <div className="absolute right-4 top-4 z-10">{artwork}</div>
+          <div className="absolute top-4 right-4 z-10">{artwork}</div>
           {children}
         </div>
       ) : (
@@ -36,7 +36,7 @@ export const PUICard = React.forwardRef<HTMLDivElement, PUICardProps>(
         <div
           ref={ref}
           className={cn(
-            'relative overflow-hidden rounded-xl border border-border bg-card text-card-foreground',
+            'border-border bg-card text-card-foreground relative overflow-hidden rounded-xl border',
             className,
           )}
           {...props}
@@ -51,7 +51,7 @@ export const PUICard = React.forwardRef<HTMLDivElement, PUICardProps>(
       <div
         ref={ref}
         className={cn(
-          'rounded-xl border border-border bg-card text-card-foreground',
+          'border-border bg-card text-card-foreground rounded-xl border',
           media != null && 'overflow-hidden',
           className,
         )}
@@ -68,7 +68,7 @@ PUICard.displayName = 'PUICard'
 
 export const PUICardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn('flex flex-col gap-2 px-5 pb-4 pt-5', className)} {...props} />
+    <div ref={ref} className={cn('flex flex-col gap-2 px-5 pt-5 pb-4', className)} {...props} />
   ),
 )
 PUICardHeader.displayName = 'PUICardHeader'
@@ -77,7 +77,7 @@ export const PUICardTitle = React.forwardRef<HTMLDivElement, React.HTMLAttribute
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn('text-title-3 font-semibold tracking-tight text-foreground', className)}
+      className={cn('text-title-3 text-foreground font-semibold tracking-tight', className)}
       {...props}
     />
   ),

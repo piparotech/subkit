@@ -1,5 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
+
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import { PUIEmailInput } from './PUIEmailInput'
 import { PUIInput, type PUIInputProps } from './PUIInput'
@@ -54,6 +55,8 @@ export const Default: Story = { render: () => <Controlled label="Name" placehold
 export const WithError: Story = {
   render: () => <Controlled error="This field is required" label="Name" placeholder="Jane Doe" />,
 }
-export const Disabled: Story = { render: () => <Controlled disabled label="Name" placeholder="Jane Doe" /> }
+export const Disabled: Story = {
+  render: () => <Controlled disabled label="Name" placeholder="Jane Doe" />,
+}
 export const Email: Story = { render: () => <ControlledEmail /> }
 export const Password: Story = { render: () => <ControlledPassword /> }

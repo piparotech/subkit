@@ -1,5 +1,4 @@
 import { and, eq, inArray } from 'drizzle-orm'
-
 import { db } from '~/db/client'
 import { tenants, userTenants } from '~/db/schema'
 
@@ -24,7 +23,9 @@ export function isSuperAdmin(user: Pick<AuthUser, 'globalRole'>): boolean {
   return user.globalRole === 'super_admin'
 }
 
-export async function listAccessibleTenantRows(user: AuthUser): Promise<Array<typeof tenants.$inferSelect>> {
+export async function listAccessibleTenantRows(
+  user: AuthUser,
+): Promise<Array<typeof tenants.$inferSelect>> {
   if (isSuperAdmin(user)) return db.select().from(tenants)
 
   const rows = await db
@@ -42,7 +43,10 @@ export async function listAccessibleTenantIds(user: AuthUser): Promise<string[]>
     return rows.map((tenant) => tenant.id)
   }
 
-  const rows = await db.select({ tenantId: userTenants.tenantId }).from(userTenants).where(eq(userTenants.userId, user.id))
+  const rows = await db
+    .select({ tenantId: userTenants.tenantId })
+    .from(userTenants)
+    .where(eq(userTenants.userId, user.id))
   return rows.map((row) => row.tenantId)
 }
 
@@ -58,7 +62,11 @@ export async function requireTenantAccess(user: AuthUser, tenantId: string): Pro
   if (membership == null) throw new TenantAccessRequiredError()
 }
 
-export async function requireTenantRole(user: AuthUser, tenantId: string, roles: readonly TenantRole[]): Promise<void> {
+export async function requireTenantRole(
+  user: AuthUser,
+  tenantId: string,
+  roles: readonly TenantRole[],
+): Promise<void> {
   if (isSuperAdmin(user)) return
 
   const [membership] = await db

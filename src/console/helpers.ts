@@ -4,7 +4,12 @@ import type { AppDraft } from '~/domain/apps/types'
 import type { TenantDraft } from '~/domain/tenants/types'
 
 export const emptyAppDraft: AppDraft = { appleAppId: '', bundleId: '', name: '', sku: '' }
-export const emptyTenantDraft: TenantDraft = { color: 'oklch(0.62 0.17 152)', id: '', initials: '', name: '' }
+export const emptyTenantDraft: TenantDraft = {
+  color: 'oklch(0.62 0.17 152)',
+  id: '',
+  initials: '',
+  name: '',
+}
 
 export function safeTenantId(value: string): string {
   try {

@@ -90,11 +90,7 @@
       "indexes": {
         "app_platforms_app_store_environment_unique": {
           "name": "app_platforms_app_store_environment_unique",
-          "columns": [
-            "app_id",
-            "store",
-            "environment"
-          ],
+          "columns": ["app_id", "store", "environment"],
           "isUnique": true
         }
       },
@@ -103,12 +99,8 @@
           "name": "app_platforms_app_id_apps_id_fk",
           "tableFrom": "app_platforms",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -180,18 +172,12 @@
       "indexes": {
         "app_store_connect_audit_events_credential_created_idx": {
           "name": "app_store_connect_audit_events_credential_created_idx",
-          "columns": [
-            "credential_id",
-            "created_at"
-          ],
+          "columns": ["credential_id", "created_at"],
           "isUnique": false
         },
         "app_store_connect_audit_events_tenant_created_idx": {
           "name": "app_store_connect_audit_events_tenant_created_idx",
-          "columns": [
-            "tenant_id",
-            "created_at"
-          ],
+          "columns": ["tenant_id", "created_at"],
           "isUnique": false
         }
       },
@@ -200,12 +186,8 @@
           "name": "app_store_connect_audit_events_tenant_id_tenants_id_fk",
           "tableFrom": "app_store_connect_audit_events",
           "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -213,12 +195,8 @@
           "name": "app_store_connect_audit_events_app_id_apps_id_fk",
           "tableFrom": "app_store_connect_audit_events",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -226,12 +204,8 @@
           "name": "app_store_connect_audit_events_credential_id_app_store_connect_credentials_id_fk",
           "tableFrom": "app_store_connect_audit_events",
           "tableTo": "app_store_connect_credentials",
-          "columnsFrom": [
-            "credential_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["credential_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -239,12 +213,8 @@
           "name": "app_store_connect_audit_events_actor_user_id_users_id_fk",
           "tableFrom": "app_store_connect_audit_events",
           "tableTo": "users",
-          "columnsFrom": [
-            "actor_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["actor_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -316,10 +286,7 @@
       "indexes": {
         "app_store_connect_capabilities_credential_key_unique": {
           "name": "app_store_connect_capabilities_credential_key_unique",
-          "columns": [
-            "credential_id",
-            "key"
-          ],
+          "columns": ["credential_id", "key"],
           "isUnique": true
         }
       },
@@ -328,12 +295,8 @@
           "name": "app_store_connect_capabilities_credential_id_app_store_connect_credentials_id_fk",
           "tableFrom": "app_store_connect_capabilities",
           "tableTo": "app_store_connect_credentials",
-          "columnsFrom": [
-            "credential_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["credential_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -455,9 +418,7 @@
       "indexes": {
         "app_store_connect_credentials_tenant_id_unique": {
           "name": "app_store_connect_credentials_tenant_id_unique",
-          "columns": [
-            "tenant_id"
-          ],
+          "columns": ["tenant_id"],
           "isUnique": true
         }
       },
@@ -466,12 +427,8 @@
           "name": "app_store_connect_credentials_tenant_id_tenants_id_fk",
           "tableFrom": "app_store_connect_credentials",
           "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -558,10 +515,7 @@
       "indexes": {
         "app_store_connect_sales_reports_credential_created_idx": {
           "name": "app_store_connect_sales_reports_credential_created_idx",
-          "columns": [
-            "credential_id",
-            "created_at"
-          ],
+          "columns": ["credential_id", "created_at"],
           "isUnique": false
         }
       },
@@ -570,12 +524,8 @@
           "name": "app_store_connect_sales_reports_credential_id_app_store_connect_credentials_id_fk",
           "tableFrom": "app_store_connect_sales_reports",
           "tableTo": "app_store_connect_credentials",
-          "columnsFrom": [
-            "credential_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["credential_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -583,12 +533,8 @@
           "name": "app_store_connect_sales_reports_app_id_apps_id_fk",
           "tableFrom": "app_store_connect_sales_reports",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -639,10 +585,7 @@
       "indexes": {
         "app_user_aliases_app_alias_unique": {
           "name": "app_user_aliases_app_alias_unique",
-          "columns": [
-            "app_id",
-            "alias"
-          ],
+          "columns": ["app_id", "alias"],
           "isUnique": true
         }
       },
@@ -651,12 +594,8 @@
           "name": "app_user_aliases_app_id_apps_id_fk",
           "tableFrom": "app_user_aliases",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -664,12 +603,8 @@
           "name": "app_user_aliases_app_user_id_app_users_id_fk",
           "tableFrom": "app_user_aliases",
           "tableTo": "app_users",
-          "columnsFrom": [
-            "app_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -748,27 +683,17 @@
       "indexes": {
         "app_user_store_identities_user_store_unique": {
           "name": "app_user_store_identities_user_store_unique",
-          "columns": [
-            "app_id",
-            "app_user_id",
-            "store"
-          ],
+          "columns": ["app_id", "app_user_id", "store"],
           "isUnique": true
         },
         "app_user_store_identities_apple_token_unique": {
           "name": "app_user_store_identities_apple_token_unique",
-          "columns": [
-            "app_id",
-            "app_account_token"
-          ],
+          "columns": ["app_id", "app_account_token"],
           "isUnique": true
         },
         "app_user_store_identities_google_account_unique": {
           "name": "app_user_store_identities_google_account_unique",
-          "columns": [
-            "app_id",
-            "obfuscated_account_id"
-          ],
+          "columns": ["app_id", "obfuscated_account_id"],
           "isUnique": true
         }
       },
@@ -777,12 +702,8 @@
           "name": "app_user_store_identities_app_id_apps_id_fk",
           "tableFrom": "app_user_store_identities",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -790,12 +711,8 @@
           "name": "app_user_store_identities_app_user_id_app_users_id_fk",
           "tableFrom": "app_user_store_identities",
           "tableTo": "app_users",
-          "columnsFrom": [
-            "app_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -862,10 +779,7 @@
       "indexes": {
         "app_users_app_user_id_unique": {
           "name": "app_users_app_user_id_unique",
-          "columns": [
-            "app_id",
-            "app_user_id"
-          ],
+          "columns": ["app_id", "app_user_id"],
           "isUnique": true
         }
       },
@@ -874,12 +788,8 @@
           "name": "app_users_app_id_apps_id_fk",
           "tableFrom": "app_users",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -997,9 +907,7 @@
       "indexes": {
         "apps_runtime_sdk_key_hash_unique": {
           "name": "apps_runtime_sdk_key_hash_unique",
-          "columns": [
-            "runtime_sdk_key_hash"
-          ],
+          "columns": ["runtime_sdk_key_hash"],
           "isUnique": true
         }
       },
@@ -1008,12 +916,8 @@
           "name": "apps_tenant_id_tenants_id_fk",
           "tableFrom": "apps",
           "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1067,12 +971,8 @@
           "name": "auth_events_user_id_users_id_fk",
           "tableFrom": "auth_events",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1144,17 +1044,12 @@
       "indexes": {
         "auth_sessions_token_hash_unique": {
           "name": "auth_sessions_token_hash_unique",
-          "columns": [
-            "token_hash"
-          ],
+          "columns": ["token_hash"],
           "isUnique": true
         },
         "auth_sessions_user_expires_idx": {
           "name": "auth_sessions_user_expires_idx",
-          "columns": [
-            "user_id",
-            "expires_at"
-          ],
+          "columns": ["user_id", "expires_at"],
           "isUnique": false
         }
       },
@@ -1163,12 +1058,8 @@
           "name": "auth_sessions_user_id_users_id_fk",
           "tableFrom": "auth_sessions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1297,10 +1188,7 @@
       "indexes": {
         "entitlement_grants_app_user_idx": {
           "name": "entitlement_grants_app_user_idx",
-          "columns": [
-            "app_id",
-            "app_user_id"
-          ],
+          "columns": ["app_id", "app_user_id"],
           "isUnique": false
         }
       },
@@ -1309,12 +1197,8 @@
           "name": "entitlement_grants_app_id_apps_id_fk",
           "tableFrom": "entitlement_grants",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1322,12 +1206,8 @@
           "name": "entitlement_grants_app_user_id_app_users_id_fk",
           "tableFrom": "entitlement_grants",
           "tableTo": "app_users",
-          "columnsFrom": [
-            "app_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1335,12 +1215,8 @@
           "name": "entitlement_grants_entitlement_id_entitlements_id_fk",
           "tableFrom": "entitlement_grants",
           "tableTo": "entitlements",
-          "columnsFrom": [
-            "entitlement_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["entitlement_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1348,12 +1224,8 @@
           "name": "entitlement_grants_product_id_products_id_fk",
           "tableFrom": "entitlement_grants",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -1361,12 +1233,8 @@
           "name": "entitlement_grants_product_plan_id_product_plans_id_fk",
           "tableFrom": "entitlement_grants",
           "tableTo": "product_plans",
-          "columnsFrom": [
-            "product_plan_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_plan_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -1374,12 +1242,8 @@
           "name": "entitlement_grants_store_product_binding_id_store_product_bindings_id_fk",
           "tableFrom": "entitlement_grants",
           "tableTo": "store_product_bindings",
-          "columnsFrom": [
-            "store_product_binding_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["store_product_binding_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -1453,10 +1317,7 @@
       "indexes": {
         "entitlements_app_key_unique": {
           "name": "entitlements_app_key_unique",
-          "columns": [
-            "app_id",
-            "key"
-          ],
+          "columns": ["app_id", "key"],
           "isUnique": true
         }
       },
@@ -1465,12 +1326,8 @@
           "name": "entitlements_app_id_apps_id_fk",
           "tableFrom": "entitlements",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1537,10 +1394,7 @@
       "indexes": {
         "offering_packages_offering_key_unique": {
           "name": "offering_packages_offering_key_unique",
-          "columns": [
-            "offering_id",
-            "key"
-          ],
+          "columns": ["offering_id", "key"],
           "isUnique": true
         }
       },
@@ -1549,12 +1403,8 @@
           "name": "offering_packages_offering_id_offerings_id_fk",
           "tableFrom": "offering_packages",
           "tableTo": "offerings",
-          "columnsFrom": [
-            "offering_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["offering_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1562,12 +1412,8 @@
           "name": "offering_packages_product_plan_id_product_plans_id_fk",
           "tableFrom": "offering_packages",
           "tableTo": "product_plans",
-          "columnsFrom": [
-            "product_plan_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_plan_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -1636,12 +1482,8 @@
           "name": "offerings_app_id_apps_id_fk",
           "tableFrom": "offerings",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1735,11 +1577,7 @@
       "indexes": {
         "prices_plan_currency_country_unique": {
           "name": "prices_plan_currency_country_unique",
-          "columns": [
-            "product_plan_id",
-            "currency_code",
-            "country_code"
-          ],
+          "columns": ["product_plan_id", "currency_code", "country_code"],
           "isUnique": true
         }
       },
@@ -1748,12 +1586,8 @@
           "name": "prices_product_plan_id_product_plans_id_fk",
           "tableFrom": "prices",
           "tableTo": "product_plans",
-          "columnsFrom": [
-            "product_plan_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_plan_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1819,10 +1653,7 @@
       "indexes": {
         "product_entitlements_product_entitlement_unique": {
           "name": "product_entitlements_product_entitlement_unique",
-          "columns": [
-            "product_id",
-            "entitlement_id"
-          ],
+          "columns": ["product_id", "entitlement_id"],
           "isUnique": true
         }
       },
@@ -1831,12 +1662,8 @@
           "name": "product_entitlements_product_id_products_id_fk",
           "tableFrom": "product_entitlements",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1844,12 +1671,8 @@
           "name": "product_entitlements_entitlement_id_entitlements_id_fk",
           "tableFrom": "product_entitlements",
           "tableTo": "entitlements",
-          "columnsFrom": [
-            "entitlement_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["entitlement_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -1965,10 +1788,7 @@
       "indexes": {
         "product_offers_plan_key_unique": {
           "name": "product_offers_plan_key_unique",
-          "columns": [
-            "product_plan_id",
-            "key"
-          ],
+          "columns": ["product_plan_id", "key"],
           "isUnique": true
         }
       },
@@ -1977,12 +1797,8 @@
           "name": "product_offers_product_plan_id_product_plans_id_fk",
           "tableFrom": "product_offers",
           "tableTo": "product_plans",
-          "columnsFrom": [
-            "product_plan_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_plan_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2062,10 +1878,7 @@
       "indexes": {
         "product_plans_product_key_unique": {
           "name": "product_plans_product_key_unique",
-          "columns": [
-            "product_id",
-            "key"
-          ],
+          "columns": ["product_id", "key"],
           "isUnique": true
         }
       },
@@ -2074,12 +1887,8 @@
           "name": "product_plans_product_id_products_id_fk",
           "tableFrom": "product_plans",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2169,10 +1978,7 @@
       "indexes": {
         "products_app_key_unique": {
           "name": "products_app_key_unique",
-          "columns": [
-            "app_id",
-            "key"
-          ],
+          "columns": ["app_id", "key"],
           "isUnique": true
         }
       },
@@ -2181,12 +1987,8 @@
           "name": "products_app_id_apps_id_fk",
           "tableFrom": "products",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2254,12 +2056,8 @@
           "name": "purchase_events_app_user_id_app_users_id_fk",
           "tableFrom": "purchase_events",
           "tableTo": "app_users",
-          "columnsFrom": [
-            "app_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2267,12 +2065,8 @@
           "name": "purchase_events_entitlement_grant_id_entitlement_grants_id_fk",
           "tableFrom": "purchase_events",
           "tableTo": "entitlement_grants",
-          "columnsFrom": [
-            "entitlement_grant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["entitlement_grant_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2347,12 +2141,8 @@
           "name": "runtime_reconcile_events_app_id_apps_id_fk",
           "tableFrom": "runtime_reconcile_events",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2360,12 +2150,8 @@
           "name": "runtime_reconcile_events_app_user_id_app_users_id_fk",
           "tableFrom": "runtime_reconcile_events",
           "tableTo": "app_users",
-          "columnsFrom": [
-            "app_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2373,12 +2159,8 @@
           "name": "runtime_reconcile_events_store_purchase_ownership_id_store_purchase_ownerships_id_fk",
           "tableFrom": "runtime_reconcile_events",
           "tableTo": "store_purchase_ownerships",
-          "columnsFrom": [
-            "store_purchase_ownership_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["store_purchase_ownership_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2482,12 +2264,8 @@
           "name": "store_catalog_drift_items_app_id_apps_id_fk",
           "tableFrom": "store_catalog_drift_items",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2495,12 +2273,8 @@
           "name": "store_catalog_drift_items_store_product_binding_id_store_product_bindings_id_fk",
           "tableFrom": "store_catalog_drift_items",
           "tableTo": "store_product_bindings",
-          "columnsFrom": [
-            "store_product_binding_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["store_product_binding_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2508,12 +2282,8 @@
           "name": "store_catalog_drift_items_snapshot_id_store_catalog_snapshots_id_fk",
           "tableFrom": "store_catalog_drift_items",
           "tableTo": "store_catalog_snapshots",
-          "columnsFrom": [
-            "snapshot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["snapshot_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2617,12 +2387,8 @@
           "name": "store_catalog_snapshots_app_platform_id_app_platforms_id_fk",
           "tableFrom": "store_catalog_snapshots",
           "tableTo": "app_platforms",
-          "columnsFrom": [
-            "app_platform_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_platform_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2730,10 +2496,7 @@
       "indexes": {
         "store_integrations_app_store_unique": {
           "name": "store_integrations_app_store_unique",
-          "columns": [
-            "app_id",
-            "store"
-          ],
+          "columns": ["app_id", "store"],
           "isUnique": true
         }
       },
@@ -2742,12 +2505,8 @@
           "name": "store_integrations_app_id_apps_id_fk",
           "tableFrom": "store_integrations",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2755,12 +2514,8 @@
           "name": "store_integrations_app_platform_id_app_platforms_id_fk",
           "tableFrom": "store_integrations",
           "tableTo": "app_platforms",
-          "columnsFrom": [
-            "app_platform_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_platform_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2872,12 +2627,8 @@
           "name": "store_mutation_plan_items_plan_id_store_mutation_plans_id_fk",
           "tableFrom": "store_mutation_plan_items",
           "tableTo": "store_mutation_plans",
-          "columnsFrom": [
-            "plan_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["plan_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2885,12 +2636,8 @@
           "name": "store_mutation_plan_items_store_product_binding_id_store_product_bindings_id_fk",
           "tableFrom": "store_mutation_plan_items",
           "tableTo": "store_product_bindings",
-          "columnsFrom": [
-            "store_product_binding_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["store_product_binding_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3015,12 +2762,8 @@
           "name": "store_mutation_plans_app_id_apps_id_fk",
           "tableFrom": "store_mutation_plans",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3028,12 +2771,8 @@
           "name": "store_mutation_plans_app_platform_id_app_platforms_id_fk",
           "tableFrom": "store_mutation_plans",
           "tableTo": "app_platforms",
-          "columnsFrom": [
-            "app_platform_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_platform_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3041,12 +2780,8 @@
           "name": "store_mutation_plans_created_by_user_id_users_id_fk",
           "tableFrom": "store_mutation_plans",
           "tableTo": "users",
-          "columnsFrom": [
-            "created_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -3054,12 +2789,8 @@
           "name": "store_mutation_plans_confirmed_by_user_id_users_id_fk",
           "tableFrom": "store_mutation_plans",
           "tableTo": "users",
-          "columnsFrom": [
-            "confirmed_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["confirmed_by_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3220,12 +2951,8 @@
           "name": "store_product_bindings_app_id_apps_id_fk",
           "tableFrom": "store_product_bindings",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3233,12 +2960,8 @@
           "name": "store_product_bindings_app_platform_id_app_platforms_id_fk",
           "tableFrom": "store_product_bindings",
           "tableTo": "app_platforms",
-          "columnsFrom": [
-            "app_platform_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_platform_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3246,12 +2969,8 @@
           "name": "store_product_bindings_product_id_products_id_fk",
           "tableFrom": "store_product_bindings",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3259,12 +2978,8 @@
           "name": "store_product_bindings_product_plan_id_product_plans_id_fk",
           "tableFrom": "store_product_bindings",
           "tableTo": "product_plans",
-          "columnsFrom": [
-            "product_plan_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_plan_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3272,12 +2987,8 @@
           "name": "store_product_bindings_store_integration_id_store_integrations_id_fk",
           "tableFrom": "store_product_bindings",
           "tableTo": "store_integrations",
-          "columnsFrom": [
-            "store_integration_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["store_integration_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3457,28 +3168,17 @@
       "indexes": {
         "store_purchase_ownerships_store_original_unique": {
           "name": "store_purchase_ownerships_store_original_unique",
-          "columns": [
-            "app_id",
-            "store",
-            "original_transaction_id"
-          ],
+          "columns": ["app_id", "store", "original_transaction_id"],
           "isUnique": true
         },
         "store_purchase_ownerships_store_transaction_unique": {
           "name": "store_purchase_ownerships_store_transaction_unique",
-          "columns": [
-            "app_id",
-            "store",
-            "transaction_id"
-          ],
+          "columns": ["app_id", "store", "transaction_id"],
           "isUnique": true
         },
         "store_purchase_ownerships_app_user_idx": {
           "name": "store_purchase_ownerships_app_user_idx",
-          "columns": [
-            "app_id",
-            "app_user_id"
-          ],
+          "columns": ["app_id", "app_user_id"],
           "isUnique": false
         }
       },
@@ -3487,12 +3187,8 @@
           "name": "store_purchase_ownerships_app_id_apps_id_fk",
           "tableFrom": "store_purchase_ownerships",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3500,12 +3196,8 @@
           "name": "store_purchase_ownerships_app_user_id_app_users_id_fk",
           "tableFrom": "store_purchase_ownerships",
           "tableTo": "app_users",
-          "columnsFrom": [
-            "app_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3513,12 +3205,8 @@
           "name": "store_purchase_ownerships_product_id_products_id_fk",
           "tableFrom": "store_purchase_ownerships",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3526,12 +3214,8 @@
           "name": "store_purchase_ownerships_product_plan_id_product_plans_id_fk",
           "tableFrom": "store_purchase_ownerships",
           "tableTo": "product_plans",
-          "columnsFrom": [
-            "product_plan_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_plan_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3539,12 +3223,8 @@
           "name": "store_purchase_ownerships_store_product_binding_id_store_product_bindings_id_fk",
           "tableFrom": "store_purchase_ownerships",
           "tableTo": "store_product_bindings",
-          "columnsFrom": [
-            "store_product_binding_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["store_product_binding_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3552,12 +3232,8 @@
           "name": "store_purchase_ownerships_entitlement_grant_id_entitlement_grants_id_fk",
           "tableFrom": "store_purchase_ownerships",
           "tableTo": "entitlement_grants",
-          "columnsFrom": [
-            "entitlement_grant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["entitlement_grant_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3653,12 +3329,8 @@
           "name": "sync_runs_app_id_apps_id_fk",
           "tableFrom": "sync_runs",
           "tableTo": "apps",
-          "columnsFrom": [
-            "app_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3666,12 +3338,8 @@
           "name": "sync_runs_app_platform_id_app_platforms_id_fk",
           "tableFrom": "sync_runs",
           "tableTo": "app_platforms",
-          "columnsFrom": [
-            "app_platform_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["app_platform_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3679,12 +3347,8 @@
           "name": "sync_runs_started_by_user_id_users_id_fk",
           "tableFrom": "sync_runs",
           "tableTo": "users",
-          "columnsFrom": [
-            "started_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["started_by_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3783,12 +3447,8 @@
           "name": "user_tenants_user_id_users_id_fk",
           "tableFrom": "user_tenants",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3796,12 +3456,8 @@
           "name": "user_tenants_tenant_id_tenants_id_fk",
           "tableFrom": "user_tenants",
           "tableTo": "tenants",
-          "columnsFrom": [
-            "tenant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tenant_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3809,22 +3465,15 @@
           "name": "user_tenants_invited_by_user_id_users_id_fk",
           "tableFrom": "user_tenants",
           "tableTo": "users",
-          "columnsFrom": [
-            "invited_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["invited_by_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "user_tenants_user_id_tenant_id_pk": {
-          "columns": [
-            "user_id",
-            "tenant_id"
-          ],
+          "columns": ["user_id", "tenant_id"],
           "name": "user_tenants_user_id_tenant_id_pk"
         }
       },
@@ -3931,16 +3580,12 @@
       "indexes": {
         "users_email_unique": {
           "name": "users_email_unique",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "isUnique": true
         },
         "users_zitadel_subject_unique": {
           "name": "users_zitadel_subject_unique",
-          "columns": [
-            "zitadel_subject"
-          ],
+          "columns": ["zitadel_subject"],
           "isUnique": true
         }
       },

@@ -1,5 +1,6 @@
-import { ChevronRight, Inbox } from 'lucide-react'
 import * as React from 'react'
+
+import { ChevronRight, Inbox } from 'lucide-react'
 
 import { cn } from '../../lib/utils'
 import { PUIEmptyState } from './PUIEmptyState'
@@ -33,14 +34,10 @@ export interface PUIListProps extends React.HTMLAttributes<HTMLUListElement> {
 
 const DEFAULT_LOADING_ROWS = 3
 
-function ListStateWrapper({
-  className,
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+function ListStateWrapper({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('overflow-hidden rounded-xl border border-border bg-card', className)}
+      className={cn('border-border bg-card overflow-hidden rounded-xl border', className)}
       {...props}
     >
       {children}
@@ -103,7 +100,7 @@ export const PUIList = React.forwardRef<HTMLUListElement, PUIListProps>(
           {emptyState ?? (
             <PUIEmptyState
               description="There is nothing here yet."
-              icon={<Inbox aria-hidden className="size-8 text-muted-foreground" />}
+              icon={<Inbox aria-hidden className="text-muted-foreground size-8" />}
               title="Nothing here"
             />
           )}
@@ -114,7 +111,7 @@ export const PUIList = React.forwardRef<HTMLUListElement, PUIListProps>(
     return (
       <ul
         className={cn(
-          'm-0 list-none overflow-hidden rounded-xl border border-border bg-card p-0',
+          'border-border bg-card m-0 list-none overflow-hidden rounded-xl border p-0',
           className,
         )}
         ref={ref}
@@ -132,7 +129,7 @@ function ListSkeletonRows({ rows }: { rows: number }) {
     <div aria-label="Loading" role="status">
       {Array.from({ length: Math.max(1, rows) }).map((_, index) => (
         <div
-          className={cn('flex items-center gap-3 px-4 py-3', index > 0 && 'border-t border-border')}
+          className={cn('flex items-center gap-3 px-4 py-3', index > 0 && 'border-border border-t')}
           key={`skeleton-${index}`}
         >
           <PUISkeleton className="size-9 shrink-0 rounded-full" />
@@ -159,16 +156,13 @@ export const PUIListSection = React.forwardRef<HTMLLIElement, PUIListSectionProp
       <li className={cn(className)} ref={ref} {...props}>
         {header != null ? (
           <div
-            className="px-4 pb-1.5 pt-4 text-footnote font-semibold uppercase tracking-wide text-muted-foreground"
+            className="text-footnote text-muted-foreground px-4 pt-4 pb-1.5 font-semibold tracking-wide uppercase"
             id={labelId}
           >
             {header}
           </div>
         ) : null}
-        <ul
-          aria-labelledby={header != null ? labelId : undefined}
-          className="m-0 list-none p-0"
-        >
+        <ul aria-labelledby={header != null ? labelId : undefined} className="m-0 list-none p-0">
           {withDividers(children)}
         </ul>
       </li>
@@ -218,7 +212,7 @@ function ListItemBody({
       </span>
       {trailing != null ? <span className="shrink-0 self-center">{trailing}</span> : null}
       {pressable && showChevron ? (
-        <ChevronRight aria-hidden className="size-4 shrink-0 self-center text-muted-foreground" />
+        <ChevronRight aria-hidden className="text-muted-foreground size-4 shrink-0 self-center" />
       ) : null}
     </>
   )
@@ -240,7 +234,7 @@ export const PUIListItem = React.forwardRef<HTMLLIElement, PUIListItemProps>(
           <button
             className={cn(
               ROW,
-              'transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring',
+              'hover:bg-muted focus-visible:ring-ring transition-colors focus-visible:ring-2 focus-visible:outline-none focus-visible:ring-inset',
               'disabled:cursor-not-allowed disabled:opacity-50',
             )}
             disabled={disabled}
@@ -284,7 +278,7 @@ function withDividers(children: React.ReactNode) {
     index === 0
       ? [child]
       : [
-          <li aria-hidden className="mx-4 h-px bg-border" key={`divider-${index}`} role="none" />,
+          <li aria-hidden className="bg-border mx-4 h-px" key={`divider-${index}`} role="none" />,
           child,
         ],
   )

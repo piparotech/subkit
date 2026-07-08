@@ -1,22 +1,25 @@
 import { createServerFn } from '@tanstack/react-start'
+
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-
 import { db } from '~/db/client'
+import { appStoreConnectAuditEvents, appStoreConnectCredentials, apps } from '~/db/schema'
 import { ensureDatabaseReady } from '~/db/setup'
+import type {
+  AppStoreConnectMonitorItem,
+  AppStoreConnectMonitorSection,
+  AppStoreConnectMonitorSnapshot,
+} from '~/integrations/app-store-connect/types'
+import {
+  type AppStoreConnectCredentials,
+  type AppStoreConnectResource,
+  getAppStoreConnectResourcePage,
+} from '~/server/app-store-connect/client'
 import { createRandomToken } from '~/server/auth/crypto'
 import { getRequiredCurrentUser } from '~/server/auth/current-user'
 import { requireTenantAccess } from '~/server/auth/tenant-access'
 import type { AuthUser } from '~/server/auth/types'
-import { appStoreConnectAuditEvents, appStoreConnectCredentials, apps } from '~/db/schema'
-import {
-  getAppStoreConnectResourcePage,
-  type AppStoreConnectCredentials,
-  type AppStoreConnectResource,
-} from '~/server/app-store-connect/client'
 import { decryptSecret } from '~/server/secrets'
-
-import type { AppStoreConnectMonitorItem, AppStoreConnectMonitorSection, AppStoreConnectMonitorSnapshot } from '~/integrations/app-store-connect/types'
 
 interface ResourceResult {
   error: string | null
@@ -39,12 +42,21 @@ export const inspectAppStoreConnectMonitoring = createServerFn({ method: 'POST' 
 
     const appleAppId = app.appleAppId
     const [versions, builds, reviews, bundleIds] = await Promise.all([
-      readResources(credentials, `/v1/apps/${encodeURIComponent(appleAppId)}/appStoreVersions?limit=5`),
+      readResources(
+        credentials,
+        `/v1/apps/${encodeURIComponent(appleAppId)}/appStoreVersions?limit=5`,
+      ),
       readResources(credentials, `/v1/apps/${encodeURIComponent(appleAppId)}/builds?limit=5`),
-      readResources(credentials, `/v1/apps/${encodeURIComponent(appleAppId)}/customerReviews?limit=5`),
+      readResources(
+        credentials,
+        `/v1/apps/${encodeURIComponent(appleAppId)}/customerReviews?limit=5`,
+      ),
       app.iosBundleId == null || app.iosBundleId.trim() === ''
         ? Promise.resolve({ error: 'Bundle ID is missing.', resources: [] })
-        : readResources(credentials, `/v1/bundleIds?filter[identifier]=${encodeURIComponent(app.iosBundleId)}&limit=5`),
+        : readResources(
+            credentials,
+            `/v1/bundleIds?filter[identifier]=${encodeURIComponent(app.iosBundleId)}&limit=5`,
+          ),
     ])
 
     await db.insert(appStoreConnectAuditEvents).values({
@@ -59,7 +71,10 @@ export const inspectAppStoreConnectMonitoring = createServerFn({ method: 'POST' 
     })
 
     return {
-      checkedAt: new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date()),
+      checkedAt: new Intl.DateTimeFormat('en-US', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(new Date()),
       sections: [
         section('Release versions', versions, versionItem),
         section('TestFlight builds', builds, buildItem),
@@ -69,11 +84,17 @@ export const inspectAppStoreConnectMonitoring = createServerFn({ method: 'POST' 
     }
   })
 
-async function readResources(credentials: AppStoreConnectCredentials, path: string): Promise<ResourceResult> {
+async function readResources(
+  credentials: AppStoreConnectCredentials,
+  path: string,
+): Promise<ResourceResult> {
   try {
     return { error: null, resources: await getAppStoreConnectResourcePage(credentials, path) }
   } catch (error) {
-    return { error: error instanceof Error ? error.message : 'Unknown App Store Connect error', resources: [] }
+    return {
+      error: error instanceof Error ? error.message : 'Unknown App Store Connect error',
+      resources: [],
+    }
   }
 }
 
@@ -83,7 +104,17 @@ function section(
   mapper: (resource: AppStoreConnectResource) => AppStoreConnectMonitorItem,
 ): AppStoreConnectMonitorSection {
   if (result.error != null) {
-    return { items: [{ detail: result.error, id: `${title}:error`, label: 'Access check failed', status: 'missing' }], title }
+    return {
+      items: [
+        {
+          detail: result.error,
+          id: `${title}:error`,
+          label: 'Access check failed',
+          status: 'missing',
+        },
+      ],
+      title,
+    }
   }
   return { items: result.resources.map(mapper), title }
 }
@@ -95,7 +126,9 @@ async function requireApp(user: AuthUser, appId: string): Promise<typeof apps.$i
   return app
 }
 
-async function requireCredential(tenantId: string): Promise<typeof appStoreConnectCredentials.$inferSelect> {
+async function requireCredential(
+  tenantId: string,
+): Promise<typeof appStoreConnectCredentials.$inferSelect> {
   const [credential] = await db
     .select()
     .from(appStoreConnectCredentials)
@@ -106,8 +139,14 @@ async function requireCredential(tenantId: string): Promise<typeof appStoreConne
   return credential
 }
 
-function decryptCredential(credential: typeof appStoreConnectCredentials.$inferSelect): AppStoreConnectCredentials {
-  if (credential.privateKeyCiphertext == null || credential.privateKeyIv == null || credential.privateKeyAuthTag == null) {
+function decryptCredential(
+  credential: typeof appStoreConnectCredentials.$inferSelect,
+): AppStoreConnectCredentials {
+  if (
+    credential.privateKeyCiphertext == null ||
+    credential.privateKeyIv == null ||
+    credential.privateKeyAuthTag == null
+  ) {
     throw new Error('Private key material is missing; upload a new .p8 key')
   }
   return {

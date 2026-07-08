@@ -27,5 +27,9 @@ body {
   margin: 0;
   background-color: var(--color-background-default);
   color: var(--color-foreground-default);
-  font-family: Inter, system-ui, -apple-system, sans-serif;
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    sans-serif;
 }

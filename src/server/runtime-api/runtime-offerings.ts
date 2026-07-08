@@ -1,8 +1,5 @@
-import type { Offering, RuntimeOfferingsResponse, RuntimeOfferingsWithAppRequestInput } from '@piparotech/subkit-core'
 import { and, eq, inArray } from 'drizzle-orm'
-
 import { db } from '~/db/client'
-import { ensureDatabaseReady } from '~/db/setup'
 import {
   entitlements,
   offeringPackages,
@@ -14,8 +11,20 @@ import {
   products,
   storeProductBindings,
 } from '~/db/schema'
+import { ensureDatabaseReady } from '~/db/setup'
 
-import { type ProductRow, amountMicrosToCents, assertAppExists, toRuntimeProductKind } from './runtime-shared'
+import type {
+  Offering,
+  RuntimeOfferingsResponse,
+  RuntimeOfferingsWithAppRequestInput,
+} from '@piparotech/subkit-core'
+
+import {
+  type ProductRow,
+  amountMicrosToCents,
+  assertAppExists,
+  toRuntimeProductKind,
+} from './runtime-shared'
 
 interface RuntimeOfferingRow {
   appleProductId: string | null
@@ -42,7 +51,9 @@ interface RuntimeOfferingRow {
   trialEnabled: boolean
 }
 
-export async function listRuntimeOfferings(input: RuntimeOfferingsWithAppRequestInput): Promise<RuntimeOfferingsResponse> {
+export async function listRuntimeOfferings(
+  input: RuntimeOfferingsWithAppRequestInput,
+): Promise<RuntimeOfferingsResponse> {
   await ensureDatabaseReady()
   await assertAppExists(input.appId)
 
@@ -74,7 +85,9 @@ export async function listRuntimeOfferings(input: RuntimeOfferingsWithAppRequest
     .where(eq(offerings.appId, input.appId))
 
   const planIds = [...new Set(packageRows.map((row) => row.planId))]
-  const entitlementKeysByProductId = await readEntitlementKeysByProductId([...new Set(packageRows.map((row) => row.productId))])
+  const entitlementKeysByProductId = await readEntitlementKeysByProductId([
+    ...new Set(packageRows.map((row) => row.productId)),
+  ])
   const trialEnabledByPlanId = await readTrialEnabledByPlanId(planIds)
   const bindingIdsByPlanId = await readRuntimeStoreProductIdsByPlanId(planIds)
 
@@ -136,7 +149,9 @@ export async function listRuntimeOfferings(input: RuntimeOfferingsWithAppRequest
   }
 }
 
-async function readEntitlementKeysByProductId(productIds: readonly string[]): Promise<Map<string, string[]>> {
+async function readEntitlementKeysByProductId(
+  productIds: readonly string[],
+): Promise<Map<string, string[]>> {
   if (productIds.length === 0) return new Map()
   const rows = await db
     .select({ entitlementKey: entitlements.key, productId: productEntitlements.productId })
@@ -157,11 +172,19 @@ async function readTrialEnabledByPlanId(planIds: readonly string[]): Promise<Map
   const rows = await db
     .select({ planId: productOffers.productPlanId })
     .from(productOffers)
-    .where(and(inArray(productOffers.productPlanId, [...planIds]), eq(productOffers.status, 'active'), eq(productOffers.offerType, 'free_trial')))
+    .where(
+      and(
+        inArray(productOffers.productPlanId, [...planIds]),
+        eq(productOffers.status, 'active'),
+        eq(productOffers.offerType, 'free_trial'),
+      ),
+    )
   return new Map(rows.map((row) => [row.planId, true]))
 }
 
-async function readRuntimeStoreProductIdsByPlanId(planIds: readonly string[]): Promise<Map<string, { apple?: string; google?: string; googleBasePlanId?: string }>> {
+async function readRuntimeStoreProductIdsByPlanId(
+  planIds: readonly string[],
+): Promise<Map<string, { apple?: string; google?: string; googleBasePlanId?: string }>> {
   if (planIds.length === 0) return new Map()
   const rows = await db
     .select({
@@ -171,7 +194,12 @@ async function readRuntimeStoreProductIdsByPlanId(planIds: readonly string[]): P
       store: storeProductBindings.store,
     })
     .from(storeProductBindings)
-    .where(and(inArray(storeProductBindings.productPlanId, [...planIds]), inArray(storeProductBindings.bindingStatus, ['linked', 'synced', 'drifted'])))
+    .where(
+      and(
+        inArray(storeProductBindings.productPlanId, [...planIds]),
+        inArray(storeProductBindings.bindingStatus, ['linked', 'synced', 'drifted']),
+      ),
+    )
   const map = new Map<string, { apple?: string; google?: string; googleBasePlanId?: string }>()
   for (const row of rows) {
     if (row.planId == null) continue

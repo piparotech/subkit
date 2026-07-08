@@ -511,14 +511,14 @@ Queue-Regeln:
 
 ### Silent Sync vs. Restore
 
-| Verhalten | Silent Auto-Sync | Manual Restore |
-|---|---|---|
-| App-Start | ja | nein |
-| Foreground | ja, gedrosselt | nein |
-| darf Prompt auslösen | nein | ja, wenn Store es erfordert |
-| kann unowned Purchase claimen | nur konservativ | ja, explizit |
-| UI Feedback | optional/leise | sichtbar |
-| Konflikte | Event/State | sichtbares Result |
+| Verhalten                     | Silent Auto-Sync | Manual Restore              |
+| ----------------------------- | ---------------- | --------------------------- |
+| App-Start                     | ja               | nein                        |
+| Foreground                    | ja, gedrosselt   | nein                        |
+| darf Prompt auslösen          | nein             | ja, wenn Store es erfordert |
+| kann unowned Purchase claimen | nur konservativ  | ja, explizit                |
+| UI Feedback                   | optional/leise   | sichtbar                    |
+| Konflikte                     | Event/State      | sichtbares Result           |
 
 ## Runtime API
 
@@ -893,12 +893,7 @@ Verarbeitung:
 Status:
 
 ```ts
-type CustomerInfoFreshness =
-  | 'fresh'
-  | 'stale'
-  | 'syncing'
-  | 'offline'
-  | 'error'
+type CustomerInfoFreshness = 'fresh' | 'stale' | 'syncing' | 'offline' | 'error'
 ```
 
 Regeln:

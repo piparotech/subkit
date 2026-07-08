@@ -1,11 +1,12 @@
+import { useState } from 'react'
+
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import {
   CheckCircle2 as CheckIcon,
-  Info as InfoIcon,
   OctagonAlert as DangerIcon,
+  Info as InfoIcon,
   TriangleAlert as WarningIcon,
 } from 'lucide-react'
-import { useState } from 'react'
 
 import { PUIAlert } from './PUIAlert'
 import { PUILinkText } from './PUILinkText'
@@ -81,7 +82,12 @@ export const WithAction: Story = {
 export const Dismissible: Story = {
   render: function Render() {
     const [open, setOpen] = useState(true)
-    if (!open) return <PUILinkText href="#" onClick={() => setOpen(true)}>Show alert again</PUILinkText>
+    if (!open)
+      return (
+        <PUILinkText href="#" onClick={() => setOpen(true)}>
+          Show alert again
+        </PUILinkText>
+      )
     return (
       <PUIAlert
         icon={<InfoIcon className="size-5" />}
@@ -97,7 +103,11 @@ export const Dismissible: Story = {
 
 export const TitleOnly: Story = {
   render: () => (
-    <PUIAlert icon={<CheckIcon className="size-5" />} title="All systems operational" tone="success" />
+    <PUIAlert
+      icon={<CheckIcon className="size-5" />}
+      title="All systems operational"
+      tone="success"
+    />
   ),
 }
 

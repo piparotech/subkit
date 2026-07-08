@@ -1,7 +1,5 @@
 import { type ReactNode, useCallback, useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import { PUIBadge, PUIButton, PUISegmentedControl, PUISwitch, PUIText } from '@/components/ui'
 import {
   type AppSettings,
@@ -14,6 +12,7 @@ import {
   createTopicsStore,
   shouldShowSoftAsk,
 } from '@/lib/app-settings'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import {
   DEMO_APP_SETTINGS_CONFIG,

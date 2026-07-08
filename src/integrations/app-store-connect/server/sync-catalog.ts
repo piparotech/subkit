@@ -1,7 +1,5 @@
-import { createHash } from 'node:crypto'
-
 import { and, eq, like } from 'drizzle-orm'
-
+import { createHash } from 'node:crypto'
 import { db } from '~/db/client'
 import {
   appPlatforms,
@@ -14,16 +12,19 @@ import {
   storeProductBindings,
 } from '~/db/schema'
 import {
-  fetchAppleCatalogProducts,
-  type AppleCatalogProduct,
-  type AppStoreConnectCredentials,
-} from '~/server/app-store-connect/client'
-import { previewProduct, type ApplePreviewLocalProduct } from '~/integrations/app-store-connect/server/preview'
+  type ApplePreviewLocalProduct,
+  previewProduct,
+} from '~/integrations/app-store-connect/server/preview'
 import type {
   AppStoreConnectCatalogSyncResult,
   AppStoreConnectProductPreview,
   AppStoreConnectProductSyncAction,
 } from '~/integrations/app-store-connect/types'
+import {
+  type AppStoreConnectCredentials,
+  type AppleCatalogProduct,
+  fetchAppleCatalogProducts,
+} from '~/server/app-store-connect/client'
 
 import { finishStoreSyncRun, safeErrorDetail, startStoreSyncRun, syncRunRowId } from './sync-shared'
 
@@ -47,7 +48,12 @@ export async function syncAppStoreConnectCatalogForApp({
   await startStoreSyncRun({ appId, mode: 'import', store: 'apple', syncRunId, userId })
   try {
     const appleProducts = await fetchAppleCatalogProducts(credentials, appleAppId)
-    const snapshotResult = await storeAppleCatalogSnapshot({ appId, appleAppId, appleProducts, syncRunId })
+    const snapshotResult = await storeAppleCatalogSnapshot({
+      appId,
+      appleAppId,
+      appleProducts,
+      syncRunId,
+    })
     await markAppleBindingsCompared(appId, snapshotResult.snapshotIdByExternalId)
     const preview = await buildAppleProductPreview(appId, appleProducts)
     await replaceAppleDriftItems(appId, preview, snapshotResult.snapshotIdByExternalId)
@@ -58,41 +64,76 @@ export async function syncAppStoreConnectCatalogForApp({
     await finishStoreSyncRun({
       errorDetail: null,
       status: conflicts > 0 ? 'partial' : 'succeeded',
-      summary: { conflicts, snapshots: snapshotResult.snapshots, storeOnly: toCreate, unchanged, valueDifferences: toUpdate },
+      summary: {
+        conflicts,
+        snapshots: snapshotResult.snapshots,
+        storeOnly: toCreate,
+        unchanged,
+        valueDifferences: toUpdate,
+      },
       syncRunId,
     })
     return { conflicts, created: toCreate, preview, skipped: 0, unchanged, updated: toUpdate }
   } catch (error) {
-    await finishStoreSyncRun({ errorDetail: safeErrorDetail(error), status: 'failed', summary: { error: safeErrorDetail(error) }, syncRunId })
+    await finishStoreSyncRun({
+      errorDetail: safeErrorDetail(error),
+      status: 'failed',
+      summary: { error: safeErrorDetail(error) },
+      syncRunId,
+    })
     throw error
   }
 }
 
-export async function readAppleProductPreview(appId: string, credentials: AppStoreConnectCredentials, appleAppId: string): Promise<AppStoreConnectProductPreview[]> {
+export async function readAppleProductPreview(
+  appId: string,
+  credentials: AppStoreConnectCredentials,
+  appleAppId: string,
+): Promise<AppStoreConnectProductPreview[]> {
   const syncRunId = syncRunRowId(appId, 'apple', 'compare')
   await startStoreSyncRun({ appId, mode: 'compare', store: 'apple', syncRunId, userId: null })
   try {
     const appleProducts = await fetchAppleCatalogProducts(credentials, appleAppId)
-    const snapshotResult = await storeAppleCatalogSnapshot({ appId, appleAppId, appleProducts, syncRunId })
+    const snapshotResult = await storeAppleCatalogSnapshot({
+      appId,
+      appleAppId,
+      appleProducts,
+      syncRunId,
+    })
     await markAppleBindingsCompared(appId, snapshotResult.snapshotIdByExternalId)
     const preview = await buildAppleProductPreview(appId, appleProducts)
     await replaceAppleDriftItems(appId, preview, snapshotResult.snapshotIdByExternalId)
     const conflicts = preview.filter((item) => item.action === 'conflict').length
-    const changed = preview.filter((item) => item.action === 'create' || item.action === 'update').length
+    const changed = preview.filter(
+      (item) => item.action === 'create' || item.action === 'update',
+    ).length
     await finishStoreSyncRun({
       errorDetail: null,
       status: conflicts > 0 ? 'partial' : 'succeeded',
-      summary: { changed, conflicts, products: preview.length, snapshots: snapshotResult.snapshots },
+      summary: {
+        changed,
+        conflicts,
+        products: preview.length,
+        snapshots: snapshotResult.snapshots,
+      },
       syncRunId,
     })
     return preview
   } catch (error) {
-    await finishStoreSyncRun({ errorDetail: safeErrorDetail(error), status: 'failed', summary: { error: safeErrorDetail(error) }, syncRunId })
+    await finishStoreSyncRun({
+      errorDetail: safeErrorDetail(error),
+      status: 'failed',
+      summary: { error: safeErrorDetail(error) },
+      syncRunId,
+    })
     throw error
   }
 }
 
-async function buildAppleProductPreview(appId: string, appleProducts: readonly AppleCatalogProduct[]): Promise<AppStoreConnectProductPreview[]> {
+async function buildAppleProductPreview(
+  appId: string,
+  appleProducts: readonly AppleCatalogProduct[],
+): Promise<AppStoreConnectProductPreview[]> {
   const rows = await db
     .select({
       appleProductId: storeProductBindings.externalProductId,
@@ -102,7 +143,13 @@ async function buildAppleProductPreview(appId: string, appleProducts: readonly A
     })
     .from(products)
     .innerJoin(productPlans, eq(productPlans.productId, products.id))
-    .leftJoin(storeProductBindings, and(eq(storeProductBindings.productPlanId, productPlans.id), eq(storeProductBindings.store, 'apple')))
+    .leftJoin(
+      storeProductBindings,
+      and(
+        eq(storeProductBindings.productPlanId, productPlans.id),
+        eq(storeProductBindings.store, 'apple'),
+      ),
+    )
     .where(eq(products.appId, appId))
   const localProducts: ApplePreviewLocalProduct[] = rows.map((row) => ({
     appleProductId: row.appleProductId,
@@ -231,11 +278,17 @@ async function ensureAppleControlPlaneRecords(appId: string, appleAppId: string)
   return appPlatformId
 }
 
-async function markAppleBindingsCompared(appId: string, snapshotIdByExternalId: ReadonlyMap<string, string>): Promise<void> {
+async function markAppleBindingsCompared(
+  appId: string,
+  snapshotIdByExternalId: ReadonlyMap<string, string>,
+): Promise<void> {
   const now = new Date()
   const appPlatformId = appleAppPlatformRowId(appId)
   const integrationId = appleIntegrationRowId(appId)
-  const bindings = await db.select().from(storeProductBindings).where(and(eq(storeProductBindings.appId, appId), eq(storeProductBindings.store, 'apple')))
+  const bindings = await db
+    .select()
+    .from(storeProductBindings)
+    .where(and(eq(storeProductBindings.appId, appId), eq(storeProductBindings.store, 'apple')))
 
   for (const binding of bindings) {
     if (binding.bindingStatus === 'archived') continue
@@ -259,10 +312,22 @@ async function replaceAppleDriftItems(
   preview: readonly AppStoreConnectProductPreview[],
   snapshotIdByExternalId: ReadonlyMap<string, string>,
 ): Promise<void> {
-  await db.delete(storeCatalogDriftItems).where(and(eq(storeCatalogDriftItems.appId, appId), like(storeCatalogDriftItems.fieldPath, 'apple.%')))
+  await db
+    .delete(storeCatalogDriftItems)
+    .where(
+      and(
+        eq(storeCatalogDriftItems.appId, appId),
+        like(storeCatalogDriftItems.fieldPath, 'apple.%'),
+      ),
+    )
 
-  const bindings = await db.select().from(storeProductBindings).where(and(eq(storeProductBindings.appId, appId), eq(storeProductBindings.store, 'apple')))
-  const bindingIdByExternalProductId = new Map(bindings.map((binding) => [binding.externalProductId, binding.id]))
+  const bindings = await db
+    .select()
+    .from(storeProductBindings)
+    .where(and(eq(storeProductBindings.appId, appId), eq(storeProductBindings.store, 'apple')))
+  const bindingIdByExternalProductId = new Map(
+    bindings.map((binding) => [binding.externalProductId, binding.id]),
+  )
   const now = new Date()
 
   for (const item of preview) {
@@ -292,7 +357,12 @@ function applePreviewDrift(item: AppStoreConnectProductPreview): {
   fieldPath: string
   severity: typeof storeCatalogDriftItems.$inferInsert.severity
 } {
-  const actualJson = JSON.stringify({ duration: item.duration, name: item.appleName, productId: item.appleProductId, state: item.appleState })
+  const actualJson = JSON.stringify({
+    duration: item.duration,
+    name: item.appleName,
+    productId: item.appleProductId,
+    state: item.appleState,
+  })
   if (item.action === 'create') {
     return {
       actualJson,
@@ -336,7 +406,11 @@ function storeSnapshotRowId(appPlatformId: string, syncRunId: string, externalId
   return `${appPlatformId}:snapshot:${syncRunId}:${externalId}`
 }
 
-function driftItemRowId(appId: string, externalId: string, action: AppStoreConnectProductSyncAction): string {
+function driftItemRowId(
+  appId: string,
+  externalId: string,
+  action: AppStoreConnectProductSyncAction,
+): string {
   return `${appId}:drift:apple:${externalId}:${action}`
 }
 

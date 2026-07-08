@@ -1,5 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
+
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import { PUIDropdown, type PUIDropdownItem } from './PUIDropdown'
 
@@ -25,7 +26,7 @@ function Controlled({
         onSelect={setSelected}
         triggerLabel="Open menu"
       />
-      <p className="text-sm text-muted-foreground">Selected: {selected ?? 'none'}</p>
+      <p className="text-muted-foreground text-sm">Selected: {selected ?? 'none'}</p>
     </div>
   )
 }

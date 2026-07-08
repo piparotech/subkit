@@ -1,7 +1,5 @@
 import { type FormEvent, useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import {
   PUIAvatar,
   PUIBadge,
@@ -19,6 +17,7 @@ import {
   defaultAuthTexts,
   useSession,
 } from '@/lib/auth'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import {
   MOCK_BASE_URL,

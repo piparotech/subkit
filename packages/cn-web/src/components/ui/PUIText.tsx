@@ -50,7 +50,18 @@ export interface PUITextProps extends React.HTMLAttributes<HTMLElement> {
 
 /** @scope both */
 export const PUIText = React.forwardRef<HTMLElement, PUITextProps>(
-  ({ className, variant = 'body', tone = 'default', as = 'span', opticalCenter = false, style, ...props }, ref) => {
+  (
+    {
+      className,
+      variant = 'body',
+      tone = 'default',
+      as = 'span',
+      opticalCenter = false,
+      style,
+      ...props
+    },
+    ref,
+  ) => {
     const Component = as as React.ElementType
     // em is font-relative, so translateY(0.13em) scales with the text size; merged on top of any
     // caller-passed style (never dropping it).

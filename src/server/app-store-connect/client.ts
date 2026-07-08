@@ -1,6 +1,5 @@
 import { sign } from 'node:crypto'
 import { gunzipSync } from 'node:zlib'
-
 import { base64UrlEncode } from '~/server/auth/crypto'
 
 const appStoreConnectApiBase = 'https://api.appstoreconnect.apple.com'
@@ -106,39 +105,70 @@ export async function validateAppStoreConnectAccess({
 
   if (resolved.probe != null) capabilities.push(capability('app_metadata', resolved.probe))
 
-  const appMetadataProbe = resolvedAppId == null ? unknownProbe('Apple app mapping is missing.') : await probeJson(credentials, `/v1/apps/${encodeURIComponent(resolvedAppId)}/appStoreVersions?limit=1`)
+  const appMetadataProbe =
+    resolvedAppId == null
+      ? unknownProbe('Apple app mapping is missing.')
+      : await probeJson(
+          credentials,
+          `/v1/apps/${encodeURIComponent(resolvedAppId)}/appStoreVersions?limit=1`,
+        )
   upsertCapability(capabilities, capability('app_metadata', appMetadataProbe))
 
-  const catalogProbe = resolvedAppId == null ? unknownProbe('Apple app mapping is missing.') : await probeSubscriptionCatalog(credentials, resolvedAppId)
+  const catalogProbe =
+    resolvedAppId == null
+      ? unknownProbe('Apple app mapping is missing.')
+      : await probeSubscriptionCatalog(credentials, resolvedAppId)
   capabilities.push(capability('subscription_catalog', catalogProbe))
 
-  const buildsProbe = resolvedAppId == null ? unknownProbe('Apple app mapping is missing.') : await probeJson(credentials, `/v1/apps/${encodeURIComponent(resolvedAppId)}/builds?limit=1`)
+  const buildsProbe =
+    resolvedAppId == null
+      ? unknownProbe('Apple app mapping is missing.')
+      : await probeJson(credentials, `/v1/apps/${encodeURIComponent(resolvedAppId)}/builds?limit=1`)
   capabilities.push(capability('testflight_builds', buildsProbe))
 
-  const reviewsProbe = resolvedAppId == null ? unknownProbe('Apple app mapping is missing.') : await probeJson(credentials, `/v1/apps/${encodeURIComponent(resolvedAppId)}/customerReviews?limit=1`)
+  const reviewsProbe =
+    resolvedAppId == null
+      ? unknownProbe('Apple app mapping is missing.')
+      : await probeJson(
+          credentials,
+          `/v1/apps/${encodeURIComponent(resolvedAppId)}/customerReviews?limit=1`,
+        )
   capabilities.push(capability('customer_reviews', reviewsProbe))
 
-  const provisioningProbe = resolvedBundleId == null || resolvedBundleId.trim() === ''
-    ? unknownProbe('Bundle ID is missing.')
-    : await probeJson(credentials, `/v1/bundleIds?filter[identifier]=${encodeURIComponent(resolvedBundleId)}&limit=1`)
+  const provisioningProbe =
+    resolvedBundleId == null || resolvedBundleId.trim() === ''
+      ? unknownProbe('Bundle ID is missing.')
+      : await probeJson(
+          credentials,
+          `/v1/bundleIds?filter[identifier]=${encodeURIComponent(resolvedBundleId)}&limit=1`,
+        )
   capabilities.push(capability('provisioning', provisioningProbe))
 
-  const salesProbe = vendorNumber == null || vendorNumber.trim() === ''
-    ? unknownProbe('Vendor Number is missing; Sales Reports cannot be checked yet.')
-    : await probeSalesReport(credentials, vendorNumber.trim(), defaultReportDate())
+  const salesProbe =
+    vendorNumber == null || vendorNumber.trim() === ''
+      ? unknownProbe('Vendor Number is missing; Sales Reports cannot be checked yet.')
+      : await probeSalesReport(credentials, vendorNumber.trim(), defaultReportDate())
   capabilities.push(capability('sales_reports', salesProbe))
 
-  const missingRequired = capabilities.some((item) => item.key === 'apps' && item.status === 'missing')
+  const missingRequired = capabilities.some(
+    (item) => item.key === 'apps' && item.status === 'missing',
+  )
   const availableCount = capabilities.filter((item) => item.status === 'available').length
   const missingCount = capabilities.filter((item) => item.status === 'missing').length
-  const status = missingRequired ? 'invalid' : missingCount > 0 || availableCount < 2 ? 'needs_attention' : 'connected'
-  const firstProblem = capabilities.find((item) => item.status === 'missing') ?? capabilities.find((item) => item.status === 'unknown')
+  const status = missingRequired
+    ? 'invalid'
+    : missingCount > 0 || availableCount < 2
+      ? 'needs_attention'
+      : 'connected'
+  const firstProblem =
+    capabilities.find((item) => item.status === 'missing') ??
+    capabilities.find((item) => item.status === 'unknown')
 
   return {
     appleAppId: resolvedAppId,
     bundleId: resolvedBundleId,
     capabilities,
-    lastError: status === 'connected' ? null : firstProblem?.detail ?? null,
+    lastError: status === 'connected' ? null : (firstProblem?.detail ?? null),
     status,
   }
 }
@@ -148,10 +178,16 @@ export async function fetchAppleCatalogProducts(
   appleAppId: string,
 ): Promise<AppleCatalogProduct[]> {
   const products: AppleCatalogProduct[] = []
-  const groups = await getAllAppStoreConnectResources(credentials, `/v1/apps/${encodeURIComponent(appleAppId)}/subscriptionGroups?limit=200`)
+  const groups = await getAllAppStoreConnectResources(
+    credentials,
+    `/v1/apps/${encodeURIComponent(appleAppId)}/subscriptionGroups?limit=200`,
+  )
 
   for (const group of groups) {
-    const subscriptions = await getAllAppStoreConnectResources(credentials, `/v1/subscriptionGroups/${encodeURIComponent(group.id)}/subscriptions?limit=200`)
+    const subscriptions = await getAllAppStoreConnectResources(
+      credentials,
+      `/v1/subscriptionGroups/${encodeURIComponent(group.id)}/subscriptions?limit=200`,
+    )
     for (const subscription of subscriptions) {
       const productId = readString(subscription.attributes, 'productId') ?? subscription.id
       products.push({
@@ -166,7 +202,10 @@ export async function fetchAppleCatalogProducts(
     }
   }
 
-  const inAppPurchases = await getAllAppStoreConnectResources(credentials, `/v1/apps/${encodeURIComponent(appleAppId)}/inAppPurchasesV2?limit=200`)
+  const inAppPurchases = await getAllAppStoreConnectResources(
+    credentials,
+    `/v1/apps/${encodeURIComponent(appleAppId)}/inAppPurchasesV2?limit=200`,
+  )
   for (const purchase of inAppPurchases) {
     const productId = readString(purchase.attributes, 'productId') ?? purchase.id
     products.push({
@@ -192,7 +231,11 @@ export async function downloadDailySalesReport({
   reportDate: string
   vendorNumber: string
 }): Promise<AppleSalesReport> {
-  const response = await fetchAppStoreConnect(credentials, salesReportPath(vendorNumber, reportDate), 'application/a-gzip')
+  const response = await fetchAppStoreConnect(
+    credentials,
+    salesReportPath(vendorNumber, reportDate),
+    'application/a-gzip',
+  )
   if (!response.ok) throw new AppStoreConnectApiError(response.status, await response.text())
 
   const compressed = Buffer.from(await response.arrayBuffer())
@@ -202,8 +245,17 @@ export async function downloadDailySalesReport({
 
 function createJwt(credentials: AppStoreConnectCredentials): string {
   const now = Math.floor(Date.now() / 1000)
-  const header = base64UrlEncode(JSON.stringify({ alg: 'ES256', kid: credentials.keyId, typ: 'JWT' }))
-  const payload = base64UrlEncode(JSON.stringify({ aud: 'appstoreconnect-v1', exp: now + 300, iat: now, iss: credentials.issuerId }))
+  const header = base64UrlEncode(
+    JSON.stringify({ alg: 'ES256', kid: credentials.keyId, typ: 'JWT' }),
+  )
+  const payload = base64UrlEncode(
+    JSON.stringify({
+      aud: 'appstoreconnect-v1',
+      exp: now + 300,
+      iat: now,
+      iss: credentials.issuerId,
+    }),
+  )
   const signingInput = `${header}.${payload}`
   const signature = sign('sha256', Buffer.from(signingInput), {
     dsaEncoding: 'ieee-p1363',
@@ -226,7 +278,10 @@ async function fetchAppStoreConnect(
   })
 }
 
-export async function requestAppStoreConnectJson(credentials: AppStoreConnectCredentials, path: string): Promise<unknown> {
+export async function requestAppStoreConnectJson(
+  credentials: AppStoreConnectCredentials,
+  path: string,
+): Promise<unknown> {
   const response = await fetchAppStoreConnect(credentials, path)
   const text = await response.text()
   if (!response.ok) throw new AppStoreConnectApiError(response.status, text)
@@ -234,11 +289,17 @@ export async function requestAppStoreConnectJson(credentials: AppStoreConnectCre
   return JSON.parse(text)
 }
 
-export async function getAppStoreConnectResourcePage(credentials: AppStoreConnectCredentials, path: string): Promise<AppStoreConnectResource[]> {
+export async function getAppStoreConnectResourcePage(
+  credentials: AppStoreConnectCredentials,
+  path: string,
+): Promise<AppStoreConnectResource[]> {
   return readResourceArray(await requestAppStoreConnectJson(credentials, path))
 }
 
-export async function getAllAppStoreConnectResources(credentials: AppStoreConnectCredentials, path: string): Promise<AppStoreConnectResource[]> {
+export async function getAllAppStoreConnectResources(
+  credentials: AppStoreConnectCredentials,
+  path: string,
+): Promise<AppStoreConnectResource[]> {
   const resources: AppStoreConnectResource[] = []
   let nextPath: string | null = path
 
@@ -251,7 +312,10 @@ export async function getAllAppStoreConnectResources(credentials: AppStoreConnec
   return resources
 }
 
-async function probeJson(credentials: AppStoreConnectCredentials, path: string): Promise<EndpointProbe> {
+async function probeJson(
+  credentials: AppStoreConnectCredentials,
+  path: string,
+): Promise<EndpointProbe> {
   try {
     await requestAppStoreConnectJson(credentials, path)
     return { detail: 'Endpoint is reachable.', status: 'available' }
@@ -260,29 +324,51 @@ async function probeJson(credentials: AppStoreConnectCredentials, path: string):
   }
 }
 
-async function probeSalesReport(credentials: AppStoreConnectCredentials, vendorNumber: string, reportDate: string): Promise<EndpointProbe> {
+async function probeSalesReport(
+  credentials: AppStoreConnectCredentials,
+  vendorNumber: string,
+  reportDate: string,
+): Promise<EndpointProbe> {
   try {
     await downloadDailySalesReport({ credentials, reportDate, vendorNumber })
     return { detail: `Daily Sales Report for ${reportDate} is reachable.`, status: 'available' }
   } catch (error) {
     if (error instanceof AppStoreConnectApiError && error.status === 404) {
-      return { detail: `No daily Sales Report was available for ${reportDate}; credentials were accepted.`, status: 'unknown' }
+      return {
+        detail: `No daily Sales Report was available for ${reportDate}; credentials were accepted.`,
+        status: 'unknown',
+      }
     }
     return probeFromError(error)
   }
 }
 
-async function probeSubscriptionCatalog(credentials: AppStoreConnectCredentials, appleAppId: string): Promise<EndpointProbe> {
-  const subscriptionGroupsProbe = await probeJson(credentials, `/v1/apps/${encodeURIComponent(appleAppId)}/subscriptionGroups?limit=1`)
-  const inAppPurchasesProbe = await probeJson(credentials, `/v1/apps/${encodeURIComponent(appleAppId)}/inAppPurchasesV2?limit=1`)
+async function probeSubscriptionCatalog(
+  credentials: AppStoreConnectCredentials,
+  appleAppId: string,
+): Promise<EndpointProbe> {
+  const subscriptionGroupsProbe = await probeJson(
+    credentials,
+    `/v1/apps/${encodeURIComponent(appleAppId)}/subscriptionGroups?limit=1`,
+  )
+  const inAppPurchasesProbe = await probeJson(
+    credentials,
+    `/v1/apps/${encodeURIComponent(appleAppId)}/inAppPurchasesV2?limit=1`,
+  )
 
-  if (subscriptionGroupsProbe.status === 'available' || inAppPurchasesProbe.status === 'available') {
+  if (
+    subscriptionGroupsProbe.status === 'available' ||
+    inAppPurchasesProbe.status === 'available'
+  ) {
     return { detail: 'Subscription groups or in-app purchases are reachable.', status: 'available' }
   }
   if (subscriptionGroupsProbe.status === 'missing' && inAppPurchasesProbe.status === 'missing') {
     return { detail: 'No access to subscription groups or in-app purchases.', status: 'missing' }
   }
-  return { detail: `${subscriptionGroupsProbe.detail} ${inAppPurchasesProbe.detail}`, status: 'unknown' }
+  return {
+    detail: `${subscriptionGroupsProbe.detail} ${inAppPurchasesProbe.detail}`,
+    status: 'unknown',
+  }
 }
 
 async function resolveApp(
@@ -293,11 +379,17 @@ async function resolveApp(
   if (requestedAppleAppId != null && requestedAppleAppId.trim() !== '') {
     const appleAppId = requestedAppleAppId.trim()
     try {
-      const json = await requestAppStoreConnectJson(credentials, `/v1/apps/${encodeURIComponent(appleAppId)}`)
+      const json = await requestAppStoreConnectJson(
+        credentials,
+        `/v1/apps/${encodeURIComponent(appleAppId)}`,
+      )
       const resource = readSingleResource(json)
       return {
         appleAppId,
-        bundleId: resource == null ? requestedBundleId : readString(resource.attributes, 'bundleId') ?? requestedBundleId,
+        bundleId:
+          resource == null
+            ? requestedBundleId
+            : (readString(resource.attributes, 'bundleId') ?? requestedBundleId),
         probe: { detail: 'Mapped Apple App ID is reachable.', status: 'available' },
       }
     } catch (error) {
@@ -308,13 +400,19 @@ async function resolveApp(
   if (requestedBundleId != null && requestedBundleId.trim() !== '') {
     const cleanBundleId = requestedBundleId.trim()
     try {
-      const json = await requestAppStoreConnectJson(credentials, `/v1/apps?filter[bundleId]=${encodeURIComponent(cleanBundleId)}&limit=1`)
+      const json = await requestAppStoreConnectJson(
+        credentials,
+        `/v1/apps?filter[bundleId]=${encodeURIComponent(cleanBundleId)}&limit=1`,
+      )
       const [resource] = readResourceArray(json)
       if (resource == null) {
         return {
           appleAppId: null,
           bundleId: cleanBundleId,
-          probe: { detail: `No App Store Connect app matched ${cleanBundleId}.`, status: 'missing' },
+          probe: {
+            detail: `No App Store Connect app matched ${cleanBundleId}.`,
+            status: 'missing',
+          },
         }
       }
       return {
@@ -327,22 +425,36 @@ async function resolveApp(
     }
   }
 
-  return { appleAppId: null, bundleId: null, probe: { detail: 'Apple App ID or Bundle ID is required for app-level checks.', status: 'unknown' } }
+  return {
+    appleAppId: null,
+    bundleId: null,
+    probe: {
+      detail: 'Apple App ID or Bundle ID is required for app-level checks.',
+      status: 'unknown',
+    },
+  }
 }
 
 function probeFromError(error: unknown): EndpointProbe {
   if (error instanceof AppStoreConnectApiError) {
     if (error.status === 401 || error.status === 403) {
-      return { detail: `Missing permission or invalid key for this endpoint (HTTP ${error.status}).`, status: 'missing' }
+      return {
+        detail: `Missing permission or invalid key for this endpoint (HTTP ${error.status}).`,
+        status: 'missing',
+      }
     }
-    if (error.status === 404) return { detail: 'Endpoint or mapped app was not found.', status: 'missing' }
+    if (error.status === 404)
+      return { detail: 'Endpoint or mapped app was not found.', status: 'missing' }
     return { detail: `Endpoint returned HTTP ${error.status}.`, status: 'unknown' }
   }
   if (error instanceof Error) return { detail: error.message, status: 'unknown' }
   return { detail: 'Unknown App Store Connect error.', status: 'unknown' }
 }
 
-function capability(key: AppStoreConnectCapabilityKey, probe: EndpointProbe): AppStoreConnectCapabilityResult {
+function capability(
+  key: AppStoreConnectCapabilityKey,
+  probe: EndpointProbe,
+): AppStoreConnectCapabilityResult {
   const meta = capabilityMeta(key)
   return { ...meta, detail: probe.detail, key, status: probe.status }
 }
@@ -352,21 +464,35 @@ function capabilityMeta(key: AppStoreConnectCapabilityKey): { description: strin
     case 'apps':
       return { description: 'List apps and resolve bundle IDs.', label: 'Apps' }
     case 'app_metadata':
-      return { description: 'Read app versions, metadata, and release state.', label: 'Metadata & releases' }
+      return {
+        description: 'Read app versions, metadata, and release state.',
+        label: 'Metadata & releases',
+      }
     case 'subscription_catalog':
-      return { description: 'Read subscription groups and in-app purchases.', label: 'Subscription catalog' }
+      return {
+        description: 'Read subscription groups and in-app purchases.',
+        label: 'Subscription catalog',
+      }
     case 'sales_reports':
-      return { description: 'Download Sales and Trends reports with a Vendor Number.', label: 'Sales reports' }
+      return {
+        description: 'Download Sales and Trends reports with a Vendor Number.',
+        label: 'Sales reports',
+      }
     case 'testflight_builds':
       return { description: 'Read builds and TestFlight readiness.', label: 'TestFlight builds' }
     case 'customer_reviews':
-      return { description: 'Read customer reviews for support and release monitoring.', label: 'Customer reviews' }
+      return {
+        description: 'Read customer reviews for support and release monitoring.',
+        label: 'Customer reviews',
+      }
     case 'provisioning':
       return { description: 'Read bundle IDs and provisioning metadata.', label: 'Provisioning' }
   }
 }
 
-function fillRemainingCapabilities(existing: AppStoreConnectCapabilityResult[]): AppStoreConnectCapabilityResult[] {
+function fillRemainingCapabilities(
+  existing: AppStoreConnectCapabilityResult[],
+): AppStoreConnectCapabilityResult[] {
   const keys: AppStoreConnectCapabilityKey[] = [
     'apps',
     'app_metadata',
@@ -379,11 +505,16 @@ function fillRemainingCapabilities(existing: AppStoreConnectCapabilityResult[]):
   const existingKeys = new Set(existing.map((item) => item.key))
   return [
     ...existing,
-    ...keys.filter((key) => !existingKeys.has(key)).map((key) => capability(key, unknownProbe('Skipped because base app access failed.'))),
+    ...keys
+      .filter((key) => !existingKeys.has(key))
+      .map((key) => capability(key, unknownProbe('Skipped because base app access failed.'))),
   ]
 }
 
-function upsertCapability(items: AppStoreConnectCapabilityResult[], item: AppStoreConnectCapabilityResult): void {
+function upsertCapability(
+  items: AppStoreConnectCapabilityResult[],
+  item: AppStoreConnectCapabilityResult,
+): void {
   const index = items.findIndex((candidate) => candidate.key === item.key)
   if (index === -1) {
     items.push(item)
@@ -457,7 +588,8 @@ function readSubscriptionPeriod(attributes: Record<string, unknown>): string {
   const direct = readString(attributes, 'subscriptionPeriod')
   if (direct != null) return direct
   const period = attributes.subscriptionPeriod
-  if (isRecord(period)) return readString(period, 'unit') ?? readString(period, 'value') ?? 'subscription'
+  if (isRecord(period))
+    return readString(period, 'unit') ?? readString(period, 'value') ?? 'subscription'
   return 'subscription'
 }
 

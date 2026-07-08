@@ -30,7 +30,11 @@ export function encryptSecret(value: string): EncryptedSecret {
 }
 
 export function decryptSecret(secret: EncryptedSecret): string {
-  const decipher = createDecipheriv('aes-256-gcm', encryptionKey(), Buffer.from(secret.iv, 'base64url'))
+  const decipher = createDecipheriv(
+    'aes-256-gcm',
+    encryptionKey(),
+    Buffer.from(secret.iv, 'base64url'),
+  )
   decipher.setAuthTag(Buffer.from(secret.authTag, 'base64url'))
   const plaintext = Buffer.concat([
     decipher.update(Buffer.from(secret.ciphertext, 'base64url')),

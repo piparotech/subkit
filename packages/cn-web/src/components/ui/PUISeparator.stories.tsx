@@ -22,7 +22,7 @@ export const Horizontal: Story = { render: () => <PUISeparator /> }
 
 export const InContext: Story = {
   render: () => (
-    <div className="flex flex-col gap-3 text-sm text-foreground">
+    <div className="text-foreground flex flex-col gap-3 text-sm">
       <span>Above</span>
       <PUISeparator />
       <span>Below</span>
@@ -32,7 +32,7 @@ export const InContext: Story = {
 
 export const Inset: Story = {
   render: () => (
-    <div className="flex flex-col gap-3 text-sm text-foreground">
+    <div className="text-foreground flex flex-col gap-3 text-sm">
       <span>Above</span>
       <PUISeparator inset />
       <span>Below</span>
@@ -42,7 +42,7 @@ export const Inset: Story = {
 
 export const Vertical: Story = {
   render: () => (
-    <div className="flex h-6 items-center gap-3 text-sm text-foreground">
+    <div className="text-foreground flex h-6 items-center gap-3 text-sm">
       <span>Left</span>
       <PUISeparator orientation="vertical" />
       <span>Right</span>

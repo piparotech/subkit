@@ -1,12 +1,12 @@
-import { Eye, EyeOff } from 'lucide-react'
 import * as React from 'react'
+
+import { Eye, EyeOff } from 'lucide-react'
 
 import { PUIInput, type PUIInputProps } from './PUIInput'
 import { type PUIPasswordToggleProps } from './PUIPasswordInput.types'
 
 export interface PUIPasswordInputProps
-  extends Omit<PUIInputProps, 'type' | 'addonEnd'>,
-    PUIPasswordToggleProps {}
+  extends Omit<PUIInputProps, 'type' | 'addonEnd'>, PUIPasswordToggleProps {}
 
 /**
  * Password field with an accessible show/hide toggle (disabled with the field).
@@ -26,7 +26,7 @@ export const PUIPasswordInput = React.forwardRef<HTMLInputElement, PUIPasswordIn
         addonEnd={
           <button
             aria-label={toggleLabel}
-            className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            className="text-muted-foreground hover:bg-muted focus-visible:ring-ring flex min-h-11 min-w-11 items-center justify-center rounded-md focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
             disabled={disabled}
             onClick={() => setVisible((v) => !v)}
             type="button"

@@ -1,10 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Check, Lock, ShieldCheck } from 'lucide-react'
-
 import { PUIBadge, PUIButton, PUIInput, PUIPasswordInput, PUIText } from '@/components/ui'
 import { type FieldErrors, fieldErrors } from '@/lib/forms-validation'
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { Check, Lock, ShieldCheck } from 'lucide-react'
 
 import {
   LoginSchema,

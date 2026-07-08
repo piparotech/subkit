@@ -1,11 +1,15 @@
 import { createServerFn } from '@tanstack/react-start'
+
 import { and, eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
-
 import { db } from '~/db/client'
-import { ensureDatabaseReady } from '~/db/setup'
 import { tenants, userTenants, users } from '~/db/schema'
-import { isSuperAdmin, requireCanCreateTenant, requireTenantRole } from '~/server/auth/tenant-access'
+import { ensureDatabaseReady } from '~/db/setup'
+import {
+  isSuperAdmin,
+  requireCanCreateTenant,
+  requireTenantRole,
+} from '~/server/auth/tenant-access'
 
 import {
   assertTenantKeepsAdmin,
@@ -78,7 +82,11 @@ export const inviteTenantMember = createServerFn({ method: 'POST' })
     const currentUser = await getCurrentConsoleUser()
     await requireTenantRole(currentUser, data.tenantId, ['admin'])
     const email = normalizeEmail(data.email)
-    const [user] = await db.select().from(users).where(and(eq(users.email, email), isNull(users.disabledAt))).limit(1)
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(eq(users.email, email), isNull(users.disabledAt)))
+      .limit(1)
     if (user == null) throw new Error('User must sign in once before they can be invited')
     const now = new Date()
 
@@ -124,9 +132,12 @@ export const removeTenantMember = createServerFn({ method: 'POST' })
     await ensureDatabaseReady()
     const currentUser = await getCurrentConsoleUser()
     await requireTenantRole(currentUser, data.tenantId, ['admin'])
-    if (!canRemoveTenantMember(currentUser, data.userId)) throw new Error('Admins cannot remove their own workspace access')
+    if (!canRemoveTenantMember(currentUser, data.userId))
+      throw new Error('Admins cannot remove their own workspace access')
     await assertTenantKeepsAdmin(data.tenantId, data.userId)
 
-    await db.delete(userTenants).where(and(eq(userTenants.tenantId, data.tenantId), eq(userTenants.userId, data.userId)))
+    await db
+      .delete(userTenants)
+      .where(and(eq(userTenants.tenantId, data.tenantId), eq(userTenants.userId, data.userId)))
     return { ok: true }
   })

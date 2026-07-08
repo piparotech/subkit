@@ -1,7 +1,11 @@
 import type { StatusTone } from '~/components/ui/types'
 
 export function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat('en-US', { currency: 'USD', maximumFractionDigits: 2, style: 'currency' }).format(cents / 100)
+  return new Intl.NumberFormat('en-US', {
+    currency: 'USD',
+    maximumFractionDigits: 2,
+    style: 'currency',
+  }).format(cents / 100)
 }
 
 export function amountMicrosToCents(value: number | null): number {
@@ -42,7 +46,10 @@ export function formatJsonSummary(value: string | null): string {
     if (isStringRecord(parsed)) {
       const entries = Object.entries(parsed)
       if (entries.length === 0) return '{}'
-      return entries.slice(0, 3).map(([key, entryValue]) => `${key}: ${formatJsonScalar(entryValue)}`).join(' · ')
+      return entries
+        .slice(0, 3)
+        .map(([key, entryValue]) => `${key}: ${formatJsonScalar(entryValue)}`)
+        .join(' · ')
     }
     return formatJsonScalar(parsed)
   } catch {

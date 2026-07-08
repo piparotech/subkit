@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import { PUIBadge, PUIButton, PUIText } from '@/components/ui'
 import {
   BackoffConfig,
@@ -13,6 +11,7 @@ import {
   backoffDelay,
   readEvent,
 } from '@/lib/realtime-web-client'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import {
   ActivityEvent,

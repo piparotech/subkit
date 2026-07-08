@@ -11,7 +11,12 @@ export interface ThemeProviderProps extends React.HTMLAttributes<HTMLDivElement>
   scheme?: ColorScheme
 }
 
-export function ThemeProvider({ scheme = 'light', className, children, ...props }: ThemeProviderProps) {
+export function ThemeProvider({
+  scheme = 'light',
+  className,
+  children,
+  ...props
+}: ThemeProviderProps) {
   return (
     <ThemeContext.Provider value={scheme}>
       <div

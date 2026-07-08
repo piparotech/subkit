@@ -1,7 +1,11 @@
 export { AppSettingsView } from '~/integrations/app-store-connect/AppSettingsView'
 export { WorkspaceSettingsView } from '~/integrations/app-store-connect/WorkspaceSettingsView'
 export { credentialDraftFromConnection } from '~/integrations/app-store-connect/credentialDraftFromConnection'
-export { capabilityStatusTone, connectionStatusTone, productActionTone } from '~/integrations/app-store-connect/statusTones'
+export {
+  capabilityStatusTone,
+  connectionStatusTone,
+  productActionTone,
+} from '~/integrations/app-store-connect/statusTones'
 export type {
   AppStoreConnectAccessibleApp,
   AppStoreConnectCatalogSyncResult,

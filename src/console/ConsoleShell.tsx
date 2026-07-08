@@ -1,16 +1,18 @@
-import { PUIButton } from '@piparo/cn-web'
-import { Link } from '@tanstack/react-router'
-import { ChevronDown, LogOut, Menu, Plus, Search, X } from 'lucide-react'
 import * as React from 'react'
 
-import { AppNavigation } from '~/domain/apps/AppNavigation'
+import { Link } from '@tanstack/react-router'
+
+import { ChevronDown, LogOut, Menu, Plus, Search, X } from 'lucide-react'
 import { GlobalNavigation } from '~/console/GlobalNavigation'
-import { MiniAppAvatar } from '~/domain/apps/MiniAppAvatar'
+import { WorkspaceSwitcher } from '~/console/WorkspaceSwitcher'
 import { appRouteParams } from '~/console/routing'
+import type { ConsolePrimaryAction } from '~/console/types'
+import { AppNavigation } from '~/domain/apps/AppNavigation'
+import { MiniAppAvatar } from '~/domain/apps/MiniAppAvatar'
 import type { AppTenant } from '~/domain/apps/types'
 import type { ConsoleUser, WorkspaceTenant } from '~/domain/tenants/types'
-import type { ConsolePrimaryAction } from '~/console/types'
-import { WorkspaceSwitcher } from '~/console/WorkspaceSwitcher'
+
+import { PUIButton } from '@piparo/cn-web'
 
 interface ShellProps {
   accessibleTenants: WorkspaceTenant[]
@@ -105,7 +107,7 @@ export function ConsoleShell({
             onClick={closeMobileNav}
             type="button"
           />
-          <aside className="absolute bottom-0 left-0 top-0 flex w-[min(320px,calc(100vw-48px))] flex-col border-r border-[var(--subkit-border)] bg-[var(--subkit-panel)] shadow-[12px_0_34px_-18px_rgba(20,20,50,0.36)]">
+          <aside className="absolute top-0 bottom-0 left-0 flex w-[min(320px,calc(100vw-48px))] flex-col border-r border-[var(--subkit-border)] bg-[var(--subkit-panel)] shadow-[12px_0_34px_-18px_rgba(20,20,50,0.36)]">
             <div className="flex items-center justify-between border-b border-[var(--subkit-border)] px-[14px] py-[12px]">
               <span className="text-[13px] font-semibold">Navigation</span>
               <button
@@ -152,20 +154,32 @@ export function ConsoleShell({
             {currentApp != null && currentAppRouteParams != null ? (
               <>
                 <BreadcrumbSeparator />
-                <Link className={breadcrumbLinkClass} params={currentAppRouteParams} preload="intent" to="/$tenantSlug/$appSlug">
+                <Link
+                  className={breadcrumbLinkClass}
+                  params={currentAppRouteParams}
+                  preload="intent"
+                  to="/$tenantSlug/$appSlug"
+                >
                   {currentApp.name}
                 </Link>
               </>
             ) : null}
             <BreadcrumbSeparator />
-            <span aria-current="page" className="min-w-0 truncate font-semibold text-[var(--subkit-text)]">
+            <span
+              aria-current="page"
+              className="min-w-0 truncate font-semibold text-[var(--subkit-text)]"
+            >
               {title}
             </span>
           </nav>
           <div className="flex-1" />
           {showSearch ? (
             <label className="hidden w-[260px] items-center gap-[8px] rounded-[9px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[11px] py-[7px] md:flex">
-              <Search aria-hidden className="size-[14px] text-[var(--subkit-faint)]" strokeWidth={1.6} />
+              <Search
+                aria-hidden
+                className="size-[14px] text-[var(--subkit-faint)]"
+                strokeWidth={1.6}
+              />
               <span className="sr-only">Search</span>
               <input
                 className="w-full border-0 bg-transparent font-sans text-[13px] text-[var(--subkit-text)] outline-none placeholder:text-[var(--subkit-faint)]"
@@ -221,7 +235,7 @@ function SidebarContent({
 }) {
   return (
     <>
-      <div className="relative px-[14px] pb-[10px] pt-[14px]">
+      <div className="relative px-[14px] pt-[14px] pb-[10px]">
         <button
           className="flex w-full cursor-pointer items-center gap-[10px] rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] p-[8px] text-left"
           onClick={onToggleSwitcher}
@@ -229,10 +243,14 @@ function SidebarContent({
         >
           <MiniAppAvatar color={tenant.color} initials={tenant.initials} />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[13px] font-semibold leading-[1.15]">{tenant.name}</div>
+            <div className="truncate text-[13px] leading-[1.15] font-semibold">{tenant.name}</div>
             <div className="text-[11px] leading-[1.2] text-[var(--subkit-faint)]">Workspace</div>
           </div>
-          <ChevronDown aria-hidden className="size-[14px] text-[var(--subkit-faint)]" strokeWidth={1.6} />
+          <ChevronDown
+            aria-hidden
+            className="size-[14px] text-[var(--subkit-faint)]"
+            strokeWidth={1.6}
+          />
         </button>
         {switcherOpen ? (
           <WorkspaceSwitcher
@@ -245,7 +263,7 @@ function SidebarContent({
         ) : null}
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-[12px] pb-[12px] pt-[4px]">
+      <nav className="flex-1 overflow-y-auto px-[12px] pt-[4px] pb-[12px]">
         {currentApp == null ? (
           <GlobalNavigation appsCount={apps.length} onNavigate={onNavigate} />
         ) : (
@@ -258,8 +276,12 @@ function SidebarContent({
           {currentUser.initials}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[12.5px] font-semibold leading-[1.15]">{currentUser.name}</div>
-          <div className="truncate text-[11px] text-[var(--subkit-faint)]">{currentUser.globalRole === 'super_admin' ? 'SuperAdmin' : currentUser.organization}</div>
+          <div className="truncate text-[12.5px] leading-[1.15] font-semibold">
+            {currentUser.name}
+          </div>
+          <div className="truncate text-[11px] text-[var(--subkit-faint)]">
+            {currentUser.globalRole === 'super_admin' ? 'SuperAdmin' : currentUser.organization}
+          </div>
         </div>
         <a
           aria-label="Sign out"
@@ -284,4 +306,3 @@ function BreadcrumbSeparator() {
     </span>
   )
 }
-

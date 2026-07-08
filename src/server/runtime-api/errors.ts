@@ -5,7 +5,12 @@ export class SubKitServerApiError extends Error {
   readonly details: unknown
   readonly status: number
 
-  constructor(input: { code: SubKitErrorCode; details?: unknown; message: string; status: number }) {
+  constructor(input: {
+    code: SubKitErrorCode
+    details?: unknown
+    message: string
+    status: number
+  }) {
     super(input.message)
     this.name = 'SubKitServerApiError'
     this.code = input.code
@@ -14,7 +19,12 @@ export class SubKitServerApiError extends Error {
   }
 }
 
-export function jsonApiError(input: { code: SubKitErrorCode; details?: unknown; message: string; status: number }): Response {
+export function jsonApiError(input: {
+  code: SubKitErrorCode
+  details?: unknown
+  message: string
+  status: number
+}): Response {
   const requestId = crypto.randomUUID()
   return Response.json(
     {
@@ -33,16 +43,29 @@ export function jsonApiError(input: { code: SubKitErrorCode; details?: unknown; 
 }
 
 export function jsonUnknownApiError(): Response {
-  return jsonApiError({ code: 'server_error', message: 'SubKit server API request failed', status: 500 })
+  return jsonApiError({
+    code: 'server_error',
+    message: 'SubKit server API request failed',
+    status: 500,
+  })
 }
 
 export function jsonApiErrorFromThrown(error: unknown): Response {
   if (error instanceof SubKitServerApiError) {
-    return jsonApiError({ code: error.code, details: error.details, message: error.message, status: error.status })
+    return jsonApiError({
+      code: error.code,
+      details: error.details,
+      message: error.message,
+      status: error.status,
+    })
   }
 
   if (error instanceof SyntaxError) {
-    return jsonApiError({ code: 'invalid_request', message: 'Invalid JSON request body', status: 400 })
+    return jsonApiError({
+      code: 'invalid_request',
+      message: 'Invalid JSON request body',
+      status: 400,
+    })
   }
 
   console.error('SubKit runtime API failed', error)

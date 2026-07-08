@@ -1,23 +1,10 @@
 import { createServerFn } from '@tanstack/react-start'
+
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-
 import { db } from '~/db/client'
+import { appStoreConnectCapabilities, appStoreConnectCredentials, apps } from '~/db/schema'
 import { ensureDatabaseReady } from '~/db/setup'
-import { createRandomToken } from '~/server/auth/crypto'
-import { getRequiredCurrentUser } from '~/server/auth/current-user'
-import { requireTenantAccess, requireTenantRole } from '~/server/auth/tenant-access'
-import type { AuthUser } from '~/server/auth/types'
-import {
-  appStoreConnectCapabilities,
-  appStoreConnectCredentials,
-  apps,
-} from '~/db/schema'
-import {
-  validateAppStoreConnectAccess,
-  type AppStoreConnectCredentials,
-} from '~/server/app-store-connect/client'
-import { decryptSecret, encryptSecret, fingerprintSecret } from '~/server/secrets'
 import {
   applyProductPreview,
   readAppleProductPreview,
@@ -33,6 +20,15 @@ import type {
   AppStoreConnectProductPreview,
   AppStoreConnectReportSyncResult,
 } from '~/integrations/app-store-connect/types'
+import {
+  type AppStoreConnectCredentials,
+  validateAppStoreConnectAccess,
+} from '~/server/app-store-connect/client'
+import { createRandomToken } from '~/server/auth/crypto'
+import { getRequiredCurrentUser } from '~/server/auth/current-user'
+import { requireTenantAccess, requireTenantRole } from '~/server/auth/tenant-access'
+import type { AuthUser } from '~/server/auth/types'
+import { decryptSecret, encryptSecret, fingerprintSecret } from '~/server/secrets'
 
 const credentialInputSchema = z.object({
   issuerId: z.string().min(1),
@@ -65,7 +61,10 @@ const importInputSchema = z.object({
 
 const salesReportInputSchema = z.object({
   appId: z.string().min(1),
-  reportDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  reportDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
 })
 
 export const saveAppStoreConnectCredential = createServerFn({ method: 'POST' })
@@ -81,7 +80,8 @@ export const saveAppStoreConnectCredential = createServerFn({ method: 'POST' })
       throw new Error('Private key is required for a new App Store Connect connection')
     }
 
-    const encrypted = cleanPrivateKey != null && cleanPrivateKey !== '' ? encryptSecret(cleanPrivateKey) : null
+    const encrypted =
+      cleanPrivateKey != null && cleanPrivateKey !== '' ? encryptSecret(cleanPrivateKey) : null
     const credentialId = existing?.id ?? `asc_${createRandomToken(14)}`
     const now = new Date()
 
@@ -98,7 +98,10 @@ export const saveAppStoreConnectCredential = createServerFn({ method: 'POST' })
         privateKeyAuthTag: encrypted?.authTag ?? existing?.privateKeyAuthTag ?? null,
         privateKeyCiphertext: encrypted?.ciphertext ?? existing?.privateKeyCiphertext ?? null,
         privateKeyIv: encrypted?.iv ?? existing?.privateKeyIv ?? null,
-        privateKeySha256: cleanPrivateKey != null && cleanPrivateKey !== '' ? fingerprintSecret(cleanPrivateKey) : existing?.privateKeySha256 ?? null,
+        privateKeySha256:
+          cleanPrivateKey != null && cleanPrivateKey !== ''
+            ? fingerprintSecret(cleanPrivateKey)
+            : (existing?.privateKeySha256 ?? null),
         status: 'needs_attention',
         tenantId: data.tenantId,
         updatedAt: now,
@@ -112,7 +115,10 @@ export const saveAppStoreConnectCredential = createServerFn({ method: 'POST' })
           privateKeyAuthTag: encrypted?.authTag ?? existing?.privateKeyAuthTag ?? null,
           privateKeyCiphertext: encrypted?.ciphertext ?? existing?.privateKeyCiphertext ?? null,
           privateKeyIv: encrypted?.iv ?? existing?.privateKeyIv ?? null,
-          privateKeySha256: cleanPrivateKey != null && cleanPrivateKey !== '' ? fingerprintSecret(cleanPrivateKey) : existing?.privateKeySha256 ?? null,
+          privateKeySha256:
+            cleanPrivateKey != null && cleanPrivateKey !== ''
+              ? fingerprintSecret(cleanPrivateKey)
+              : (existing?.privateKeySha256 ?? null),
           status: 'needs_attention',
           updatedAt: now,
           vendorNumber: optionalTrim(data.vendorNumber),
@@ -173,7 +179,8 @@ export const deleteAppStoreConnectCredential = createServerFn({ method: 'POST' }
       action: 'credential.deleted',
       appId: null,
       credentialId: credential.id,
-      detail: 'Encrypted private key material deleted locally. Revoke the key in App Store Connect too.',
+      detail:
+        'Encrypted private key material deleted locally. Revoke the key in App Store Connect too.',
       tenantId: data.tenantId,
       userId: currentUser.id,
     })
@@ -185,7 +192,10 @@ export const previewAppStoreConnectProducts = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<AppStoreConnectProductPreview[]> => {
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
-    const { appleAppId, app, credential, credentials } = await requireActiveAppleCredential(currentUser, data.appId)
+    const { appleAppId, app, credential, credentials } = await requireActiveAppleCredential(
+      currentUser,
+      data.appId,
+    )
     const preview = await readAppleProductPreview(data.appId, credentials, appleAppId)
     await recordAudit({
       action: 'products.previewed',
@@ -223,8 +233,15 @@ export const syncAppStoreConnectCatalog = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<AppStoreConnectCatalogSyncResult> => {
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
-    const { appleAppId, app, credential, credentials } = await requireActiveAppleCredential(currentUser, data.appId)
-    const result = await syncAppStoreConnectCatalogForApp({ appleAppId, appId: data.appId, credentials })
+    const { appleAppId, app, credential, credentials } = await requireActiveAppleCredential(
+      currentUser,
+      data.appId,
+    )
+    const result = await syncAppStoreConnectCatalogForApp({
+      appleAppId,
+      appId: data.appId,
+      credentials,
+    })
 
     await recordAudit({
       action: 'products.synced',
@@ -242,7 +259,10 @@ export const syncAppStoreConnectSalesReport = createServerFn({ method: 'POST' })
   .handler(async ({ data }): Promise<AppStoreConnectReportSyncResult> => {
     await ensureDatabaseReady()
     const currentUser = await getRequiredCurrentUser()
-    const { app, credential, credentials } = await requireActiveAppleCredential(currentUser, data.appId)
+    const { app, credential, credentials } = await requireActiveAppleCredential(
+      currentUser,
+      data.appId,
+    )
     const vendorNumber = credential.vendorNumber?.trim()
     if (!vendorNumber) throw new Error('Vendor Number is required to sync Sales Reports')
     return syncAppStoreConnectSalesReportSnapshot({
@@ -312,7 +332,10 @@ async function validateTenantCredential(user: AuthUser, tenantId: string): Promi
   })
 }
 
-async function requireActiveAppleCredential(user: AuthUser, appId: string): Promise<{
+async function requireActiveAppleCredential(
+  user: AuthUser,
+  appId: string,
+): Promise<{
   appleAppId: string
   app: typeof apps.$inferSelect
   credential: typeof appStoreConnectCredentials.$inferSelect
@@ -321,7 +344,8 @@ async function requireActiveAppleCredential(user: AuthUser, appId: string): Prom
   const app = await requireApp(user, appId)
   const credential = await requireCredential(app.tenantId)
   if (credential.status === 'deleted') throw new Error('App Store Connect credential was deleted')
-  if (app.appleAppId == null || app.appleAppId.trim() === '') throw new Error('Select an App Store Connect app before syncing Apple app data')
+  if (app.appleAppId == null || app.appleAppId.trim() === '')
+    throw new Error('Select an App Store Connect app before syncing Apple app data')
   return { appleAppId: app.appleAppId, app, credential, credentials: decryptCredential(credential) }
 }
 
@@ -332,13 +356,17 @@ async function requireApp(user: AuthUser, appId: string): Promise<typeof apps.$i
   return app
 }
 
-async function requireCredential(tenantId: string): Promise<typeof appStoreConnectCredentials.$inferSelect> {
+async function requireCredential(
+  tenantId: string,
+): Promise<typeof appStoreConnectCredentials.$inferSelect> {
   const credential = await findCredential(tenantId)
   if (!credential) throw new Error('No workspace App Store Connect credential is configured')
   return credential
 }
 
-async function findCredential(tenantId: string): Promise<typeof appStoreConnectCredentials.$inferSelect | undefined> {
+async function findCredential(
+  tenantId: string,
+): Promise<typeof appStoreConnectCredentials.$inferSelect | undefined> {
   const [credential] = await db
     .select()
     .from(appStoreConnectCredentials)
@@ -347,8 +375,14 @@ async function findCredential(tenantId: string): Promise<typeof appStoreConnectC
   return credential
 }
 
-function decryptCredential(credential: typeof appStoreConnectCredentials.$inferSelect): AppStoreConnectCredentials {
-  if (credential.privateKeyCiphertext == null || credential.privateKeyIv == null || credential.privateKeyAuthTag == null) {
+function decryptCredential(
+  credential: typeof appStoreConnectCredentials.$inferSelect,
+): AppStoreConnectCredentials {
+  if (
+    credential.privateKeyCiphertext == null ||
+    credential.privateKeyIv == null ||
+    credential.privateKeyAuthTag == null
+  ) {
     throw new Error('Private key material is missing; upload a new .p8 key')
   }
   return {

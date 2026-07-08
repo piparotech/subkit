@@ -1,7 +1,5 @@
 import { useCallback, useId, useMemo, useReducer, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import { PUIBadge, PUIButton, PUISegmentedControl, PUISwitch, PUIText } from '@/components/ui'
 import {
   type ConsentState,
@@ -12,6 +10,7 @@ import {
 } from '@/lib/analytics-posthog'
 import { createErrorReporter } from '@/lib/analytics-posthog/reporter'
 import { createTracker } from '@/lib/analytics-posthog/tracker'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import {
   DEMO_ACTIONS,

@@ -7,9 +7,15 @@ import {
   products,
   storeProductBindings,
 } from '~/db/schema'
-import type { AppStoreConnectImportResult, AppStoreConnectProductPreview } from '~/integrations/app-store-connect/types'
+import type {
+  AppStoreConnectImportResult,
+  AppStoreConnectProductPreview,
+} from '~/integrations/app-store-connect/types'
 
-export async function applyProductPreview(appId: string, preview: readonly AppStoreConnectProductPreview[]): Promise<AppStoreConnectImportResult> {
+export async function applyProductPreview(
+  appId: string,
+  preview: readonly AppStoreConnectProductPreview[],
+): Promise<AppStoreConnectImportResult> {
   let created = 0
   let updated = 0
   let skipped = 0
@@ -35,7 +41,12 @@ export async function applyProductPreview(appId: string, preview: readonly AppSt
         updatedAt: now,
       })
       .onConflictDoUpdate({
-        set: { description: `Imported from App Store Connect ${item.kind.replaceAll('_', ' ')}`, key: item.entitlement, name: item.entitlement, updatedAt: now },
+        set: {
+          description: `Imported from App Store Connect ${item.kind.replaceAll('_', ' ')}`,
+          key: item.entitlement,
+          name: item.entitlement,
+          updatedAt: now,
+        },
         target: entitlements.id,
       })
 
@@ -79,7 +90,10 @@ export async function applyProductPreview(appId: string, preview: readonly AppSt
         updatedAt: now,
       })
       .onConflictDoUpdate({
-        set: { grantMode: item.kind === 'subscription' ? 'while_active' : 'lifetime', updatedAt: now },
+        set: {
+          grantMode: item.kind === 'subscription' ? 'while_active' : 'lifetime',
+          updatedAt: now,
+        },
         target: [productEntitlements.productId, productEntitlements.entitlementId],
       })
 
@@ -156,7 +170,13 @@ export async function applyProductPreview(appId: string, preview: readonly AppSt
           syncDirection: 'store_to_subkit',
           updatedAt: now,
         },
-        target: [storeProductBindings.appId, storeProductBindings.store, storeProductBindings.externalProductId, storeProductBindings.externalBasePlanId, storeProductBindings.environment],
+        target: [
+          storeProductBindings.appId,
+          storeProductBindings.store,
+          storeProductBindings.externalProductId,
+          storeProductBindings.externalBasePlanId,
+          storeProductBindings.environment,
+        ],
       })
 
     if (item.action === 'create') created += 1
@@ -178,11 +198,20 @@ function productEntitlementRowId(productId: string, entitlementId: string): stri
   return `${productId}:entitlement:${entitlementId}`
 }
 
-function priceRowId(productPlanId: string, currencyCode: string, countryCode: string | null): string {
+function priceRowId(
+  productPlanId: string,
+  currencyCode: string,
+  countryCode: string | null,
+): string {
   return `${productPlanId}:price:${currencyCode}:${countryCode ?? 'global'}`
 }
 
-function storeBindingRowId(productPlanId: string, store: 'apple', externalProductId: string, basePlanId: string): string {
+function storeBindingRowId(
+  productPlanId: string,
+  store: 'apple',
+  externalProductId: string,
+  basePlanId: string,
+): string {
   return `${productPlanId}:binding:${store}:${externalProductId}:${basePlanId || 'default'}`
 }
 
@@ -191,9 +220,11 @@ function entitlementRowId(appId: string, key: string): string {
 }
 
 function durationToPlanKey(duration: string): string {
-  return duration
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'default'
+  return (
+    duration
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'default'
+  )
 }

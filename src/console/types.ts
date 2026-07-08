@@ -62,7 +62,9 @@ export interface ConsoleActionContext {
   openProductCreator: () => void
 }
 
-export type ConsolePrimaryActionFactory = (context: ConsoleActionContext) => ConsolePrimaryAction | null
+export type ConsolePrimaryActionFactory = (
+  context: ConsoleActionContext,
+) => ConsolePrimaryAction | null
 
 export type PanelState =
   | { kind: 'closed' }

@@ -25,7 +25,8 @@ export function createPurchaseQueueId(purchase: PurchaseQueueIdentifierInput): s
   const orderId = normalizeIdentifierPart(purchase.orderId)
   if (orderId != null) return `${purchase.store}:order:${orderId}`
 
-  const productId = normalizeIdentifierPart(purchase.productId ?? purchase.storeProductId) ?? 'unknown'
+  const productId =
+    normalizeIdentifierPart(purchase.productId ?? purchase.storeProductId) ?? 'unknown'
   const purchaseTime = purchase.purchaseTime ?? purchase.transactionDate ?? 'unknown'
   return `${purchase.store}:fallback:${productId}:${purchaseTime}`
 }

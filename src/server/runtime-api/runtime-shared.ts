@@ -1,8 +1,5 @@
-import { createHash } from 'node:crypto'
-
-import type { ProductKind, StoreName } from '@piparotech/subkit-core'
 import { eq } from 'drizzle-orm'
-
+import { createHash } from 'node:crypto'
 import { db } from '~/db/client'
 import {
   appUsers,
@@ -14,6 +11,8 @@ import {
   storePurchaseOwnerships,
 } from '~/db/schema'
 
+import type { ProductKind, StoreName } from '@piparotech/subkit-core'
+
 export type AppUserRow = typeof appUsers.$inferSelect
 export type ProductRow = typeof products.$inferSelect
 export type ProductPlanRow = typeof productPlans.$inferSelect
@@ -21,7 +20,8 @@ export type StoreProductBindingRow = typeof storeProductBindings.$inferSelect
 export type EntitlementGrantStatus = typeof entitlementGrants.$inferSelect.status
 export type RuntimeStore = typeof storePurchaseOwnerships.$inferSelect.store
 
-export const RUNTIME_IAP_VALIDATION_PENDING_NOTE = 'SubKit runtime IAP reconcile · validation pending'
+export const RUNTIME_IAP_VALIDATION_PENDING_NOTE =
+  'SubKit runtime IAP reconcile · validation pending'
 
 export interface RuntimeAppUserContext {
   appUser: AppUserRow
@@ -38,9 +38,16 @@ export function amountMicrosToCents(value: number | null): number {
   return Math.round(value / 10_000)
 }
 
-export function isGrantCurrentlyEffective(grant: { expiresAt: string | null; note?: string | null; revokedAt: Date | null; startsAt: string; status: EntitlementGrantStatus }): boolean {
+export function isGrantCurrentlyEffective(grant: {
+  expiresAt: string | null
+  note?: string | null
+  revokedAt: Date | null
+  startsAt: string
+  status: EntitlementGrantStatus
+}): boolean {
   if (isGrantValidationPending(grant)) return false
-  if (grant.status !== 'active' && grant.status !== 'trialing' && grant.status !== 'billing_retry') return false
+  if (grant.status !== 'active' && grant.status !== 'trialing' && grant.status !== 'billing_retry')
+    return false
   if (grant.revokedAt != null) return false
   const now = Date.now()
   const startsAt = Date.parse(grant.startsAt)

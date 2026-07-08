@@ -1,18 +1,17 @@
 import * as React from 'react'
 
 import { cn } from '../../lib/utils'
-import { PUIText } from './PUIText'
 import {
   type PUIFieldOwnProps,
   type PUIFieldRenderProps,
   type PUIFormOwnProps,
 } from './PUIField.types'
+import { PUIText } from './PUIText'
 
 export type { PUIFieldRenderProps } from './PUIField.types'
 
 export interface PUIFieldProps
-  extends PUIFieldOwnProps,
-    Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {
+  extends PUIFieldOwnProps, Omit<React.HTMLAttributes<HTMLDivElement>, 'children'> {
   /** Override the generated id (e.g. to match an external label). */
   id?: string
 }
@@ -74,8 +73,7 @@ export const PUIField = React.forwardRef<HTMLDivElement, PUIFieldProps>(function
 })
 
 export interface PUIFormProps
-  extends PUIFormOwnProps,
-    Omit<React.FormHTMLAttributes<HTMLFormElement>, 'children'> {}
+  extends PUIFormOwnProps, Omit<React.FormHTMLAttributes<HTMLFormElement>, 'children'> {}
 
 /**
  * Scope: both. Light `<form>` wrapper that groups PUIFields with a column rhythm and an

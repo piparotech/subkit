@@ -1,11 +1,13 @@
 import { and, eq } from 'drizzle-orm'
+import { db } from '~/db/client'
+import { appUsers, entitlementGrants, entitlements, products } from '~/db/schema'
+import { ensureDatabaseReady } from '~/db/setup'
+
 import type { ServerCustomerInfoRequest, ServerCustomerInfoResponse } from '@piparotech/subkit-core'
 
-import { db } from '~/db/client'
-import { ensureDatabaseReady } from '~/db/setup'
-import { appUsers, entitlementGrants, entitlements, products } from '~/db/schema'
-
-export async function getServerCustomerInfo(input: ServerCustomerInfoRequest): Promise<ServerCustomerInfoResponse> {
+export async function getServerCustomerInfo(
+  input: ServerCustomerInfoRequest,
+): Promise<ServerCustomerInfoResponse> {
   await ensureDatabaseReady()
   const checkedAt = new Date().toISOString()
 
@@ -36,7 +38,9 @@ export async function getServerCustomerInfo(input: ServerCustomerInfoRequest): P
     .from(entitlementGrants)
     .innerJoin(entitlements, eq(entitlementGrants.entitlementId, entitlements.id))
     .leftJoin(products, eq(entitlementGrants.productId, products.id))
-    .where(and(eq(entitlementGrants.appId, input.appId), eq(entitlementGrants.appUserId, appUser.id)))
+    .where(
+      and(eq(entitlementGrants.appId, input.appId), eq(entitlementGrants.appUserId, appUser.id)),
+    )
 
   return {
     appId: input.appId,

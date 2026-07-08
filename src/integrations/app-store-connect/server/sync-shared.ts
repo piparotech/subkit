@@ -1,8 +1,7 @@
 import { eq } from 'drizzle-orm'
-
 import { db } from '~/db/client'
-import { createRandomToken } from '~/server/auth/crypto'
 import { appStoreConnectAuditEvents, syncRuns } from '~/db/schema'
+import { createRandomToken } from '~/server/auth/crypto'
 
 export type AppleSyncMode = 'compare' | 'import'
 export type AppleSyncRunStatus = 'failed' | 'partial' | 'succeeded'
@@ -98,6 +97,9 @@ export function safeErrorDetail(error: unknown): string {
 
 export function redactSecretLikeText(value: string): string {
   return value
-    .replace(/-----BEGIN PRIVATE KEY-----[\s\S]*?-----END PRIVATE KEY-----/g, '[redacted-private-key]')
+    .replace(
+      /-----BEGIN PRIVATE KEY-----[\s\S]*?-----END PRIVATE KEY-----/g,
+      '[redacted-private-key]',
+    )
     .replace(/[A-Za-z0-9_-]{80,}/g, '[redacted-token]')
 }

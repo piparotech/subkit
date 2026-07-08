@@ -1,17 +1,19 @@
-import { PUIText } from '@piparo/cn-web'
-import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 
-import { AppAvatar } from '~/domain/apps/AppAvatar'
-import { AppCardMetric } from '~/domain/apps/AppCardMetric'
-import { sumCurrency, sumNumberText } from '~/domain/dashboard/formatMetrics'
+import { Link } from '@tanstack/react-router'
+
 import { MetricCard } from '~/components/ui/MetricCard'
 import { RowChevron } from '~/components/ui/RowChevron'
 import { SoftTag } from '~/components/ui/SoftTag'
-import { appRouteParams } from '~/console/routing'
 import { StatusLabel } from '~/components/ui/StatusLabel'
+import { appRouteParams } from '~/console/routing'
+import { AppAvatar } from '~/domain/apps/AppAvatar'
+import { AppCardMetric } from '~/domain/apps/AppCardMetric'
 import type { AppTenant } from '~/domain/apps/types'
+import { sumCurrency, sumNumberText } from '~/domain/dashboard/formatMetrics'
 import type { AppStoreConnectConnection } from '~/integrations/app-store-connect/types'
+
+import { PUIText } from '@piparo/cn-web'
 
 export function AppsView({
   apps,
@@ -32,29 +34,45 @@ export function AppsView({
       <div className="max-w-[1200px]">
         <div className="mb-[6px] flex items-end justify-between">
           <div>
-            <PUIText as="h1" className="m-0 text-[23px] font-bold tracking-[-0.01em]" variant="title2">
+            <PUIText
+              as="h1"
+              className="m-0 text-[23px] font-bold tracking-[-0.01em]"
+              variant="title2"
+            >
               Apps
             </PUIText>
             <p className="mt-[5px] mb-0 text-[13.5px] text-[var(--subkit-dim)]">
-              Mobile apps in this workspace. Connect store apps, sync products, then check entitlements from SubKit.
+              Mobile apps in this workspace. Connect store apps, sync products, then check
+              entitlements from SubKit.
             </p>
           </div>
         </div>
 
         {apps.length === 0 ? (
-          isFiltering ? <SearchEmptyState /> : <WorkspaceSetupEmptyState canCreateApps={canCreateApps} hasAppStoreConnectKey={hasAppStoreConnectKey} onCreateApp={onCreateApp} />
+          isFiltering ? (
+            <SearchEmptyState />
+          ) : (
+            <WorkspaceSetupEmptyState
+              canCreateApps={canCreateApps}
+              hasAppStoreConnectKey={hasAppStoreConnectKey}
+              onCreateApp={onCreateApp}
+            />
+          )
         ) : (
           <>
             <div className="my-[22px] mb-[24px] flex gap-[14px] max-md:flex-col">
               <MetricCard label="Total MRR" value={sumCurrency(apps.map((app) => app.mrr))} />
-              <MetricCard label="Active App Users" value={sumNumberText(apps.map((app) => app.activeAppUsers))} />
+              <MetricCard
+                label="Active App Users"
+                value={sumNumberText(apps.map((app) => app.activeAppUsers))}
+              />
               <MetricCard label="Apps" value={String(apps.length)} />
             </div>
 
             <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-[16px]">
               {apps.map((app) => (
                 <Link
-                  className="cursor-pointer rounded-[14px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] p-[18px] text-left transition-[box-shadow,border-color,transform] duration-fast hover:-translate-y-[2px] hover:border-[var(--subkit-border-2)] hover:shadow-[0_10px_28px_-12px_rgba(30,30,70,0.22)] motion-reduce:transform-none"
+                  className="duration-fast cursor-pointer rounded-[14px] border border-[var(--subkit-border)] bg-[var(--subkit-panel)] p-[18px] text-left transition-[box-shadow,border-color,transform] hover:-translate-y-[2px] hover:border-[var(--subkit-border-2)] hover:shadow-[0_10px_28px_-12px_rgba(30,30,70,0.22)] motion-reduce:transform-none"
                   key={app.id}
                   params={appRouteParams(app)}
                   preload="intent"
@@ -64,7 +82,9 @@ export function AppsView({
                     <AppAvatar app={app} />
                     <div className="min-w-0 flex-1">
                       <div className="text-[15px] font-semibold">{app.name}</div>
-                      <div className="truncate font-mono text-[12px] text-[var(--subkit-faint)]">{app.bundle}</div>
+                      <div className="truncate font-mono text-[12px] text-[var(--subkit-faint)]">
+                        {app.bundle}
+                      </div>
                     </div>
                     <StatusLabel label={app.status} tone={app.statusTone} />
                   </div>
@@ -109,7 +129,8 @@ function WorkspaceSetupEmptyState({
       <div className="max-w-[720px]">
         <div className="text-[18px] font-bold text-[var(--subkit-text)]">Set up this workspace</div>
         <p className="mt-[6px] text-[13.5px] leading-[1.5] text-[var(--subkit-dim)]">
-          SubKit needs a store connection before it can become the source of truth for products, App Users, and entitlement checks.
+          SubKit needs a store connection before it can become the source of truth for products, App
+          Users, and entitlement checks.
         </p>
       </div>
 
@@ -117,7 +138,11 @@ function WorkspaceSetupEmptyState({
         <SetupStep
           action={
             hasAppStoreConnectKey ? null : (
-              <Link className="font-semibold text-[var(--subkit-accent-d)] hover:underline" preload="intent" to="/settings">
+              <Link
+                className="font-semibold text-[var(--subkit-accent-d)] hover:underline"
+                preload="intent"
+                to="/settings"
+              >
                 Open Workspace Settings
               </Link>
             )
@@ -130,7 +155,11 @@ function WorkspaceSetupEmptyState({
         <SetupStep
           action={
             canCreateApps ? (
-              <button className="font-semibold text-[var(--subkit-accent-d)] hover:underline" onClick={onCreateApp} type="button">
+              <button
+                className="font-semibold text-[var(--subkit-accent-d)] hover:underline"
+                onClick={onCreateApp}
+                type="button"
+              >
                 Create app
               </button>
             ) : null
@@ -152,7 +181,8 @@ function WorkspaceSetupEmptyState({
 
       {!canCreateApps ? (
         <div className="mt-[16px] rounded-[10px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[12px] py-[10px] text-[12.5px] text-[var(--subkit-dim)]">
-          You can inspect apps after an Admin connects one. Ask a workspace Admin to create the first app or grant you Admin access.
+          You can inspect apps after an Admin connects one. Ask a workspace Admin to create the
+          first app or grant you Admin access.
         </div>
       ) : null}
     </div>
@@ -182,9 +212,13 @@ function SetupStep({
         </span>
         <div className="text-[13.5px] font-semibold text-[var(--subkit-text)]">{title}</div>
       </div>
-      <p className="mb-0 mt-[8px] text-[12.5px] leading-[1.45] text-[var(--subkit-dim)]">{text}</p>
+      <p className="mt-[8px] mb-0 text-[12.5px] leading-[1.45] text-[var(--subkit-dim)]">{text}</p>
       {action != null ? <div className="mt-[10px] text-[12.5px]">{action}</div> : null}
-      {disabled ? <div className="mt-[10px] text-[11.5px] text-[var(--subkit-faint)]">Available after the previous step.</div> : null}
+      {disabled ? (
+        <div className="mt-[10px] text-[11.5px] text-[var(--subkit-faint)]">
+          Available after the previous step.
+        </div>
+      ) : null}
     </div>
   )
 }

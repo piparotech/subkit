@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 import { AppRouteView } from '~/console/AppRouteView'
-import { AppUsersView } from '~/domain/app-users/AppUsersView'
 import type { AppConsoleViewRenderProps } from '~/console/types'
+import { AppUsersView } from '~/domain/app-users/AppUsersView'
 
 export const Route = createFileRoute('/_console/$tenantSlug/$appSlug/app-users')({
   component: AppUsersRoute,
@@ -19,5 +19,7 @@ function AppUsersRoute() {
 }
 
 function renderAppUsersView({ appUsers, isFiltering, onOpenAppUser }: AppConsoleViewRenderProps) {
-  return <AppUsersView appUsers={appUsers} isFiltering={isFiltering} onOpenAppUser={onOpenAppUser} />
+  return (
+    <AppUsersView appUsers={appUsers} isFiltering={isFiltering} onOpenAppUser={onOpenAppUser} />
+  )
 }

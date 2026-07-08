@@ -1,18 +1,6 @@
-import { randomUUID } from 'node:crypto'
-
-import {
-  type IapReconcileWithAppRequestInput,
-  type NormalizedStorePurchase,
-  createPurchaseQueueId,
-  type PurchaseOwnershipConflict,
-  type PurchaseSyncResult,
-  type RejectedPurchase,
-  type StoreName,
-} from '@piparotech/subkit-core'
 import { and, eq, inArray } from 'drizzle-orm'
-
+import { randomUUID } from 'node:crypto'
 import { db } from '~/db/client'
-import { ensureDatabaseReady } from '~/db/setup'
 import {
   entitlementGrants,
   prices,
@@ -24,16 +12,27 @@ import {
   storeProductBindings,
   storePurchaseOwnerships,
 } from '~/db/schema'
+import { ensureDatabaseReady } from '~/db/setup'
+
+import {
+  type IapReconcileWithAppRequestInput,
+  type NormalizedStorePurchase,
+  type PurchaseOwnershipConflict,
+  type PurchaseSyncResult,
+  type RejectedPurchase,
+  type StoreName,
+  createPurchaseQueueId,
+} from '@piparotech/subkit-core'
 
 import { resolveRuntimeAppUser } from './runtime-app-users'
 import { buildCustomerInfo, emptyCustomerInfo } from './runtime-customer-info'
 import {
   type EntitlementGrantStatus,
-  type ProductRow,
   type ProductPlanRow,
+  type ProductRow,
+  RUNTIME_IAP_VALIDATION_PENDING_NOTE,
   type RuntimeStore,
   type StoreProductBindingRow,
-  RUNTIME_IAP_VALIDATION_PENDING_NOTE,
   amountMicrosToCents,
   assertAppExists,
   sha256Hex,
@@ -48,7 +47,9 @@ interface RuntimeProductContext {
   productPlan: ProductPlanRow
 }
 
-export async function reconcileRuntimeIap(input: IapReconcileWithAppRequestInput): Promise<PurchaseSyncResult> {
+export async function reconcileRuntimeIap(
+  input: IapReconcileWithAppRequestInput,
+): Promise<PurchaseSyncResult> {
   await ensureDatabaseReady()
   await assertAppExists(input.appId)
 
@@ -58,34 +59,76 @@ export async function reconcileRuntimeIap(input: IapReconcileWithAppRequestInput
   const acceptedPurchases: string[] = []
   const finishableTransactions: PurchaseSyncResult['finishableTransactions'] = []
 
-  const resolvedAppUser = await resolveRuntimeAppUser(input.appId, input.appUserId, input.storeIdentities)
+  const resolvedAppUser = await resolveRuntimeAppUser(
+    input.appId,
+    input.appUserId,
+    input.storeIdentities,
+  )
   if (resolvedAppUser == null) {
     for (const purchase of input.purchases) {
-      rejectedPurchases.push(rejectPurchase(purchase, 'missing_identity', 'Missing app user id and no store identity matched a known app user'))
+      rejectedPurchases.push(
+        rejectPurchase(
+          purchase,
+          'missing_identity',
+          'Missing app user id and no store identity matched a known app user',
+        ),
+      )
     }
     const customerInfo = emptyCustomerInfo(input.appId, '', checkedAt)
-    return { acceptedPurchases, checkedAt, conflicts, customerInfo, finishableTransactions, rejectedPurchases, verificationStatus: 'failed' }
+    return {
+      acceptedPurchases,
+      checkedAt,
+      conflicts,
+      customerInfo,
+      finishableTransactions,
+      rejectedPurchases,
+      verificationStatus: 'failed',
+    }
   }
 
   const appUser = resolvedAppUser.appUser
 
   for (const purchase of input.purchases) {
-    const transactionId = purchase.transactionId ?? purchase.purchaseToken ?? purchase.orderId ?? null
+    const transactionId =
+      purchase.transactionId ?? purchase.purchaseToken ?? purchase.orderId ?? null
     if (transactionId == null) {
-      rejectedPurchases.push(rejectPurchase(purchase, 'invalid_purchase', 'Missing transaction id or purchase token'))
+      rejectedPurchases.push(
+        rejectPurchase(purchase, 'invalid_purchase', 'Missing transaction id or purchase token'),
+      )
       continue
     }
 
     const store = toRuntimeStore(purchase.store)
     const originalTransactionId = purchase.originalTransactionId ?? transactionId
-    const productContext = await findRuntimeProduct(input.appId, purchase.store, purchase.storeProductId)
+    const productContext = await findRuntimeProduct(
+      input.appId,
+      purchase.store,
+      purchase.storeProductId,
+    )
     if (productContext == null) {
-      rejectedPurchases.push(rejectPurchase(purchase, 'product_not_found', 'Store product is not bound to a SubKit product plan'))
-      await insertRuntimeEvent(input.appId, appUser.id, null, store, 'product_not_found', purchase.storeProductId)
+      rejectedPurchases.push(
+        rejectPurchase(
+          purchase,
+          'product_not_found',
+          'Store product is not bound to a SubKit product plan',
+        ),
+      )
+      await insertRuntimeEvent(
+        input.appId,
+        appUser.id,
+        null,
+        store,
+        'product_not_found',
+        purchase.storeProductId,
+      )
       continue
     }
 
-    const existingOwnership = await findStorePurchaseOwnership(input.appId, store, originalTransactionId)
+    const existingOwnership = await findStorePurchaseOwnership(
+      input.appId,
+      store,
+      originalTransactionId,
+    )
     if (existingOwnership != null && existingOwnership.appUserId !== appUser.id) {
       conflicts.push({
         reason: 'owned_by_another_user',
@@ -94,8 +137,21 @@ export async function reconcileRuntimeIap(input: IapReconcileWithAppRequestInput
         storeProductId: purchase.storeProductId,
         transactionId,
       })
-      rejectedPurchases.push(rejectPurchase(purchase, 'ownership_conflict', 'Purchase is already owned by another app user'))
-      await insertRuntimeEvent(input.appId, appUser.id, existingOwnership.id, store, 'ownership_conflict', originalTransactionId)
+      rejectedPurchases.push(
+        rejectPurchase(
+          purchase,
+          'ownership_conflict',
+          'Purchase is already owned by another app user',
+        ),
+      )
+      await insertRuntimeEvent(
+        input.appId,
+        appUser.id,
+        existingOwnership.id,
+        store,
+        'ownership_conflict',
+        originalTransactionId,
+      )
       continue
     }
 
@@ -103,9 +159,11 @@ export async function reconcileRuntimeIap(input: IapReconcileWithAppRequestInput
     const grantId = entitlementGrantId(input.appId, store, originalTransactionId)
     const now = new Date()
     const status = toGrantStatus(purchase)
-    const startsAt = purchase.purchaseTime == null ? checkedAt : new Date(purchase.purchaseTime).toISOString()
+    const startsAt =
+      purchase.purchaseTime == null ? checkedAt : new Date(purchase.purchaseTime).toISOString()
     const rawPayloadJson = stringifyJson(purchase.rawPayload)
-    const purchaseTokenHash = purchase.purchaseToken == null ? null : sha256Hex(purchase.purchaseToken)
+    const purchaseTokenHash =
+      purchase.purchaseToken == null ? null : sha256Hex(purchase.purchaseToken)
     const receiptHash = purchase.receipt == null ? null : sha256Hex(purchase.receipt)
 
     if (existingOwnership == null) {
@@ -134,7 +192,14 @@ export async function reconcileRuntimeIap(input: IapReconcileWithAppRequestInput
         transactionId,
         updatedAt: now,
       })
-      await insertRuntimeEvent(input.appId, appUser.id, ownershipId, store, 'purchase_created', originalTransactionId)
+      await insertRuntimeEvent(
+        input.appId,
+        appUser.id,
+        ownershipId,
+        store,
+        'purchase_created',
+        originalTransactionId,
+      )
     } else {
       await db
         .update(storePurchaseOwnerships)
@@ -154,7 +219,14 @@ export async function reconcileRuntimeIap(input: IapReconcileWithAppRequestInput
           updatedAt: now,
         })
         .where(eq(storePurchaseOwnerships.id, existingOwnership.id))
-      await insertRuntimeEvent(input.appId, appUser.id, existingOwnership.id, store, 'purchase_updated', originalTransactionId)
+      await insertRuntimeEvent(
+        input.appId,
+        appUser.id,
+        existingOwnership.id,
+        store,
+        'purchase_updated',
+        originalTransactionId,
+      )
     }
 
     for (const entitlementId of productContext.entitlementIds) {
@@ -162,7 +234,10 @@ export async function reconcileRuntimeIap(input: IapReconcileWithAppRequestInput
         appId: input.appId,
         appUserId: appUser.id,
         entitlementId,
-        grantId: entitlementId === productContext.entitlementIds[0] ? grantId : `${grantId}:${entitlementId}`,
+        grantId:
+          entitlementId === productContext.entitlementIds[0]
+            ? grantId
+            : `${grantId}:${entitlementId}`,
         ownershipId,
         ownershipSource: store === 'apple' ? 'app_account_token' : 'obfuscated_account_id',
         productId: productContext.product.id,
@@ -184,7 +259,12 @@ export async function reconcileRuntimeIap(input: IapReconcileWithAppRequestInput
     })
 
     acceptedPurchases.push(transactionId)
-    finishableTransactions.push({ isConsumable: productContext.product.productType === 'consumable', purchaseId: createPurchaseQueueId(purchase), store: purchase.store, transactionId })
+    finishableTransactions.push({
+      isConsumable: productContext.product.productType === 'consumable',
+      purchaseId: createPurchaseQueueId(purchase),
+      store: purchase.store,
+      transactionId,
+    })
   }
 
   const customerInfo = await buildCustomerInfo(input.appId, appUser)
@@ -199,7 +279,11 @@ export async function reconcileRuntimeIap(input: IapReconcileWithAppRequestInput
   }
 }
 
-async function findRuntimeProduct(appId: string, store: StoreName, productIdentifier: string): Promise<RuntimeProductContext | null> {
+async function findRuntimeProduct(
+  appId: string,
+  store: StoreName,
+  productIdentifier: string,
+): Promise<RuntimeProductContext | null> {
   const runtimeStore = toRuntimeStore(store)
   const [row] = await db
     .select({
@@ -225,11 +309,21 @@ async function findRuntimeProduct(appId: string, store: StoreName, productIdenti
   return { ...row, entitlementIds }
 }
 
-async function findStorePurchaseOwnership(appId: string, store: RuntimeStore, originalTransactionId: string): Promise<typeof storePurchaseOwnerships.$inferSelect | null> {
+async function findStorePurchaseOwnership(
+  appId: string,
+  store: RuntimeStore,
+  originalTransactionId: string,
+): Promise<typeof storePurchaseOwnerships.$inferSelect | null> {
   const [row] = await db
     .select()
     .from(storePurchaseOwnerships)
-    .where(and(eq(storePurchaseOwnerships.appId, appId), eq(storePurchaseOwnerships.store, store), eq(storePurchaseOwnerships.originalTransactionId, originalTransactionId)))
+    .where(
+      and(
+        eq(storePurchaseOwnerships.appId, appId),
+        eq(storePurchaseOwnerships.store, store),
+        eq(storePurchaseOwnerships.originalTransactionId, originalTransactionId),
+      ),
+    )
     .limit(1)
   return row ?? null
 }
@@ -249,7 +343,11 @@ async function upsertEntitlementGrant(input: {
   storeProductBindingId: string
 }): Promise<void> {
   const now = new Date()
-  const [existing] = await db.select({ id: entitlementGrants.id }).from(entitlementGrants).where(eq(entitlementGrants.id, input.grantId)).limit(1)
+  const [existing] = await db
+    .select({ id: entitlementGrants.id })
+    .from(entitlementGrants)
+    .where(eq(entitlementGrants.id, input.grantId))
+    .limit(1)
   if (existing == null) {
     await db.insert(entitlementGrants).values({
       appId: input.appId,
@@ -295,7 +393,11 @@ async function insertPurchaseEventIfMissing(input: {
   occurredOn: string
   store: RuntimeStore
 }): Promise<void> {
-  const [existing] = await db.select({ id: purchaseEvents.id }).from(purchaseEvents).where(eq(purchaseEvents.id, input.eventId)).limit(1)
+  const [existing] = await db
+    .select({ id: purchaseEvents.id })
+    .from(purchaseEvents)
+    .where(eq(purchaseEvents.id, input.eventId))
+    .limit(1)
   if (existing != null) return
   await db.insert(purchaseEvents).values({
     amountCents: input.amountCents,
@@ -308,7 +410,14 @@ async function insertPurchaseEventIfMissing(input: {
   })
 }
 
-async function insertRuntimeEvent(appId: string, appUserId: string | null, ownershipId: string | null, store: RuntimeStore, action: string, detail: string): Promise<void> {
+async function insertRuntimeEvent(
+  appId: string,
+  appUserId: string | null,
+  ownershipId: string | null,
+  store: RuntimeStore,
+  action: string,
+  detail: string,
+): Promise<void> {
   await db.insert(runtimeReconcileEvents).values({
     action,
     appId,
@@ -322,7 +431,10 @@ async function insertRuntimeEvent(appId: string, appUserId: string | null, owner
 }
 
 async function readEntitlementIdsForProduct(productId: string): Promise<string[]> {
-  const rows = await db.select({ entitlementId: productEntitlements.entitlementId }).from(productEntitlements).where(eq(productEntitlements.productId, productId))
+  const rows = await db
+    .select({ entitlementId: productEntitlements.entitlementId })
+    .from(productEntitlements)
+    .where(eq(productEntitlements.productId, productId))
   return rows.map((row) => row.entitlementId)
 }
 
@@ -340,15 +452,33 @@ function toGrantStatus(purchase: NormalizedStorePurchase): EntitlementGrantStatu
   return 'active'
 }
 
-function rejectPurchase(purchase: NormalizedStorePurchase, code: RejectedPurchase['code'], message: string): RejectedPurchase {
-  return { code, message, store: purchase.store, storeProductId: purchase.storeProductId, transactionId: purchase.transactionId ?? purchase.purchaseToken ?? null }
+function rejectPurchase(
+  purchase: NormalizedStorePurchase,
+  code: RejectedPurchase['code'],
+  message: string,
+): RejectedPurchase {
+  return {
+    code,
+    message,
+    store: purchase.store,
+    storeProductId: purchase.storeProductId,
+    transactionId: purchase.transactionId ?? purchase.purchaseToken ?? null,
+  }
 }
 
-function storePurchaseOwnershipId(appId: string, store: RuntimeStore, originalTransactionId: string): string {
+function storePurchaseOwnershipId(
+  appId: string,
+  store: RuntimeStore,
+  originalTransactionId: string,
+): string {
   return `${appId}:${store}:purchase:${encodeURIComponent(originalTransactionId)}`
 }
 
-function entitlementGrantId(appId: string, store: RuntimeStore, originalTransactionId: string): string {
+function entitlementGrantId(
+  appId: string,
+  store: RuntimeStore,
+  originalTransactionId: string,
+): string {
   return `${appId}:${store}:grant:${encodeURIComponent(originalTransactionId)}`
 }
 

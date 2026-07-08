@@ -1,4 +1,8 @@
-import { serverProductsResponseSchema, type ServerProductsRequest, type ServerProductsResponse } from '@piparotech/subkit-core'
+import {
+  type ServerProductsRequest,
+  type ServerProductsResponse,
+  serverProductsResponseSchema,
+} from '@piparotech/subkit-core'
 
 import type { HttpClient } from './HttpClient.js'
 import type { SubKitRequestOptions } from './requestOptions.js'
@@ -17,7 +21,10 @@ export class ProductsClient {
     this.http = options.http
   }
 
-  list(input: Omit<ServerProductsRequest, 'appId'> & { appId?: string } = {}, options: SubKitRequestOptions = {}): Promise<ServerProductsResponse> {
+  list(
+    input: Omit<ServerProductsRequest, 'appId'> & { appId?: string } = {},
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerProductsResponse> {
     return this.http.post('/api/server/products', {
       ...options,
       body: {

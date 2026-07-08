@@ -17,7 +17,11 @@ export function sha256Hex(value: string): string {
 }
 
 export function base64UrlEncode(input: Buffer | string): string {
-  return Buffer.from(input).toString('base64').replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
+  return Buffer.from(input)
+    .toString('base64')
+    .replaceAll('+', '-')
+    .replaceAll('/', '_')
+    .replaceAll('=', '')
 }
 
 export function base64UrlDecode(value: string): Buffer {

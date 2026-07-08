@@ -83,7 +83,7 @@ export function PUICarousel({
         ref={trackRef}
         aria-label={`${ariaLabel}, slide ${index + 1} of ${count}`}
         aria-live="polite"
-        className="flex w-full snap-x snap-mandatory overflow-x-auto scroll-smooth focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="focus-visible:ring-ring flex w-full snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto scroll-smooth focus-visible:ring-2 focus-visible:outline-none [&::-webkit-scrollbar]:hidden"
         onKeyDown={onKeyDown}
         onScroll={onScroll}
         tabIndex={0}
@@ -102,7 +102,11 @@ export function PUICarousel({
       </div>
 
       {showIndicators && count > 1 ? (
-        <div aria-label="Slide indicators" className="flex items-center justify-center" role="group">
+        <div
+          aria-label="Slide indicators"
+          className="flex items-center justify-center"
+          role="group"
+        >
           {slides.map((_, i) => {
             const active = i === index
             return (
@@ -110,14 +114,14 @@ export function PUICarousel({
                 key={i}
                 aria-current={active ? 'true' : undefined}
                 aria-label={`Go to slide ${i + 1} of ${count}`}
-                className="group flex min-h-11 items-center justify-center rounded-full px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="group focus-visible:ring-ring flex min-h-11 items-center justify-center rounded-full px-2 focus-visible:ring-2 focus-visible:outline-none"
                 onClick={() => goTo(i)}
                 type="button"
               >
                 <span
                   className={cn(
-                    'h-1.5 rounded-full transition-all duration-normal ease-decelerate motion-reduce:transition-none',
-                    active ? 'w-4 bg-primary' : 'w-1.5 bg-muted group-hover:bg-muted-foreground/40',
+                    'duration-normal ease-decelerate h-1.5 rounded-full transition-all motion-reduce:transition-none',
+                    active ? 'bg-primary w-4' : 'bg-muted group-hover:bg-muted-foreground/40 w-1.5',
                   )}
                 />
               </button>

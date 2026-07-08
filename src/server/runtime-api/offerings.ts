@@ -1,11 +1,27 @@
 import { and, eq, ne } from 'drizzle-orm'
-import type { ServerOffering, ServerOfferingPackage, ServerOfferingsRequest, ServerOfferingsResponse, ServerProduct } from '@piparotech/subkit-core'
-
 import { db } from '~/db/client'
+import {
+  entitlements,
+  offeringPackages,
+  offerings,
+  prices,
+  productEntitlements,
+  productPlans,
+  products,
+} from '~/db/schema'
 import { ensureDatabaseReady } from '~/db/setup'
-import { entitlements, offeringPackages, offerings, prices, productEntitlements, productPlans, products } from '~/db/schema'
 
-export async function listServerOfferings(input: ServerOfferingsRequest): Promise<ServerOfferingsResponse> {
+import type {
+  ServerOffering,
+  ServerOfferingPackage,
+  ServerOfferingsRequest,
+  ServerOfferingsResponse,
+  ServerProduct,
+} from '@piparotech/subkit-core'
+
+export async function listServerOfferings(
+  input: ServerOfferingsRequest,
+): Promise<ServerOfferingsResponse> {
   await ensureDatabaseReady()
 
   const rows = await db
@@ -48,15 +64,15 @@ export async function listServerOfferings(input: ServerOfferingsRequest): Promis
     }
 
     if (
-      row.packageId != null
-      && row.packageKey != null
-      && row.packageLabel != null
-      && row.packageSortOrder != null
-      && row.planId != null
-      && row.planKey != null
-      && row.productId != null
-      && row.productKey != null
-      && row.productName != null
+      row.packageId != null &&
+      row.packageKey != null &&
+      row.packageLabel != null &&
+      row.packageSortOrder != null &&
+      row.planId != null &&
+      row.planKey != null &&
+      row.productId != null &&
+      row.productKey != null &&
+      row.productName != null
     ) {
       const currentPackage = offering.packages.get(row.packageId) ?? {
         id: row.packageId,
@@ -73,7 +89,10 @@ export async function listServerOfferings(input: ServerOfferingsRequest): Promis
         },
         sortOrder: row.packageSortOrder,
       }
-      if (row.entitlementKey != null && !currentPackage.product.entitlementKeys.includes(row.entitlementKey)) {
+      if (
+        row.entitlementKey != null &&
+        !currentPackage.product.entitlementKeys.includes(row.entitlementKey)
+      ) {
         currentPackage.product.entitlementKeys.push(row.entitlementKey)
       }
       if (currentPackage.product.priceCents === 0 && row.priceAmountMicros != null) {

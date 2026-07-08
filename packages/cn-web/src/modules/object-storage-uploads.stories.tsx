@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import {
   PUIBadge,
   PUIButton,
@@ -11,6 +9,7 @@ import {
   PUIText,
 } from '@/components/ui'
 import { UploadError, type UploadObject, checkPolicy } from '@/lib/object-storage-uploads'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import { createMockUploadEnvironment } from './mock-object-storage-uploads'
 

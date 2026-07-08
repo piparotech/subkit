@@ -133,7 +133,12 @@ test('configureSubKit resets customer info snapshot and refresh publishes latest
 })
 
 test('refresh publishes a failing customer info request once and rejects to callers', async () => {
-  const restoreFetch = installFetch(async () => new Response(JSON.stringify({ error: { code: 'server_error', message: 'boom' } }), { status: 500 }))
+  const restoreFetch = installFetch(
+    async () =>
+      new Response(JSON.stringify({ error: { code: 'server_error', message: 'boom' } }), {
+        status: 500,
+      }),
+  )
   let notifications = 0
 
   try {

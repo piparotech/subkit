@@ -1,8 +1,14 @@
-import { cn } from '@piparo/cn-web'
-
 import type { AppTenant } from '~/domain/apps/types'
 
-export function AppAvatar({ app, size = 'md' }: { app: AppTenant; size?: 'xs' | 'sm' | 'md' | 'lg' }) {
+import { cn } from '@piparo/cn-web'
+
+export function AppAvatar({
+  app,
+  size = 'md',
+}: {
+  app: AppTenant
+  size?: 'xs' | 'sm' | 'md' | 'lg'
+}) {
   const sizeClass = {
     xs: 'size-[14px] rounded-[4px] text-[8px]',
     sm: 'size-[24px] rounded-[6px] text-[10.5px]',
@@ -11,7 +17,10 @@ export function AppAvatar({ app, size = 'md' }: { app: AppTenant; size?: 'xs' | 
   }
   return (
     <span
-      className={cn('inline-flex shrink-0 items-center justify-center font-bold text-white', sizeClass[size])}
+      className={cn(
+        'inline-flex shrink-0 items-center justify-center font-bold text-white',
+        sizeClass[size],
+      )}
       style={{ background: app.color }}
     >
       {app.initials}

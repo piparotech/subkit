@@ -1,8 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { CornerDownLeft, Languages } from 'lucide-react'
-
 import { PUIBadge, PUIButton, PUICard, PUISeparator, PUIText } from '@/components/ui'
 import {
   type LocaleDescriptor,
@@ -13,6 +10,8 @@ import {
   resolveMessage,
   saveLocalePreference,
 } from '@/lib/i18n-lingui'
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { CornerDownLeft, Languages } from 'lucide-react'
 
 import {
   CATALOGS,

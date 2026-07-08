@@ -1,7 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import { PUIBadge, PUIButton, PUISegmentedControl, PUIText } from '@/components/ui'
 import {
   type Entitlement,
@@ -10,6 +8,7 @@ import {
   createPaymentsClient,
   isPro,
 } from '@/lib/payments-iap-stripe'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import {
   BASE_URL,

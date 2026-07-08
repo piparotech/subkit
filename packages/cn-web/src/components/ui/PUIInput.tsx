@@ -1,12 +1,11 @@
 import * as React from 'react'
 
 import { cn } from '../../lib/utils'
-import { PUIText } from './PUIText'
 import { type PUIInputOwnProps } from './PUIInput.types'
+import { PUIText } from './PUIText'
 
 export interface PUIInputProps
-  extends PUIInputOwnProps,
-    Omit<React.InputHTMLAttributes<HTMLInputElement>, 'disabled'> {
+  extends PUIInputOwnProps, Omit<React.InputHTMLAttributes<HTMLInputElement>, 'disabled'> {
   /** Trailing element rendered inside the field (e.g. a password toggle). */
   addonEnd?: React.ReactNode
 }
@@ -38,8 +37,8 @@ export const PUIInput = React.forwardRef<HTMLInputElement, PUIInputProps>(functi
           aria-describedby={error != null ? errorId : undefined}
           aria-invalid={error != null || undefined}
           className={cn(
-            'flex min-h-11 w-full rounded-lg border bg-background px-4 text-callout text-foreground placeholder:text-muted-foreground',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            'bg-background text-callout text-foreground placeholder:text-muted-foreground flex min-h-11 w-full rounded-lg border px-4',
+            'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
             'disabled:cursor-not-allowed disabled:opacity-50',
             error != null ? 'border-destructive' : 'border-border focus-within:border-ring',
             addonEnd != null && 'pr-11',

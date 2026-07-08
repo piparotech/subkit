@@ -54,7 +54,7 @@ export const WithLeadingAndTrailing: Story = {
         leading={<span style={{ fontSize: 20 }}>{'🌐'}</span>}
         onPress={() => {}}
         title="Language"
-        trailing={<span className="text-sm text-muted-foreground">English</span>}
+        trailing={<span className="text-muted-foreground text-sm">English</span>}
       />
     </PUIList>
   ),

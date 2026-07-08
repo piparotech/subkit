@@ -1,9 +1,4 @@
 import {
-  customerInfoSchema,
-  iapReconcileResponseSchema,
-  isRetryableSubKitErrorCode,
-  runtimeOfferingsResponseSchema,
-  subKitApiErrorResponseSchema,
   type CustomerInfo,
   type IapReconcileRequest,
   type NormalizedStorePurchase,
@@ -12,6 +7,11 @@ import {
   type RuntimeOfferingsResponse,
   type StoreIdentityHints,
   type SubKitErrorCode,
+  customerInfoSchema,
+  iapReconcileResponseSchema,
+  isRetryableSubKitErrorCode,
+  runtimeOfferingsResponseSchema,
+  subKitApiErrorResponseSchema,
 } from '@piparotech/subkit-core'
 
 import type { SubKitIapPurchase } from './types.js'
@@ -27,7 +27,13 @@ export class SubKitRuntimeError extends Error {
   readonly retryable: boolean
   readonly status: number
 
-  constructor(input: { code: SubKitErrorCode; message: string; requestId?: string; retryable?: boolean; status: number }) {
+  constructor(input: {
+    code: SubKitErrorCode
+    message: string
+    requestId?: string
+    retryable?: boolean
+    status: number
+  }) {
     super(input.message)
     this.name = 'SubKitRuntimeError'
     this.code = input.code
@@ -51,7 +57,9 @@ export class SubKitRuntimeClient {
     return customerInfoSchema.parse(response)
   }
 
-  async getOfferings(input: { appUserId?: string; placement?: string; platform?: 'ios' | 'android' } = {}): Promise<RuntimeOfferingsResponse> {
+  async getOfferings(
+    input: { appUserId?: string; placement?: string; platform?: 'ios' | 'android' } = {},
+  ): Promise<RuntimeOfferingsResponse> {
     const response = await this.post('/api/runtime/offerings', input)
     return runtimeOfferingsResponseSchema.parse(response)
   }
@@ -97,7 +105,9 @@ export class SubKitRuntimeClient {
   }
 }
 
-export function normalizePurchaseForReconcile(purchase: SubKitIapPurchase): NormalizedStorePurchase {
+export function normalizePurchaseForReconcile(
+  purchase: SubKitIapPurchase,
+): NormalizedStorePurchase {
   return {
     environment: purchase.environment,
     linkedPurchaseToken: purchase.linkedPurchaseToken,

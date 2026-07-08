@@ -1,11 +1,17 @@
 import { and, eq, ne } from 'drizzle-orm'
-import type { ServerProduct, ServerProductsRequest, ServerProductsResponse } from '@piparotech/subkit-core'
-
 import { db } from '~/db/client'
-import { ensureDatabaseReady } from '~/db/setup'
 import { entitlements, prices, productEntitlements, productPlans, products } from '~/db/schema'
+import { ensureDatabaseReady } from '~/db/setup'
 
-export async function listServerProducts(input: ServerProductsRequest): Promise<ServerProductsResponse> {
+import type {
+  ServerProduct,
+  ServerProductsRequest,
+  ServerProductsResponse,
+} from '@piparotech/subkit-core'
+
+export async function listServerProducts(
+  input: ServerProductsRequest,
+): Promise<ServerProductsResponse> {
   await ensureDatabaseReady()
 
   const rows = await db
@@ -26,8 +32,17 @@ export async function listServerProducts(input: ServerProductsRequest): Promise<
     .leftJoin(prices, and(eq(prices.productPlanId, productPlans.id), eq(prices.status, 'active')))
     .where(
       input.entitlement == null
-        ? and(eq(products.appId, input.appId), ne(products.status, 'archived'), ne(productPlans.status, 'archived'))
-        : and(eq(products.appId, input.appId), eq(entitlements.key, input.entitlement), ne(products.status, 'archived'), ne(productPlans.status, 'archived')),
+        ? and(
+            eq(products.appId, input.appId),
+            ne(products.status, 'archived'),
+            ne(productPlans.status, 'archived'),
+          )
+        : and(
+            eq(products.appId, input.appId),
+            eq(entitlements.key, input.entitlement),
+            ne(products.status, 'archived'),
+            ne(productPlans.status, 'archived'),
+          ),
     )
 
   return { products: groupServerProducts(rows) }
@@ -46,8 +61,10 @@ function groupServerProducts(rows: readonly ProductRow[]): ServerProduct[] {
       priceCents: amountMicrosToCents(row.priceAmountMicros),
       productKey: row.productKey,
     }
-    if (!current.entitlementKeys.includes(row.entitlement)) current.entitlementKeys.push(row.entitlement)
-    if (current.priceCents === 0 && row.priceAmountMicros != null) current.priceCents = amountMicrosToCents(row.priceAmountMicros)
+    if (!current.entitlementKeys.includes(row.entitlement))
+      current.entitlementKeys.push(row.entitlement)
+    if (current.priceCents === 0 && row.priceAmountMicros != null)
+      current.priceCents = amountMicrosToCents(row.priceAmountMicros)
     grouped.set(row.planId, current)
   }
   return [...grouped.values()]

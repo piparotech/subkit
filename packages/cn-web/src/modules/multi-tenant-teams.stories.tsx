@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import {
   PUIBadge,
   PUIButton,
@@ -21,6 +19,7 @@ import {
   roleIn,
   toMembership,
 } from '@/lib/multi-tenant-teams'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import { JOINABLE_CODE, SELF, createMockTeamsClient, memberName } from './mock-multi-tenant-teams'
 

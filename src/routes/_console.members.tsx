@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { TenantMembersView } from '~/domain/tenants/TenantMembersView'
 import { WorkspaceRouteView } from '~/console/WorkspaceRouteView'
 import type { ConsoleViewRenderProps } from '~/console/types'
+import { TenantMembersView } from '~/domain/tenants/TenantMembersView'
 
 export const Route = createFileRoute('/_console/members')({
   component: TenantMembersRoute,
@@ -18,6 +18,18 @@ function TenantMembersRoute() {
   )
 }
 
-function renderTenantMembersView({ isFiltering, onRefreshConsoleData, tenant, tenantMembers }: ConsoleViewRenderProps) {
-  return <TenantMembersView isFiltering={isFiltering} onRefreshConsoleData={onRefreshConsoleData} tenant={tenant} tenantMembers={tenantMembers} />
+function renderTenantMembersView({
+  isFiltering,
+  onRefreshConsoleData,
+  tenant,
+  tenantMembers,
+}: ConsoleViewRenderProps) {
+  return (
+    <TenantMembersView
+      isFiltering={isFiltering}
+      onRefreshConsoleData={onRefreshConsoleData}
+      tenant={tenant}
+      tenantMembers={tenantMembers}
+    />
+  )
 }

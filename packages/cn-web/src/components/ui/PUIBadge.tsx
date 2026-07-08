@@ -1,5 +1,6 @@
-import { cva } from 'class-variance-authority'
 import * as React from 'react'
+
+import { cva } from 'class-variance-authority'
 
 import { cn } from '../../lib/utils'
 import { type PUIBadgeBaseProps, type PUIBadgeVariant } from './PUIBadge.types'
@@ -40,12 +41,14 @@ const dotVariants = cva('h-sm w-sm rounded-pill', {
 })
 
 export interface PUIBadgeProps
-  extends Omit<React.HTMLAttributes<HTMLSpanElement>, 'children'>,
-    PUIBadgeBaseProps {}
+  extends Omit<React.HTMLAttributes<HTMLSpanElement>, 'children'>, PUIBadgeBaseProps {}
 
 /** @scope both */
 export const PUIBadge = React.forwardRef<HTMLSpanElement, PUIBadgeProps>(
-  ({ className, variant, dot = false, mono = false, icon, children, textClassName, ...props }, ref) => (
+  (
+    { className, variant, dot = false, mono = false, icon, children, textClassName, ...props },
+    ref,
+  ) => (
     <span
       ref={ref}
       className={cn(badgeVariants({ variant }), mono ? 'rounded-sm' : 'rounded-pill', className)}

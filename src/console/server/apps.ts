@@ -1,14 +1,13 @@
 import { createServerFn } from '@tanstack/react-start'
+
 import { eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
-
 import { db } from '~/db/client'
-import { ensureDatabaseReady } from '~/db/setup'
 import {
-  apps,
   appStoreConnectAuditEvents,
   appStoreConnectSalesReports,
   appUsers,
+  apps,
   entitlementGrants,
   entitlements,
   offeringPackages,
@@ -17,6 +16,7 @@ import {
   purchaseEvents,
   storeProductBindings,
 } from '~/db/schema'
+import { ensureDatabaseReady } from '~/db/setup'
 import { requireTenantRole } from '~/server/auth/tenant-access'
 
 import { getCurrentConsoleUser, requireAccessibleApp } from './access'
@@ -85,17 +85,29 @@ export const deleteAppRecord = createServerFn({ method: 'POST' })
     await requireTenantRole(currentUser, app.tenantId, ['admin'])
 
     await db.transaction(async (tx) => {
-      const appUserRows = await tx.select({ id: appUsers.id }).from(appUsers).where(eq(appUsers.appId, data.appId))
-      const offeringRows = await tx.select({ id: offerings.id }).from(offerings).where(eq(offerings.appId, data.appId))
+      const appUserRows = await tx
+        .select({ id: appUsers.id })
+        .from(appUsers)
+        .where(eq(appUsers.appId, data.appId))
+      const offeringRows = await tx
+        .select({ id: offerings.id })
+        .from(offerings)
+        .where(eq(offerings.appId, data.appId))
       const appUserIds = appUserRows.map((appUser) => appUser.id)
       const offeringIds = offeringRows.map((offering) => offering.id)
 
-      if (appUserIds.length > 0) await tx.delete(purchaseEvents).where(inArray(purchaseEvents.appUserId, appUserIds))
+      if (appUserIds.length > 0)
+        await tx.delete(purchaseEvents).where(inArray(purchaseEvents.appUserId, appUserIds))
       await tx.delete(entitlementGrants).where(eq(entitlementGrants.appId, data.appId))
-      if (offeringIds.length > 0) await tx.delete(offeringPackages).where(inArray(offeringPackages.offeringId, offeringIds))
+      if (offeringIds.length > 0)
+        await tx.delete(offeringPackages).where(inArray(offeringPackages.offeringId, offeringIds))
 
-      await tx.delete(appStoreConnectSalesReports).where(eq(appStoreConnectSalesReports.appId, data.appId))
-      await tx.delete(appStoreConnectAuditEvents).where(eq(appStoreConnectAuditEvents.appId, data.appId))
+      await tx
+        .delete(appStoreConnectSalesReports)
+        .where(eq(appStoreConnectSalesReports.appId, data.appId))
+      await tx
+        .delete(appStoreConnectAuditEvents)
+        .where(eq(appStoreConnectAuditEvents.appId, data.appId))
       await tx.delete(storeProductBindings).where(eq(storeProductBindings.appId, data.appId))
       await tx.delete(products).where(eq(products.appId, data.appId))
       await tx.delete(appUsers).where(eq(appUsers.appId, data.appId))

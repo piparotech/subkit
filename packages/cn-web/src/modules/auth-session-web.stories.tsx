@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import { PUIBadge, PUIButton, PUIEmailInput, PUIPasswordInput, PUIText } from '@/components/ui'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import {
   type CookieJar,

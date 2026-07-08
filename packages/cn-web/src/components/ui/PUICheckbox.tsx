@@ -1,10 +1,11 @@
-import * as CheckboxPrimitive from '@radix-ui/react-checkbox'
-import { Check } from 'lucide-react'
 import * as React from 'react'
 
+import * as CheckboxPrimitive from '@radix-ui/react-checkbox'
+import { Check } from 'lucide-react'
+
 import { cn } from '../../lib/utils'
-import { PUIText } from './PUIText'
 import { type PUICheckboxOwnProps } from './PUICheckbox.types'
+import { PUIText } from './PUIText'
 
 export interface PUICheckboxProps extends PUICheckboxOwnProps {
   id?: string
@@ -29,7 +30,7 @@ export function PUICheckbox({ checked, onChange, label, error, disabled, id }: P
           className={cn(
             'flex size-6 shrink-0 items-center justify-center rounded-md border-2 transition-colors motion-reduce:transition-none',
             'data-[state=checked]:border-primary data-[state=checked]:bg-primary',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
             'disabled:cursor-not-allowed disabled:opacity-50',
             error != null ? 'border-destructive' : 'border-border',
           )}
@@ -38,7 +39,7 @@ export function PUICheckbox({ checked, onChange, label, error, disabled, id }: P
           onCheckedChange={(c) => onChange?.(c === true)}
         >
           <CheckboxPrimitive.Indicator>
-            <Check className="h-4 w-4 text-primary-foreground" />
+            <Check className="text-primary-foreground h-4 w-4" />
           </CheckboxPrimitive.Indicator>
         </CheckboxPrimitive.Root>
         {label != null ? (

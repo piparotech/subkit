@@ -1,5 +1,9 @@
 import type { StatusTone } from '~/components/ui/types'
-import type { AppStoreConnectCapabilityStatus, AppStoreConnectConnection, AppStoreConnectProductSyncAction } from '~/integrations/app-store-connect/types'
+import type {
+  AppStoreConnectCapabilityStatus,
+  AppStoreConnectConnection,
+  AppStoreConnectProductSyncAction,
+} from '~/integrations/app-store-connect/types'
 
 export function connectionStatusTone(status: AppStoreConnectConnection['status']): StatusTone {
   if (status === 'connected') return 'success'

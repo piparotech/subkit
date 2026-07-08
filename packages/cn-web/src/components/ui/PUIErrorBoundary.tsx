@@ -72,7 +72,7 @@ export class PUIErrorBoundary extends Component<PUIErrorBoundaryProps, State> {
         return this.props.fallback(error, this.reset)
       }
       return (
-        <div className="flex min-h-skeleton-xl flex-col items-center justify-center gap-sm bg-background p-xl text-center">
+        <div className="min-h-skeleton-xl gap-sm bg-background p-xl flex flex-col items-center justify-center text-center">
           <PUIText className="font-semibold" variant="headline">
             Something went wrong.
           </PUIText>

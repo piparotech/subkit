@@ -2,7 +2,10 @@ import { z } from 'zod'
 
 const requiredNonEmptyString = z.string().min(1)
 const requiredUrl = z.string().url()
-const optionalSecret = z.preprocess((value) => (value === '' ? undefined : value), z.string().min(16).optional())
+const optionalSecret = z.preprocess(
+  (value) => (value === '' ? undefined : value),
+  z.string().min(16).optional(),
+)
 
 export const serverEnvSchema = z.object({
   AUTH_BASE_URL: requiredUrl,

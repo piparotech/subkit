@@ -1,7 +1,7 @@
-import { PUIField, PUIInput, PUISelect } from '@piparo/cn-web'
-
 import { inputFieldProps } from '~/components/ui/formFieldProps'
 import type { CatalogProduct, EditableCatalogProductTextField } from '~/domain/products/types'
+
+import { PUIField, PUIInput, PUISelect } from '@piparo/cn-web'
 
 const productTypeOptions = [
   { label: 'Subscription', value: 'subscription' },
@@ -36,7 +36,10 @@ export function ProductFormFields({
           />
         )}
       </PUIField>
-      <PUIField hint="Canonical SubKit key. Apps and stores should not depend on display names." label="Product key">
+      <PUIField
+        hint="Canonical SubKit key. Apps and stores should not depend on display names."
+        label="Product key"
+      >
         {(field) => (
           <PUIInput
             className="font-mono"
@@ -92,7 +95,9 @@ export function ProductFormFields({
           )}
         </PUIField>
       </div>
-      <div className="mt-[6px] text-[12px] font-semibold uppercase tracking-[0.04em] text-[var(--subkit-faint)]">Plan</div>
+      <div className="mt-[6px] text-[12px] font-semibold tracking-[0.04em] text-[var(--subkit-faint)] uppercase">
+        Plan
+      </div>
       <div className="grid grid-cols-2 gap-[12px] max-sm:grid-cols-1">
         <PUIField hint="Stable package/plan key, e.g. monthly, annual, lifetime." label="Plan key">
           {(field) => (
@@ -105,7 +110,10 @@ export function ProductFormFields({
             />
           )}
         </PUIField>
-        <PUIField hint="ISO-8601 duration, e.g. P1M, P1Y. Use lifetime for one-time lifetime products." label="Billing period">
+        <PUIField
+          hint="ISO-8601 duration, e.g. P1M, P1Y. Use lifetime for one-time lifetime products."
+          label="Billing period"
+        >
           {(field) => (
             <PUIInput
               className="font-mono"
@@ -117,7 +125,10 @@ export function ProductFormFields({
           )}
         </PUIField>
       </div>
-      <PUIField hint="Reference price in SubKit. Store-effective regional prices are synced separately." label="Reference price">
+      <PUIField
+        hint="Reference price in SubKit. Store-effective regional prices are synced separately."
+        label="Reference price"
+      >
         {(field) => (
           <PUIInput
             className="font-mono"
@@ -128,8 +139,13 @@ export function ProductFormFields({
           />
         )}
       </PUIField>
-      <div className="mt-[6px] text-[12px] font-semibold uppercase tracking-[0.04em] text-[var(--subkit-faint)]">Store bindings</div>
-      <PUIField hint="External Apple product ID. This is a binding, not the canonical Product key." label="Apple product ID">
+      <div className="mt-[6px] text-[12px] font-semibold tracking-[0.04em] text-[var(--subkit-faint)] uppercase">
+        Store bindings
+      </div>
+      <PUIField
+        hint="External Apple product ID. This is a binding, not the canonical Product key."
+        label="Apple product ID"
+      >
         {(field) => (
           <PUIInput
             className="font-mono"

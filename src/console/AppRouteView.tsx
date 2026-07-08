@@ -1,8 +1,9 @@
-import { useLoaderData, useParams } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 
-import { appMatchesRouteParams } from '~/console/routing'
+import { useLoaderData, useParams } from '@tanstack/react-router'
+
 import { SubKitConsole } from '~/console/SubKitConsole'
+import { appMatchesRouteParams } from '~/console/routing'
 import type { AppConsoleViewRenderProps, ConsolePrimaryActionFactory } from '~/console/types'
 
 export function AppRouteView({
@@ -18,7 +19,8 @@ export function AppRouteView({
 }) {
   const consoleData = useLoaderData({ from: '/_console' })
   const { appSlug, tenantSlug } = useParams({ from: '/_console/$tenantSlug/$appSlug' })
-  const app = consoleData.apps.find((item) => appMatchesRouteParams(item, { appSlug, tenantSlug })) ?? null
+  const app =
+    consoleData.apps.find((item) => appMatchesRouteParams(item, { appSlug, tenantSlug })) ?? null
 
   return (
     <SubKitConsole

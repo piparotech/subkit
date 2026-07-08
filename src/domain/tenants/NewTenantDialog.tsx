@@ -1,6 +1,6 @@
-import { PUIButton, PUIText } from '@piparo/cn-web'
-
 import type { TenantDraft, TenantDraftField } from '~/domain/tenants/types'
+
+import { PUIButton, PUIText } from '@piparo/cn-web'
 
 export function NewTenantDialog({
   draft,
@@ -18,7 +18,7 @@ export function NewTenantDialog({
       <div
         aria-label="Create workspace"
         aria-modal="true"
-        className="w-[520px] max-w-full overflow-hidden rounded-[16px] bg-[var(--subkit-panel)] shadow-[0_24px_60px_-16px_rgba(20,20,50,0.4)] animate-[subkit-pop-in_180ms_ease]"
+        className="w-[520px] max-w-full animate-[subkit-pop-in_180ms_ease] overflow-hidden rounded-[16px] bg-[var(--subkit-panel)] shadow-[0_24px_60px_-16px_rgba(20,20,50,0.4)]"
         role="dialog"
         tabIndex={-1}
       >
@@ -26,7 +26,9 @@ export function NewTenantDialog({
           <PUIText as="h2" className="text-[18px] font-bold" variant="title3">
             Create workspace
           </PUIText>
-          <div className="mt-[4px] text-[13px] text-[var(--subkit-dim)]">Admins are assigned to workspaces they create automatically.</div>
+          <div className="mt-[4px] text-[13px] text-[var(--subkit-dim)]">
+            Admins are assigned to workspaces they create automatically.
+          </div>
         </div>
         <div className="flex flex-col gap-[12px] px-[24px] py-[18px]">
           <label className="flex flex-col gap-[6px] text-[12.5px] font-semibold text-[var(--subkit-text)]">
@@ -69,7 +71,12 @@ export function NewTenantDialog({
         </div>
         <div className="flex justify-end gap-[10px] border-t border-[var(--subkit-border)] px-[24px] py-[16px]">
           <PUIButton className="rounded-[9px]" label="Cancel" onPress={onClose} variant="outline" />
-          <PUIButton className="rounded-[9px]" disabled={draft.name.trim() === '' || draft.id.trim() === ''} label="Create workspace" onPress={onCreate} />
+          <PUIButton
+            className="rounded-[9px]"
+            disabled={draft.name.trim() === '' || draft.id.trim() === ''}
+            label="Create workspace"
+            onPress={onCreate}
+          />
         </div>
       </div>
     </div>

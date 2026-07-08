@@ -1,14 +1,16 @@
 import { timingSafeEqual } from 'node:crypto'
-
-import { parseServerEnv } from '~/server/env'
-
 import { sha256Hex } from '~/server/auth/crypto'
+import { parseServerEnv } from '~/server/env'
 import { jsonApiError } from '~/server/runtime-api/errors'
 
 export function authorizeServerApiRequest(request: Request): Response | null {
   const key = parseServerEnv(process.env).SUBKIT_SERVER_API_KEY
   if (key == null) {
-    return jsonApiError({ code: 'service_unavailable', message: 'SubKit server API key is not configured', status: 503 })
+    return jsonApiError({
+      code: 'service_unavailable',
+      message: 'SubKit server API key is not configured',
+      status: 503,
+    })
   }
 
   const token = readBearerToken(request)

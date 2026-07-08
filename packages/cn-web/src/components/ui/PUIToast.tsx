@@ -1,5 +1,6 @@
-import { X } from 'lucide-react'
 import * as React from 'react'
+
+import { X } from 'lucide-react'
 
 import { cn } from '../../lib/utils'
 import {
@@ -87,7 +88,7 @@ export function PUIToastProvider({
       {toasts.length > 0 ? (
         <div
           className={cn(
-            'pointer-events-none fixed inset-x-0 z-toast mx-auto flex w-full max-w-sm flex-col gap-2 px-4',
+            'z-toast pointer-events-none fixed inset-x-0 mx-auto flex w-full max-w-sm flex-col gap-2 px-4',
             position === 'top' ? 'top-0 pt-6' : 'bottom-0 pb-6',
           )}
         >
@@ -138,7 +139,7 @@ function ToastItem({
       </div>
       <button
         aria-label="Dismiss notification"
-        className="-m-1.5 flex min-h-11 min-w-11 shrink-0 items-center justify-center self-start rounded-md opacity-70 transition-opacity duration-fast hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+        className="duration-fast focus-visible:ring-ring -m-1.5 flex min-h-11 min-w-11 shrink-0 items-center justify-center self-start rounded-md opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:outline-none motion-reduce:transition-none"
         onClick={() => onDismiss(item.id)}
         type="button"
       >

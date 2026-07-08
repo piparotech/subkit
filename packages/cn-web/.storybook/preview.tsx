@@ -4,6 +4,7 @@ import type { Decorator, Preview } from '@storybook/react-vite'
 
 import { ThemeProvider } from '../src/components/ui/ThemeProvider'
 import { type Locale } from '../src/i18n'
+
 import '../src/i18n'
 // Token-driven: loads @piparo/design-tokens CSS vars + Tailwind layers.
 import '../src/index.css'
@@ -14,7 +15,10 @@ const withProviders: Decorator = (Story, ctx) => {
   if (i18n.locale !== locale) i18n.activate(locale)
   return (
     <I18nProvider i18n={i18n}>
-      <ThemeProvider scheme={scheme} className="flex min-h-[240px] items-center justify-center p-10">
+      <ThemeProvider
+        scheme={scheme}
+        className="flex min-h-[240px] items-center justify-center p-10"
+      >
         <Story />
       </ThemeProvider>
     </I18nProvider>

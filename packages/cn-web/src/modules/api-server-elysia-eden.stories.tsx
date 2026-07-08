@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import {
   PUIBadge,
   PUIButton,
@@ -11,6 +9,7 @@ import {
   PUITextArea,
 } from '@/components/ui'
 import { ApiError, type Note, parseCreateNoteInput } from '@/lib/api-server-elysia-eden'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import {
   type AuthMode,

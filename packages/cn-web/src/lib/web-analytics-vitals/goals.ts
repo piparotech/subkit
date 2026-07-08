@@ -17,8 +17,7 @@ export type GoalValidationError = { ok: false; issues: string[] }
 
 /** Result of validating a goal payload — a discriminated union on `ok`. */
 export type GoalValidation<M extends GoalSchemaMap, K extends keyof M> =
-  | { ok: true; data: GoalProps<M, K> }
-  | GoalValidationError
+  { ok: true; data: GoalProps<M, K> } | GoalValidationError
 
 export type GoalRegistry<M extends GoalSchemaMap> = {
   readonly names: readonly (keyof M & string)[]

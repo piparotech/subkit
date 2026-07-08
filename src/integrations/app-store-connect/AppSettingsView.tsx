@@ -1,24 +1,29 @@
-import { PUIInput } from '@piparo/cn-web'
 import * as React from 'react'
 
 import { ActionButton } from '~/components/ui/ActionButton'
-import { inspectAppStoreConnectMonitoring } from '~/integrations/app-store-connect/server/monitor'
+import { EmptySettingsText } from '~/components/ui/EmptySettingsText'
+import { Notice, type NoticeTone } from '~/components/ui/Notice'
+import { SettingsCard } from '~/components/ui/SettingsCard'
+import { ViewTitle } from '~/components/ui/ViewTitle'
+import { deleteAppRecord } from '~/console/server'
+import type { AppTenant } from '~/domain/apps/types'
+import { MonitoringSnapshot } from '~/integrations/app-store-connect/components/MonitoringSnapshot'
+import { ProductPreviewTable } from '~/integrations/app-store-connect/components/ProductPreviewTable'
+import { SalesReportHistory } from '~/integrations/app-store-connect/components/SalesReportHistory'
 import {
   importAppStoreConnectProductPreview,
   previewAppStoreConnectProducts,
   syncAppStoreConnectCatalog,
   syncAppStoreConnectSalesReport,
 } from '~/integrations/app-store-connect/server/actions'
-import { EmptySettingsText } from '~/components/ui/EmptySettingsText'
-import { MonitoringSnapshot } from '~/integrations/app-store-connect/components/MonitoringSnapshot'
-import { Notice, type NoticeTone } from '~/components/ui/Notice'
-import { ProductPreviewTable } from '~/integrations/app-store-connect/components/ProductPreviewTable'
-import { SalesReportHistory } from '~/integrations/app-store-connect/components/SalesReportHistory'
-import { deleteAppRecord } from '~/console/server'
-import { SettingsCard } from '~/components/ui/SettingsCard'
-import type { AppTenant } from '~/domain/apps/types'
-import type { AppStoreConnectConnection, AppStoreConnectMonitorSnapshot, AppStoreConnectProductPreview } from '~/integrations/app-store-connect/types'
-import { ViewTitle } from '~/components/ui/ViewTitle'
+import { inspectAppStoreConnectMonitoring } from '~/integrations/app-store-connect/server/monitor'
+import type {
+  AppStoreConnectConnection,
+  AppStoreConnectMonitorSnapshot,
+  AppStoreConnectProductPreview,
+} from '~/integrations/app-store-connect/types'
+
+import { PUIInput } from '@piparo/cn-web'
 
 export function AppSettingsView({
   app,
@@ -54,7 +59,10 @@ export function AppSettingsView({
         onRefreshConsoleData()
       })
       .catch((error: unknown) => {
-        setFeedback({ message: error instanceof Error ? error.message : 'App Store Connect operation failed', tone: 'danger' })
+        setFeedback({
+          message: error instanceof Error ? error.message : 'App Store Connect operation failed',
+          tone: 'danger',
+        })
       })
       .finally(() => setBusy(null))
   }
@@ -84,7 +92,9 @@ export function AppSettingsView({
 
   const syncSalesReport = () => {
     runTask('sales-report', async () => {
-      const result = await syncAppStoreConnectSalesReport({ data: { appId: app.id, reportDate: reportDate || undefined } })
+      const result = await syncAppStoreConnectSalesReport({
+        data: { appId: app.id, reportDate: reportDate || undefined },
+      })
       return result.status === 'imported'
         ? `Sales Report ${result.reportDate} imported with ${result.rowCount} rows.`
         : `Sales Report ${result.reportDate} failed; see import history.`
@@ -110,28 +120,64 @@ export function AppSettingsView({
         onAppDeleted(app.id)
       })
       .catch((error: unknown) => {
-        setFeedback({ message: error instanceof Error ? error.message : 'App could not be deleted', tone: 'danger' })
+        setFeedback({
+          message: error instanceof Error ? error.message : 'App could not be deleted',
+          tone: 'danger',
+        })
         setBusy(null)
       })
   }
 
   return (
     <section className="max-w-[1080px] animate-[subkit-fade-in_200ms_ease] px-[32px] py-[28px] max-md:px-[18px]">
-      <ViewTitle description={`App-specific App Store Connect workflows for ${app.name}. Workspace credentials live in Workspace Settings.`} title="App Settings" />
+      <ViewTitle
+        description={`App-specific App Store Connect workflows for ${app.name}. Workspace credentials live in Workspace Settings.`}
+        title="App Settings"
+      />
 
-      {feedback != null ? <Notice className="mb-[16px] mt-[16px]" tone={feedback.tone}>{feedback.message}</Notice> : null}
+      {feedback != null ? (
+        <Notice className="mt-[16px] mb-[16px]" tone={feedback.tone}>
+          {feedback.message}
+        </Notice>
+      ) : null}
 
       <div className="grid grid-cols-[1fr_1fr] gap-[16px] max-lg:grid-cols-1">
-        <SettingsCard description="Fetch Apple subscriptions and IAPs, compare them with local products, then create or update local SubKit products. App Store Connect is never mutated." title="Subscription catalog sync">
+        <SettingsCard
+          description="Fetch Apple subscriptions and IAPs, compare them with local products, then create or update local SubKit products. App Store Connect is never mutated."
+          title="Subscription catalog sync"
+        >
           <div className="flex flex-wrap gap-[8px]">
-            <ActionButton disabled={busy != null || connection == null || connection.status === 'deleted'} label={busy === 'catalog-sync' ? 'Syncing catalog…' : 'Sync from App Store Connect'} onPress={syncCatalog} tone="primary" />
-            <ActionButton disabled={busy != null || connection == null || connection.status === 'deleted'} label="Preview only" onPress={previewProducts} />
-            <ActionButton disabled={busy != null || preview.length === 0} label="Import preview" onPress={importProducts} />
+            <ActionButton
+              disabled={busy != null || connection == null || connection.status === 'deleted'}
+              label={busy === 'catalog-sync' ? 'Syncing catalog…' : 'Sync from App Store Connect'}
+              onPress={syncCatalog}
+              tone="primary"
+            />
+            <ActionButton
+              disabled={busy != null || connection == null || connection.status === 'deleted'}
+              label="Preview only"
+              onPress={previewProducts}
+            />
+            <ActionButton
+              disabled={busy != null || preview.length === 0}
+              label="Import preview"
+              onPress={importProducts}
+            />
           </div>
-          {preview.length > 0 ? <ProductPreviewTable preview={preview} /> : <EmptySettingsText>No sync preview yet. Syncing reads Apple catalog data and updates local SubKit records only.</EmptySettingsText>}
+          {preview.length > 0 ? (
+            <ProductPreviewTable preview={preview} />
+          ) : (
+            <EmptySettingsText>
+              No sync preview yet. Syncing reads Apple catalog data and updates local SubKit records
+              only.
+            </EmptySettingsText>
+          )}
         </SettingsCard>
 
-        <SettingsCard description="Download the latest daily Sales & Trends report. Raw imports are kept separate from derived metrics." title="Sales report sync">
+        <SettingsCard
+          description="Download the latest daily Sales & Trends report. Raw imports are kept separate from derived metrics."
+          title="Sales report sync"
+        >
           <div className="flex gap-[10px] max-sm:flex-col">
             <PUIInput
               className="font-mono"
@@ -140,22 +186,47 @@ export function AppSettingsView({
               type="text"
               value={reportDate}
             />
-            <ActionButton disabled={busy != null || connection == null || connection.vendorNumber == null} label="Sync report" onPress={syncSalesReport} tone="primary" />
+            <ActionButton
+              disabled={busy != null || connection == null || connection.vendorNumber == null}
+              label="Sync report"
+              onPress={syncSalesReport}
+              tone="primary"
+            />
           </div>
           <SalesReportHistory connection={connection} />
         </SettingsCard>
       </div>
 
-      <SettingsCard description="Read release versions, TestFlight builds, customer reviews, and provisioning metadata before deeper workflows." title="Release and store monitoring">
+      <SettingsCard
+        description="Read release versions, TestFlight builds, customer reviews, and provisioning metadata before deeper workflows."
+        title="Release and store monitoring"
+      >
         <div className="flex flex-wrap gap-[8px]">
-          <ActionButton disabled={busy != null || connection == null || connection.status === 'deleted'} label="Inspect monitoring" onPress={inspectMonitoring} />
+          <ActionButton
+            disabled={busy != null || connection == null || connection.status === 'deleted'}
+            label="Inspect monitoring"
+            onPress={inspectMonitoring}
+          />
         </div>
-        {monitoring == null ? <EmptySettingsText>No monitoring snapshot yet. This is read-only App Store Connect inspection.</EmptySettingsText> : <MonitoringSnapshot snapshot={monitoring} />}
+        {monitoring == null ? (
+          <EmptySettingsText>
+            No monitoring snapshot yet. This is read-only App Store Connect inspection.
+          </EmptySettingsText>
+        ) : (
+          <MonitoringSnapshot snapshot={monitoring} />
+        )}
       </SettingsCard>
 
-      <SettingsCard description="Runtime APIs answer entitlement checks from SubKit state. App backends read authorization answers; they do not authoritatively sync App User state." title="Runtime Entitlement API">
+      <SettingsCard
+        description="Runtime APIs answer entitlement checks from SubKit state. App backends read authorization answers; they do not authoritatively sync App User state."
+        title="Runtime Entitlement API"
+      >
         <EmptySettingsText>
-          App backends should query <span className="font-mono">/api/runtime/entitlements/check</span> with <span className="font-mono">appId</span>, <span className="font-mono">appUserId</span>, and <span className="font-mono">entitlement</span>. SubKit answers from local App User entitlement grants.
+          App backends should query{' '}
+          <span className="font-mono">/api/runtime/entitlements/check</span> with{' '}
+          <span className="font-mono">appId</span>, <span className="font-mono">appUserId</span>,
+          and <span className="font-mono">entitlement</span>. SubKit answers from local App User
+          entitlement grants.
         </EmptySettingsText>
       </SettingsCard>
 
@@ -165,10 +236,15 @@ export function AppSettingsView({
         tone="danger"
       >
         <div className="rounded-[11px] border border-[color-mix(in_oklch,var(--subkit-red)_24%,var(--subkit-border))] bg-[color-mix(in_oklch,var(--subkit-red)_5%,white)] px-[12px] py-[10px] text-[12.5px] leading-[1.45] text-[var(--subkit-dim)]">
-          This removes local products, entitlements, offerings, App Users, imported reports, and app-scoped audit entries for <strong className="text-[var(--subkit-text)]">{app.name}</strong>.
+          This removes local products, entitlements, offerings, App Users, imported reports, and
+          app-scoped audit entries for{' '}
+          <strong className="text-[var(--subkit-text)]">{app.name}</strong>.
         </div>
         <div className="flex flex-col gap-[7px]">
-          <label className="text-[12.5px] font-semibold text-[var(--subkit-text)]" htmlFor="delete-app-confirmation">
+          <label
+            className="text-[12.5px] font-semibold text-[var(--subkit-text)]"
+            htmlFor="delete-app-confirmation"
+          >
             Type <span className="font-mono">{app.name}</span> to confirm
           </label>
           <PUIInput

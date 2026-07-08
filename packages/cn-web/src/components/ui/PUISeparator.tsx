@@ -1,16 +1,12 @@
 import * as React from 'react'
 
 import { cn } from '../../lib/utils'
-import {
-  type PUISeparatorBaseProps,
-  type PUISeparatorOrientation,
-} from './PUISeparator.types'
+import { type PUISeparatorBaseProps, type PUISeparatorOrientation } from './PUISeparator.types'
 
 export type { PUISeparatorBaseProps, PUISeparatorOrientation } from './PUISeparator.types'
 
 export interface PUISeparatorProps
-  extends PUISeparatorBaseProps,
-    Omit<React.HTMLAttributes<HTMLDivElement>, 'className'> {}
+  extends PUISeparatorBaseProps, Omit<React.HTMLAttributes<HTMLDivElement>, 'className'> {}
 
 const ORIENTATION: Record<PUISeparatorOrientation, string> = {
   horizontal: 'h-px w-full',
@@ -28,7 +24,12 @@ export const PUISeparator = React.forwardRef<HTMLDivElement, PUISeparatorProps>(
     <div
       ref={ref}
       aria-orientation={decorative ? undefined : orientation}
-      className={cn('shrink-0 bg-border', ORIENTATION[orientation], inset && INSET[orientation], className)}
+      className={cn(
+        'bg-border shrink-0',
+        ORIENTATION[orientation],
+        inset && INSET[orientation],
+        className,
+      )}
       role={decorative ? 'none' : 'separator'}
       {...props}
     />

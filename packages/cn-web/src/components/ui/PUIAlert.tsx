@@ -1,15 +1,15 @@
-import { X } from 'lucide-react'
 import * as React from 'react'
 
+import { X } from 'lucide-react'
+
 import { cn } from '../../lib/utils'
-import { PUIText } from './PUIText'
 import { type PUIAlertOwnProps, type PUIAlertTone } from './PUIAlert.types'
+import { PUIText } from './PUIText'
 
 export type { PUIAlertOwnProps, PUIAlertTone } from './PUIAlert.types'
 
 export interface PUIAlertProps
-  extends PUIAlertOwnProps,
-    Omit<React.HTMLAttributes<HTMLDivElement>, 'title' | 'role'> {}
+  extends PUIAlertOwnProps, Omit<React.HTMLAttributes<HTMLDivElement>, 'title' | 'role'> {}
 
 // Restrained tonal scheme: the surface is a neutral subtle plane for every tone (tonal
 // layering, not a loud status fill, per DESIGN.md). The tone reads through the leading-icon
@@ -47,7 +47,7 @@ export const PUIAlert = React.forwardRef<HTMLDivElement, PUIAlertProps>(function
       ref={ref}
       aria-live={urgent ? 'assertive' : 'polite'}
       className={cn(
-        'flex items-start gap-3 rounded-xl border border-border bg-muted p-4',
+        'border-border bg-muted flex items-start gap-3 rounded-xl border p-4',
         className,
       )}
       role={urgent ? 'alert' : 'status'}
@@ -76,8 +76,8 @@ export const PUIAlert = React.forwardRef<HTMLDivElement, PUIAlertProps>(function
           aria-label={dismissLabel}
           className={cn(
             '-m-1.5 flex min-h-11 min-w-11 shrink-0 items-center justify-center self-start rounded-md',
-            'text-muted-foreground opacity-70 transition-opacity duration-fast hover:opacity-100',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            'text-muted-foreground duration-fast opacity-70 transition-opacity hover:opacity-100',
+            'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
             'motion-reduce:transition-none',
           )}
           onClick={onClose}

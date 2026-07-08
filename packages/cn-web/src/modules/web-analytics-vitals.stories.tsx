@@ -1,7 +1,5 @@
 import { useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import {
   PUIBadge,
   PUIButton,
@@ -19,6 +17,7 @@ import {
   isTrackingAllowed,
   noopSink,
 } from '@/lib/web-analytics-vitals'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import {
   type SeededGoalName,

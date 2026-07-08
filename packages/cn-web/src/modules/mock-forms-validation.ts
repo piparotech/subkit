@@ -5,14 +5,13 @@
 //
 // Demo schema (login): username (required) + a 6-digit PIN. The "correct" PIN is 123456; any other
 // valid-shaped PIN is rejected as a failed attempt. Lockout after 3 failures.
-import { z } from 'zod'
-
 import {
   type AttemptState,
   type FieldErrors,
   createAttemptLimiter,
   revalidate,
 } from '@/lib/forms-validation'
+import { z } from 'zod'
 
 export const LoginSchema = z.object({
   username: z.string().trim().min(1, 'Enter a username.'),

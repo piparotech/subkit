@@ -5,8 +5,7 @@ import { PUIText } from './PUIText'
 import { type PUITextAreaOwnProps } from './PUITextArea.types'
 
 export interface PUITextAreaProps
-  extends PUITextAreaOwnProps,
-    Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'disabled'> {
+  extends PUITextAreaOwnProps, Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'disabled'> {
   /** Grow the field to fit its content instead of scrolling internally. Off by default. */
   autoGrow?: boolean
 }
@@ -49,9 +48,8 @@ export const PUITextArea = React.forwardRef<HTMLTextAreaElement, PUITextAreaProp
     }, [resize, props.value, props.defaultValue])
 
     const describedBy =
-      [error != null ? errorId : null, hint != null ? hintId : null]
-        .filter(Boolean)
-        .join(' ') || undefined
+      [error != null ? errorId : null, hint != null ? hintId : null].filter(Boolean).join(' ') ||
+      undefined
 
     return (
       <div className="flex flex-col gap-2">
@@ -67,8 +65,8 @@ export const PUITextArea = React.forwardRef<HTMLTextAreaElement, PUITextAreaProp
           aria-describedby={describedBy}
           aria-invalid={error != null || undefined}
           className={cn(
-            'flex min-h-11 w-full resize-y rounded-lg border bg-background px-4 py-2.5 text-callout text-foreground placeholder:text-muted-foreground',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            'bg-background text-callout text-foreground placeholder:text-muted-foreground flex min-h-11 w-full resize-y rounded-lg border px-4 py-2.5',
+            'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
             'disabled:cursor-not-allowed disabled:opacity-50',
             autoGrow && 'resize-none overflow-hidden',
             error != null ? 'border-destructive' : 'border-border',

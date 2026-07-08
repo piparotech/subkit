@@ -1,8 +1,11 @@
 import { db } from '~/db/client'
-import { createRandomToken } from '~/server/auth/crypto'
 import { appStoreConnectSalesReports } from '~/db/schema'
-import { downloadDailySalesReport, type AppStoreConnectCredentials } from '~/server/app-store-connect/client'
 import type { AppStoreConnectReportSyncResult } from '~/integrations/app-store-connect/types'
+import {
+  type AppStoreConnectCredentials,
+  downloadDailySalesReport,
+} from '~/server/app-store-connect/client'
+import { createRandomToken } from '~/server/auth/crypto'
 
 import { recordAppStoreConnectAudit, safeErrorDetail } from './sync-shared'
 

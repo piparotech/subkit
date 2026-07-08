@@ -1,5 +1,5 @@
-import { matchesQuery } from '~/domain/apps/filters'
 import type { AppUser } from '~/domain/app-users/types'
+import { matchesQuery } from '~/domain/apps/filters'
 
 export function filterAppUsers(items: readonly AppUser[], query: string): AppUser[] {
   return items.filter((appUser) =>

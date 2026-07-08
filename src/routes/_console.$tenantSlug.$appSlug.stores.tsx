@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 import { AppRouteView } from '~/console/AppRouteView'
-import { StoresView } from '~/domain/stores/StoresView'
 import type { AppConsoleViewRenderProps } from '~/console/types'
+import { StoresView } from '~/domain/stores/StoresView'
 
 export const Route = createFileRoute('/_console/$tenantSlug/$appSlug/stores')({
   component: StoresRoute,

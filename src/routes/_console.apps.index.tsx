@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 
-import { AppsView } from '~/domain/apps/AppsView'
 import { WorkspaceRouteView } from '~/console/WorkspaceRouteView'
 import type { ConsoleActionContext, ConsoleViewRenderProps } from '~/console/types'
+import { AppsView } from '~/domain/apps/AppsView'
 
 export const Route = createFileRoute('/_console/apps/')({
   component: AppsRoute,
@@ -19,7 +19,13 @@ function AppsRoute() {
   )
 }
 
-function renderAppsView({ apps, canCreateApps, connection, isFiltering, onCreateApp }: ConsoleViewRenderProps) {
+function renderAppsView({
+  apps,
+  canCreateApps,
+  connection,
+  isFiltering,
+  onCreateApp,
+}: ConsoleViewRenderProps) {
   return (
     <AppsView
       apps={apps}

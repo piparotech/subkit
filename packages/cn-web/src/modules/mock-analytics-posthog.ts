@@ -3,12 +3,11 @@
 // injected `AnalyticsSink` (PostHog in production) and `ErrorSink` (Sentry); here both are recording
 // fakes that simply remember what got through the gate. A deterministic event registry + a seeded
 // candidate list let the demo prove the consent ladder live (off / anonymous / identified + replay).
-import { z } from 'zod'
-
 import { type SentryConfig } from '@/lib/analytics-posthog/config'
 import { type EventRegistry, defineEvents } from '@/lib/analytics-posthog/events'
 import { type ErrorSink } from '@/lib/analytics-posthog/reporter'
 import { type AnalyticsSink, type Tracker } from '@/lib/analytics-posthog/tracker'
+import { z } from 'zod'
 
 const eventSchemas = {
   app_opened: z.strictObject({ source: z.string() }),

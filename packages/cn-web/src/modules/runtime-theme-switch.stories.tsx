@@ -1,7 +1,5 @@
 import { type CSSProperties, useCallback, useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-
 import {
   PUIBadge,
   PUIButton,
@@ -24,6 +22,7 @@ import {
   resolveScheme,
   saveThemePreferences,
 } from '@/lib/runtime-theme-switch'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import {
   BASE_PRESET_ID,

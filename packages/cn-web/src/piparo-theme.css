@@ -3,7 +3,12 @@
   --border-width-0: 0px;
   --border-width-1: 1px;
   --border-width-2: 2px;
-  --color-background-scrim: rgba(10, 10, 10, 0.5); /** Modal/sheet backdrop. neutral-950 at ~50% so underlying color dims to a uniform near-black without its own hue. Wired to bg-overlay. */
+  --color-background-scrim: rgba(
+    10,
+    10,
+    10,
+    0.5
+  ); /** Modal/sheet backdrop. neutral-950 at ~50% so underlying color dims to a uniform near-black without its own hue. Wired to bg-overlay. */
   --color-brand-indigo-100: #e5eafc;
   --color-brand-indigo-200: #c7d2fe;
   --color-brand-indigo-300: #9eb3f9; /** Current site primary HSL token converted to hex. */
@@ -47,17 +52,36 @@
   --duration-instant: 0ms; /** No animation; honoured when OS reduce-motion is on (useMotion returns 0). */
   --duration-normal: 250ms; /** Default UI transition (fade/slide between states). Sits between piparo.party base (200ms) and SmartCoach tab label (280ms). */
   --duration-slow: 400ms; /** Larger enter/exit transitions (sheets, screens). piparo.party duration.enter. */
-  --easing-accelerate: cubic-bezier(0.4, 0, 1, 1); /** Ease-in for exiting elements that leave the screen. */
-  --easing-decelerate: cubic-bezier(0.16, 1, 0.3, 1); /** Ease-out for entering elements. Grounded in piparo.party easeOutExpo + SmartCoach Easing.out(cubic). */
-  --easing-standard: cubic-bezier(0.2, 0, 0, 1); /** Symmetric ease for moves that start and end on screen (color/position swaps). */
+  --easing-accelerate: cubic-bezier(
+    0.4,
+    0,
+    1,
+    1
+  ); /** Ease-in for exiting elements that leave the screen. */
+  --easing-decelerate: cubic-bezier(
+    0.16,
+    1,
+    0.3,
+    1
+  ); /** Ease-out for entering elements. Grounded in piparo.party easeOutExpo + SmartCoach Easing.out(cubic). */
+  --easing-standard: cubic-bezier(
+    0.2,
+    0,
+    0,
+    1
+  ); /** Symmetric ease for moves that start and end on screen (color/position swaps). */
   --elevation-0: 0;
   --elevation-1: 1;
   --elevation-2: 2;
   --elevation-3: 3;
   --elevation-4: 4;
   --elevation-5: 5;
-  --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  --font-family-sans: 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-family-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+  --font-family-sans:
+    'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   --font-line-height-loose: 2;
   --font-line-height-none: 1;
   --font-line-height-normal: 1.5;
@@ -104,8 +128,10 @@
   --radius-xl: 0.75rem;
   --radius-xs: 0.25rem;
   --shadow-color: #0a1740; /** Base shadow tint (navy); opacity applied per-platform in the Shell. */
-  --shadow-lg: 0px 12px 24px -6px #0a17402e, 0px 4px 8px -4px #0a174014; /** Large floating elevation (bottom sheets, large modals, popovers over content). Diffuse two-layer navy shadow (PUI v2). NativeWind shadow-lg / --shadow-lg. */
-  --shadow-md: 0px 4px 8px -2px #0a174033, 0px 2px 4px -1px #0a174014; /** Floating elevation (sheets/menus/dialogs). Two-layer navy shadow, diffuse. NativeWind v5 shadow-md / CSS box-shadow / --shadow-md. */
+  --shadow-lg:
+    0px 12px 24px -6px #0a17402e, 0px 4px 8px -4px #0a174014; /** Large floating elevation (bottom sheets, large modals, popovers over content). Diffuse two-layer navy shadow (PUI v2). NativeWind shadow-lg / --shadow-lg. */
+  --shadow-md:
+    0px 4px 8px -2px #0a174033, 0px 2px 4px -1px #0a174014; /** Floating elevation (sheets/menus/dialogs). Two-layer navy shadow, diffuse. NativeWind v5 shadow-md / CSS box-shadow / --shadow-md. */
   --shadow-sm: 0px 1px 2px 0px #0a174026; /** Subtle resting elevation (cards/popovers). Navy tint at ~15% alpha. NativeWind v5 shadow-sm / CSS box-shadow / --shadow-sm. */
   --space-0: 0rem;
   --space-1: 0.25rem;
@@ -132,7 +158,10 @@
   --color-action-primary-background: var(--color-brand-indigo-300, #9eb3f9);
   --color-action-primary-foreground: var(--color-neutral-950, #090a0b);
   --color-action-primary-hover: var(--color-brand-indigo-400, #818cf8);
-  --color-action-primary-muted: var(--color-brand-indigo-100, #e5eafc); /** Soft indigo surface for selected/active/soft-emphasis states (PUI v2 richer signature). Pair with foreground.brand text. */
+  --color-action-primary-muted: var(
+    --color-brand-indigo-100,
+    #e5eafc
+  ); /** Soft indigo surface for selected/active/soft-emphasis states (PUI v2 richer signature). Pair with foreground.brand text. */
   --color-action-secondary-background: var(--color-neutral-150, #f0f0f1);
   --color-action-secondary-foreground: var(--color-neutral-950, #090a0b);
   --color-action-secondary-hover: var(--color-neutral-250, #dfe0e2);
@@ -164,7 +193,18 @@
   --color-intent-success-foreground: var(--color-neutral-50, #fafafa);
   --color-intent-warning-background: var(--color-status-warning, #f59e0b);
   --color-intent-warning-foreground: var(--color-neutral-950, #090a0b);
-  --component-button-font-family: var(--font-family-sans, 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji');
+  --component-button-font-family: var(
+    --font-family-sans,
+    'Inter Variable',
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    sans-serif,
+    'Apple Color Emoji',
+    'Segoe UI Emoji',
+    'Segoe UI Symbol',
+    'Noto Color Emoji'
+  );
   --component-button-font-size: var(--font-size-base, 1rem);
   --component-button-font-weight: var(--font-weight-semibold, 600);
   --component-button-padding-x: var(--space-6, 1.5rem);
@@ -185,11 +225,17 @@
   --component-card-foreground: var(--color-foreground-default, #090a0b);
 }
 
-:root[data-theme="dark"], .dark {
+:root[data-theme='dark'],
+.dark {
   --border-width-0: 0px;
   --border-width-1: 1px;
   --border-width-2: 2px;
-  --color-background-scrim: rgba(10, 10, 10, 0.6); /** Modal/sheet backdrop. neutral-950 at ~60% (heavier on dark surfaces) so underlying color dims to a uniform near-black without its own hue. Wired to bg-overlay. */
+  --color-background-scrim: rgba(
+    10,
+    10,
+    10,
+    0.6
+  ); /** Modal/sheet backdrop. neutral-950 at ~60% (heavier on dark surfaces) so underlying color dims to a uniform near-black without its own hue. Wired to bg-overlay. */
   --color-brand-indigo-100: #e5eafc;
   --color-brand-indigo-200: #c7d2fe;
   --color-brand-indigo-300: #9eb3f9; /** Current site primary HSL token converted to hex. */
@@ -233,17 +279,36 @@
   --duration-instant: 0ms; /** No animation; honoured when OS reduce-motion is on (useMotion returns 0). */
   --duration-normal: 250ms; /** Default UI transition (fade/slide between states). Sits between piparo.party base (200ms) and SmartCoach tab label (280ms). */
   --duration-slow: 400ms; /** Larger enter/exit transitions (sheets, screens). piparo.party duration.enter. */
-  --easing-accelerate: cubic-bezier(0.4, 0, 1, 1); /** Ease-in for exiting elements that leave the screen. */
-  --easing-decelerate: cubic-bezier(0.16, 1, 0.3, 1); /** Ease-out for entering elements. Grounded in piparo.party easeOutExpo + SmartCoach Easing.out(cubic). */
-  --easing-standard: cubic-bezier(0.2, 0, 0, 1); /** Symmetric ease for moves that start and end on screen (color/position swaps). */
+  --easing-accelerate: cubic-bezier(
+    0.4,
+    0,
+    1,
+    1
+  ); /** Ease-in for exiting elements that leave the screen. */
+  --easing-decelerate: cubic-bezier(
+    0.16,
+    1,
+    0.3,
+    1
+  ); /** Ease-out for entering elements. Grounded in piparo.party easeOutExpo + SmartCoach Easing.out(cubic). */
+  --easing-standard: cubic-bezier(
+    0.2,
+    0,
+    0,
+    1
+  ); /** Symmetric ease for moves that start and end on screen (color/position swaps). */
   --elevation-0: 0;
   --elevation-1: 1;
   --elevation-2: 2;
   --elevation-3: 3;
   --elevation-4: 4;
   --elevation-5: 5;
-  --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  --font-family-sans: 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-family-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+  --font-family-sans:
+    'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   --font-line-height-loose: 2;
   --font-line-height-none: 1;
   --font-line-height-normal: 1.5;
@@ -290,8 +355,10 @@
   --radius-xl: 0.75rem;
   --radius-xs: 0.25rem;
   --shadow-color: #0a1740; /** Base shadow tint (navy); opacity applied per-platform in the Shell. */
-  --shadow-lg: 0px 12px 24px -6px #0a17402e, 0px 4px 8px -4px #0a174014; /** Large floating elevation (bottom sheets, large modals, popovers over content). Diffuse two-layer navy shadow (PUI v2). NativeWind shadow-lg / --shadow-lg. */
-  --shadow-md: 0px 4px 8px -2px #0a174033, 0px 2px 4px -1px #0a174014; /** Floating elevation (sheets/menus/dialogs). Two-layer navy shadow, diffuse. NativeWind v5 shadow-md / CSS box-shadow / --shadow-md. */
+  --shadow-lg:
+    0px 12px 24px -6px #0a17402e, 0px 4px 8px -4px #0a174014; /** Large floating elevation (bottom sheets, large modals, popovers over content). Diffuse two-layer navy shadow (PUI v2). NativeWind shadow-lg / --shadow-lg. */
+  --shadow-md:
+    0px 4px 8px -2px #0a174033, 0px 2px 4px -1px #0a174014; /** Floating elevation (sheets/menus/dialogs). Two-layer navy shadow, diffuse. NativeWind v5 shadow-md / CSS box-shadow / --shadow-md. */
   --shadow-sm: 0px 1px 2px 0px #0a174026; /** Subtle resting elevation (cards/popovers). Navy tint at ~15% alpha. NativeWind v5 shadow-sm / CSS box-shadow / --shadow-sm. */
   --space-0: 0rem;
   --space-1: 0.25rem;
@@ -318,7 +385,10 @@
   --color-action-primary-background: var(--color-brand-indigo-300, #9eb3f9);
   --color-action-primary-foreground: var(--color-neutral-950, #090a0b);
   --color-action-primary-hover: var(--color-brand-indigo-200, #c7d2fe);
-  --color-action-primary-muted: var(--color-brand-navy-700, #1d2746); /** Deep indigo-navy surface for selected/active/soft-emphasis states (PUI v2 richer signature). Pair with foreground.brand text. */
+  --color-action-primary-muted: var(
+    --color-brand-navy-700,
+    #1d2746
+  ); /** Deep indigo-navy surface for selected/active/soft-emphasis states (PUI v2 richer signature). Pair with foreground.brand text. */
   --color-action-secondary-background: var(--color-neutral-800, #252629);
   --color-action-secondary-foreground: var(--color-neutral-50, #fafafa);
   --color-action-secondary-hover: var(--color-neutral-700, #3e4044);
@@ -350,7 +420,18 @@
   --color-intent-success-foreground: var(--color-neutral-50, #fafafa);
   --color-intent-warning-background: var(--color-status-warning, #f59e0b);
   --color-intent-warning-foreground: var(--color-neutral-950, #090a0b);
-  --component-button-font-family: var(--font-family-sans, 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji');
+  --component-button-font-family: var(
+    --font-family-sans,
+    'Inter Variable',
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    sans-serif,
+    'Apple Color Emoji',
+    'Segoe UI Emoji',
+    'Segoe UI Symbol',
+    'Noto Color Emoji'
+  );
   --component-button-font-size: var(--font-size-base, 1rem);
   --component-button-font-weight: var(--font-weight-semibold, 600);
   --component-button-padding-x: var(--space-6, 1.5rem);
@@ -374,187 +455,227 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --border-width-0: 0px;
-  --border-width-1: 1px;
-  --border-width-2: 2px;
-  --color-background-scrim: rgba(10, 10, 10, 0.6); /** Modal/sheet backdrop. neutral-950 at ~60% (heavier on dark surfaces) so underlying color dims to a uniform near-black without its own hue. Wired to bg-overlay. */
-  --color-brand-indigo-100: #e5eafc;
-  --color-brand-indigo-200: #c7d2fe;
-  --color-brand-indigo-300: #9eb3f9; /** Current site primary HSL token converted to hex. */
-  --color-brand-indigo-400: #818cf8;
-  --color-brand-indigo-500: #4764c6; /** Frequent site accent blue. */
-  --color-brand-indigo-600: #4f46e5;
-  --color-brand-navy-600: #27304d;
-  --color-brand-navy-700: #1d2746;
-  --color-brand-navy-800: #131d3e;
-  --color-brand-navy-900: #0b1a49; /** Dark navy frequently used in hero and deep surfaces. */
-  --color-brand-navy-950: #0a1740; /** Primary Piparo navy; current site theme-color. */
-  --color-brand-violet-100: #eef0f9;
-  --color-brand-violet-300: #9f7bff; /** Current site secondary HSL token converted to hex. */
-  --color-brand-violet-400: #8e6aed;
-  --color-brand-violet-500: #6c63ff;
-  --color-brand-violet-600: #565ac7;
-  --color-data-coral: #f4a462;
-  --color-data-orange: #e76e50;
-  --color-data-slate: #274754;
-  --color-data-teal: #2a9d90;
-  --color-data-yellow: #e8c468;
-  --color-neutral-0: #ffffff;
-  --color-neutral-100: #f5f5f6;
-  --color-neutral-150: #f0f0f1;
-  --color-neutral-200: #e4e5e6;
-  --color-neutral-250: #dfe0e2;
-  --color-neutral-300: #d3d4d6;
-  --color-neutral-400: #a1a3a7;
-  --color-neutral-50: #fafafa;
-  --color-neutral-500: #717378;
-  --color-neutral-600: #505256;
-  --color-neutral-700: #3e4044;
-  --color-neutral-800: #252629;
-  --color-neutral-900: #161719;
-  --color-neutral-950: #090a0b;
-  --color-status-danger: #ef4444;
-  --color-status-info: #06b6d4;
-  --color-status-success: #116600;
-  --color-status-warning: #f59e0b;
-  --duration-fast: 150ms; /** Press feedback / micro-interactions. SmartCoach press-out + slider; piparo.party duration.fast. */
-  --duration-instant: 0ms; /** No animation; honoured when OS reduce-motion is on (useMotion returns 0). */
-  --duration-normal: 250ms; /** Default UI transition (fade/slide between states). Sits between piparo.party base (200ms) and SmartCoach tab label (280ms). */
-  --duration-slow: 400ms; /** Larger enter/exit transitions (sheets, screens). piparo.party duration.enter. */
-  --easing-accelerate: cubic-bezier(0.4, 0, 1, 1); /** Ease-in for exiting elements that leave the screen. */
-  --easing-decelerate: cubic-bezier(0.16, 1, 0.3, 1); /** Ease-out for entering elements. Grounded in piparo.party easeOutExpo + SmartCoach Easing.out(cubic). */
-  --easing-standard: cubic-bezier(0.2, 0, 0, 1); /** Symmetric ease for moves that start and end on screen (color/position swaps). */
-  --elevation-0: 0;
-  --elevation-1: 1;
-  --elevation-2: 2;
-  --elevation-3: 3;
-  --elevation-4: 4;
-  --elevation-5: 5;
-  --font-family-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-  --font-family-sans: 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-  --font-line-height-loose: 2;
-  --font-line-height-none: 1;
-  --font-line-height-normal: 1.5;
-  --font-line-height-relaxed: 1.625;
-  --font-line-height-snug: 1.375;
-  --font-line-height-tight: 1.25;
-  --font-size-2xl: 1.5rem;
-  --font-size-3xl: 1.875rem;
-  --font-size-4xl: 2.25rem;
-  --font-size-5xl: 3rem;
-  --font-size-6xl: 3.75rem;
-  --font-size-7xl: 4.5rem;
-  --font-size-base: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-sm: 0.875rem;
-  --font-size-xl: 1.25rem;
-  --font-size-xs: 0.75rem;
-  --font-tracking-normal: 0em;
-  --font-tracking-tight: -0.025em;
-  --font-tracking-wide: 0.025em;
-  --font-weight-black: 900;
-  --font-weight-bold: 700;
-  --font-weight-extrabold: 800;
-  --font-weight-light: 300;
-  --font-weight-medium: 500;
-  --font-weight-regular: 400;
-  --font-weight-semibold: 600;
-  --opacity-disabled: 0.5;
-  --opacity-full: 1;
-  --opacity-hidden: 0;
-  --opacity-muted: 0.7;
-  --opacity-pressed: 0.75;
-  --opacity-resting: 0.8;
-  --opacity-subtle: 0.9;
-  --opacity-unavailable: 0.6;
-  --press-scale: 0.97; /** Pressed-state scale for tappable surfaces. Used by usePressScale (native) and active:scale-press (web). */
-  --radius-2xl: 1rem;
-  --radius-3xl: 1.5rem;
-  --radius-lg: 0.5rem; /** Current --radius value on piparo.tech. */
-  --radius-md: 0.375rem;
-  --radius-none: 0rem;
-  --radius-pill: 9999px;
-  --radius-sm: 0.3125rem;
-  --radius-xl: 0.75rem;
-  --radius-xs: 0.25rem;
-  --shadow-color: #0a1740; /** Base shadow tint (navy); opacity applied per-platform in the Shell. */
-  --shadow-lg: 0px 12px 24px -6px #0a17402e, 0px 4px 8px -4px #0a174014; /** Large floating elevation (bottom sheets, large modals, popovers over content). Diffuse two-layer navy shadow (PUI v2). NativeWind shadow-lg / --shadow-lg. */
-  --shadow-md: 0px 4px 8px -2px #0a174033, 0px 2px 4px -1px #0a174014; /** Floating elevation (sheets/menus/dialogs). Two-layer navy shadow, diffuse. NativeWind v5 shadow-md / CSS box-shadow / --shadow-md. */
-  --shadow-sm: 0px 1px 2px 0px #0a174026; /** Subtle resting elevation (cards/popovers). Navy tint at ~15% alpha. NativeWind v5 shadow-sm / CSS box-shadow / --shadow-sm. */
-  --space-0: 0rem;
-  --space-1: 0.25rem;
-  --space-1-5: 0.375rem;
-  --space-10: 2.5rem;
-  --space-11: 2.75rem; /** 44px — minimum touch target (min-h-11 / min-w-11 / h-11). */
-  --space-12: 3rem;
-  --space-14: 3.5rem;
-  --space-16: 4rem;
-  --space-2: 0.5rem;
-  --space-20: 5rem;
-  --space-24: 6rem;
-  --space-28: 7rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.25rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --z-overlay: 50; /** Modal/sheet/dropdown backdrops and surfaces (z-overlay). */
-  --z-toast: 100; /** Toasts/notifications above everything (z-toast). */
-  --color-action-ghost-background: var(--color-neutral-900, #161719);
-  --color-action-ghost-foreground: var(--color-neutral-0, #ffffff);
-  --color-action-ghost-hover: var(--color-neutral-800, #252629);
-  --color-action-primary-background: var(--color-brand-indigo-300, #9eb3f9);
-  --color-action-primary-foreground: var(--color-neutral-950, #090a0b);
-  --color-action-primary-hover: var(--color-brand-indigo-200, #c7d2fe);
-  --color-action-primary-muted: var(--color-brand-navy-700, #1d2746); /** Deep indigo-navy surface for selected/active/soft-emphasis states (PUI v2 richer signature). Pair with foreground.brand text. */
-  --color-action-secondary-background: var(--color-neutral-800, #252629);
-  --color-action-secondary-foreground: var(--color-neutral-50, #fafafa);
-  --color-action-secondary-hover: var(--color-neutral-700, #3e4044);
-  --color-background-brand: var(--color-brand-indigo-500, #4764c6);
-  --color-background-card: var(--color-neutral-900, #161719);
-  --color-background-default: var(--color-neutral-950, #090a0b);
-  --color-background-inverse: var(--color-neutral-0, #ffffff);
-  --color-background-muted: var(--color-neutral-800, #252629);
-  --color-background-subtle: var(--color-neutral-900, #161719);
-  --color-border-default: var(--color-neutral-800, #252629);
-  --color-border-focus: var(--color-brand-indigo-300, #9eb3f9);
-  --color-border-muted: var(--color-neutral-700, #3e4044);
-  --color-border-strong: var(--color-neutral-600, #505256);
-  --color-chart-1: var(--color-brand-indigo-500, #4764c6);
-  --color-chart-2: var(--color-data-teal, #2a9d90);
-  --color-chart-3: var(--color-brand-indigo-300, #9eb3f9);
-  --color-chart-4: var(--color-data-yellow, #e8c468);
-  --color-chart-5: var(--color-data-coral, #f4a462);
-  --color-foreground-brand: var(--color-brand-indigo-300, #9eb3f9);
-  --color-foreground-default: var(--color-neutral-50, #fafafa);
-  --color-foreground-inverse: var(--color-neutral-950, #090a0b);
-  --color-foreground-muted: var(--color-neutral-400, #a1a3a7);
-  --color-foreground-subtle: var(--color-neutral-300, #d3d4d6);
-  --color-intent-danger-background: var(--color-status-danger, #ef4444);
-  --color-intent-danger-foreground: var(--color-neutral-950, #090a0b);
-  --color-intent-info-background: var(--color-status-info, #06b6d4);
-  --color-intent-info-foreground: var(--color-neutral-950, #090a0b);
-  --color-intent-success-background: var(--color-status-success, #116600);
-  --color-intent-success-foreground: var(--color-neutral-50, #fafafa);
-  --color-intent-warning-background: var(--color-status-warning, #f59e0b);
-  --color-intent-warning-foreground: var(--color-neutral-950, #090a0b);
-  --component-button-font-family: var(--font-family-sans, 'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji');
-  --component-button-font-size: var(--font-size-base, 1rem);
-  --component-button-font-weight: var(--font-weight-semibold, 600);
-  --component-button-padding-x: var(--space-6, 1.5rem);
-  --component-button-padding-y: var(--space-3, 0.75rem);
-  --component-button-radius: var(--radius-pill, 9999px);
-  --component-card-border-width: var(--border-width-1, 1px);
-  --component-card-gap: var(--space-4, 1rem);
-  --component-card-padding: var(--space-8, 2rem);
-  --component-card-radius: var(--radius-2xl, 1rem);
-  --component-button-primary-background: var(--color-action-primary-background, #9eb3f9);
-  --component-button-primary-foreground: var(--color-action-primary-foreground, #090a0b);
-  --component-button-primary-hover: var(--color-action-primary-hover, #c7d2fe);
-  --component-button-secondary-background: var(--color-action-secondary-background, #252629);
-  --component-button-secondary-foreground: var(--color-action-secondary-foreground, #fafafa);
-  --component-button-secondary-hover: var(--color-action-secondary-hover, #3e4044);
-  --component-card-background: var(--color-background-card, #161719);
-  --component-card-border-color: var(--color-border-default, #252629);
-  --component-card-foreground: var(--color-foreground-default, #fafafa);
+    --border-width-1: 1px;
+    --border-width-2: 2px;
+    --color-background-scrim: rgba(
+      10,
+      10,
+      10,
+      0.6
+    ); /** Modal/sheet backdrop. neutral-950 at ~60% (heavier on dark surfaces) so underlying color dims to a uniform near-black without its own hue. Wired to bg-overlay. */
+    --color-brand-indigo-100: #e5eafc;
+    --color-brand-indigo-200: #c7d2fe;
+    --color-brand-indigo-300: #9eb3f9; /** Current site primary HSL token converted to hex. */
+    --color-brand-indigo-400: #818cf8;
+    --color-brand-indigo-500: #4764c6; /** Frequent site accent blue. */
+    --color-brand-indigo-600: #4f46e5;
+    --color-brand-navy-600: #27304d;
+    --color-brand-navy-700: #1d2746;
+    --color-brand-navy-800: #131d3e;
+    --color-brand-navy-900: #0b1a49; /** Dark navy frequently used in hero and deep surfaces. */
+    --color-brand-navy-950: #0a1740; /** Primary Piparo navy; current site theme-color. */
+    --color-brand-violet-100: #eef0f9;
+    --color-brand-violet-300: #9f7bff; /** Current site secondary HSL token converted to hex. */
+    --color-brand-violet-400: #8e6aed;
+    --color-brand-violet-500: #6c63ff;
+    --color-brand-violet-600: #565ac7;
+    --color-data-coral: #f4a462;
+    --color-data-orange: #e76e50;
+    --color-data-slate: #274754;
+    --color-data-teal: #2a9d90;
+    --color-data-yellow: #e8c468;
+    --color-neutral-0: #ffffff;
+    --color-neutral-100: #f5f5f6;
+    --color-neutral-150: #f0f0f1;
+    --color-neutral-200: #e4e5e6;
+    --color-neutral-250: #dfe0e2;
+    --color-neutral-300: #d3d4d6;
+    --color-neutral-400: #a1a3a7;
+    --color-neutral-50: #fafafa;
+    --color-neutral-500: #717378;
+    --color-neutral-600: #505256;
+    --color-neutral-700: #3e4044;
+    --color-neutral-800: #252629;
+    --color-neutral-900: #161719;
+    --color-neutral-950: #090a0b;
+    --color-status-danger: #ef4444;
+    --color-status-info: #06b6d4;
+    --color-status-success: #116600;
+    --color-status-warning: #f59e0b;
+    --duration-fast: 150ms; /** Press feedback / micro-interactions. SmartCoach press-out + slider; piparo.party duration.fast. */
+    --duration-instant: 0ms; /** No animation; honoured when OS reduce-motion is on (useMotion returns 0). */
+    --duration-normal: 250ms; /** Default UI transition (fade/slide between states). Sits between piparo.party base (200ms) and SmartCoach tab label (280ms). */
+    --duration-slow: 400ms; /** Larger enter/exit transitions (sheets, screens). piparo.party duration.enter. */
+    --easing-accelerate: cubic-bezier(
+      0.4,
+      0,
+      1,
+      1
+    ); /** Ease-in for exiting elements that leave the screen. */
+    --easing-decelerate: cubic-bezier(
+      0.16,
+      1,
+      0.3,
+      1
+    ); /** Ease-out for entering elements. Grounded in piparo.party easeOutExpo + SmartCoach Easing.out(cubic). */
+    --easing-standard: cubic-bezier(
+      0.2,
+      0,
+      0,
+      1
+    ); /** Symmetric ease for moves that start and end on screen (color/position swaps). */
+    --elevation-0: 0;
+    --elevation-1: 1;
+    --elevation-2: 2;
+    --elevation-3: 3;
+    --elevation-4: 4;
+    --elevation-5: 5;
+    --font-family-mono:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+      monospace;
+    --font-family-sans:
+      'Inter Variable', Inter, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+      'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-line-height-loose: 2;
+    --font-line-height-none: 1;
+    --font-line-height-normal: 1.5;
+    --font-line-height-relaxed: 1.625;
+    --font-line-height-snug: 1.375;
+    --font-line-height-tight: 1.25;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+    --font-size-5xl: 3rem;
+    --font-size-6xl: 3.75rem;
+    --font-size-7xl: 4.5rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-sm: 0.875rem;
+    --font-size-xl: 1.25rem;
+    --font-size-xs: 0.75rem;
+    --font-tracking-normal: 0em;
+    --font-tracking-tight: -0.025em;
+    --font-tracking-wide: 0.025em;
+    --font-weight-black: 900;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+    --font-weight-light: 300;
+    --font-weight-medium: 500;
+    --font-weight-regular: 400;
+    --font-weight-semibold: 600;
+    --opacity-disabled: 0.5;
+    --opacity-full: 1;
+    --opacity-hidden: 0;
+    --opacity-muted: 0.7;
+    --opacity-pressed: 0.75;
+    --opacity-resting: 0.8;
+    --opacity-subtle: 0.9;
+    --opacity-unavailable: 0.6;
+    --press-scale: 0.97; /** Pressed-state scale for tappable surfaces. Used by usePressScale (native) and active:scale-press (web). */
+    --radius-2xl: 1rem;
+    --radius-3xl: 1.5rem;
+    --radius-lg: 0.5rem; /** Current --radius value on piparo.tech. */
+    --radius-md: 0.375rem;
+    --radius-none: 0rem;
+    --radius-pill: 9999px;
+    --radius-sm: 0.3125rem;
+    --radius-xl: 0.75rem;
+    --radius-xs: 0.25rem;
+    --shadow-color: #0a1740; /** Base shadow tint (navy); opacity applied per-platform in the Shell. */
+    --shadow-lg:
+      0px 12px 24px -6px #0a17402e, 0px 4px 8px -4px #0a174014; /** Large floating elevation (bottom sheets, large modals, popovers over content). Diffuse two-layer navy shadow (PUI v2). NativeWind shadow-lg / --shadow-lg. */
+    --shadow-md:
+      0px 4px 8px -2px #0a174033, 0px 2px 4px -1px #0a174014; /** Floating elevation (sheets/menus/dialogs). Two-layer navy shadow, diffuse. NativeWind v5 shadow-md / CSS box-shadow / --shadow-md. */
+    --shadow-sm: 0px 1px 2px 0px #0a174026; /** Subtle resting elevation (cards/popovers). Navy tint at ~15% alpha. NativeWind v5 shadow-sm / CSS box-shadow / --shadow-sm. */
+    --space-0: 0rem;
+    --space-1: 0.25rem;
+    --space-1-5: 0.375rem;
+    --space-10: 2.5rem;
+    --space-11: 2.75rem; /** 44px — minimum touch target (min-h-11 / min-w-11 / h-11). */
+    --space-12: 3rem;
+    --space-14: 3.5rem;
+    --space-16: 4rem;
+    --space-2: 0.5rem;
+    --space-20: 5rem;
+    --space-24: 6rem;
+    --space-28: 7rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.25rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+    --z-overlay: 50; /** Modal/sheet/dropdown backdrops and surfaces (z-overlay). */
+    --z-toast: 100; /** Toasts/notifications above everything (z-toast). */
+    --color-action-ghost-background: var(--color-neutral-900, #161719);
+    --color-action-ghost-foreground: var(--color-neutral-0, #ffffff);
+    --color-action-ghost-hover: var(--color-neutral-800, #252629);
+    --color-action-primary-background: var(--color-brand-indigo-300, #9eb3f9);
+    --color-action-primary-foreground: var(--color-neutral-950, #090a0b);
+    --color-action-primary-hover: var(--color-brand-indigo-200, #c7d2fe);
+    --color-action-primary-muted: var(
+      --color-brand-navy-700,
+      #1d2746
+    ); /** Deep indigo-navy surface for selected/active/soft-emphasis states (PUI v2 richer signature). Pair with foreground.brand text. */
+    --color-action-secondary-background: var(--color-neutral-800, #252629);
+    --color-action-secondary-foreground: var(--color-neutral-50, #fafafa);
+    --color-action-secondary-hover: var(--color-neutral-700, #3e4044);
+    --color-background-brand: var(--color-brand-indigo-500, #4764c6);
+    --color-background-card: var(--color-neutral-900, #161719);
+    --color-background-default: var(--color-neutral-950, #090a0b);
+    --color-background-inverse: var(--color-neutral-0, #ffffff);
+    --color-background-muted: var(--color-neutral-800, #252629);
+    --color-background-subtle: var(--color-neutral-900, #161719);
+    --color-border-default: var(--color-neutral-800, #252629);
+    --color-border-focus: var(--color-brand-indigo-300, #9eb3f9);
+    --color-border-muted: var(--color-neutral-700, #3e4044);
+    --color-border-strong: var(--color-neutral-600, #505256);
+    --color-chart-1: var(--color-brand-indigo-500, #4764c6);
+    --color-chart-2: var(--color-data-teal, #2a9d90);
+    --color-chart-3: var(--color-brand-indigo-300, #9eb3f9);
+    --color-chart-4: var(--color-data-yellow, #e8c468);
+    --color-chart-5: var(--color-data-coral, #f4a462);
+    --color-foreground-brand: var(--color-brand-indigo-300, #9eb3f9);
+    --color-foreground-default: var(--color-neutral-50, #fafafa);
+    --color-foreground-inverse: var(--color-neutral-950, #090a0b);
+    --color-foreground-muted: var(--color-neutral-400, #a1a3a7);
+    --color-foreground-subtle: var(--color-neutral-300, #d3d4d6);
+    --color-intent-danger-background: var(--color-status-danger, #ef4444);
+    --color-intent-danger-foreground: var(--color-neutral-950, #090a0b);
+    --color-intent-info-background: var(--color-status-info, #06b6d4);
+    --color-intent-info-foreground: var(--color-neutral-950, #090a0b);
+    --color-intent-success-background: var(--color-status-success, #116600);
+    --color-intent-success-foreground: var(--color-neutral-50, #fafafa);
+    --color-intent-warning-background: var(--color-status-warning, #f59e0b);
+    --color-intent-warning-foreground: var(--color-neutral-950, #090a0b);
+    --component-button-font-family: var(
+      --font-family-sans,
+      'Inter Variable',
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      sans-serif,
+      'Apple Color Emoji',
+      'Segoe UI Emoji',
+      'Segoe UI Symbol',
+      'Noto Color Emoji'
+    );
+    --component-button-font-size: var(--font-size-base, 1rem);
+    --component-button-font-weight: var(--font-weight-semibold, 600);
+    --component-button-padding-x: var(--space-6, 1.5rem);
+    --component-button-padding-y: var(--space-3, 0.75rem);
+    --component-button-radius: var(--radius-pill, 9999px);
+    --component-card-border-width: var(--border-width-1, 1px);
+    --component-card-gap: var(--space-4, 1rem);
+    --component-card-padding: var(--space-8, 2rem);
+    --component-card-radius: var(--radius-2xl, 1rem);
+    --component-button-primary-background: var(--color-action-primary-background, #9eb3f9);
+    --component-button-primary-foreground: var(--color-action-primary-foreground, #090a0b);
+    --component-button-primary-hover: var(--color-action-primary-hover, #c7d2fe);
+    --component-button-secondary-background: var(--color-action-secondary-background, #252629);
+    --component-button-secondary-foreground: var(--color-action-secondary-foreground, #fafafa);
+    --component-button-secondary-hover: var(--color-action-secondary-hover, #3e4044);
+    --component-card-background: var(--color-background-card, #161719);
+    --component-card-border-color: var(--color-border-default, #252629);
+    --component-card-foreground: var(--color-foreground-default, #fafafa);
   }
 }

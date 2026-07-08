@@ -1,5 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
+
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import { PUIBadge } from './PUIBadge'
 import { PUIDataTable } from './PUIDataTable'
@@ -15,7 +16,13 @@ interface Invoice {
 
 const INVOICES: Invoice[] = [
   { id: 'INV-001', client: 'Otto Chemie', amount: 4200, status: 'paid', issued: '2026-01-12' },
-  { id: 'INV-002', client: 'Rudolf Müller', amount: 34900, status: 'pending', issued: '2026-02-03' },
+  {
+    id: 'INV-002',
+    client: 'Rudolf Müller',
+    amount: 34900,
+    status: 'pending',
+    issued: '2026-02-03',
+  },
   { id: 'INV-003', client: 'Bolzfieber', amount: 1800, status: 'overdue', issued: '2026-01-28' },
   { id: 'INV-004', client: 'Stadt Aachen', amount: 12600, status: 'paid', issued: '2026-03-15' },
   { id: 'INV-005', client: 'Piparo Party', amount: 980, status: 'pending', issued: '2026-03-22' },

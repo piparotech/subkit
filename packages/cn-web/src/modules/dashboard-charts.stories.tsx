@@ -1,8 +1,5 @@
 import { useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Minus, TrendingDown, TrendingUp } from 'lucide-react'
-
 import { PUIBadge, PUISegmentedControl, PUIText } from '@/components/ui'
 import {
   type Bucket,
@@ -19,6 +16,8 @@ import {
   resolveCardStatus,
   resolveTimeWindow,
 } from '@/lib/dashboard-charts'
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { Minus, TrendingDown, TrendingUp } from 'lucide-react'
 
 import { CHANNEL_LABELS, DEMO_NOW, type DemoOrder, seedDemoOrders } from './mock-dashboard-charts'
 

@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Search, WifiOff } from 'lucide-react'
-
 import { PUIBadge, PUIEmptyState, PUIInput, PUISpinner, PUISwitch, PUIText } from '@/components/ui'
 import {
   type FacetSelection,
@@ -13,6 +10,8 @@ import {
   hasActiveFacets,
   toggleFacet,
 } from '@/lib/search-filter'
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { Search, WifiOff } from 'lucide-react'
 
 import {
   type Article,

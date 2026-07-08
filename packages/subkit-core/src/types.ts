@@ -2,12 +2,29 @@ export type StorePlatform = 'ios' | 'android'
 export type StoreName = 'apple_app_store' | 'google_play'
 export type StoreEnvironment = 'sandbox' | 'production' | 'unknown'
 export type ProductKind = 'subscription' | 'non_consumable' | 'consumable'
-export type EntitlementStatus = 'active' | 'trialing' | 'billing_retry' | 'grace_period' | 'paused' | 'expired' | 'refunded' | 'revoked' | 'pending'
+export type EntitlementStatus =
+  | 'active'
+  | 'trialing'
+  | 'billing_retry'
+  | 'grace_period'
+  | 'paused'
+  | 'expired'
+  | 'refunded'
+  | 'revoked'
+  | 'pending'
 export type CustomerInfoFreshness = 'fresh' | 'stale' | 'syncing' | 'offline' | 'error'
-export type PurchaseSyncReason = 'app_start' | 'foreground' | 'identity_changed' | 'purchase_event' | 'manual_restore' | 'paywall_preflight' | 'queue_retry'
+export type PurchaseSyncReason =
+  | 'app_start'
+  | 'foreground'
+  | 'identity_changed'
+  | 'purchase_event'
+  | 'manual_restore'
+  | 'paywall_preflight'
+  | 'queue_retry'
 export type PurchaseResultStatus = 'cancelled' | 'pending' | 'verified' | 'failed'
 export type VerificationStatus = 'verified' | 'accepted_unverified' | 'pending' | 'failed'
-export type OwnershipConflictResolution = 'login_original_account' | 'manual_review' | 'support_required'
+export type OwnershipConflictResolution =
+  'login_original_account' | 'manual_review' | 'support_required'
 
 export interface StoreIdentityHints {
   apple?: {
@@ -24,7 +41,8 @@ export interface CustomerEntitlement {
   entitlementKey: string
   expiresAt: string | null
   productIdentifier: string | null
-  source: 'apple' | 'google' | 'voucher' | 'promo' | 'manual' | 'lifetime' | 'migration' | 'family_shared'
+  source:
+    'apple' | 'google' | 'voucher' | 'promo' | 'manual' | 'lifetime' | 'migration' | 'family_shared'
   startsAt: string | null
   status: EntitlementStatus
   verifiedAt: string | null
@@ -129,7 +147,12 @@ export interface PurchaseOwnershipConflict {
 }
 
 export interface RejectedPurchase {
-  code: 'missing_identity' | 'product_not_found' | 'validation_failed' | 'invalid_purchase' | 'ownership_conflict'
+  code:
+    | 'missing_identity'
+    | 'product_not_found'
+    | 'validation_failed'
+    | 'invalid_purchase'
+    | 'ownership_conflict'
   message: string
   store: StoreName
   storeProductId: string

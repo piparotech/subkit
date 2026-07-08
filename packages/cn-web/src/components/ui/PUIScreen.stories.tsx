@@ -1,12 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 
-import {
-  PUICard,
-  PUICardContent,
-  PUICardDescription,
-  PUICardHeader,
-  PUICardTitle,
-} from './PUICard'
+import { PUICard, PUICardContent, PUICardDescription, PUICardHeader, PUICardTitle } from './PUICard'
 import { PUIScreen } from './PUIScreen'
 import { PUIText } from './PUIText'
 

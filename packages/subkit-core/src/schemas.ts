@@ -4,7 +4,17 @@ export const storePlatformSchema = z.enum(['ios', 'android'])
 export const storeNameSchema = z.enum(['apple_app_store', 'google_play'])
 export const storeEnvironmentSchema = z.enum(['sandbox', 'production', 'unknown'])
 export const productKindSchema = z.enum(['subscription', 'non_consumable', 'consumable'])
-export const entitlementStatusSchema = z.enum(['active', 'trialing', 'billing_retry', 'grace_period', 'paused', 'expired', 'refunded', 'revoked', 'pending'])
+export const entitlementStatusSchema = z.enum([
+  'active',
+  'trialing',
+  'billing_retry',
+  'grace_period',
+  'paused',
+  'expired',
+  'refunded',
+  'revoked',
+  'pending',
+])
 export const customerInfoFreshnessSchema = z.enum(['fresh', 'stale', 'syncing', 'offline', 'error'])
 export const purchaseSyncReasonSchema = z.enum([
   'app_start',
@@ -15,7 +25,12 @@ export const purchaseSyncReasonSchema = z.enum([
   'paywall_preflight',
   'queue_retry',
 ])
-export const verificationStatusSchema = z.enum(['verified', 'accepted_unverified', 'pending', 'failed'])
+export const verificationStatusSchema = z.enum([
+  'verified',
+  'accepted_unverified',
+  'pending',
+  'failed',
+])
 
 export const storeIdentityHintsSchema = z.strictObject({
   apple: z
@@ -36,7 +51,16 @@ export const customerEntitlementSchema = z.strictObject({
   entitlementKey: z.string().min(1),
   expiresAt: z.string().nullable(),
   productIdentifier: z.string().nullable(),
-  source: z.enum(['apple', 'google', 'voucher', 'promo', 'manual', 'lifetime', 'migration', 'family_shared']),
+  source: z.enum([
+    'apple',
+    'google',
+    'voucher',
+    'promo',
+    'manual',
+    'lifetime',
+    'migration',
+    'family_shared',
+  ]),
   startsAt: z.string().nullable(),
   status: entitlementStatusSchema,
   verifiedAt: z.string().nullable(),
@@ -141,7 +165,13 @@ export const purchaseOwnershipConflictSchema = z.strictObject({
 })
 
 export const rejectedPurchaseSchema = z.strictObject({
-  code: z.enum(['missing_identity', 'product_not_found', 'validation_failed', 'invalid_purchase', 'ownership_conflict']),
+  code: z.enum([
+    'missing_identity',
+    'product_not_found',
+    'validation_failed',
+    'invalid_purchase',
+    'ownership_conflict',
+  ]),
   message: z.string().min(1),
   store: storeNameSchema,
   storeProductId: z.string().min(1),
@@ -195,15 +225,24 @@ export const runtimeEntitlementCheckRequestSchema = z.object({
   entitlement: z.string().min(1),
 })
 
-export const runtimeEntitlementCheckWithAppRequestSchema = runtimeEntitlementCheckRequestSchema.extend({
-  appId: z.string().min(1),
-})
+export const runtimeEntitlementCheckWithAppRequestSchema =
+  runtimeEntitlementCheckRequestSchema.extend({
+    appId: z.string().min(1),
+  })
 
 export type RuntimeCustomerInfoRequestInput = z.infer<typeof runtimeCustomerInfoRequestSchema>
-export type RuntimeCustomerInfoWithAppRequestInput = z.infer<typeof runtimeCustomerInfoWithAppRequestSchema>
+export type RuntimeCustomerInfoWithAppRequestInput = z.infer<
+  typeof runtimeCustomerInfoWithAppRequestSchema
+>
 export type RuntimeOfferingsRequestInput = z.infer<typeof runtimeOfferingsRequestSchema>
-export type RuntimeOfferingsWithAppRequestInput = z.infer<typeof runtimeOfferingsWithAppRequestSchema>
+export type RuntimeOfferingsWithAppRequestInput = z.infer<
+  typeof runtimeOfferingsWithAppRequestSchema
+>
 export type IapReconcileRequestInput = z.infer<typeof iapReconcileRequestSchema>
 export type IapReconcileWithAppRequestInput = z.infer<typeof iapReconcileWithAppRequestSchema>
-export type RuntimeEntitlementCheckRequestInput = z.infer<typeof runtimeEntitlementCheckRequestSchema>
-export type RuntimeEntitlementCheckWithAppRequestInput = z.infer<typeof runtimeEntitlementCheckWithAppRequestSchema>
+export type RuntimeEntitlementCheckRequestInput = z.infer<
+  typeof runtimeEntitlementCheckRequestSchema
+>
+export type RuntimeEntitlementCheckWithAppRequestInput = z.infer<
+  typeof runtimeEntitlementCheckWithAppRequestSchema
+>

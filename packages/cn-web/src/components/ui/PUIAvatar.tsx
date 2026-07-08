@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import { cn } from '../../lib/utils'
-import { avatarInitials, type PUIAvatarBaseProps, type PUIAvatarSize } from './PUIAvatar.types'
+import { type PUIAvatarBaseProps, type PUIAvatarSize, avatarInitials } from './PUIAvatar.types'
 
 export type { PUIAvatarBaseProps, PUIAvatarSize } from './PUIAvatar.types'
 
@@ -32,7 +32,7 @@ export const PUIAvatar = React.forwardRef<HTMLSpanElement, PUIAvatarProps>(funct
       ref={ref}
       aria-label={typeof name === 'string' ? name : undefined}
       className={cn(
-        'relative inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full bg-muted font-semibold text-foreground',
+        'bg-muted text-foreground relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold select-none',
         SIZE[size],
         className,
       )}

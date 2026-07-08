@@ -1,8 +1,5 @@
 import { type ReactNode, useMemo, useState } from 'react'
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { AlertTriangle, ArrowDown, ArrowUp, ChevronsUpDown, Inbox, Search } from 'lucide-react'
-
 import {
   PUIBadge,
   PUIButton,
@@ -14,6 +11,8 @@ import {
   PUIText,
 } from '@/components/ui'
 import { type ColumnDef, type SortDirection, useDataTable } from '@/lib/data-table-server'
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { AlertTriangle, ArrowDown, ArrowUp, ChevronsUpDown, Inbox, Search } from 'lucide-react'
 
 import { type Order, createMockDataTableClient, orderColumns } from './mock-data-table-server'
 

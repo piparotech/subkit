@@ -1,13 +1,18 @@
-import { PUICard, PUIText, cn } from '@piparo/cn-web'
-
 import { ActionButton } from '~/components/ui/ActionButton'
-import { AppAvatar } from '~/domain/apps/AppAvatar'
 import { EmptySettingsText } from '~/components/ui/EmptySettingsText'
 import { MetricCard } from '~/components/ui/MetricCard'
-import { toneTextClass } from '~/components/ui/toneClasses'
 import { ToneDot } from '~/components/ui/ToneDot'
+import { toneTextClass } from '~/components/ui/toneClasses'
+import { AppAvatar } from '~/domain/apps/AppAvatar'
 import type { AppTenant } from '~/domain/apps/types'
-import type { ActivityEvent, ConsoleRuntimeConfig, Metric, RevenueBar } from '~/domain/dashboard/types'
+import type {
+  ActivityEvent,
+  ConsoleRuntimeConfig,
+  Metric,
+  RevenueBar,
+} from '~/domain/dashboard/types'
+
+import { PUICard, PUIText, cn } from '@piparo/cn-web'
 
 export function DashboardView({
   activity,
@@ -33,16 +38,28 @@ export function DashboardView({
       <div className="mb-[22px] flex items-center gap-[14px]">
         <AppAvatar app={app} size="lg" />
         <div>
-          <PUIText as="h1" className="m-0 text-[22px] font-bold tracking-[-0.01em]" variant="title2">
+          <PUIText
+            as="h1"
+            className="m-0 text-[22px] font-bold tracking-[-0.01em]"
+            variant="title2"
+          >
             {app.name}
           </PUIText>
-          <div className="mt-[2px] font-mono text-[12.5px] text-[var(--subkit-faint)]">{app.bundle}</div>
+          <div className="mt-[2px] font-mono text-[12.5px] text-[var(--subkit-faint)]">
+            {app.bundle}
+          </div>
         </div>
       </div>
 
       <div className="grid grid-cols-3 gap-[14px] max-lg:grid-cols-2 max-sm:grid-cols-1">
         {metrics.map((metric) => (
-          <MetricCard delta={metric.delta} key={metric.label} label={metric.label} tone={metric.tone} value={metric.value} />
+          <MetricCard
+            delta={metric.delta}
+            key={metric.label}
+            label={metric.label}
+            tone={metric.tone}
+            value={metric.value}
+          />
         ))}
       </div>
 
@@ -51,7 +68,11 @@ export function DashboardView({
           <div>
             <div className="text-[14px] font-semibold">App Store Connect setup</div>
             <div className="mt-[3px] text-[12.5px] leading-[1.45] text-[var(--subkit-faint)]">
-              Configure these Apple settings for <span className="font-semibold text-[var(--subkit-dim)]">{app.name}</span>. Webhook URLs point to the deployed SubKit backend at <span className="font-mono text-[var(--subkit-dim)]">{runtime.publicOrigin}</span>, not to the mobile app.
+              Configure these Apple settings for{' '}
+              <span className="font-semibold text-[var(--subkit-dim)]">{app.name}</span>. Webhook
+              URLs point to the deployed SubKit backend at{' '}
+              <span className="font-mono text-[var(--subkit-dim)]">{runtime.publicOrigin}</span>,
+              not to the mobile app.
             </div>
           </div>
           <span className="rounded-[999px] border border-[var(--subkit-border)] bg-[var(--subkit-panel-2)] px-[9px] py-[4px] font-mono text-[11px] text-[var(--subkit-faint)]">
@@ -78,7 +99,10 @@ export function DashboardView({
                   {runtime.appleServerNotificationsUrl}
                 </div>
               </div>
-              <div>Path in Apple: App Store Connect → My Apps → {app.name} → App Information → App Store Server Notifications.</div>
+              <div>
+                Path in Apple: App Store Connect → My Apps → {app.name} → App Information → App
+                Store Server Notifications.
+              </div>
             </div>
           </div>
 
@@ -86,9 +110,17 @@ export function DashboardView({
             <div className="text-[12.5px] font-semibold">API and product prerequisites</div>
             <ul className="mt-[8px] space-y-[6px] pl-[16px] text-[12px] leading-[1.45] text-[var(--subkit-faint)]">
               <li>Use the bundle ID shown above for the App Store Connect app mapping.</li>
-              <li>Create an App Store Connect API key with read access for catalogue, reports, reviews, builds, and app metadata.</li>
-              <li>Store Issuer ID, Key ID, private key, Apple app ID, and vendor number in Workspace Settings.</li>
-              <li>Make subscription product IDs match the Store IDs configured in SubKit products.</li>
+              <li>
+                Create an App Store Connect API key with read access for catalogue, reports,
+                reviews, builds, and app metadata.
+              </li>
+              <li>
+                Store Issuer ID, Key ID, private key, Apple app ID, and vendor number in Workspace
+                Settings.
+              </li>
+              <li>
+                Make subscription product IDs match the Store IDs configured in SubKit products.
+              </li>
             </ul>
           </div>
         </div>
@@ -102,18 +134,28 @@ export function DashboardView({
           </div>
           {revenueBars.length === 0 ? (
             <div className="mt-[16px]">
-              <EmptySettingsText>No revenue events yet. Revenue bars appear after Sales Report or purchase imports create monthly totals.</EmptySettingsText>
+              <EmptySettingsText>
+                No revenue events yet. Revenue bars appear after Sales Report or purchase imports
+                create monthly totals.
+              </EmptySettingsText>
             </div>
           ) : (
             <div className="mt-[20px] flex h-[190px] items-end gap-[8px]">
               {revenueBars.map((bar, index) => (
-                <div className="flex h-full flex-1 flex-col items-center justify-end gap-[8px]" key={bar.month}>
-                  <div className="font-mono text-[10.5px] font-semibold text-[var(--subkit-dim)]">{bar.value}</div>
+                <div
+                  className="flex h-full flex-1 flex-col items-center justify-end gap-[8px]"
+                  key={bar.month}
+                >
+                  <div className="font-mono text-[10.5px] font-semibold text-[var(--subkit-dim)]">
+                    {bar.value}
+                  </div>
                   <div
                     aria-label={`${bar.month}: ${bar.value}`}
                     className={cn(
-                      'w-full rounded-t-[5px] rounded-b-[2px] transition-[height] duration-normal',
-                      index === revenueBars.length - 1 ? 'bg-[var(--subkit-accent)]' : 'bg-[var(--subkit-accent-line)]',
+                      'duration-normal w-full rounded-t-[5px] rounded-b-[2px] transition-[height]',
+                      index === revenueBars.length - 1
+                        ? 'bg-[var(--subkit-accent)]'
+                        : 'bg-[var(--subkit-accent-line)]',
                     )}
                     role="img"
                     style={{ height: bar.height }}
@@ -129,7 +171,10 @@ export function DashboardView({
         <PUICard className="rounded-[14px] border-[var(--subkit-border)] bg-[var(--subkit-panel)] px-[20px] py-[18px]">
           <div className="mb-[6px] text-[14px] font-semibold">Recent activity</div>
           {activity.map((event) => (
-            <div className="flex items-center gap-[11px] border-b border-[var(--subkit-border)] py-[9px] last:border-b-0" key={`${event.type}-${event.time}`}>
+            <div
+              className="flex items-center gap-[11px] border-b border-[var(--subkit-border)] py-[9px] last:border-b-0"
+              key={`${event.type}-${event.time}`}
+            >
               <ToneDot className="shrink-0" tone={event.dotTone} />
               <div className="min-w-0 flex-1">
                 <div className="text-[13px] font-medium">{event.type}</div>
@@ -138,7 +183,14 @@ export function DashboardView({
                 </div>
               </div>
               <div className="text-right">
-                <div className={cn('font-mono text-[12.5px] font-semibold', toneTextClass(event.amountTone))}>{event.amount}</div>
+                <div
+                  className={cn(
+                    'font-mono text-[12.5px] font-semibold',
+                    toneTextClass(event.amountTone),
+                  )}
+                >
+                  {event.amount}
+                </div>
                 <div className="text-[11px] text-[var(--subkit-faint)]">{event.time}</div>
               </div>
             </div>

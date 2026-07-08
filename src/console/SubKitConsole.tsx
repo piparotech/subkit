@@ -1,27 +1,36 @@
-import { useLoaderData, useNavigate, useRouter } from '@tanstack/react-router'
 import * as React from 'react'
 
-import { AppRouteNotFound } from '~/console/AppRouteNotFound'
-import { listAppStoreConnectApps } from '~/integrations/app-store-connect/server/apps'
-import { emptyAppDraft, emptyTenantDraft, safeInitials, safeTenantId } from '~/console/helpers'
-import { newCatalogProduct } from '~/domain/products/data'
+import { useLoaderData, useNavigate, useRouter } from '@tanstack/react-router'
+
 import { Notice, type NoticeTone } from '~/components/ui/Notice'
-import { Panels } from '~/console/Panels'
-import { createAppRecord, createTenantRecord, upsertProductRecord } from '~/console/server'
+import { AppRouteNotFound } from '~/console/AppRouteNotFound'
 import { ConsoleShell } from '~/console/ConsoleShell'
+import { Panels } from '~/console/Panels'
+import { emptyAppDraft, emptyTenantDraft, safeInitials, safeTenantId } from '~/console/helpers'
 import { appRouteParams } from '~/console/routing'
+import { createAppRecord, createTenantRecord, upsertProductRecord } from '~/console/server'
+import type {
+  AppConsoleViewRenderProps,
+  ConsolePrimaryActionFactory,
+  ConsoleViewRenderProps,
+  PanelState,
+} from '~/console/types'
 import { filterAppUsers } from '~/domain/app-users/filters'
-import { createAppFromDraft } from '~/domain/apps/helpers'
-import { filterApps } from '~/domain/apps/filters'
-import { filterProducts } from '~/domain/products/filters'
 import type { AppUser } from '~/domain/app-users/types'
+import { filterApps } from '~/domain/apps/filters'
+import { createAppFromDraft } from '~/domain/apps/helpers'
 import type { AppDraft, AppDraftField, AppTenant } from '~/domain/apps/types'
 import type { Entitlement } from '~/domain/entitlements/types'
 import type { Offering } from '~/domain/offerings/types'
+import { newCatalogProduct } from '~/domain/products/data'
+import { filterProducts } from '~/domain/products/filters'
 import type { CatalogProduct, EditableCatalogProductTextField } from '~/domain/products/types'
 import type { TenantDraft, TenantDraftField, TenantMemberSummary } from '~/domain/tenants/types'
-import type { AppStoreConnectAccessibleApp, AppStoreConnectConnection } from '~/integrations/app-store-connect/types'
-import type { AppConsoleViewRenderProps, ConsolePrimaryActionFactory, ConsoleViewRenderProps, PanelState } from '~/console/types'
+import { listAppStoreConnectApps } from '~/integrations/app-store-connect/server/apps'
+import type {
+  AppStoreConnectAccessibleApp,
+  AppStoreConnectConnection,
+} from '~/integrations/app-store-connect/types'
 
 interface OperationFeedback {
   message: string
@@ -84,24 +93,38 @@ export function SubKitConsole(props: SubKitConsoleProps) {
   }, [currentAppId, props.title])
 
   const currentApp = apps.find((app) => app.id === currentAppId) ?? null
-  const currentTenant = consoleData.accessibleTenants.find((item) => item.id === (currentApp?.tenantId ?? selectedTenantId)) ?? consoleData.tenant
-  const currentConnection = consoleData.appStoreConnectConnections.find((connection) => connection.tenantId === currentTenant.id) ?? null
+  const currentTenant =
+    consoleData.accessibleTenants.find(
+      (item) => item.id === (currentApp?.tenantId ?? selectedTenantId),
+    ) ?? consoleData.tenant
+  const currentConnection =
+    consoleData.appStoreConnectConnections.find(
+      (connection) => connection.tenantId === currentTenant.id,
+    ) ?? null
   const canCreateApps = currentTenant.role === 'admin' || currentTenant.role === 'super_admin'
   const isFiltering = searchQuery.trim() !== ''
   const currentProducts = React.useMemo(
-    () => (currentApp == null ? products : products.filter((product) => product.appId === currentApp.id)),
+    () =>
+      currentApp == null ? products : products.filter((product) => product.appId === currentApp.id),
     [currentApp, products],
   )
   const currentEntitlements = React.useMemo(
-    () => (currentApp == null ? entitlements : entitlements.filter((entitlement) => entitlement.appId === currentApp.id)),
+    () =>
+      currentApp == null
+        ? entitlements
+        : entitlements.filter((entitlement) => entitlement.appId === currentApp.id),
     [currentApp, entitlements],
   )
   const currentOfferings = React.useMemo(
-    () => (currentApp == null ? offerings : offerings.filter((offering) => offering.appId === currentApp.id)),
+    () =>
+      currentApp == null
+        ? offerings
+        : offerings.filter((offering) => offering.appId === currentApp.id),
     [currentApp, offerings],
   )
   const currentAppUsers = React.useMemo(
-    () => (currentApp == null ? appUsers : appUsers.filter((appUser) => appUser.appId === currentApp.id)),
+    () =>
+      currentApp == null ? appUsers : appUsers.filter((appUser) => appUser.appId === currentApp.id),
     [appUsers, currentApp],
   )
 
@@ -121,7 +144,10 @@ export function SubKitConsole(props: SubKitConsoleProps) {
 
   const reportNavigationError = (error: unknown) => {
     console.error('Failed to navigate SubKit', error)
-    setOperationFeedback({ message: readErrorMessage(error, 'SubKit could not navigate to the requested view.'), tone: 'danger' })
+    setOperationFeedback({
+      message: readErrorMessage(error, 'SubKit could not navigate to the requested view.'),
+      tone: 'danger',
+    })
   }
 
   const selectTenant = (id: string) => {
@@ -174,7 +200,10 @@ export function SubKitConsole(props: SubKitConsoleProps) {
         product: {
           ...current.product,
           [field]: value,
-          billingKind: field === 'productType' && value !== 'subscription' ? 'one_time' : current.product.billingKind,
+          billingKind:
+            field === 'productType' && value !== 'subscription'
+              ? 'one_time'
+              : current.product.billingKind,
           trialOn: nextTrial.toLowerCase() !== 'off' && nextTrial.toLowerCase() !== 'no trial',
         },
       }
@@ -199,7 +228,13 @@ export function SubKitConsole(props: SubKitConsoleProps) {
   const refreshConsoleData = () => {
     router.invalidate().catch((error: unknown) => {
       console.error('Failed to refresh SubKit data', error)
-      setOperationFeedback({ message: readErrorMessage(error, 'SubKit saved the change, but could not refresh the console data.'), tone: 'warning' })
+      setOperationFeedback({
+        message: readErrorMessage(
+          error,
+          'SubKit saved the change, but could not refresh the console data.',
+        ),
+        tone: 'warning',
+      })
     })
   }
 
@@ -210,14 +245,19 @@ export function SubKitConsole(props: SubKitConsoleProps) {
     const productKey = saved.productKey.trim()
     const planKey = saved.planKey.trim()
     if (!productKey || !planKey || !appId) {
-      setOperationFeedback({ message: 'Product key and plan key are required before saving a product.', tone: 'warning' })
+      setOperationFeedback({
+        message: 'Product key and plan key are required before saving a product.',
+        tone: 'warning',
+      })
       return
     }
 
     const previousProducts = products
     const nextProduct = { ...saved, appId, planKey, productKey }
     setProducts((current) => {
-      const existingIndex = current.findIndex((item) => item.appId === appId && item.planId === saved.planId)
+      const existingIndex = current.findIndex(
+        (item) => item.appId === appId && item.planId === saved.planId,
+      )
       if (existingIndex === -1) return [...current, nextProduct]
       return current.map((item, index) => (index === existingIndex ? nextProduct : item))
     })
@@ -245,13 +285,22 @@ export function SubKitConsole(props: SubKitConsoleProps) {
       },
     })
       .then(() => {
-        setOperationFeedback({ message: `${nextProduct.name || nextProduct.productKey} saved in SubKit.`, tone: 'success' })
+        setOperationFeedback({
+          message: `${nextProduct.name || nextProduct.productKey} saved in SubKit.`,
+          tone: 'success',
+        })
         refreshConsoleData()
       })
       .catch((error: unknown) => {
         console.error('Failed to save product', error)
         setProducts(previousProducts)
-        setOperationFeedback({ message: readErrorMessage(error, 'Product could not be saved. Your local preview was rolled back.'), tone: 'danger' })
+        setOperationFeedback({
+          message: readErrorMessage(
+            error,
+            'Product could not be saved. Your local preview was rolled back.',
+          ),
+          tone: 'danger',
+        })
       })
   }
 
@@ -265,8 +314,14 @@ export function SubKitConsole(props: SubKitConsoleProps) {
       if (field === 'name') {
         return {
           ...next,
-          id: draft.id.trim() === '' || draft.id === safeTenantId(draft.name) ? safeTenantId(value) : draft.id,
-          initials: draft.initials.trim() === '' || draft.initials === safeInitials(draft.name) ? safeInitials(value) : draft.initials,
+          id:
+            draft.id.trim() === '' || draft.id === safeTenantId(draft.name)
+              ? safeTenantId(value)
+              : draft.id,
+          initials:
+            draft.initials.trim() === '' || draft.initials === safeInitials(draft.name)
+              ? safeInitials(value)
+              : draft.initials,
         }
       }
       return next
@@ -278,7 +333,9 @@ export function SubKitConsole(props: SubKitConsoleProps) {
 
     if (currentConnection?.hasPrivateKey !== true) {
       setAppStoreApps([])
-      setAppStoreLoadError('Configure the App Store Connect key in Workspace Settings before creating an iOS app.')
+      setAppStoreLoadError(
+        'Configure the App Store Connect key in Workspace Settings before creating an iOS app.',
+      )
       setAppStoreAppsLoaded(true)
       return
     }
@@ -308,7 +365,13 @@ export function SubKitConsole(props: SubKitConsoleProps) {
     try {
       app = createAppFromDraft(appDraft, apps.length, currentTenant.id)
     } catch (error: unknown) {
-      setOperationFeedback({ message: readErrorMessage(error, 'Select an App Store Connect app before creating it in SubKit.'), tone: 'warning' })
+      setOperationFeedback({
+        message: readErrorMessage(
+          error,
+          'Select an App Store Connect app before creating it in SubKit.',
+        ),
+        tone: 'warning',
+      })
       return
     }
 
@@ -317,7 +380,9 @@ export function SubKitConsole(props: SubKitConsoleProps) {
     setAppDraft(emptyAppDraft)
     setOperationFeedback({ message: `Creating ${app.name} in this workspace…`, tone: 'info' })
 
-    navigate({ params: appRouteParams(app), to: '/$tenantSlug/$appSlug' }).catch(reportNavigationError)
+    navigate({ params: appRouteParams(app), to: '/$tenantSlug/$appSlug' }).catch(
+      reportNavigationError,
+    )
     createAppRecord({
       data: {
         appleAppId: app.appleAppId ?? '',
@@ -330,13 +395,22 @@ export function SubKitConsole(props: SubKitConsoleProps) {
       },
     })
       .then(() => {
-        setOperationFeedback({ message: `${app.name} was created. Next step: sync the catalog from App Settings.`, tone: 'success' })
+        setOperationFeedback({
+          message: `${app.name} was created. Next step: sync the catalog from App Settings.`,
+          tone: 'success',
+        })
         refreshConsoleData()
       })
       .catch((error: unknown) => {
         console.error('Failed to create app', error)
         setApps((current) => current.filter((item) => item.id !== app.id))
-        setOperationFeedback({ message: readErrorMessage(error, `${app.name} could not be created. The optimistic app card was rolled back.`), tone: 'danger' })
+        setOperationFeedback({
+          message: readErrorMessage(
+            error,
+            `${app.name} could not be created. The optimistic app card was rolled back.`,
+          ),
+          tone: 'danger',
+        })
         navigate({ to: '/apps' }).catch(reportNavigationError)
       })
   }
@@ -366,7 +440,10 @@ export function SubKitConsole(props: SubKitConsoleProps) {
       })
       .catch((error: unknown) => {
         console.error('Failed to create workspace', error)
-        setOperationFeedback({ message: readErrorMessage(error, 'Workspace could not be created.'), tone: 'danger' })
+        setOperationFeedback({
+          message: readErrorMessage(error, 'Workspace could not be created.'),
+          tone: 'danger',
+        })
       })
   }
 
@@ -405,18 +482,24 @@ export function SubKitConsole(props: SubKitConsoleProps) {
     tenantMembers: visibleTenantMembers,
   }
 
-  const primaryAction = props.primaryAction?.({
-    canCreateApps,
-    currentApp,
-    openAppCreator,
-    openProductCreator,
-  }) ?? null
+  const primaryAction =
+    props.primaryAction?.({
+      canCreateApps,
+      currentApp,
+      openAppCreator,
+      openProductCreator,
+    }) ?? null
 
-  const content = props.scope === 'app'
-    ? currentApp == null
-      ? <AppRouteNotFound apps={visibleApps} />
-      : props.renderView({ ...viewProps, currentApp })
-    : props.renderView(viewProps)
+  const content =
+    props.scope === 'app' ? (
+      currentApp == null ? (
+        <AppRouteNotFound apps={visibleApps} />
+      ) : (
+        props.renderView({ ...viewProps, currentApp })
+      )
+    ) : (
+      props.renderView(viewProps)
+    )
 
   return (
     <>
@@ -440,7 +523,9 @@ export function SubKitConsole(props: SubKitConsoleProps) {
       >
         {operationFeedback != null ? (
           <div className="px-[32px] pt-[16px] max-md:px-[18px]">
-            <Notice className="m-0" tone={operationFeedback.tone}>{operationFeedback.message}</Notice>
+            <Notice className="m-0" tone={operationFeedback.tone}>
+              {operationFeedback.message}
+            </Notice>
           </div>
         ) : null}
         {content}
@@ -472,12 +557,18 @@ function readErrorMessage(error: unknown, fallback: string): string {
   return fallback
 }
 
-
 function filterTenantMembers(members: TenantMemberSummary[], query: string): TenantMemberSummary[] {
   const normalized = query.trim().toLowerCase()
   if (normalized === '') return members
   return members.filter((member) => {
-    const searchable = [member.name, member.email ?? '', member.userId, member.organization, member.role, member.globalRole]
+    const searchable = [
+      member.name,
+      member.email ?? '',
+      member.userId,
+      member.organization,
+      member.role,
+      member.globalRole,
+    ]
     return searchable.some((value) => value.toLowerCase().includes(normalized))
   })
 }

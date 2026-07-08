@@ -5,8 +5,6 @@
 // each carrying a strictly-monotonic `seq` STRICTLY AFTER that cursor. So tearing a source down and
 // re-dialing resumes exactly where it left off — the resume-from-sequence guarantee, visible. The
 // activity items mirror the native realtime-websocket mock so both showcases tell the same story.
-import { z } from 'zod'
-
 import {
   EVENT_NAME,
   type EventSourceFactory,
@@ -16,6 +14,7 @@ import {
   defineEvent,
   encodeServerEvent,
 } from '@/lib/realtime-web-client'
+import { z } from 'zod'
 
 /** The demo's single typed domain channel: a live activity feed item. */
 export const ActivityEvent = defineEvent(

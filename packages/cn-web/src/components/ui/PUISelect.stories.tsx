@@ -1,5 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
+
+import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import { PUISelect, type PUISelectProps } from './PUISelect'
 
@@ -36,6 +37,12 @@ export const Default: Story = { render: () => <Controlled placeholder="Select a 
 export const WithValue: Story = { render: () => <Controlled value="banana" /> }
 export const Disabled: Story = {
   render: () => (
-    <PUISelect disabled options={FRUITS} placeholder="Select a fruit" value={null} onValueChange={() => {}} />
+    <PUISelect
+      disabled
+      options={FRUITS}
+      placeholder="Select a fruit"
+      value={null}
+      onValueChange={() => {}}
+    />
   ),
 }

@@ -1,13 +1,7 @@
 import { type ReactNode } from 'react'
 
 export type PUIBadgeVariant =
-  | 'default'
-  | 'secondary'
-  | 'destructive'
-  | 'success'
-  | 'warning'
-  | 'info'
-  | 'outline'
+  'default' | 'secondary' | 'destructive' | 'success' | 'warning' | 'info' | 'outline'
 
 export interface PUIBadgeBaseProps {
   children: ReactNode

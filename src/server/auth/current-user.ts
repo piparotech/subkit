@@ -1,7 +1,6 @@
 import { and, eq, gt, isNull } from 'drizzle-orm'
-
-import { authEvents, authSessions, tenants, users, userTenants } from '~/db/schema'
 import { db } from '~/db/client'
+import { authEvents, authSessions, tenants, userTenants, users } from '~/db/schema'
 
 import { createRandomToken, sha256Hex } from './crypto'
 import { getAppSession } from './session'
@@ -23,7 +22,8 @@ const defaultTenant = {
 export async function getOptionalCurrentUser(): Promise<AuthUser | undefined> {
   const session = await getAppSession()
 
-  if (!session.data.userId || !session.data.authSessionId || !session.data.sessionToken) return undefined
+  if (!session.data.userId || !session.data.authSessionId || !session.data.sessionToken)
+    return undefined
 
   const [row] = await db
     .select({ authSession: authSessions, user: users })
@@ -42,7 +42,10 @@ export async function getOptionalCurrentUser(): Promise<AuthUser | undefined> {
 
   if (!row) return undefined
 
-  await db.update(authSessions).set({ lastSeenAt: new Date() }).where(eq(authSessions.id, row.authSession.id))
+  await db
+    .update(authSessions)
+    .set({ lastSeenAt: new Date() })
+    .where(eq(authSessions.id, row.authSession.id))
   await ensureDefaultTenantAccess(row.user)
   return toAuthUser(row.user)
 }
@@ -53,7 +56,10 @@ export async function getRequiredCurrentUser(): Promise<AuthUser> {
   return currentUser
 }
 
-export async function findOrCreateUserFromClaims(claims: OidcClaims, identityProvider: string): Promise<AuthUser> {
+export async function findOrCreateUserFromClaims(
+  claims: OidcClaims,
+  identityProvider: string,
+): Promise<AuthUser> {
   const verifiedEmail = claims.email_verified === true ? normalizeEmail(claims.email) : undefined
   const loginName = claims.preferred_username ?? claims.login_name ?? verifiedEmail
   const existing = await findUserByClaims(claims.sub)
@@ -157,11 +163,19 @@ function shouldGrantDefaultTenantAccess(user: typeof users.$inferSelect): boolea
 }
 
 async function findUserByClaims(zitadelSubject: string) {
-  const [user] = await db.select().from(users).where(and(eq(users.zitadelSubject, zitadelSubject), isNull(users.disabledAt))).limit(1)
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(and(eq(users.zitadelSubject, zitadelSubject), isNull(users.disabledAt)))
+    .limit(1)
   return user
 }
 
-async function recordAuthEvent(userId: string | undefined, type: string, detail: string): Promise<void> {
+async function recordAuthEvent(
+  userId: string | undefined,
+  type: string,
+  detail: string,
+): Promise<void> {
   await db.insert(authEvents).values({ detail, id: createRandomEventId(), type, userId })
 }
 
@@ -176,7 +190,11 @@ function readDisplayName(claims: OidcClaims): string {
 }
 
 function createInitials(name: string): string {
-  const parts = name.replaceAll('@', ' ').replaceAll('.', ' ').split(/\s+/).filter((part) => part.length > 0)
+  const parts = name
+    .replaceAll('@', ' ')
+    .replaceAll('.', ' ')
+    .split(/\s+/)
+    .filter((part) => part.length > 0)
   const first = parts[0]?.at(0)
   const second = parts[1]?.at(0) ?? parts[0]?.at(1)
   if (!first || !second) throw new Error('OIDC profile name must contain at least two initials')

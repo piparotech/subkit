@@ -45,14 +45,14 @@ export function PUIProgressBar({
         aria-valuemax={max}
         aria-valuemin={min}
         aria-valuenow={indeterminate ? undefined : value}
-        className="h-2 w-full overflow-hidden rounded-full bg-muted"
+        className="bg-muted h-2 w-full overflow-hidden rounded-full"
         role="progressbar"
       >
         <div
           className={cn(
             'h-full w-full rounded-full',
             TONE_FILL[tone],
-            indeterminate && 'w-1/3 animate-indeterminate-progress motion-reduce:animate-none',
+            indeterminate && 'animate-indeterminate-progress w-1/3 motion-reduce:animate-none',
           )}
           style={indeterminate ? undefined : { transform: `translateX(-${100 - pct * 100}%)` }}
         />

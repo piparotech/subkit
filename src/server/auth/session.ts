@@ -1,7 +1,12 @@
-import { clearSession, getRequestHeader, getRequestIP, useSession } from '@tanstack/react-start/server'
+import {
+  clearSession,
+  getRequestHeader,
+  getRequestIP,
+  useSession,
+} from '@tanstack/react-start/server'
 
-import { authSessions } from '~/db/schema'
 import { db } from '~/db/client'
+import { authSessions } from '~/db/schema'
 
 import { getAuthConfig } from './config'
 import { createRandomToken, sha256Hex } from './crypto'

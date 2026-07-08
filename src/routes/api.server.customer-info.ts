@@ -1,9 +1,10 @@
-import { serverCustomerInfoRequestSchema } from '@piparotech/subkit-core'
 import { createFileRoute } from '@tanstack/react-router'
 
 import { authorizeServerApiRequest } from '~/server/runtime-api'
 import { jsonApiError, jsonApiErrorFromThrown } from '~/server/runtime-api'
 import { getServerCustomerInfo } from '~/server/runtime-api'
+
+import { serverCustomerInfoRequestSchema } from '@piparotech/subkit-core'
 
 export const Route = createFileRoute('/api/server/customer-info')({
   server: {
@@ -15,7 +16,12 @@ export const Route = createFileRoute('/api/server/customer-info')({
         try {
           const payload = serverCustomerInfoRequestSchema.safeParse(await request.json())
           if (!payload.success) {
-            return jsonApiError({ code: 'validation_failed', details: payload.error.issues, message: 'Invalid customer info request', status: 400 })
+            return jsonApiError({
+              code: 'validation_failed',
+              details: payload.error.issues,
+              message: 'Invalid customer info request',
+              status: 400,
+            })
           }
 
           const result = await getServerCustomerInfo(payload.data)

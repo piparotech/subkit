@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 
-import { PUIText } from './PUIText'
 import { PUIErrorBoundary } from './PUIErrorBoundary'
+import { PUIText } from './PUIText'
 
 function Boom(): React.ReactElement {
   throw new Error('Demo failure from a child component')
@@ -35,7 +35,7 @@ export const CustomFallback: Story = {
   render: () => (
     <PUIErrorBoundary
       fallback={(error) => (
-        <div className="flex min-h-skeleton-xl flex-col items-center justify-center bg-background p-xl text-center">
+        <div className="min-h-skeleton-xl bg-background p-xl flex flex-col items-center justify-center text-center">
           <PUIText tone="muted" variant="callout">
             Custom: {error.message}
           </PUIText>

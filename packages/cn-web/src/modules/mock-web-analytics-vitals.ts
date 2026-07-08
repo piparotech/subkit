@@ -1,5 +1,3 @@
-import { z } from 'zod'
-
 import {
   type ScriptHost,
   type WebAnalyticsConfig,
@@ -7,6 +5,7 @@ import {
   defineGoals,
   parseWebAnalyticsConfig,
 } from '@/lib/web-analytics-vitals'
+import { z } from 'zod'
 
 // In-memory seam for the web-analytics-vitals Engine demo. In production the host injects two sides
 // the Engine drives: a `ScriptHost` (the real Plausible/PostHog <script> lifecycle) and a

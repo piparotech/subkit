@@ -6,7 +6,8 @@ export function LoginPage({ reason }: { reason?: string }) {
         <div className="subkit-login-kicker">SubKit</div>
         <h1 id="login-title">Sign in to manage app subscriptions</h1>
         <p className="subkit-login-copy">
-          ZITADEL protects this console. Piparo staff use Microsoft; external operators receive a one-time e-mail code.
+          ZITADEL protects this console. Piparo staff use Microsoft; external operators receive a
+          one-time e-mail code.
         </p>
         {reason ? <p className="subkit-login-notice">{reason}</p> : null}
 
@@ -24,10 +25,19 @@ export function LoginPage({ reason }: { reason?: string }) {
             <input name="method" type="hidden" value="email" />
             <label htmlFor="login-email">External e-mail code</label>
             <div className="subkit-login-email-row">
-              <input id="login-email" name="login_hint" placeholder="name@company.com" type="email" autoComplete="email" />
+              <input
+                id="login-email"
+                name="login_hint"
+                placeholder="name@company.com"
+                type="email"
+                autoComplete="email"
+              />
               <button type="submit">Send code</button>
             </div>
-            <p>If the address is allowed, ZITADEL sends the login code. Account existence is never revealed here.</p>
+            <p>
+              If the address is allowed, ZITADEL sends the login code. Account existence is never
+              revealed here.
+            </p>
           </form>
         </div>
       </section>

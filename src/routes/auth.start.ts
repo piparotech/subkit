@@ -21,9 +21,22 @@ export const Route = createFileRoute('/auth/start')({
         const codeVerifier = createCodeVerifier()
         const challengeSession = await getLoginChallengeSession()
 
-        await challengeSession.update({ codeVerifier, createdAt: Date.now(), method, nonce, returnTo, state })
+        await challengeSession.update({
+          codeVerifier,
+          createdAt: Date.now(),
+          method,
+          nonce,
+          returnTo,
+          state,
+        })
 
-        const authorizeUrl = await buildAuthorizeUrl({ codeVerifier, loginHint, method, nonce, state })
+        const authorizeUrl = await buildAuthorizeUrl({
+          codeVerifier,
+          loginHint,
+          method,
+          nonce,
+          state,
+        })
         return redirectResponse(authorizeUrl)
       },
     },
@@ -42,6 +55,7 @@ function readOptionalValue(value: string | null): string | undefined {
 
 function readReturnTo(value: string | null): string {
   if (!value?.startsWith('/')) return '/'
-  if (value.startsWith('/auth/') || value.startsWith('/login') || value.startsWith('/logout')) return '/'
+  if (value.startsWith('/auth/') || value.startsWith('/login') || value.startsWith('/logout'))
+    return '/'
   return value
 }

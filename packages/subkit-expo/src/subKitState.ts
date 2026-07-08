@@ -2,7 +2,8 @@ import type { CustomerInfo } from '@piparotech/subkit-core'
 
 import type { SubKitIapClient } from './SubKitIapClient.js'
 
-export type SubKitCustomerInfoState = 'unconfigured' | 'idle' | 'loading' | 'ready' | 'refreshing' | 'error'
+export type SubKitCustomerInfoState =
+  'unconfigured' | 'idle' | 'loading' | 'ready' | 'refreshing' | 'error'
 
 export interface SubKitCustomerInfoSnapshot {
   clientConfigured: boolean
@@ -47,7 +48,10 @@ export function getSubKitCustomerInfoSnapshot(): SubKitCustomerInfoSnapshot {
   return snapshot
 }
 
-export function publishSubKitCustomerInfo(info: CustomerInfo, sourceClient?: SubKitIapClient): void {
+export function publishSubKitCustomerInfo(
+  info: CustomerInfo,
+  sourceClient?: SubKitIapClient,
+): void {
   if (!isCurrentClient(sourceClient)) return
 
   updateSnapshot({
@@ -59,7 +63,10 @@ export function publishSubKitCustomerInfo(info: CustomerInfo, sourceClient?: Sub
   })
 }
 
-export function publishSubKitCustomerInfoError(error: unknown, sourceClient?: SubKitIapClient): Error {
+export function publishSubKitCustomerInfoError(
+  error: unknown,
+  sourceClient?: SubKitIapClient,
+): Error {
   const normalizedError = normalizeError(error)
   if (!isCurrentClient(sourceClient)) return normalizedError
 
@@ -87,12 +94,11 @@ export async function refreshSubKitCustomerInfo(): Promise<CustomerInfo | null> 
     state: snapshot.customerInfo == null ? 'loading' : 'refreshing',
   })
 
-  const refreshPromise = refreshClient.getCustomerInfo()
-    .finally(() => {
-      if (pendingRefresh === refreshPromise) {
-        pendingRefresh = null
-      }
-    })
+  const refreshPromise = refreshClient.getCustomerInfo().finally(() => {
+    if (pendingRefresh === refreshPromise) {
+      pendingRefresh = null
+    }
+  })
 
   pendingRefresh = refreshPromise
   return refreshPromise

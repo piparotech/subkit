@@ -1,14 +1,17 @@
 import * as React from 'react'
 
+import type { PanelState } from '~/console/types'
 import { AppUserPanel } from '~/domain/app-users/AppUserPanel'
 import { NewAppDialog } from '~/domain/apps/NewAppDialog'
-import { NewTenantDialog } from '~/domain/tenants/NewTenantDialog'
-import { ProductPanel } from '~/domain/products/ProductPanel'
 import type { AppDraft, AppDraftField } from '~/domain/apps/types'
+import { ProductPanel } from '~/domain/products/ProductPanel'
 import type { EditableCatalogProductTextField } from '~/domain/products/types'
+import { NewTenantDialog } from '~/domain/tenants/NewTenantDialog'
 import type { TenantDraft, TenantDraftField } from '~/domain/tenants/types'
-import type { AppStoreConnectAccessibleApp, AppStoreConnectConnection } from '~/integrations/app-store-connect/types'
-import type { PanelState } from '~/console/types'
+import type {
+  AppStoreConnectAccessibleApp,
+  AppStoreConnectConnection,
+} from '~/integrations/app-store-connect/types'
 
 interface PanelsProps {
   appDraft: AppDraft

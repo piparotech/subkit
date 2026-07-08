@@ -35,7 +35,9 @@ export function createReactNativeAppStateSource(): SubKitAppStateSource {
   }
 }
 
-export function createSubKitAppStateSync(options: SubKitAppStateSyncOptions): { start(): SubKitAppStateSubscription } {
+export function createSubKitAppStateSync(options: SubKitAppStateSyncOptions): {
+  start(): SubKitAppStateSubscription
+} {
   return {
     start() {
       let previous = options.appStateSource.getCurrentState()
@@ -47,7 +49,12 @@ export function createSubKitAppStateSync(options: SubKitAppStateSyncOptions): { 
         const backgroundDuration = backgroundedAt == null ? null : now - backgroundedAt
         previous = next
         if (!becameActive) return
-        if (options.minBackgroundDurationMs != null && backgroundDuration != null && backgroundDuration < options.minBackgroundDurationMs) return
+        if (
+          options.minBackgroundDurationMs != null &&
+          backgroundDuration != null &&
+          backgroundDuration < options.minBackgroundDurationMs
+        )
+          return
         backgroundedAt = null
         options.onBecameActive().catch((error: unknown) => {
           options.logger?.warn('SubKit foreground sync failed', error)
