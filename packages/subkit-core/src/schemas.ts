@@ -50,6 +50,9 @@ export const customerEntitlementSchema = z.strictObject({
   active: z.boolean(),
   entitlementKey: z.string().min(1),
   expiresAt: z.string().nullable(),
+  // Additive v2 enrichment: the canonical plan key behind the grant. Optional so
+  // existing v1 payloads/clients stay compatible.
+  planKey: z.string().nullable().optional(),
   productIdentifier: z.string().nullable(),
   source: z.enum([
     'apple',
@@ -132,6 +135,53 @@ export const runtimeOfferingsResponseSchema = z.strictObject({
   current: offeringSchema.nullable(),
 })
 
+// --- Runtime v2 (additive; v1 above stays byte-compatible) ---
+
+export const runtimePriceSourceSchema = z.enum(['canonical', 'store_snapshot'])
+
+export const runtimeV2PriceSchema = z.strictObject({
+  amountMicros: z.number().int().nonnegative(),
+  currencyCode: z.string().length(3),
+  source: runtimePriceSourceSchema,
+})
+
+export const runtimeV2AppleStoreIdSchema = z.strictObject({
+  productId: z.string().min(1),
+  subscriptionGroupId: z.string().min(1).optional(),
+  offerIds: z.array(z.string().min(1)),
+})
+
+export const runtimeV2GoogleStoreIdSchema = z.strictObject({
+  productId: z.string().min(1),
+  basePlanId: z.string().min(1).nullable(),
+  offerToken: z.string().min(1).optional(),
+})
+
+export const runtimeV2PackageSchema = z.strictObject({
+  packageKey: z.string().min(1),
+  productKey: z.string().min(1),
+  planKey: z.string().min(1),
+  entitlements: z.array(z.string().min(1)),
+  billingPeriod: z.string().nullable(),
+  storeProductIds: z.strictObject({
+    apple: runtimeV2AppleStoreIdSchema.optional(),
+    google: runtimeV2GoogleStoreIdSchema.optional(),
+  }),
+  price: runtimeV2PriceSchema.nullable(),
+})
+
+export const runtimeV2OfferingSchema = z.strictObject({
+  identifier: z.string().min(1),
+  current: z.boolean(),
+  packages: z.array(runtimeV2PackageSchema),
+})
+
+export const runtimeV2OfferingsResponseSchema = z.strictObject({
+  appId: z.string().min(1),
+  apiVersion: z.literal(2),
+  offerings: z.array(runtimeV2OfferingSchema),
+})
+
 export const normalizedStorePurchaseSchema = z.strictObject({
   environment: storeEnvironmentSchema.optional(),
   linkedPurchaseToken: z.string().min(1).optional(),
@@ -197,7 +247,9 @@ export const runtimeCustomerInfoWithAppRequestSchema = runtimeCustomerInfoReques
 })
 
 export const runtimeOfferingsRequestSchema = z.object({
+  apiVersion: z.union([z.literal(1), z.literal(2)]).optional(),
   appUserId: z.string().min(1).optional(),
+  environment: storeEnvironmentSchema.optional(),
   placement: z.string().min(1).optional(),
   platform: storePlatformSchema.optional(),
 })
@@ -246,3 +298,7 @@ export type RuntimeEntitlementCheckRequestInput = z.infer<
 export type RuntimeEntitlementCheckWithAppRequestInput = z.infer<
   typeof runtimeEntitlementCheckWithAppRequestSchema
 >
+
+export type RuntimeV2Package = z.infer<typeof runtimeV2PackageSchema>
+export type RuntimeV2Offering = z.infer<typeof runtimeV2OfferingSchema>
+export type RuntimeV2OfferingsResponse = z.infer<typeof runtimeV2OfferingsResponseSchema>

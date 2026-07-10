@@ -101,6 +101,11 @@ export type ServerCreateRuntimeSdkKeyResponse = z.infer<
   typeof serverCreateRuntimeSdkKeyResponseSchema
 >
 
+const serverStoreProductIdsSchema = z.object({
+  apple: z.string().min(1).optional(),
+  google: z.string().min(1).optional(),
+})
+
 export const serverProductSchema = z.object({
   billingPeriod: z.string().nullable(),
   displayName: z.string().min(1),
@@ -110,6 +115,7 @@ export const serverProductSchema = z.object({
   planKey: z.string().min(1),
   priceCents: z.number().int().nonnegative(),
   productKey: z.string().min(1),
+  storeProductIds: serverStoreProductIdsSchema,
 })
 export type ServerProduct = z.infer<typeof serverProductSchema>
 

@@ -40,6 +40,8 @@ export interface CustomerEntitlement {
   active: boolean
   entitlementKey: string
   expiresAt: string | null
+  /** Additive v2 enrichment: canonical plan key behind the grant, when known. */
+  planKey?: string | null
   productIdentifier: string | null
   source:
     'apple' | 'google' | 'voucher' | 'promo' | 'manual' | 'lifetime' | 'migration' | 'family_shared'
