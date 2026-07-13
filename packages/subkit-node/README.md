@@ -98,6 +98,22 @@ console.log(allocation.capacity, allocation.used, allocation.available)
 
 Invitation tokens stay outside SubKit storage; send the opaque token to the invitee and submit only its hash to SubKit.
 
+## Preview capacity changes
+
+Preview uses the pool's frozen policy and current used/reserved quantities without mutating it.
+
+```ts
+const preview = await subkit.access.previewPoolCapacity({
+  poolId: contract.poolIds[0],
+  newCapacity: 20,
+  effectiveAt: new Date('2028-01-01T00:00:00Z'),
+})
+
+if (preview.decision === 'schedule_at_renewal') {
+  // confirm with the operator, then call updatePool with an idempotency key
+}
+```
+
 ## Check an entitlement
 
 ```ts

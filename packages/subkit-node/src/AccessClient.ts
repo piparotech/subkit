@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import type { HttpClient } from './HttpClient.js'
-import type { SubKitMutationOptions } from './requestOptions.js'
+import type { SubKitMutationOptions, SubKitRequestOptions } from './requestOptions.js'
 
 const capacityResultSchema = z.object({
   available: z.number().nullable(),
@@ -12,6 +12,19 @@ const capacityResultSchema = z.object({
 const reservationResultSchema = capacityResultSchema.extend({ reservationId: z.string() })
 const allocationResultSchema = capacityResultSchema.extend({ allocationId: z.string() })
 const poolResultSchema = capacityResultSchema.extend({ poolId: z.string() })
+const poolCapacityPreviewSchema = capacityResultSchema.extend({
+  decision: z.enum(['apply_immediately', 'schedule_at_renewal', 'reject']),
+  effectiveAt: z.coerce.date().nullable(),
+  newCapacity: z.number().nullable(),
+  pendingCapacity: z.number().nullable(),
+  policy: z.enum(['immediate', 'renewal_only', 'forbidden']),
+  reason: z.enum([
+    'allowed',
+    'effective_date_required',
+    'policy_forbidden',
+    'usage_exceeds_capacity',
+  ]),
+})
 const okResultSchema = z.object({ ok: z.literal(true) })
 const freeEnrollmentResultSchema = z.object({
   accessSourceId: z.string(),
@@ -26,6 +39,7 @@ const promotionRedemptionResultSchema = freeEnrollmentResultSchema.extend({
 export type ReservationResult = z.infer<typeof reservationResultSchema>
 export type AllocationResult = z.infer<typeof allocationResultSchema>
 export type PoolResult = z.infer<typeof poolResultSchema>
+export type PoolCapacityPreview = z.infer<typeof poolCapacityPreviewSchema>
 export type MutationResult = z.infer<typeof okResultSchema>
 
 export interface ReserveAccessInput {
@@ -54,6 +68,12 @@ export interface UpdateAllocationInput {
   action: 'suspend' | 'resume' | 'revoke'
   allocationId: string
   reason: string
+}
+
+export interface PreviewPoolCapacityInput {
+  effectiveAt?: Date
+  newCapacity: number | null
+  poolId: string
 }
 
 export type UpdatePoolInput =
@@ -176,6 +196,18 @@ export class AccessClient {
       ...options,
       body,
       responseSchema: okResultSchema,
+    })
+  }
+
+  previewPoolCapacity(
+    input: PreviewPoolCapacityInput,
+    options: SubKitRequestOptions = {},
+  ): Promise<PoolCapacityPreview> {
+    const { poolId, ...body } = input
+    return this.http.post(`/api/server/access-pools/${encodeURIComponent(poolId)}`, {
+      ...options,
+      body: { ...body, effectiveAt: body.effectiveAt?.toISOString() },
+      responseSchema: poolCapacityPreviewSchema,
     })
   }
 

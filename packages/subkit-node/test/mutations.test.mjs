@@ -13,7 +13,7 @@ test('typed customer, contract, and access clients send scoped idempotent reques
       method: init.method,
       url,
     })
-    return Response.json(responseFor(url))
+    return Response.json(responseFor(url, init.method))
   }
   const subkit = new SubKit({
     apiBaseUrl: 'https://subkit.example.com/',
@@ -63,6 +63,11 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     { action: 'suspend', allocationId: 'allocation/a b', reason: 'leave' },
     { idempotencyKey: 'suspend-1' },
   )
+  await subkit.access.previewPoolCapacity({
+    effectiveAt: new Date('2028-01-01T00:00:00Z'),
+    newCapacity: 4,
+    poolId: 'pool-1',
+  })
   await subkit.access.updatePool(
     {
       action: 'change_capacity',
@@ -88,7 +93,7 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     { idempotencyKey: 'manual-1' },
   )
 
-  assert.equal(requests.length, 12)
+  assert.equal(requests.length, 13)
   assert.deepEqual(
     requests.map(({ method, url }) => [method, new URL(url).pathname]),
     [
@@ -101,13 +106,19 @@ test('typed customer, contract, and access clients send scoped idempotent reques
       ['POST', '/api/server/access-reservations/claim'],
       ['POST', '/api/server/access-pools/pool%2Fa%20b/allocations'],
       ['PATCH', '/api/server/access-allocations/allocation%2Fa%20b'],
+      ['POST', '/api/server/access-pools/pool-1'],
       ['PATCH', '/api/server/access-pools/pool-1'],
       ['DELETE', '/api/server/access-reservations/reservation%2Fa%20b'],
       ['POST', '/api/server/manual-provisions'],
     ],
   )
   for (const request of requests) {
-    assert.match(request.headers.get('idempotency-key'), /.+/)
+    if (
+      request.method !== 'POST' ||
+      new URL(request.url).pathname !== '/api/server/access-pools/pool-1'
+    ) {
+      assert.match(request.headers.get('idempotency-key'), /.+/)
+    }
     assert.equal(request.headers.get('authorization'), 'Bearer sk_srv_test')
   }
   assert.equal(requests[0].body.appId, 'smartcoach')
@@ -117,12 +128,13 @@ test('typed customer, contract, and access clients send scoped idempotent reques
   assert.equal(requests[4].body.appId, 'smartcoach')
   assert.equal(requests[6].body.appId, 'smartcoach')
   assert.equal(requests[9].body.effectiveAt, '2028-01-01T00:00:00.000Z')
-  assert.equal(requests[10].body.reason, 'cancelled')
-  assert.equal(requests[11].body.appId, 'smartcoach')
-  assert.equal(requests[11].body.validFrom, '2027-02-01T00:00:00.000Z')
+  assert.equal(requests[10].body.effectiveAt, '2028-01-01T00:00:00.000Z')
+  assert.equal(requests[11].body.reason, 'cancelled')
+  assert.equal(requests[12].body.appId, 'smartcoach')
+  assert.equal(requests[12].body.validFrom, '2027-02-01T00:00:00.000Z')
 })
 
-function responseFor(url) {
+function responseFor(url, method) {
   const path = new URL(url).pathname
   if (path === '/api/server/subjects/upsert') return { id: 'subject-1', status: 'active' }
   if (path === '/api/server/billing-accounts') return { id: 'account-1', status: 'active' }
@@ -151,6 +163,17 @@ function responseFor(url) {
     return capacity({ allocationId: 'allocation-2' })
   }
   if (path.startsWith('/api/server/access-allocations/')) return { ok: true }
+  if (path === '/api/server/access-pools/pool-1' && method === 'POST') {
+    return {
+      ...capacity({}),
+      decision: 'schedule_at_renewal',
+      effectiveAt: '2028-01-01T00:00:00.000Z',
+      newCapacity: 4,
+      pendingCapacity: null,
+      policy: 'renewal_only',
+      reason: 'allowed',
+    }
+  }
   if (path === '/api/server/access-pools/pool-1') return capacity({ poolId: 'pool-1' })
   if (path.startsWith('/api/server/access-reservations/')) return { ok: true }
   throw new Error(`Unexpected request: ${path}`)
