@@ -256,8 +256,8 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
 
     const productId =
       platform === 'ios'
-        ? selected.product.storeProductIds.apple
-        : selected.product.storeProductIds.google
+        ? selected.product.storeProductIds.apple?.productId
+        : selected.product.storeProductIds.google?.productId
     if (productId == null || productId.trim() === '') {
       return {
         error: {

@@ -79,20 +79,70 @@ export interface CustomerInfo {
   unclaimedPurchases: CustomerUnclaimedPurchase[]
 }
 
+export interface RuntimePlanEntitlement {
+  durationIso: string | null
+  grantMode: 'while_source_active' | 'lifetime' | 'fixed_duration'
+  key: string
+}
+
+export interface RuntimePlanOffer {
+  billingPeriodCount: number | null
+  durationIso: string | null
+  eligibility: 'new_customers' | 'lapsed' | 'existing' | 'all' | 'store_managed'
+  key: string
+  offerType: 'free_trial' | 'intro_price' | 'promo' | 'winback' | 'custom_code'
+  priceAmountMicros: number | null
+  priceCurrencyCode: string | null
+}
+
+export interface RuntimePlanPool {
+  capacity: number | null
+  capacityChangePolicy: 'immediate' | 'renewal_only' | 'forbidden'
+  entitlementKeys: string[]
+  key: string
+  reservationMode: 'disabled' | 'optional' | 'required'
+  reservationTtlIso: string | null
+}
+
+export interface RuntimePlanPrice {
+  amountMicros: number
+  countryCode: string | null
+  currencyCode: string
+  salesChannel:
+    | 'apple'
+    | 'google'
+    | 'direct_checkout'
+    | 'assisted_contract'
+    | 'free_enrollment'
+    | 'operator_provision'
+  taxInclusive: boolean | null
+}
+
 export interface StoreProduct {
-  billingPeriod: string | null
   description: string
   displayName: string
-  entitlementKeys: string[]
   kind: ProductKind
-  planKey: string
-  priceCents: number
+  plan: {
+    billingKind: 'recurring' | 'one_time' | 'external' | 'none'
+    billingPeriodIso: string | null
+    fixedTermIso: string | null
+    gracePeriodIso: string | null
+    id: string
+    key: string
+    version: number
+    versionId: string
+  }
+  entitlements: RuntimePlanEntitlement[]
+  offers: RuntimePlanOffer[]
+  pools: RuntimePlanPool[]
+  prices: RuntimePlanPrice[]
+  productId: string
   productKey: string
   storeProductIds: {
-    apple?: string
-    google?: string
+    apple?: { offerIds: string[]; productId: string; subscriptionGroupId?: string }
+    google?: { basePlanId: string | null; productId: string }
   }
-  trialEnabled: boolean
+  trial: { durationIso: string | null; eligibility: RuntimePlanOffer['eligibility'] } | null
 }
 
 export interface OfferingPackage {

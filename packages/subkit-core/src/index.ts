@@ -37,10 +37,6 @@ export {
   runtimeOfferingsRequestSchema,
   runtimeOfferingsWithAppRequestSchema,
   runtimeOfferingsResponseSchema,
-  runtimeV2OfferingSchema,
-  runtimeV2OfferingsResponseSchema,
-  runtimeV2PackageSchema,
-  runtimeV2PriceSchema,
   storeEnvironmentSchema,
   storeIdentityHintsSchema,
   storeNameSchema,
@@ -57,9 +53,6 @@ export type {
   RuntimeEntitlementCheckWithAppRequestInput,
   RuntimeOfferingsRequestInput,
   RuntimeOfferingsWithAppRequestInput,
-  RuntimeV2Offering,
-  RuntimeV2OfferingsResponse,
-  RuntimeV2Package,
 } from './schemas.js'
 export * from './server-contracts.js'
 export type {
@@ -84,6 +77,10 @@ export type {
   PurchaseSyncResult,
   QueuedPurchase,
   RejectedPurchase,
+  RuntimePlanEntitlement,
+  RuntimePlanOffer,
+  RuntimePlanPool,
+  RuntimePlanPrice,
   RuntimeCustomerInfoRequest,
   RuntimeCustomerInfoWithAppRequest,
   RuntimeEntitlementCheckRequest,

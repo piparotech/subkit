@@ -26,7 +26,7 @@ The backend SDK uses the `server*` contracts:
 - `serverCustomerInfoRequestSchema`
 - `serverCustomerInfoResponseSchema`
 - `serverOfferingsRequestSchema`
-- `serverOfferingsResponseSchema`
+- `runtimeOfferingsResponseSchema` (shared by Runtime and Server offering endpoints)
 
 ## Error contracts
 

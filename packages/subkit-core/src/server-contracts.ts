@@ -75,6 +75,7 @@ export type ServerCustomerInfoResponse = z.infer<typeof serverCustomerInfoRespon
 export const serverOfferingsRequestSchema = z.object({
   appId: z.string().min(1),
   appUserId: z.string().min(1).optional(),
+  environment: z.enum(['sandbox', 'production', 'unknown']).optional(),
   placement: z.string().min(1).optional(),
   platform: z.enum(['ios', 'android']).optional(),
 })
@@ -120,28 +121,6 @@ export const serverProductSchema = z.object({
   storeProductIds: serverStoreProductIdsSchema,
 })
 export type ServerProduct = z.infer<typeof serverProductSchema>
-
-export const serverOfferingPackageSchema = z.object({
-  id: z.string().min(1),
-  label: z.string().min(1),
-  product: serverProductSchema,
-  sortOrder: z.number().int(),
-})
-export type ServerOfferingPackage = z.infer<typeof serverOfferingPackageSchema>
-
-export const serverOfferingSchema = z.object({
-  id: z.string().min(1),
-  description: z.string(),
-  key: z.string().min(1),
-  name: z.string().min(1),
-  packages: z.array(serverOfferingPackageSchema),
-})
-export type ServerOffering = z.infer<typeof serverOfferingSchema>
-
-export const serverOfferingsResponseSchema = z.object({
-  offerings: z.array(serverOfferingSchema),
-})
-export type ServerOfferingsResponse = z.infer<typeof serverOfferingsResponseSchema>
 
 export const serverProductsResponseSchema = z.object({
   products: z.array(serverProductSchema),

@@ -98,20 +98,87 @@ export const customerInfoSchema = z.strictObject({
   unclaimedPurchases: z.array(customerUnclaimedPurchaseSchema),
 })
 
+const runtimePlanEntitlementSchema = z.strictObject({
+  durationIso: z.string().nullable(),
+  grantMode: z.enum(['while_source_active', 'lifetime', 'fixed_duration']),
+  key: z.string().min(1),
+})
+
+const runtimePlanOfferSchema = z.strictObject({
+  billingPeriodCount: z.number().int().positive().nullable(),
+  durationIso: z.string().nullable(),
+  eligibility: z.enum(['new_customers', 'lapsed', 'existing', 'all', 'store_managed']),
+  key: z.string().min(1),
+  offerType: z.enum(['free_trial', 'intro_price', 'promo', 'winback', 'custom_code']),
+  priceAmountMicros: z.number().int().nonnegative().nullable(),
+  priceCurrencyCode: z.string().length(3).nullable(),
+})
+
+const runtimePlanPoolSchema = z.strictObject({
+  capacity: z.number().int().positive().nullable(),
+  capacityChangePolicy: z.enum(['immediate', 'renewal_only', 'forbidden']),
+  entitlementKeys: z.array(z.string().min(1)),
+  key: z.string().min(1),
+  reservationMode: z.enum(['disabled', 'optional', 'required']),
+  reservationTtlIso: z.string().nullable(),
+})
+
+const runtimePlanPriceSchema = z.strictObject({
+  amountMicros: z.number().int().nonnegative(),
+  countryCode: z.string().length(2).nullable(),
+  currencyCode: z.string().length(3),
+  salesChannel: z.enum([
+    'apple',
+    'google',
+    'direct_checkout',
+    'assisted_contract',
+    'free_enrollment',
+    'operator_provision',
+  ]),
+  taxInclusive: z.boolean().nullable(),
+})
+
 export const storeProductSchema = z.strictObject({
-  billingPeriod: z.string().nullable(),
   description: z.string(),
   displayName: z.string(),
-  entitlementKeys: z.array(z.string().min(1)),
   kind: productKindSchema,
-  planKey: z.string().min(1),
-  priceCents: z.number().int(),
+  plan: z.strictObject({
+    billingKind: z.enum(['recurring', 'one_time', 'external', 'none']),
+    billingPeriodIso: z.string().nullable(),
+    fixedTermIso: z.string().nullable(),
+    gracePeriodIso: z.string().nullable(),
+    id: z.string().min(1),
+    key: z.string().min(1),
+    version: z.number().int().positive(),
+    versionId: z.string().min(1),
+  }),
+  entitlements: z.array(runtimePlanEntitlementSchema),
+  offers: z.array(runtimePlanOfferSchema),
+  pools: z.array(runtimePlanPoolSchema),
+  prices: z.array(runtimePlanPriceSchema),
+  productId: z.string().min(1),
   productKey: z.string().min(1),
   storeProductIds: z.strictObject({
-    apple: z.string().min(1).optional(),
-    google: z.string().min(1).optional(),
+    apple: z
+      .strictObject({
+        offerIds: z.array(z.string().min(1)),
+        productId: z.string().min(1),
+        subscriptionGroupId: z.string().min(1).optional(),
+      })
+      .optional(),
+    google: z
+      .strictObject({
+        basePlanId: z.string().min(1).nullable(),
+        productId: z.string().min(1),
+      })
+      .optional(),
   }),
-  trialEnabled: z.boolean(),
+  trial: z
+    .strictObject({
+      durationIso: z.string().nullable(),
+      eligibility: z.enum(['new_customers', 'lapsed', 'existing', 'all', 'store_managed']),
+    })
+    .nullable(),
 })
 
 export const offeringPackageSchema = z.strictObject({
@@ -133,53 +200,6 @@ export const runtimeOfferingsResponseSchema = z.strictObject({
   all: z.array(offeringSchema),
   appId: z.string().min(1),
   current: offeringSchema.nullable(),
-})
-
-// --- Runtime v2 (additive; v1 above stays byte-compatible) ---
-
-export const runtimePriceSourceSchema = z.enum(['canonical', 'store_snapshot'])
-
-export const runtimeV2PriceSchema = z.strictObject({
-  amountMicros: z.number().int().nonnegative(),
-  currencyCode: z.string().length(3),
-  source: runtimePriceSourceSchema,
-})
-
-export const runtimeV2AppleStoreIdSchema = z.strictObject({
-  productId: z.string().min(1),
-  subscriptionGroupId: z.string().min(1).optional(),
-  offerIds: z.array(z.string().min(1)),
-})
-
-export const runtimeV2GoogleStoreIdSchema = z.strictObject({
-  productId: z.string().min(1),
-  basePlanId: z.string().min(1).nullable(),
-  offerToken: z.string().min(1).optional(),
-})
-
-export const runtimeV2PackageSchema = z.strictObject({
-  packageKey: z.string().min(1),
-  productKey: z.string().min(1),
-  planKey: z.string().min(1),
-  entitlements: z.array(z.string().min(1)),
-  billingPeriod: z.string().nullable(),
-  storeProductIds: z.strictObject({
-    apple: runtimeV2AppleStoreIdSchema.optional(),
-    google: runtimeV2GoogleStoreIdSchema.optional(),
-  }),
-  price: runtimeV2PriceSchema.nullable(),
-})
-
-export const runtimeV2OfferingSchema = z.strictObject({
-  identifier: z.string().min(1),
-  current: z.boolean(),
-  packages: z.array(runtimeV2PackageSchema),
-})
-
-export const runtimeV2OfferingsResponseSchema = z.strictObject({
-  appId: z.string().min(1),
-  apiVersion: z.literal(2),
-  offerings: z.array(runtimeV2OfferingSchema),
 })
 
 export const normalizedStorePurchaseSchema = z.strictObject({
@@ -247,7 +267,6 @@ export const runtimeCustomerInfoWithAppRequestSchema = runtimeCustomerInfoReques
 })
 
 export const runtimeOfferingsRequestSchema = z.object({
-  apiVersion: z.union([z.literal(1), z.literal(2)]).optional(),
   appUserId: z.string().min(1).optional(),
   environment: storeEnvironmentSchema.optional(),
   placement: z.string().min(1).optional(),
@@ -298,7 +317,3 @@ export type RuntimeEntitlementCheckRequestInput = z.infer<
 export type RuntimeEntitlementCheckWithAppRequestInput = z.infer<
   typeof runtimeEntitlementCheckWithAppRequestSchema
 >
-
-export type RuntimeV2Package = z.infer<typeof runtimeV2PackageSchema>
-export type RuntimeV2Offering = z.infer<typeof runtimeV2OfferingSchema>
-export type RuntimeV2OfferingsResponse = z.infer<typeof runtimeV2OfferingsResponseSchema>
