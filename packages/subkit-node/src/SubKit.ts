@@ -1,3 +1,5 @@
+import { AccessClient } from './AccessClient.js'
+import { ContractsClient } from './ContractsClient.js'
 import { CustomersClient } from './CustomersClient.js'
 import { EntitlementsClient } from './EntitlementsClient.js'
 import { HttpClient } from './HttpClient.js'
@@ -14,6 +16,8 @@ export interface SubKitOptions {
 }
 
 export class SubKit {
+  readonly access: AccessClient
+  readonly contracts: ContractsClient
   readonly customers: CustomersClient
   readonly entitlements: EntitlementsClient
   readonly offerings: OfferingsClient
@@ -28,6 +32,8 @@ export class SubKit {
       userAgent: options.userAgent ?? '@piparotech/subkit-node/0.1.0',
     })
 
+    this.access = new AccessClient({ appId: options.appId, http })
+    this.contracts = new ContractsClient({ appId: options.appId, http })
     this.customers = new CustomersClient({ appId: options.appId, http })
     this.entitlements = new EntitlementsClient({ appId: options.appId, http })
     this.offerings = new OfferingsClient({ appId: options.appId, http })

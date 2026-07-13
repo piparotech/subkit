@@ -13,7 +13,7 @@ interface HttpClientOptions {
   userAgent: string
 }
 
-interface PostOptions<ResponseBody> extends SubKitRequestOptions {
+interface RequestOptions<ResponseBody> extends SubKitRequestOptions {
   body: unknown
   responseSchema: ZodType<ResponseBody>
 }
@@ -35,9 +35,22 @@ export class HttpClient {
     this.userAgent = options.userAgent
   }
 
-  async post<ResponseBody>(
+  post<ResponseBody>(path: string, options: RequestOptions<ResponseBody>): Promise<ResponseBody> {
+    return this.request('POST', path, options)
+  }
+
+  patch<ResponseBody>(path: string, options: RequestOptions<ResponseBody>): Promise<ResponseBody> {
+    return this.request('PATCH', path, options)
+  }
+
+  delete<ResponseBody>(path: string, options: RequestOptions<ResponseBody>): Promise<ResponseBody> {
+    return this.request('DELETE', path, options)
+  }
+
+  private async request<ResponseBody>(
+    method: 'DELETE' | 'PATCH' | 'POST',
     path: string,
-    options: PostOptions<ResponseBody>,
+    options: RequestOptions<ResponseBody>,
   ): Promise<ResponseBody> {
     const timeoutMs = options.timeoutMs ?? this.timeoutMs
     const controller = new AbortController()
@@ -48,7 +61,7 @@ export class HttpClient {
       const response = await this.fetchImpl(`${this.apiBaseUrl}${path}`, {
         body: JSON.stringify(options.body),
         headers: this.createHeaders(options.idempotencyKey),
-        method: 'POST',
+        method,
         signal,
       })
       const payload = await readJson(response)

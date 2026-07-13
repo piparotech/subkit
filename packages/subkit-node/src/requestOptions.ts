@@ -3,3 +3,7 @@ export interface SubKitRequestOptions {
   signal?: AbortSignal
   timeoutMs?: number
 }
+
+export interface SubKitMutationOptions extends SubKitRequestOptions {
+  idempotencyKey: string
+}

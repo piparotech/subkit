@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 import {
   type ServerCustomerInfoRequest,
   type ServerCustomerInfoResponse,
@@ -5,7 +7,27 @@ import {
 } from '@piparotech/subkit-core'
 
 import type { HttpClient } from './HttpClient.js'
-import type { SubKitRequestOptions } from './requestOptions.js'
+import type { SubKitMutationOptions, SubKitRequestOptions } from './requestOptions.js'
+
+const customerRecordSchema = z.object({ id: z.string(), status: z.string() })
+
+export type CustomerRecord = z.infer<typeof customerRecordSchema>
+
+export interface UpsertSubjectInput {
+  appId?: string
+  countryCode?: string | null
+  displayName?: string | null
+  externalId: string
+  kind: 'app_user' | 'organization' | 'service_account'
+  locale?: string | null
+}
+
+export interface CreateBillingAccountInput {
+  displayName: string
+  externalId?: string | null
+  kind: 'individual' | 'organization'
+  metadataJson?: string
+}
 
 interface CustomersClientOptions {
   appId: string | undefined
@@ -19,6 +41,28 @@ export class CustomersClient {
   constructor(options: CustomersClientOptions) {
     this.appId = options.appId
     this.http = options.http
+  }
+
+  upsertSubject(
+    input: UpsertSubjectInput,
+    options: SubKitMutationOptions,
+  ): Promise<CustomerRecord> {
+    return this.http.post('/api/server/subjects/upsert', {
+      ...options,
+      body: { ...input, appId: resolveAppId(input.appId, this.appId) },
+      responseSchema: customerRecordSchema,
+    })
+  }
+
+  createBillingAccount(
+    input: CreateBillingAccountInput,
+    options: SubKitMutationOptions,
+  ): Promise<CustomerRecord> {
+    return this.http.post('/api/server/billing-accounts', {
+      ...options,
+      body: input,
+      responseSchema: customerRecordSchema,
+    })
   }
 
   getCustomerInfo(

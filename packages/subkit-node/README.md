@@ -24,6 +24,56 @@ const subkit = new SubKit({
 
 Use a server-side secret such as `subkit_server_live_...`. Public/mobile SDK keys are intentionally out of scope for this package.
 
+## Create customers and contracts
+
+Every mutation requires an explicit idempotency key.
+
+```ts
+const subject = await subkit.customers.upsertSubject(
+  { externalId: 'trainer_123', kind: 'app_user' },
+  { idempotencyKey: 'subject:trainer_123' },
+)
+
+const club = await subkit.customers.createBillingAccount(
+  { displayName: 'FC Example', externalId: 'club_123', kind: 'organization' },
+  { idempotencyKey: 'billing-account:club_123' },
+)
+
+const contract = await subkit.contracts.create(
+  {
+    billingAccountId: club.id,
+    externalContractId: 'contract_123',
+    planVersionId: 'plan-version_123',
+    termStart: new Date('2027-01-01T00:00:00Z'),
+  },
+  { idempotencyKey: 'contract:contract_123' },
+)
+```
+
+## Reserve and allocate access
+
+```ts
+const reservation = await subkit.access.reserve(
+  {
+    poolId: contract.poolIds[0],
+    claimTokenHash: securelyHashInvitationToken(invitationToken),
+  },
+  { idempotencyKey: 'invite:trainer_123' },
+)
+
+const allocation = await subkit.access.claim(
+  {
+    claimTokenHash: securelyHashInvitationToken(invitationToken),
+    subjectId: subject.id,
+  },
+  { idempotencyKey: 'claim:trainer_123' },
+)
+
+console.log(allocation.capacity, allocation.used, allocation.available)
+```
+
+Invitation tokens stay outside SubKit storage; send the opaque token to the invitee and submit only its hash to SubKit.
+
 ## Check an entitlement
 
 ```ts
@@ -104,11 +154,12 @@ await subkit.entitlements.check(
 
 ## Backend endpoints
 
-The SDK currently calls server-authenticated SubKit endpoints:
+The SDK calls server-authenticated SubKit endpoints for:
 
-- `POST /api/server/entitlements/check`
-- `POST /api/server/customer-info`
-- `POST /api/server/offerings`
-- `POST /api/server/products`
+- subjects and billing accounts
+- contracts and manual provisions
+- reservations, claims, allocations, and pool/allocation lifecycle actions
+- entitlement checks and customer info
+- offerings and products
 
 Use a SubKit-issued `sk_srv_…` key scoped to the target app and required capabilities. SubKit stores only its hash; there is no global server API environment key.
