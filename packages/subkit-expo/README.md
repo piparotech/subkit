@@ -28,11 +28,11 @@ If `client` is used before configuration, it throws.
 
 Required fields are `sdkKey` and `installationId`. `appUserId` is optional. The SDK key is app-scoped, so SubKit resolves the app automatically. `apiBaseUrl` is optional and defaults to `https://subkit.piparo.tech`; pass it explicitly for staging, local development, or self-hosted SubKit deployments.
 
-Create runtime SDK keys from a trusted backend context with the server API key, never from the mobile app:
+Create runtime SDK keys from a trusted backend context with a SubKit-issued `sk_srv_…` key carrying the `runtime_keys:write` capability, never from the mobile app:
 
 ```sh
 curl -X POST https://subkit.example.com/api/server/runtime-sdk-keys \
-  -H "Authorization: Bearer $SUBKIT_SERVER_API_KEY" \
+  -H "Authorization: Bearer $SUBKIT_SCOPED_SERVER_KEY" \
   -H "Content-Type: application/json" \
   -d '{"appId":"app_123","name":"iOS production","scopes":["read","iap_reconcile"]}'
 ```

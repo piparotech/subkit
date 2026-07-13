@@ -111,4 +111,4 @@ The SDK currently calls server-authenticated SubKit endpoints:
 - `POST /api/server/offerings`
 - `POST /api/server/products`
 
-The SubKit backend must be configured with `SUBKIT_SERVER_API_KEY`.
+Use a SubKit-issued `sk_srv_…` key scoped to the target app and required capabilities. SubKit stores only its hash; there is no global server API environment key.
