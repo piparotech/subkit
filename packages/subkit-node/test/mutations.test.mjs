@@ -43,6 +43,10 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     { planVersionId: 'version-free', subjectId: subject.id },
     { idempotencyKey: 'free-enrollment-1' },
   )
+  await subkit.access.redeemPromotionCode(
+    { code: 'SMART-COACH-30', subjectId: subject.id },
+    { idempotencyKey: 'promotion-redemption-1' },
+  )
   await subkit.access.reserve(
     { claimTokenHash: 'h'.repeat(64), poolId: contract.poolIds[0] },
     { idempotencyKey: 'reserve-1' },
@@ -84,7 +88,7 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     { idempotencyKey: 'manual-1' },
   )
 
-  assert.equal(requests.length, 11)
+  assert.equal(requests.length, 12)
   assert.deepEqual(
     requests.map(({ method, url }) => [method, new URL(url).pathname]),
     [
@@ -92,6 +96,7 @@ test('typed customer, contract, and access clients send scoped idempotent reques
       ['POST', '/api/server/billing-accounts'],
       ['POST', '/api/server/contracts'],
       ['POST', '/api/server/free-enrollments'],
+      ['POST', '/api/server/promotion-codes/redeem'],
       ['POST', '/api/server/access-pools/pool-1/reservations'],
       ['POST', '/api/server/access-reservations/claim'],
       ['POST', '/api/server/access-pools/pool%2Fa%20b/allocations'],
@@ -109,11 +114,12 @@ test('typed customer, contract, and access clients send scoped idempotent reques
   assert.equal(requests[2].body.appId, 'smartcoach')
   assert.equal(requests[2].body.termStart, '2027-01-01T00:00:00.000Z')
   assert.equal(requests[3].body.appId, 'smartcoach')
-  assert.equal(requests[5].body.appId, 'smartcoach')
-  assert.equal(requests[8].body.effectiveAt, '2028-01-01T00:00:00.000Z')
-  assert.equal(requests[9].body.reason, 'cancelled')
-  assert.equal(requests[10].body.appId, 'smartcoach')
-  assert.equal(requests[10].body.validFrom, '2027-02-01T00:00:00.000Z')
+  assert.equal(requests[4].body.appId, 'smartcoach')
+  assert.equal(requests[6].body.appId, 'smartcoach')
+  assert.equal(requests[9].body.effectiveAt, '2028-01-01T00:00:00.000Z')
+  assert.equal(requests[10].body.reason, 'cancelled')
+  assert.equal(requests[11].body.appId, 'smartcoach')
+  assert.equal(requests[11].body.validFrom, '2027-02-01T00:00:00.000Z')
 })
 
 function responseFor(url) {
@@ -126,6 +132,15 @@ function responseFor(url) {
       accessSourceId: 'source-free',
       allocationIds: ['allocation-free'],
       poolIds: ['pool-free'],
+    }
+  }
+  if (path === '/api/server/promotion-codes/redeem') {
+    return {
+      accessSourceId: 'source-promotion',
+      allocationIds: ['allocation-promotion'],
+      poolIds: ['pool-promotion'],
+      promotionBenefitId: 'benefit-1',
+      promotionCampaignId: 'campaign-1',
     }
   }
   if (path.endsWith('/reservations')) return capacity({ reservationId: 'reservation-1' })

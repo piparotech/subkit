@@ -61,6 +61,19 @@ const enrollment = await subkit.access.enrollFree(
 )
 ```
 
+## Redeem a promotion code
+
+Promotion codes create commercial promotion sources. They are separate from invitation tokens, which only claim already reserved pool capacity.
+
+```ts
+const promotion = await subkit.access.redeemPromotionCode(
+  { code: userEnteredCode, subjectId: subject.id },
+  { idempotencyKey: 'promotion-redemption:trainer_123' },
+)
+```
+
+The SDK sends plaintext only over the authenticated request. SubKit normalizes and hashes it before lookup; stored records contain hashes and safe prefixes only.
+
 ## Reserve and allocate access
 
 ```ts

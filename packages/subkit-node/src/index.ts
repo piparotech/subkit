@@ -10,6 +10,8 @@ export type {
   ManualProvisionInput,
   MutationResult,
   PoolResult,
+  PromotionRedemptionResult,
+  RedeemPromotionCodeInput,
   ReservationResult,
   ReserveAccessInput,
   RevokeReservationInput,

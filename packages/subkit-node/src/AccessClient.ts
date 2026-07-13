@@ -18,6 +18,10 @@ const freeEnrollmentResultSchema = z.object({
   allocationIds: z.array(z.string()),
   poolIds: z.array(z.string()),
 })
+const promotionRedemptionResultSchema = freeEnrollmentResultSchema.extend({
+  promotionBenefitId: z.string(),
+  promotionCampaignId: z.string(),
+})
 
 export type ReservationResult = z.infer<typeof reservationResultSchema>
 export type AllocationResult = z.infer<typeof allocationResultSchema>
@@ -80,6 +84,17 @@ export interface FreeEnrollmentResult {
   poolIds: string[]
 }
 
+export interface RedeemPromotionCodeInput {
+  appId?: string
+  code: string
+  subjectId: string
+}
+
+export interface PromotionRedemptionResult extends FreeEnrollmentResult {
+  promotionBenefitId: string
+  promotionCampaignId: string
+}
+
 export interface ManualProvisionInput {
   appId?: string
   originReference: string
@@ -112,6 +127,17 @@ export class AccessClient {
       ...options,
       body: { ...input, appId: resolveAppId(input.appId, this.appId) },
       responseSchema: freeEnrollmentResultSchema,
+    })
+  }
+
+  redeemPromotionCode(
+    input: RedeemPromotionCodeInput,
+    options: SubKitMutationOptions,
+  ): Promise<PromotionRedemptionResult> {
+    return this.http.post('/api/server/promotion-codes/redeem', {
+      ...options,
+      body: { ...input, appId: resolveAppId(input.appId, this.appId) },
+      responseSchema: promotionRedemptionResultSchema,
     })
   }
 
