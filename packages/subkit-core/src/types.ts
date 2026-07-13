@@ -22,7 +22,7 @@ export type PurchaseSyncReason =
   | 'paywall_preflight'
   | 'queue_retry'
 export type PurchaseResultStatus = 'cancelled' | 'pending' | 'verified' | 'failed'
-export type VerificationStatus = 'verified' | 'accepted_unverified' | 'pending' | 'failed'
+export type VerificationStatus = 'verified' | 'failed'
 export type OwnershipConflictResolution =
   'login_original_account' | 'manual_review' | 'support_required'
 
@@ -40,8 +40,7 @@ export interface CustomerEntitlement {
   active: boolean
   entitlementKey: string
   expiresAt: string | null
-  /** Additive v2 enrichment: canonical plan key behind the grant, when known. */
-  planKey?: string | null
+  planKey: string | null
   productIdentifier: string | null
   source:
     'apple' | 'google' | 'voucher' | 'promo' | 'manual' | 'lifetime' | 'migration' | 'family_shared'

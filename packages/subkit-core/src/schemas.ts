@@ -25,12 +25,7 @@ export const purchaseSyncReasonSchema = z.enum([
   'paywall_preflight',
   'queue_retry',
 ])
-export const verificationStatusSchema = z.enum([
-  'verified',
-  'accepted_unverified',
-  'pending',
-  'failed',
-])
+export const verificationStatusSchema = z.enum(['verified', 'failed'])
 
 export const storeIdentityHintsSchema = z.strictObject({
   apple: z
@@ -50,9 +45,7 @@ export const customerEntitlementSchema = z.strictObject({
   active: z.boolean(),
   entitlementKey: z.string().min(1),
   expiresAt: z.string().nullable(),
-  // Additive v2 enrichment: the canonical plan key behind the grant. Optional so
-  // existing v1 payloads/clients stay compatible.
-  planKey: z.string().nullable().optional(),
+  planKey: z.string().nullable(),
   productIdentifier: z.string().nullable(),
   source: z.enum([
     'apple',

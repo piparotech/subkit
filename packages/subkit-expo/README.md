@@ -304,4 +304,4 @@ Silent sync uses `getAvailablePurchases()` and never calls prompt-prone restore 
 - Pending purchases are queued durably when a storage-backed queue is provided.
 - Queued purchases are scoped to the app user that first observed them; switching identities does not reconcile one user's pending purchases under another user.
 - Ownership conflicts are returned by the runtime API and are not silently transferred.
-- Server-side Apple/Google receipt validation is still a later milestone; the current reconcile path records `accepted_unverified` semantics.
+- Purchases are accepted and returned as finishable only after provider-side verification. Missing credentials, unsupported providers, and verification failures fail closed.

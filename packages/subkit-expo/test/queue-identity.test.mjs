@@ -45,7 +45,7 @@ function createRuntimeRecorder() {
           },
           finishableTransactions: [],
           rejectedPurchases: [],
-          verificationStatus: 'accepted_unverified',
+          verificationStatus: 'failed',
         }
       },
     },
@@ -222,7 +222,7 @@ test('purchase sync coordinator finishes transactions using the shared queue pur
             },
           ],
           rejectedPurchases: [],
-          verificationStatus: 'accepted_unverified',
+          verificationStatus: 'failed',
         }
       },
     },

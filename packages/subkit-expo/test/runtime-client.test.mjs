@@ -118,7 +118,7 @@ test('runtime client omits appId from reconcile requests', async () => {
       customerInfo: createCustomerInfo('user_123'),
       finishableTransactions: [],
       rejectedPurchases: [],
-      verificationStatus: 'accepted_unverified',
+      verificationStatus: 'failed',
     })
   }
 

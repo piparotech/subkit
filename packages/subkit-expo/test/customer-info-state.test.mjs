@@ -36,6 +36,7 @@ function createCustomerInfo(appUserId, entitlementActive) {
       pro: {
         active: entitlementActive,
         entitlementKey: 'pro',
+        planKey: 'monthly',
         expiresAt: null,
         productIdentifier: 'pro_monthly',
         source: 'apple',
@@ -93,7 +94,7 @@ test('configureSubKit resets customer info snapshot and refresh publishes latest
         customerInfo: createCustomerInfo('user_123', entitlementActive),
         finishableTransactions: [],
         rejectedPurchases: [],
-        verificationStatus: 'accepted_unverified',
+        verificationStatus: 'failed',
       })
     }
     return jsonResponse(createCustomerInfo('user_123', entitlementActive))
