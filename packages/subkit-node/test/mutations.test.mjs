@@ -39,6 +39,10 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     },
     { idempotencyKey: 'contract-1' },
   )
+  await subkit.products.updatePlanVersionLifecycle(
+    { action: 'retire', planVersionId: 'version/a b', reason: 'superseded' },
+    { idempotencyKey: 'retire-version-1' },
+  )
   await subkit.access.enrollFree(
     { planVersionId: 'version-free', subjectId: subject.id },
     { idempotencyKey: 'free-enrollment-1' },
@@ -93,13 +97,14 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     { idempotencyKey: 'manual-1' },
   )
 
-  assert.equal(requests.length, 13)
+  assert.equal(requests.length, 14)
   assert.deepEqual(
     requests.map(({ method, url }) => [method, new URL(url).pathname]),
     [
       ['POST', '/api/server/subjects/upsert'],
       ['POST', '/api/server/billing-accounts'],
       ['POST', '/api/server/contracts'],
+      ['PATCH', '/api/server/plan-versions/version%2Fa%20b'],
       ['POST', '/api/server/free-enrollments'],
       ['POST', '/api/server/promotion-codes/redeem'],
       ['POST', '/api/server/access-pools/pool-1/reservations'],
@@ -124,14 +129,15 @@ test('typed customer, contract, and access clients send scoped idempotent reques
   assert.equal(requests[0].body.appId, 'smartcoach')
   assert.equal(requests[2].body.appId, 'smartcoach')
   assert.equal(requests[2].body.termStart, '2027-01-01T00:00:00.000Z')
-  assert.equal(requests[3].body.appId, 'smartcoach')
+  assert.equal(requests[3].body.reason, 'superseded')
   assert.equal(requests[4].body.appId, 'smartcoach')
-  assert.equal(requests[6].body.appId, 'smartcoach')
-  assert.equal(requests[9].body.effectiveAt, '2028-01-01T00:00:00.000Z')
+  assert.equal(requests[5].body.appId, 'smartcoach')
+  assert.equal(requests[7].body.appId, 'smartcoach')
   assert.equal(requests[10].body.effectiveAt, '2028-01-01T00:00:00.000Z')
-  assert.equal(requests[11].body.reason, 'cancelled')
-  assert.equal(requests[12].body.appId, 'smartcoach')
-  assert.equal(requests[12].body.validFrom, '2027-02-01T00:00:00.000Z')
+  assert.equal(requests[11].body.effectiveAt, '2028-01-01T00:00:00.000Z')
+  assert.equal(requests[12].body.reason, 'cancelled')
+  assert.equal(requests[13].body.appId, 'smartcoach')
+  assert.equal(requests[13].body.validFrom, '2027-02-01T00:00:00.000Z')
 })
 
 function responseFor(url, method) {
@@ -139,6 +145,9 @@ function responseFor(url, method) {
   if (path === '/api/server/subjects/upsert') return { id: 'subject-1', status: 'active' }
   if (path === '/api/server/billing-accounts') return { id: 'account-1', status: 'active' }
   if (path === '/api/server/contracts') return { accessSourceId: 'source-1', poolIds: ['pool-1'] }
+  if (path.startsWith('/api/server/plan-versions/')) {
+    return { planVersionId: 'version/a b', state: 'retired' }
+  }
   if (path === '/api/server/free-enrollments') {
     return {
       accessSourceId: 'source-free',

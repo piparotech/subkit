@@ -26,6 +26,10 @@ export type {
   CustomerRecord,
   UpsertSubjectInput,
 } from './CustomersClient.js'
+export type {
+  PlanVersionLifecycleResult,
+  UpdatePlanVersionLifecycleInput,
+} from './ProductsClient.js'
 export type { SubKitMutationOptions, SubKitRequestOptions } from './requestOptions.js'
 export type {
   ServerCustomerEntitlement,

@@ -24,6 +24,17 @@ const subkit = new SubKit({
 
 Use a server-side secret such as `subkit_server_live_...`. Public/mobile SDK keys are intentionally out of scope for this package.
 
+## Publish and retire Plan Versions
+
+Lifecycle mutations require a reason and are audit logged. Retirement stops new acquisition; existing Sources keep their pinned immutable version.
+
+```ts
+await subkit.products.updatePlanVersionLifecycle(
+  { action: 'retire', planVersionId: 'plan-version_123', reason: 'superseded by v2' },
+  { idempotencyKey: 'retire:plan-version_123' },
+)
+```
+
 ## Create customers and contracts
 
 Every mutation requires an explicit idempotency key.

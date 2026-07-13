@@ -1,3 +1,5 @@
+import { z } from 'zod'
+
 import {
   type ServerProductsRequest,
   type ServerProductsResponse,
@@ -5,7 +7,20 @@ import {
 } from '@piparotech/subkit-core'
 
 import type { HttpClient } from './HttpClient.js'
-import type { SubKitRequestOptions } from './requestOptions.js'
+import type { SubKitMutationOptions, SubKitRequestOptions } from './requestOptions.js'
+
+const planVersionLifecycleResultSchema = z.object({
+  planVersionId: z.string(),
+  state: z.enum(['published', 'retired']),
+})
+
+export type PlanVersionLifecycleResult = z.infer<typeof planVersionLifecycleResultSchema>
+
+export interface UpdatePlanVersionLifecycleInput {
+  action: 'publish' | 'retire'
+  planVersionId: string
+  reason: string
+}
 
 interface ProductsClientOptions {
   appId: string | undefined
@@ -19,6 +34,18 @@ export class ProductsClient {
   constructor(options: ProductsClientOptions) {
     this.appId = options.appId
     this.http = options.http
+  }
+
+  updatePlanVersionLifecycle(
+    input: UpdatePlanVersionLifecycleInput,
+    options: SubKitMutationOptions,
+  ): Promise<PlanVersionLifecycleResult> {
+    const { planVersionId, ...body } = input
+    return this.http.patch(`/api/server/plan-versions/${encodeURIComponent(planVersionId)}`, {
+      ...options,
+      body,
+      responseSchema: planVersionLifecycleResultSchema,
+    })
   }
 
   list(
