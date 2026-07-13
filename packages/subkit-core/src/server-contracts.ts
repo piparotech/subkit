@@ -113,6 +113,8 @@ export const serverProductSchema = z.object({
   id: z.string().min(1),
   planId: z.string().min(1),
   planKey: z.string().min(1),
+  planVersion: z.number().int().positive(),
+  planVersionId: z.string().min(1),
   priceCents: z.number().int().nonnegative(),
   productKey: z.string().min(1),
   storeProductIds: serverStoreProductIdsSchema,
