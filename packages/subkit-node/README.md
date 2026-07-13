@@ -50,6 +50,17 @@ const contract = await subkit.contracts.create(
 )
 ```
 
+## Enroll free access
+
+Free access is still server-verified and follows the normal Source → Pool → Allocation → Grant path. Eligibility comes from the published Plan Version, not from caller input.
+
+```ts
+const enrollment = await subkit.access.enrollFree(
+  { planVersionId: 'plan-version_basis', subjectId: subject.id },
+  { idempotencyKey: 'free-enrollment:trainer_123' },
+)
+```
+
 ## Reserve and allocate access
 
 ```ts

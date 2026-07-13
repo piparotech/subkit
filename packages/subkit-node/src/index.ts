@@ -5,6 +5,8 @@ export type {
   AllocateAccessInput,
   AllocationResult,
   ClaimReservationInput,
+  FreeEnrollmentInput,
+  FreeEnrollmentResult,
   ManualProvisionInput,
   MutationResult,
   PoolResult,

@@ -13,6 +13,11 @@ const reservationResultSchema = capacityResultSchema.extend({ reservationId: z.s
 const allocationResultSchema = capacityResultSchema.extend({ allocationId: z.string() })
 const poolResultSchema = capacityResultSchema.extend({ poolId: z.string() })
 const okResultSchema = z.object({ ok: z.literal(true) })
+const freeEnrollmentResultSchema = z.object({
+  accessSourceId: z.string(),
+  allocationIds: z.array(z.string()),
+  poolIds: z.array(z.string()),
+})
 
 export type ReservationResult = z.infer<typeof reservationResultSchema>
 export type AllocationResult = z.infer<typeof allocationResultSchema>
@@ -63,6 +68,18 @@ export interface RevokeReservationInput {
   reservationId: string
 }
 
+export interface FreeEnrollmentInput {
+  appId?: string
+  planVersionId: string
+  subjectId: string
+}
+
+export interface FreeEnrollmentResult {
+  accessSourceId: string
+  allocationIds: string[]
+  poolIds: string[]
+}
+
 export interface ManualProvisionInput {
   appId?: string
   originReference: string
@@ -85,6 +102,17 @@ export class AccessClient {
   constructor(options: AccessClientOptions) {
     this.appId = options.appId
     this.http = options.http
+  }
+
+  enrollFree(
+    input: FreeEnrollmentInput,
+    options: SubKitMutationOptions,
+  ): Promise<FreeEnrollmentResult> {
+    return this.http.post('/api/server/free-enrollments', {
+      ...options,
+      body: { ...input, appId: resolveAppId(input.appId, this.appId) },
+      responseSchema: freeEnrollmentResultSchema,
+    })
   }
 
   reserve(input: ReserveAccessInput, options: SubKitMutationOptions): Promise<ReservationResult> {

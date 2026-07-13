@@ -39,6 +39,10 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     },
     { idempotencyKey: 'contract-1' },
   )
+  await subkit.access.enrollFree(
+    { planVersionId: 'version-free', subjectId: subject.id },
+    { idempotencyKey: 'free-enrollment-1' },
+  )
   await subkit.access.reserve(
     { claimTokenHash: 'h'.repeat(64), poolId: contract.poolIds[0] },
     { idempotencyKey: 'reserve-1' },
@@ -80,13 +84,14 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     { idempotencyKey: 'manual-1' },
   )
 
-  assert.equal(requests.length, 10)
+  assert.equal(requests.length, 11)
   assert.deepEqual(
     requests.map(({ method, url }) => [method, new URL(url).pathname]),
     [
       ['POST', '/api/server/subjects/upsert'],
       ['POST', '/api/server/billing-accounts'],
       ['POST', '/api/server/contracts'],
+      ['POST', '/api/server/free-enrollments'],
       ['POST', '/api/server/access-pools/pool-1/reservations'],
       ['POST', '/api/server/access-reservations/claim'],
       ['POST', '/api/server/access-pools/pool%2Fa%20b/allocations'],
@@ -103,11 +108,12 @@ test('typed customer, contract, and access clients send scoped idempotent reques
   assert.equal(requests[0].body.appId, 'smartcoach')
   assert.equal(requests[2].body.appId, 'smartcoach')
   assert.equal(requests[2].body.termStart, '2027-01-01T00:00:00.000Z')
-  assert.equal(requests[4].body.appId, 'smartcoach')
-  assert.equal(requests[7].body.effectiveAt, '2028-01-01T00:00:00.000Z')
-  assert.equal(requests[8].body.reason, 'cancelled')
-  assert.equal(requests[9].body.appId, 'smartcoach')
-  assert.equal(requests[9].body.validFrom, '2027-02-01T00:00:00.000Z')
+  assert.equal(requests[3].body.appId, 'smartcoach')
+  assert.equal(requests[5].body.appId, 'smartcoach')
+  assert.equal(requests[8].body.effectiveAt, '2028-01-01T00:00:00.000Z')
+  assert.equal(requests[9].body.reason, 'cancelled')
+  assert.equal(requests[10].body.appId, 'smartcoach')
+  assert.equal(requests[10].body.validFrom, '2027-02-01T00:00:00.000Z')
 })
 
 function responseFor(url) {
@@ -115,6 +121,13 @@ function responseFor(url) {
   if (path === '/api/server/subjects/upsert') return { id: 'subject-1', status: 'active' }
   if (path === '/api/server/billing-accounts') return { id: 'account-1', status: 'active' }
   if (path === '/api/server/contracts') return { accessSourceId: 'source-1', poolIds: ['pool-1'] }
+  if (path === '/api/server/free-enrollments') {
+    return {
+      accessSourceId: 'source-free',
+      allocationIds: ['allocation-free'],
+      poolIds: ['pool-free'],
+    }
+  }
   if (path.endsWith('/reservations')) return capacity({ reservationId: 'reservation-1' })
   if (path === '/api/server/access-reservations/claim') {
     return capacity({ allocationId: 'allocation-1' })
