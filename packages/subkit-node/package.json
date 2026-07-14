@@ -1,6 +1,6 @@
 {
   "name": "@piparotech/subkit-node",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "type": "module",
   "description": "Node.js backend SDK for querying SubKit.",
@@ -22,10 +22,13 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@piparotech/subkit-core": "workspace:*",
     "zod": "^4.4.3"
   },
+  "peerDependencies": {
+    "@piparotech/subkit-core": "workspace:^"
+  },
   "devDependencies": {
+    "@piparotech/subkit-core": "workspace:*",
     "typescript": "catalog:"
   },
   "engines": {

@@ -1,7 +1,7 @@
 {
   "name": "@piparotech/subkit-expo",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "sideEffects": false,
   "description": "Private SubKit Expo IAP SDK skeleton with automatic purchase sync.",
@@ -29,16 +29,17 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@piparotech/subkit-core": "workspace:*",
     "@react-native-async-storage/async-storage": "^3.1.1"
   },
   "peerDependencies": {
+    "@piparotech/subkit-core": "workspace:^",
     "expo": "*",
     "expo-iap": "*",
     "react": ">=18",
     "react-native": "*"
   },
   "devDependencies": {
+    "@piparotech/subkit-core": "workspace:*",
     "@types/react": "catalog:",
     "react": "catalog:",
     "typescript": "catalog:"
