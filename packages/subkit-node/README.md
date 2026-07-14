@@ -127,13 +127,13 @@ Invitation tokens stay outside SubKit storage; send the opaque token to the invi
 
 ## Preview capacity changes
 
-Preview uses the pool's frozen policy and current used/reserved quantities without mutating it.
+Preview uses the pool's frozen policy and current used/reserved quantities without mutating it. The requested capacity and effective date must come from your operator input or commercial contract—not from a host-app constant.
 
 ```ts
 const preview = await subkit.access.previewPoolCapacity({
   poolId: contract.poolIds[0],
-  newCapacity: 20,
-  effectiveAt: new Date('2028-01-01T00:00:00Z'),
+  newCapacity: requestedSeatCapacity,
+  effectiveAt: requestedRenewalDate,
 })
 
 if (preview.decision === 'schedule_at_renewal') {

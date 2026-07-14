@@ -86,7 +86,7 @@ const customerInfo = await client.identify('user_123')
 const hasPremium = customerInfo.entitlements[PREMIUM_ENTITLEMENT]?.active === true
 ```
 
-Use the entitlement key/identifier configured in SubKit, not the package id (`monthly`) or store product id (`com.example.pro.monthly`).
+Use the entitlement key/identifier configured in SubKit, not an Offering Package identifier or provider Store Product ID. Package identifiers, Product IDs, prices, billing periods, trials and offers are runtime catalog data.
 
 ## Purchase flow
 
@@ -94,11 +94,13 @@ Use the entitlement key/identifier configured in SubKit, not the package id (`mo
 import { client } from '@piparotech/subkit-expo'
 
 await client.identify('user_123')
-await client.getOfferings()
-const result = await client.purchasePackage('monthly')
+const offerings = await client.getOfferings()
+const selectedPackage = offerings.current?.packages[0]
+if (selectedPackage == null) throw new Error('No purchasable SubKit Offering is available')
+const result = await client.purchasePackage(selectedPackage.identifier)
 ```
 
-`purchasePackage(...)` starts the native store purchase and returns the current purchase outcome. Do not unlock paid features just because this call returned or because the package id was `monthly`. SubKit entitlements are the source of truth.
+`purchasePackage(...)` starts the native store purchase and returns the current purchase outcome. Render package labels, prices, terms and trial copy from the returned Offering, then pass only the selected package's runtime `identifier`. Do not unlock paid features just because this call returned. SubKit entitlements are the source of truth.
 
 Handle every result status and keep thrown errors separate from expected purchase outcomes:
 
@@ -107,9 +109,9 @@ import { client } from '@piparotech/subkit-expo'
 
 const PRO_ENTITLEMENT = 'pro' // the entitlement key configured in SubKit
 
-async function buyMonthly() {
+async function buySelectedPackage(packageIdentifier: string) {
   try {
-    const result = await client.purchasePackage('monthly')
+    const result = await client.purchasePackage(packageIdentifier)
 
     switch (result.status) {
       case 'verified': {
