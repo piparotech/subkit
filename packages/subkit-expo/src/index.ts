@@ -57,6 +57,7 @@ export type {
   SubKitIapProductType,
   SubKitIapPurchase,
   SubKitIapStore,
+  SubKitIapSubscriptionOffer,
   SubKitIdentityState,
   SubKitPurchaseRequest,
   SubKitSyncOptions,

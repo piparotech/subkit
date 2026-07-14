@@ -139,7 +139,7 @@ export interface StoreProduct {
   productKey: string
   storeProductIds: {
     apple?: { offerIds: string[]; productId: string; subscriptionGroupId?: string }
-    google?: { basePlanId: string | null; productId: string }
+    google?: { basePlanId: string | null; offerIds: string[]; productId: string }
   }
   trial: { durationIso: string | null; eligibility: RuntimePlanOffer['eligibility'] } | null
 }

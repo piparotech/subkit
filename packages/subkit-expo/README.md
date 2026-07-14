@@ -191,7 +191,9 @@ async function restoreAndCheckAccess() {
 }
 ```
 
-The SDK passes SubKit-generated store identity hints to `expo-iap` automatically:
+The SDK resolves the native product id and applicable Google base-plan/offer token from the selected SubKit Offering. Host-app code never supplies static Store identifiers, prices, or provider offer tokens. If a configured Google offer is not currently returned as eligible by Play Billing, the purchase fails closed as unavailable instead of silently buying a different offer.
+
+The SDK also passes SubKit-generated store identity hints to `expo-iap` automatically:
 
 - iOS: `appAccountToken`
 - Android: `obfuscatedAccountId`, optional `obfuscatedProfileId`

@@ -162,6 +162,7 @@ export const storeProductSchema = z.strictObject({
     google: z
       .strictObject({
         basePlanId: z.string().min(1).nullable(),
+        offerIds: z.array(z.string().min(1)),
         productId: z.string().min(1),
       })
       .optional(),

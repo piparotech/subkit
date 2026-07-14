@@ -43,6 +43,7 @@ import {
 import type {
   SubKitExpoIapConfig,
   SubKitIapPlatform,
+  SubKitIapProduct,
   SubKitIapPurchase,
   SubKitPurchaseRequest,
   SubKitSyncOptions,
@@ -299,12 +300,32 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
       }
     }
 
+    const offerToken = await resolveGoogleOfferToken({
+      adapter: adapterBundle.iap,
+      basePlanId: selected.product.storeProductIds.google?.basePlanId ?? null,
+      offerIds: selected.product.storeProductIds.google?.offerIds ?? [],
+      platform,
+      productId,
+      productType: selected.product.kind === 'subscription' ? 'subs' : 'in-app',
+    })
+    if (offerToken === null) {
+      return {
+        error: {
+          code: 'product_unavailable',
+          message: `SubKit package ${packageId} has no eligible configured Store offer`,
+          retryable: false,
+        },
+        status: 'failed',
+      }
+    }
+
     const hints = customerInfo?.storeIdentityHints ?? currentIdentityHints(identity)
     const purchaseRequest: SubKitPurchaseRequest = {
       appAccountToken: hints?.apple?.appAccountToken,
       isConsumable: selected.product.kind === 'consumable',
       obfuscatedAccountId: hints?.google?.obfuscatedAccountId,
       obfuscatedProfileId: hints?.google?.obfuscatedProfileId,
+      offerToken: offerToken ?? undefined,
       productId,
       productType: selected.product.kind === 'subscription' ? 'subs' : 'in-app',
     }
@@ -426,6 +447,45 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   }
 
   return subKitClient
+}
+
+async function resolveGoogleOfferToken(input: {
+  adapter: SubKitExpoIapAdapter
+  basePlanId: string | null
+  offerIds: readonly string[]
+  platform: SubKitIapPlatform
+  productId: string
+  productType: SubKitPurchaseRequest['productType']
+}): Promise<string | null | undefined> {
+  if (input.platform !== 'android' || input.productType !== 'subs') return undefined
+  const products = await input.adapter.fetchProducts({
+    skus: [input.productId],
+    type: input.productType,
+  })
+  const product = products.find((candidate) => candidate.id === input.productId)
+  if (product == null) return null
+  const offer = selectGoogleSubscriptionOffer(product, input.basePlanId, input.offerIds)
+  return offer?.offerToken ?? null
+}
+
+function selectGoogleSubscriptionOffer(
+  product: SubKitIapProduct,
+  basePlanId: string | null,
+  offerIds: readonly string[],
+): NonNullable<SubKitIapProduct['subscriptionOffers']>[number] | undefined {
+  const offers = product.subscriptionOffers ?? []
+  const configuredOffer = offers.find(
+    (offer) =>
+      offerIds.includes(offer.id) &&
+      (basePlanId == null || offer.basePlanId == null || offer.basePlanId === basePlanId),
+  )
+  if (configuredOffer != null) return configuredOffer
+  if (offerIds.length > 0) return undefined
+  return offers.find(
+    (offer) =>
+      (basePlanId == null || offer.basePlanId == null || offer.basePlanId === basePlanId) &&
+      offer.offerToken != null,
+  )
 }
 
 function createDefaultPurchaseQueue(options: ConfigureSubKitOptions): PurchaseQueueStore {

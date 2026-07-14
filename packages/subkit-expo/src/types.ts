@@ -11,8 +11,15 @@ export interface SubKitIapProduct {
   id: string
   price?: number
   raw: unknown
+  subscriptionOffers?: SubKitIapSubscriptionOffer[]
   title?: string
   type: SubKitIapProductType
+}
+
+export interface SubKitIapSubscriptionOffer {
+  basePlanId?: string
+  id: string
+  offerToken?: string
 }
 
 export interface SubKitIapPurchase {

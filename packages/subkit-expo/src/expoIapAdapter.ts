@@ -24,6 +24,7 @@ import type {
   SubKitIapProduct,
   SubKitIapProductType,
   SubKitIapPurchase,
+  SubKitIapSubscriptionOffer,
   SubKitPurchaseRequest,
 } from './types.js'
 
@@ -140,9 +141,21 @@ function normalizeProduct(
     id: product.id,
     price: product.price ?? undefined,
     raw: product,
+    subscriptionOffers: normalizeSubscriptionOffers(product),
     title: product.title,
     type: product.type === 'subs' ? 'subs' : fallbackType,
   }
+}
+
+function normalizeSubscriptionOffers(
+  product: Product | ProductSubscription,
+): SubKitIapSubscriptionOffer[] | undefined {
+  if (product.type !== 'subs' || product.platform !== 'android') return undefined
+  return product.subscriptionOffers.map((offer) => ({
+    basePlanId: offer.basePlanIdAndroid ?? undefined,
+    id: offer.id,
+    offerToken: offer.offerTokenAndroid ?? undefined,
+  }))
 }
 
 function normalizePurchase(purchase: Purchase): SubKitIapPurchase {
