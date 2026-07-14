@@ -163,6 +163,7 @@ test('typed customer, contract, and access clients send scoped idempotent reques
       assert.match(request.headers.get('idempotency-key'), /.+/)
     }
     assert.equal(request.headers.get('authorization'), 'Bearer sk_srv_test')
+    assert.equal(request.headers.get('user-agent'), '@piparotech/subkit-node/0.1.4')
   }
   assert.equal(requests[0].body.appId, 'smartcoach')
   assert.equal(requests[2].body.appId, 'smartcoach')

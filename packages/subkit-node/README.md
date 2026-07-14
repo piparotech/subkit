@@ -7,8 +7,10 @@ This package is for trusted backend code only. Do not ship its `secretKey` in mo
 ## Install
 
 ```sh
-pnpm add @piparotech/subkit-node
+pnpm add @piparotech/subkit-core@^0.1.3 @piparotech/subkit-node@^0.1.4
 ```
+
+Install the matching Core contract explicitly. The Node SDK imports its runtime schemas from that host-provided package and will not auto-install a second unpublished copy.
 
 ## Configure
 

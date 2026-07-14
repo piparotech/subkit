@@ -4,6 +4,14 @@ Private Expo / React Native SDK for SubKit-managed in-app purchases.
 
 SubKit is the entitlement authority. `expo-iap` is only the native store adapter.
 
+## Install
+
+```sh
+pnpm add @piparotech/subkit-core@^0.1.3 @piparotech/subkit-expo@^0.1.4
+```
+
+Install the matching Core contract explicitly. The Expo SDK imports its runtime schemas from that host-provided package and will not auto-install a second unpublished copy.
+
 ## Basic usage
 
 Configure SubKit once at module scope during app startup, then import the shared `client` wherever you need it.
