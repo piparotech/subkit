@@ -254,29 +254,28 @@ export const iapReconcileResponseSchema = z.strictObject({
 
 const runtimeEnvironmentSchema = z.enum(['production', 'sandbox'])
 
-export const runtimeCustomerInfoRequestSchema = z.object({
+export const runtimeCustomerInfoRequestSchema = z.strictObject({
   appUserId: z.string().min(1),
-  environment: runtimeEnvironmentSchema.optional(),
 })
 
 export const runtimeCustomerInfoWithAppRequestSchema = runtimeCustomerInfoRequestSchema.extend({
   appId: z.string().min(1),
+  environment: runtimeEnvironmentSchema,
 })
 
-export const runtimeOfferingsRequestSchema = z.object({
+export const runtimeOfferingsRequestSchema = z.strictObject({
   appUserId: z.string().min(1).optional(),
-  environment: runtimeEnvironmentSchema.optional(),
   placement: z.string().min(1).optional(),
   platform: storePlatformSchema.optional(),
 })
 
 export const runtimeOfferingsWithAppRequestSchema = runtimeOfferingsRequestSchema.extend({
   appId: z.string().min(1),
+  environment: runtimeEnvironmentSchema,
 })
 
-export const iapReconcileRequestSchema = z.object({
+export const iapReconcileRequestSchema = z.strictObject({
   appUserId: z.string().min(1).optional(),
-  environment: runtimeEnvironmentSchema.optional(),
   installationId: z.string().min(1),
   platform: storePlatformSchema,
   purchases: z.array(normalizedStorePurchaseSchema),
@@ -287,17 +286,18 @@ export const iapReconcileRequestSchema = z.object({
 
 export const iapReconcileWithAppRequestSchema = iapReconcileRequestSchema.extend({
   appId: z.string().min(1),
+  environment: runtimeEnvironmentSchema,
 })
 
-export const runtimeEntitlementCheckRequestSchema = z.object({
+export const runtimeEntitlementCheckRequestSchema = z.strictObject({
   appUserId: z.string().min(1),
   entitlement: z.string().min(1),
-  environment: runtimeEnvironmentSchema.optional(),
 })
 
 export const runtimeEntitlementCheckWithAppRequestSchema =
   runtimeEntitlementCheckRequestSchema.extend({
     appId: z.string().min(1),
+    environment: runtimeEnvironmentSchema,
   })
 
 export type RuntimeCustomerInfoRequestInput = z.infer<typeof runtimeCustomerInfoRequestSchema>

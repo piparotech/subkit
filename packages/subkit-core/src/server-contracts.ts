@@ -85,6 +85,7 @@ export type ServerProductsRequest = z.infer<typeof serverProductsRequestSchema>
 
 export const serverCreateRuntimeSdkKeyRequestSchema = z.object({
   appId: z.string().min(1),
+  environment: z.enum(['production', 'sandbox']),
   reason: z.string().trim().min(1),
 })
 export type ServerCreateRuntimeSdkKeyRequest = z.infer<
@@ -93,6 +94,7 @@ export type ServerCreateRuntimeSdkKeyRequest = z.infer<
 
 export const serverCreateRuntimeSdkKeyResponseSchema = z.object({
   appId: z.string().min(1),
+  environment: z.enum(['production', 'sandbox']),
   key: z.string().min(1),
 })
 export type ServerCreateRuntimeSdkKeyResponse = z.infer<

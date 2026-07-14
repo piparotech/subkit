@@ -32,29 +32,25 @@ function parseRequestBody(request) {
   return JSON.parse(request.body)
 }
 
-test('runtime request schemas ignore legacy appId fields for backwards compatibility', () => {
-  assert.deepEqual(
-    runtimeCustomerInfoRequestSchema.parse({ appId: 'legacy_app', appUserId: 'user_123' }),
-    { appUserId: 'user_123' },
+test('runtime request schemas reject caller-selected app and environment authority', () => {
+  assert.equal(
+    runtimeCustomerInfoRequestSchema.safeParse({
+      appId: 'caller_app',
+      appUserId: 'user_123',
+    }).success,
+    false,
   )
-  assert.deepEqual(
-    iapReconcileRequestSchema.parse({
-      appId: 'legacy_app',
+  assert.equal(
+    iapReconcileRequestSchema.safeParse({
       appUserId: 'user_123',
+      environment: 'sandbox',
       installationId: 'install_123',
       platform: 'ios',
       purchases: [],
       reason: 'app_start',
       sessionId: 'session_123',
-    }),
-    {
-      appUserId: 'user_123',
-      installationId: 'install_123',
-      platform: 'ios',
-      purchases: [],
-      reason: 'app_start',
-      sessionId: 'session_123',
-    },
+    }).success,
+    false,
   )
 })
 
@@ -78,10 +74,7 @@ test('runtime client omits appId from customer info requests', async () => {
 
   assert.equal(requests.length, 1)
   assert.equal(requests[0].request.headers.authorization, 'Bearer runtime_public_key')
-  assert.deepEqual(parseRequestBody(requests[0].request), {
-    appUserId: 'user_123',
-    environment: 'production',
-  })
+  assert.deepEqual(parseRequestBody(requests[0].request), { appUserId: 'user_123' })
 })
 
 test('runtime client omits appId from offerings requests', async () => {
@@ -105,7 +98,6 @@ test('runtime client omits appId from offerings requests', async () => {
   assert.equal(requests.length, 1)
   assert.deepEqual(parseRequestBody(requests[0].request), {
     appUserId: 'user_123',
-    environment: 'production',
     platform: 'ios',
   })
 })
@@ -146,7 +138,6 @@ test('runtime client omits appId from reconcile requests', async () => {
   assert.equal(requests.length, 1)
   assert.deepEqual(parseRequestBody(requests[0].request), {
     appUserId: 'user_123',
-    environment: 'production',
     installationId: 'install_123',
     platform: 'ios',
     purchases: [],

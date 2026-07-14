@@ -56,7 +56,6 @@ export interface SubKitSyncOptions {
 export interface SubKitExpoIapConfig {
   apiBaseUrl?: string
   appUserId?: string
-  environment?: 'production' | 'sandbox'
   iap?: {
     autoSync?: boolean
     customerInfoStaleAfterMs?: number
@@ -67,7 +66,11 @@ export interface SubKitExpoIapConfig {
     syncOnForeground?: boolean
     syncOnPurchaseEvent?: boolean
   }
-  sdkKey: string
+  sdkKey?: string
+  sdkKeys?: {
+    production: string
+    sandbox: string
+  }
 }
 
 export interface SubKitIdentityState {

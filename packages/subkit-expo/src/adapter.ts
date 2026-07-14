@@ -6,6 +6,7 @@ import type {
 } from './types.js'
 
 export interface SubKitExpoIapAdapter {
+  detectEnvironment?(): Promise<'production' | 'sandbox' | 'unknown'>
   endConnection?(): Promise<void>
   fetchProducts(input: { skus: string[]; type: SubKitIapProductType }): Promise<SubKitIapProduct[]>
   finishTransaction(input: { isConsumable: boolean; purchase: SubKitIapPurchase }): Promise<void>

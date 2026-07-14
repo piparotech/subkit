@@ -152,14 +152,15 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   const appStateSource = options.appStateSource ?? createReactNativeAppStateSource()
   const iapOptions = resolveSubKitIapOptions(options.iap)
   const platform = options.platform ?? detectSubKitIapPlatform()
+  const credential = createRuntimeCredentialResolver(options, adapterBundle.iap, platform)
   const runtime = new SubKitRuntimeClient({
     apiBaseUrl: options.apiBaseUrl ?? DEFAULT_SUBKIT_API_BASE_URL,
-    environment: options.environment,
-    sdkKey: options.sdkKey,
+    sdkKey: credential.resolveKey,
   })
   const identity = new MemoryIdentityStore()
-  const queue = options.queue ?? createDefaultPurchaseQueue(options)
-  const customerInfoCache = options.customerInfoCache ?? createDefaultCustomerInfoCache(options)
+  const queue = options.queue ?? createDefaultPurchaseQueue(options, credential)
+  const customerInfoCache =
+    options.customerInfoCache ?? createDefaultCustomerInfoCache(options, credential)
   let customerInfo: CustomerInfo | null = null
   let offeringsCache: RuntimeOfferingsResponse | null = null
   let sessionId = options.sessionId ?? createSessionId()
@@ -488,24 +489,137 @@ function selectGoogleSubscriptionOffer(
   )
 }
 
-function createDefaultPurchaseQueue(options: ConfigureSubKitOptions): PurchaseQueueStore {
-  const scope = createStorageScope(options)
-  return createStoredPurchaseQueueStore({
-    key: `subkit:iap:purchase-queue:v1:${hashStorageScope(scope)}`,
-    storage: AsyncStorage,
-  })
+interface RuntimeCredentialResolver {
+  resolveEnvironment(): Promise<'production' | 'sandbox'>
+  resolveKey(): Promise<string>
 }
 
-function createDefaultCustomerInfoCache(options: ConfigureSubKitOptions): CustomerInfoCacheStore {
-  return createCustomerInfoCacheStore({
-    keyPrefix: `subkit:customer-info:v1:${hashStorageScope(createStorageScope(options))}`,
-    policy: options.iap,
-    storage: AsyncStorage,
-  })
+function createRuntimeCredentialResolver(
+  options: ConfigureSubKitOptions,
+  adapter: SubKitExpoIapAdapter,
+  platform: SubKitIapPlatform,
+): RuntimeCredentialResolver {
+  if (options.sdkKey != null) {
+    return {
+      async resolveEnvironment() {
+        return 'production'
+      },
+      async resolveKey() {
+        return options.sdkKey ?? ''
+      },
+    }
+  }
+
+  let environmentPromise: Promise<'production' | 'sandbox'> | null = null
+  const resolveEnvironment = async (): Promise<'production' | 'sandbox'> => {
+    if (environmentPromise == null) {
+      environmentPromise = (async () => {
+        await adapter.initConnection()
+        const environment = await adapter.detectEnvironment?.()
+        if (environment !== 'production' && environment !== 'sandbox') {
+          throw new Error(
+            `SubKit could not derive a trusted ${platform} Store environment for Runtime credential selection`,
+          )
+        }
+        return environment
+      })()
+    }
+    return environmentPromise
+  }
+
+  return {
+    resolveEnvironment,
+    async resolveKey() {
+      const environment = await resolveEnvironment()
+      const key = options.sdkKeys?.[environment]
+      if (key == null || key.trim() === '') {
+        throw new Error(`SubKit ${environment} sdkKey is required`)
+      }
+      return key
+    },
+  }
 }
 
-function createStorageScope(options: ConfigureSubKitOptions): string {
-  return `${options.sdkKey}:${options.installationId}:${options.environment ?? 'production'}`
+function createDefaultPurchaseQueue(
+  options: ConfigureSubKitOptions,
+  credential: RuntimeCredentialResolver,
+): PurchaseQueueStore {
+  const stores = createEnvironmentStores(options, (key) =>
+    createStoredPurchaseQueueStore({
+      key: `subkit:iap:purchase-queue:v1:${key}`,
+      storage: AsyncStorage,
+    }),
+  )
+  return {
+    async enqueue(purchase, appUserId) {
+      return (await stores.current(credential)).enqueue(purchase, appUserId)
+    },
+    async enqueueMany(purchases, appUserId) {
+      return (await stores.current(credential)).enqueueMany(purchases, appUserId)
+    },
+    async listPending(appUserId) {
+      return (await stores.current(credential)).listPending(appUserId)
+    },
+    async markFailed(id, error) {
+      return (await stores.current(credential)).markFailed(id, error)
+    },
+    async markFinished(id) {
+      return (await stores.current(credential)).markFinished(id)
+    },
+    async markRejected(id, error) {
+      return (await stores.current(credential)).markRejected(id, error)
+    },
+    async markVerified(id) {
+      return (await stores.current(credential)).markVerified(id)
+    },
+  }
+}
+
+function createDefaultCustomerInfoCache(
+  options: ConfigureSubKitOptions,
+  credential: RuntimeCredentialResolver,
+): CustomerInfoCacheStore {
+  const stores = createEnvironmentStores(options, (key) =>
+    createCustomerInfoCacheStore({
+      keyPrefix: `subkit:customer-info:v1:${key}`,
+      policy: options.iap,
+      storage: AsyncStorage,
+    }),
+  )
+  return {
+    async read(appUserId) {
+      return (await stores.current(credential)).read(appUserId)
+    },
+    async write(info) {
+      return (await stores.current(credential)).write(info)
+    },
+  }
+}
+
+function createEnvironmentStores<Store>(
+  options: ConfigureSubKitOptions,
+  create: (key: string) => Store,
+): { current(credential: RuntimeCredentialResolver): Promise<Store> } {
+  const singleKey = options.sdkKey
+  if (singleKey != null) {
+    const store = create(hashStorageScope(`${singleKey}:${options.installationId}`))
+    return {
+      async current() {
+        return store
+      },
+    }
+  }
+  const production = create(
+    hashStorageScope(`${options.sdkKeys?.production ?? ''}:${options.installationId}`),
+  )
+  const sandbox = create(
+    hashStorageScope(`${options.sdkKeys?.sandbox ?? ''}:${options.installationId}`),
+  )
+  return {
+    async current(credential) {
+      return (await credential.resolveEnvironment()) === 'production' ? production : sandbox
+    },
+  }
 }
 
 function hashStorageScope(value: string): string {
@@ -582,7 +696,21 @@ function detectSubKitIapPlatform(): SubKitIapPlatform {
 }
 
 function validateConfigureSubKitOptions(options: ConfigureSubKitOptions): void {
-  if (options.sdkKey.trim() === '') throw new Error('SubKit sdkKey is required')
+  if (options.sdkKey != null && options.sdkKeys != null) {
+    throw new Error('Configure SubKit with sdkKey or sdkKeys, not both')
+  }
+  if (options.sdkKey == null && options.sdkKeys == null) {
+    throw new Error('SubKit sdkKey or sdkKeys are required')
+  }
+  if (options.sdkKey != null && options.sdkKey.trim() === '') {
+    throw new Error('SubKit sdkKey is required')
+  }
+  if (
+    options.sdkKeys != null &&
+    (options.sdkKeys.production.trim() === '' || options.sdkKeys.sandbox.trim() === '')
+  ) {
+    throw new Error('SubKit production and sandbox sdkKeys are required')
+  }
   if (options.installationId.trim() === '') throw new Error('SubKit installationId is required')
   const apiBaseUrl = options.apiBaseUrl ?? DEFAULT_SUBKIT_API_BASE_URL
   try {
@@ -641,6 +769,10 @@ function createLazyExpoIapAdapterBundle(): SubKitIapAdapterBundle {
   }
 
   const iap: SubKitExpoIapAdapter = {
+    async detectEnvironment() {
+      const bundle = await loadBundle()
+      return (await bundle.iap.detectEnvironment?.()) ?? 'unknown'
+    },
     async endConnection() {
       const bundle = await loadBundle()
       await bundle.iap.endConnection?.()

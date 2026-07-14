@@ -18,8 +18,7 @@ import type { SubKitIapPurchase } from './types.js'
 
 export interface SubKitRuntimeClientOptions {
   apiBaseUrl: string
-  environment?: 'production' | 'sandbox'
-  sdkKey: string
+  sdkKey: string | (() => Promise<string>)
 }
 
 export class SubKitRuntimeError extends Error {
@@ -46,20 +45,15 @@ export class SubKitRuntimeError extends Error {
 
 export class SubKitRuntimeClient {
   private readonly apiBaseUrl: string
-  private readonly environment: 'production' | 'sandbox'
-  private readonly sdkKey: string
+  private readonly sdkKey: string | (() => Promise<string>)
 
   constructor(options: SubKitRuntimeClientOptions) {
     this.apiBaseUrl = options.apiBaseUrl.replace(/\/$/, '')
-    this.environment = options.environment ?? 'production'
     this.sdkKey = options.sdkKey
   }
 
   async getCustomerInfo(appUserId: string): Promise<CustomerInfo> {
-    const response = await this.post('/api/runtime/customer-info', {
-      appUserId,
-      environment: this.environment,
-    })
+    const response = await this.post('/api/runtime/customer-info', { appUserId })
     return customerInfoSchema.parse(response)
   }
 
@@ -70,10 +64,7 @@ export class SubKitRuntimeClient {
       platform?: 'ios' | 'android'
     } = {},
   ): Promise<RuntimeOfferingsResponse> {
-    const response = await this.post('/api/runtime/offerings', {
-      ...input,
-      environment: this.environment,
-    })
+    const response = await this.post('/api/runtime/offerings', input)
     return runtimeOfferingsResponseSchema.parse(response)
   }
 
@@ -88,7 +79,6 @@ export class SubKitRuntimeClient {
   }): Promise<PurchaseSyncResult> {
     const request: IapReconcileRequest = {
       appUserId: input.appUserId,
-      environment: this.environment,
       installationId: input.installationId,
       platform: input.platform,
       purchases: input.purchases,
@@ -101,10 +91,11 @@ export class SubKitRuntimeClient {
   }
 
   private async post(path: string, payload: unknown): Promise<unknown> {
+    const sdkKey = typeof this.sdkKey === 'string' ? this.sdkKey : await this.sdkKey()
     const response = await fetch(`${this.apiBaseUrl}${path}`, {
       body: JSON.stringify(payload),
       headers: {
-        authorization: `Bearer ${this.sdkKey}`,
+        authorization: `Bearer ${sdkKey}`,
         'content-type': 'application/json',
       },
       method: 'POST',

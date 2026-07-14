@@ -132,6 +132,92 @@ test('default purchase queue survives client reconfiguration', async () => {
   }
 })
 
+test('parallel runtime keys are selected from trusted native Store context', async () => {
+  const previousFetch = globalThis.fetch
+  const headers = []
+  globalThis.fetch = async (_url, request) => {
+    headers.push(request.headers.authorization)
+    return new Response(JSON.stringify({ all: [], appId: 'app_123', current: null }), {
+      headers: { 'content-type': 'application/json' },
+      status: 200,
+    })
+  }
+
+  try {
+    for (const environment of ['production', 'sandbox']) {
+      const configuredClient = configureSubKit({
+        adapterBundle: {
+          iap: {
+            ...createIapAdapter(),
+            async detectEnvironment() {
+              return environment
+            },
+          },
+        },
+        appStateSource: {
+          getCurrentState: () => 'active',
+          subscribe: () => ({ remove() {} }),
+        },
+        appUserId: 'user_123',
+        autoStart: false,
+        installationId: `install_${environment}`,
+        platform: 'ios',
+        sdkKeys: {
+          production: 'runtime_production_key',
+          sandbox: 'runtime_sandbox_key',
+        },
+      })
+      await configuredClient.getOfferings()
+    }
+    assert.deepEqual(headers, ['Bearer runtime_production_key', 'Bearer runtime_sandbox_key'])
+  } finally {
+    client.stop()
+    globalThis.fetch = previousFetch
+  }
+})
+
+test('unknown native Store context fails closed before Runtime HTTP', async () => {
+  const previousFetch = globalThis.fetch
+  let requestCount = 0
+  globalThis.fetch = async () => {
+    requestCount += 1
+    return new Response('{}', { status: 200 })
+  }
+
+  try {
+    const configuredClient = configureSubKit({
+      adapterBundle: {
+        iap: {
+          ...createIapAdapter(),
+          async detectEnvironment() {
+            return 'unknown'
+          },
+        },
+      },
+      appStateSource: {
+        getCurrentState: () => 'active',
+        subscribe: () => ({ remove() {} }),
+      },
+      appUserId: 'user_123',
+      autoStart: false,
+      installationId: 'install_unknown',
+      platform: 'ios',
+      sdkKeys: {
+        production: 'runtime_production_key',
+        sandbox: 'runtime_sandbox_key',
+      },
+    })
+    await assert.rejects(
+      () => configuredClient.getOfferings(),
+      /could not derive a trusted ios Store environment/,
+    )
+    assert.equal(requestCount, 0)
+  } finally {
+    client.stop()
+    globalThis.fetch = previousFetch
+  }
+})
+
 test('configureSubKit starts the client by default', async () => {
   let initConnectionCount = 0
   configureSubKit({

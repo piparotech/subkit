@@ -6,6 +6,7 @@ import {
   endConnection,
   fetchProducts,
   finishTransaction,
+  getAppTransactionIOS,
   getAvailablePurchases,
   initConnection,
   purchaseErrorListener,
@@ -30,6 +31,14 @@ import type {
 
 export function createExpoIapAdapter(): SubKitIapAdapterBundle {
   const iap: SubKitExpoIapAdapter = {
+    async detectEnvironment() {
+      try {
+        const transaction = await getAppTransactionIOS()
+        return normalizeAppleEnvironment(transaction?.environment)
+      } catch {
+        return 'unknown'
+      }
+    },
     async endConnection() {
       await endConnection()
     },
@@ -156,6 +165,15 @@ function normalizeSubscriptionOffers(
     id: offer.id,
     offerToken: offer.offerTokenAndroid ?? undefined,
   }))
+}
+
+function normalizeAppleEnvironment(
+  value: string | null | undefined,
+): 'production' | 'sandbox' | 'unknown' {
+  const normalized = value?.trim().toLowerCase()
+  if (normalized === 'production') return 'production'
+  if (normalized === 'sandbox' || normalized === 'xcode') return 'sandbox'
+  return 'unknown'
 }
 
 function normalizePurchase(purchase: Purchase): SubKitIapPurchase {

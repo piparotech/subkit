@@ -22,6 +22,7 @@ const expoIapStub = `
 export async function endConnection() {}
 export async function fetchProducts() { return [] }
 export async function finishTransaction() {}
+export async function getAppTransactionIOS() { return { environment: 'Production' } }
 export async function getAvailablePurchases() { return [] }
 export async function initConnection() { return true }
 export function purchaseErrorListener() { return { remove() {} } }

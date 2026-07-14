@@ -7,7 +7,7 @@ SubKit is the entitlement authority. `expo-iap` is only the native store adapter
 ## Install
 
 ```sh
-pnpm add @piparotech/subkit-core@^0.1.3 @piparotech/subkit-expo@^0.1.4
+pnpm add @piparotech/subkit-core@^0.1.4 @piparotech/subkit-expo@^0.1.5
 ```
 
 Install the matching Core contract explicitly. The Expo SDK imports its runtime schemas from that host-provided package and will not auto-install a second unpublished copy.
@@ -21,14 +21,16 @@ Configure SubKit once at module scope during app startup, then import the shared
 import { configureSubKit } from '@piparotech/subkit-expo'
 
 configureSubKit({
-  // App-scoped public/runtime SubKit key. Do not use the server secret key here.
-  sdkKey: 'runtime_public_key',
+  // Parallel app-scoped public Runtime keys. Never use a server secret key here.
+  // On iOS SubKit selects the key from the native AppTransaction environment.
+  sdkKeys: {
+    production: 'runtime_production_key',
+    sandbox: 'runtime_sandbox_key',
+  },
   // Stable id for this app install on this device. Generate once, persist locally, and reuse on every launch.
   installationId: 'install_abc',
   // Optional stable user id from your app/backend/auth system. Purchases require an identified user.
   appUserId: 'user_123',
-  // Optional. Defaults to production. Use sandbox only in a dedicated test build.
-  environment: 'production',
 })
 ```
 
@@ -36,7 +38,7 @@ Call `configureSubKit(...)` at module level, not inside `useEffect` or a compone
 
 If `client` is used before configuration, it throws.
 
-Required fields are `sdkKey` and `installationId`. `appUserId` is optional. The SDK key is app-scoped, so SubKit resolves the app automatically. `environment` defaults to `production`; set it to `sandbox` only in a dedicated Store test build. SubKit sends that environment on offerings, CustomerInfo and reconciliation requests, rejects cross-environment purchases, and never exposes sandbox access to a production client. `apiBaseUrl` is optional and defaults to `https://subkit.piparo.tech`; pass it explicitly for staging, local development, or self-hosted SubKit deployments.
+Required fields are `installationId` plus either one already-selected `sdkKey` or the parallel `sdkKeys.production` and `sdkKeys.sandbox` pair. `appUserId` is optional. Runtime requests contain no app or environment selector; the authenticated key determines both. On iOS the SDK derives the Store context from native `AppTransaction.environment` and fails closed when it cannot select a trusted Production or Sandbox credential. A single `sdkKey` remains useful when the host already supplies the correctly scoped credential through a trusted build/track boundary. `apiBaseUrl` is optional and defaults to `https://subkit.piparo.tech`; pass it explicitly for local development or self-hosted SubKit deployments.
 
 Create runtime SDK keys from a trusted backend context with a SubKit-issued `sk_srv_…` key carrying the `runtime_keys:write` capability, never from the mobile app:
 
@@ -45,10 +47,10 @@ curl -X POST https://subkit.example.com/api/server/runtime-sdk-keys \
   -H "Authorization: Bearer $SUBKIT_SCOPED_SERVER_KEY" \
   -H "Content-Type: application/json" \
   -H "Idempotency-Key: runtime-key:app_123:ios-production" \
-  -d '{"appId":"app_123","reason":"provision iOS production release"}'
+  -d '{"appId":"app_123","environment":"production","reason":"provision iOS production release"}'
 ```
 
-Use the returned `key` once in your Expo app config. SubKit stores only a keyed hash on the app and an encrypted response for an identical idempotent retry; audit evidence contains hashes, never the plaintext key.
+Issue both Production and Sandbox keys for the same app and use the returned plaintext values once in your Expo app config. SubKit stores one keyed hash per app/environment in `runtime_sdk_keys` plus an encrypted response for an identical idempotent retry; audit evidence contains hashes, never plaintext keys.
 
 If the user logs in later, configure without `appUserId` first, then identify after login:
 
@@ -256,7 +258,7 @@ Advanced options:
 - `adapterBundle`: native store adapter. The default uses `expo-iap`. Override it for tests or a custom native purchase bridge.
 - `apiBaseUrl`: SubKit runtime API URL. Defaults to `https://subkit.piparo.tech`.
 - `sdkKey`: app-scoped public/runtime key. SubKit resolves the app from this bearer token.
-- `environment`: `production` by default. Use `sandbox` only for Store test builds; access and Store IDs are isolated by environment.
+- `sdkKeys`: parallel Production and Sandbox Runtime credentials. On iOS the native Store context selects one; no environment field is sent to SubKit.
 - `appStateSource`: foreground/background source. The default uses React Native `AppState`.
 - `autoStart`: starts the SDK when `configureSubKit(...)` is called. Defaults to `true`. Override only for custom startup control or tests.
 - `iap`: automatic sync and offline-cache behavior. By default, the SDK syncs on app start, foreground, and purchase events; CustomerInfo becomes stale after 24 hours, while non-expiring entitlements remain usable offline for at most 30 days after verification.
@@ -277,7 +279,7 @@ Apple and Google already redeliver unfinished non-consumable and subscription tr
 
 The queue stores pending purchases locally and retries them on later syncs. A transaction is only finished after SubKit's runtime API says it is finishable.
 
-SubKit uses AsyncStorage by default and scopes its queue to the runtime SDK key, installation ID, and Store environment. Normal production setup therefore requires no queue configuration. Override the queue only when you need a custom key/size policy, encrypted storage, or another storage engine.
+SubKit uses AsyncStorage by default and scopes its queue and CustomerInfo cache to the selected environment-scoped Runtime key plus installation ID. Production and Sandbox therefore never share durable state, and normal setup requires no queue configuration. Override the queue only when you need a custom key/size policy, encrypted storage, or another storage engine.
 
 For example, an app using MMKV can wrap it with the built-in adapter:
 
