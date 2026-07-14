@@ -31,7 +31,7 @@ export class SubKit {
       fetchImpl: options.fetch ?? fetch,
       secretKey: options.secretKey,
       timeoutMs: options.timeoutMs ?? 10_000,
-      userAgent: options.userAgent ?? '@piparotech/subkit-node/0.1.0',
+      userAgent: options.userAgent ?? '@piparotech/subkit-node/0.1.1',
     })
 
     this.access = new AccessClient({ appId: options.appId, http })
