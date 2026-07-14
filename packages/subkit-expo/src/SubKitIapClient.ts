@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Platform } from 'react-native'
 
 import type {
@@ -27,7 +28,8 @@ import {
 } from './coordinator.js'
 import { normalizeIapError } from './errors.js'
 import { MemoryIdentityStore } from './identity.js'
-import { type PurchaseQueueStore, createMemoryPurchaseQueueStore } from './queue.js'
+import type { PurchaseQueueStore } from './queue.js'
+import { createStoredPurchaseQueueStore } from './storageQueue.js'
 import {
   configureSubKitCustomerInfoState,
   publishSubKitCustomerInfo,
@@ -149,7 +151,7 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
     sdkKey: options.sdkKey,
   })
   const identity = new MemoryIdentityStore()
-  const queue = options.queue ?? createMemoryPurchaseQueueStore()
+  const queue = options.queue ?? createDefaultPurchaseQueue(options)
   let customerInfo: CustomerInfo | null = null
   let offeringsCache: RuntimeOfferingsResponse | null = null
   let sessionId = options.sessionId ?? createSessionId()
@@ -393,6 +395,24 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   }
 
   return subKitClient
+}
+
+function createDefaultPurchaseQueue(options: ConfigureSubKitOptions): PurchaseQueueStore {
+  const environment = options.environment ?? 'production'
+  const scope = `${options.sdkKey}:${options.installationId}:${environment}`
+  return createStoredPurchaseQueueStore({
+    key: `subkit:iap:purchase-queue:v1:${hashStorageScope(scope)}`,
+    storage: AsyncStorage,
+  })
+}
+
+function hashStorageScope(value: string): string {
+  let hash = 0x811c9dc5
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  return (hash >>> 0).toString(36)
 }
 
 function findOfferingPackage(

@@ -247,7 +247,7 @@ Advanced options:
 - `autoStart`: starts the SDK when `configureSubKit(...)` is called. Defaults to `true`. Override only for custom startup control or tests.
 - `iap`: automatic sync behavior. By default, the SDK syncs on app start, foreground, and purchase events.
 - `platform`: store platform. The default uses React Native `Platform.OS` and supports `ios` and `android`.
-- `queue`: local purchase queue. The default is in-memory. Use `createStoredPurchaseQueueStore` for durable production sync.
+- `queue`: local purchase queue. The default is a durable, app/install/environment-scoped AsyncStorage queue. Override it for custom keys, limits, MMKV, encrypted storage, or tests.
 
 ## What `createStoredPurchaseQueueStore` does
 
@@ -263,17 +263,9 @@ Apple and Google already redeliver unfinished non-consumable and subscription tr
 
 The queue stores pending purchases locally and retries them on later syncs. A transaction is only finished after SubKit's runtime API says it is finishable.
 
-In production, pass a storage implementation such as AsyncStorage:
+SubKit uses AsyncStorage by default and scopes its queue to the runtime SDK key, installation ID, and Store environment. Normal production setup therefore requires no queue configuration. Override the queue only when you need a custom key/size policy, encrypted storage, or another storage engine.
 
-```ts
-import AsyncStorage from '@react-native-async-storage/async-storage'
-
-import { createStoredPurchaseQueueStore } from '@piparotech/subkit-expo'
-
-const queue = createStoredPurchaseQueueStore({ storage: AsyncStorage })
-```
-
-SubKit intentionally does not choose a default persistent storage because React Native projects use different storage implementations and security requirements. If your app uses MMKV, wrap it with the built-in adapter:
+For example, an app using MMKV can wrap it with the built-in adapter:
 
 ```ts
 import { MMKV } from 'react-native-mmkv'
@@ -286,7 +278,7 @@ const queue = createStoredPurchaseQueueStore({
 })
 ```
 
-If you do not pass `queue`, the SDK uses an in-memory queue. Unfinished subscription and non-consumable transactions are redelivered by the stores, so the in-memory queue is acceptable for subscription-only apps, tests, and prototypes. On restart it loses rejected/failed markers, retry counts, user attribution, and any iOS consumable purchase that was not reconciled yet. If you sell consumables or want stable retry behavior across restarts, use the stored queue. If your app has stricter local-data requirements, provide an encrypted storage implementation with the same `getItem` / `setItem` / `removeItem` shape.
+The default durable queue preserves rejected/failed markers, retry counts, user attribution, and iOS consumable purchase events across app restarts. Apps with stricter local-data requirements can provide an encrypted storage implementation with the same `getItem` / `setItem` / `removeItem` shape. Tests can explicitly pass `createMemoryPurchaseQueueStore()` when persistence is undesirable.
 
 A fully custom `queue` must implement the complete `PurchaseQueueStore` interface: `enqueue`, `enqueueMany`, `listPending`, `markFailed`, `markFinished`, `markRejected`, and `markVerified`. The sync coordinator drains all available store purchases through `enqueueMany`, so implementations should persist a batch with a single storage write instead of one write per purchase.
 
