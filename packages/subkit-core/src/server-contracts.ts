@@ -1,12 +1,6 @@
 import { z } from 'zod'
 
-export const serverGrantStatusSchema = z.enum([
-  'active',
-  'trialing',
-  'billing_retry',
-  'expired',
-  'revoked',
-])
+export const serverGrantStatusSchema = z.enum(['active', 'suspended', 'expired', 'revoked'])
 export type ServerGrantStatus = z.infer<typeof serverGrantStatusSchema>
 
 export const serverEntitlementCheckReasonSchema = z.enum([
