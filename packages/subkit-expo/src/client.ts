@@ -18,6 +18,7 @@ import type { SubKitIapPurchase } from './types.js'
 
 export interface SubKitRuntimeClientOptions {
   apiBaseUrl: string
+  environment?: 'production' | 'sandbox'
   sdkKey: string
 }
 
@@ -45,22 +46,34 @@ export class SubKitRuntimeError extends Error {
 
 export class SubKitRuntimeClient {
   private readonly apiBaseUrl: string
+  private readonly environment: 'production' | 'sandbox'
   private readonly sdkKey: string
 
   constructor(options: SubKitRuntimeClientOptions) {
     this.apiBaseUrl = options.apiBaseUrl.replace(/\/$/, '')
+    this.environment = options.environment ?? 'production'
     this.sdkKey = options.sdkKey
   }
 
   async getCustomerInfo(appUserId: string): Promise<CustomerInfo> {
-    const response = await this.post('/api/runtime/customer-info', { appUserId })
+    const response = await this.post('/api/runtime/customer-info', {
+      appUserId,
+      environment: this.environment,
+    })
     return customerInfoSchema.parse(response)
   }
 
   async getOfferings(
-    input: { appUserId?: string; placement?: string; platform?: 'ios' | 'android' } = {},
+    input: {
+      appUserId?: string
+      placement?: string
+      platform?: 'ios' | 'android'
+    } = {},
   ): Promise<RuntimeOfferingsResponse> {
-    const response = await this.post('/api/runtime/offerings', input)
+    const response = await this.post('/api/runtime/offerings', {
+      ...input,
+      environment: this.environment,
+    })
     return runtimeOfferingsResponseSchema.parse(response)
   }
 
@@ -75,6 +88,7 @@ export class SubKitRuntimeClient {
   }): Promise<PurchaseSyncResult> {
     const request: IapReconcileRequest = {
       appUserId: input.appUserId,
+      environment: this.environment,
       installationId: input.installationId,
       platform: input.platform,
       purchases: input.purchases,

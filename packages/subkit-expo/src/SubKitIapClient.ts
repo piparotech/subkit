@@ -145,6 +145,7 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   const platform = options.platform ?? detectSubKitIapPlatform()
   const runtime = new SubKitRuntimeClient({
     apiBaseUrl: options.apiBaseUrl ?? DEFAULT_SUBKIT_API_BASE_URL,
+    environment: options.environment,
     sdkKey: options.sdkKey,
   })
   const identity = new MemoryIdentityStore()

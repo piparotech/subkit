@@ -19,6 +19,8 @@ configureSubKit({
   installationId: 'install_abc',
   // Optional stable user id from your app/backend/auth system. Purchases require an identified user.
   appUserId: 'user_123',
+  // Optional. Defaults to production. Use sandbox only in a dedicated test build.
+  environment: 'production',
 })
 ```
 
@@ -26,7 +28,7 @@ Call `configureSubKit(...)` at module level, not inside `useEffect` or a compone
 
 If `client` is used before configuration, it throws.
 
-Required fields are `sdkKey` and `installationId`. `appUserId` is optional. The SDK key is app-scoped, so SubKit resolves the app automatically. `apiBaseUrl` is optional and defaults to `https://subkit.piparo.tech`; pass it explicitly for staging, local development, or self-hosted SubKit deployments.
+Required fields are `sdkKey` and `installationId`. `appUserId` is optional. The SDK key is app-scoped, so SubKit resolves the app automatically. `environment` defaults to `production`; set it to `sandbox` only in a dedicated Store test build. SubKit sends that environment on offerings, CustomerInfo and reconciliation requests, rejects cross-environment purchases, and never exposes sandbox access to a production client. `apiBaseUrl` is optional and defaults to `https://subkit.piparo.tech`; pass it explicitly for staging, local development, or self-hosted SubKit deployments.
 
 Create runtime SDK keys from a trusted backend context with a SubKit-issued `sk_srv_…` key carrying the `runtime_keys:write` capability, never from the mobile app:
 
@@ -239,6 +241,7 @@ Advanced options:
 - `adapterBundle`: native store adapter. The default uses `expo-iap`. Override it for tests or a custom native purchase bridge.
 - `apiBaseUrl`: SubKit runtime API URL. Defaults to `https://subkit.piparo.tech`.
 - `sdkKey`: app-scoped public/runtime key. SubKit resolves the app from this bearer token.
+- `environment`: `production` by default. Use `sandbox` only for Store test builds; access and Store IDs are isolated by environment.
 - `appStateSource`: foreground/background source. The default uses React Native `AppState`.
 - `autoStart`: starts the SDK when `configureSubKit(...)` is called. Defaults to `true`. Override only for custom startup control or tests.
 - `iap`: automatic sync behavior. By default, the SDK syncs on app start, foreground, and purchase events.

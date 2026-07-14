@@ -49,6 +49,7 @@ export interface SubKitSyncOptions {
 export interface SubKitExpoIapConfig {
   apiBaseUrl?: string
   appUserId?: string
+  environment?: 'production' | 'sandbox'
   iap?: {
     autoSync?: boolean
     foregroundMinIntervalMs?: number

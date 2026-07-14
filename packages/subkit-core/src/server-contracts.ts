@@ -16,6 +16,7 @@ export const serverEntitlementCheckRequestSchema = z.object({
   appId: z.string().min(1),
   appUserId: z.string().min(1),
   entitlement: z.string().min(1),
+  environment: z.enum(['sandbox', 'production']).optional(),
 })
 export type ServerEntitlementCheckRequest = z.infer<typeof serverEntitlementCheckRequestSchema>
 
@@ -55,6 +56,7 @@ export type ServerCustomerEntitlement = z.infer<typeof serverCustomerEntitlement
 export const serverCustomerInfoRequestSchema = z.object({
   appId: z.string().min(1),
   appUserId: z.string().min(1),
+  environment: z.enum(['sandbox', 'production']).optional(),
 })
 export type ServerCustomerInfoRequest = z.infer<typeof serverCustomerInfoRequestSchema>
 
@@ -69,7 +71,7 @@ export type ServerCustomerInfoResponse = z.infer<typeof serverCustomerInfoRespon
 export const serverOfferingsRequestSchema = z.object({
   appId: z.string().min(1),
   appUserId: z.string().min(1).optional(),
-  environment: z.enum(['sandbox', 'production', 'unknown']).optional(),
+  environment: z.enum(['sandbox', 'production']).optional(),
   placement: z.string().min(1).optional(),
   platform: z.enum(['ios', 'android']).optional(),
 })

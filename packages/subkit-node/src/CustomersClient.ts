@@ -74,6 +74,7 @@ export class CustomersClient {
       body: {
         appId: resolveAppId(input.appId, this.appId),
         appUserId: input.appUserId,
+        environment: input.environment,
       },
       responseSchema: serverCustomerInfoResponseSchema,
     })

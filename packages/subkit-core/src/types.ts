@@ -259,6 +259,7 @@ export interface QueuedPurchase {
 
 export interface RuntimeCustomerInfoRequest {
   appUserId: string
+  environment?: 'production' | 'sandbox'
 }
 
 export interface RuntimeCustomerInfoWithAppRequest extends RuntimeCustomerInfoRequest {
@@ -267,6 +268,7 @@ export interface RuntimeCustomerInfoWithAppRequest extends RuntimeCustomerInfoRe
 
 export interface RuntimeOfferingsRequest {
   appUserId?: string
+  environment?: 'production' | 'sandbox'
   placement?: string
   platform?: StorePlatform
 }
@@ -277,6 +279,7 @@ export interface RuntimeOfferingsWithAppRequest extends RuntimeOfferingsRequest 
 
 export interface IapReconcileRequest {
   appUserId?: string
+  environment?: 'production' | 'sandbox'
   installationId: string
   platform: StorePlatform
   purchases: NormalizedStorePurchase[]
@@ -292,6 +295,7 @@ export interface IapReconcileWithAppRequest extends IapReconcileRequest {
 export interface RuntimeEntitlementCheckRequest {
   appUserId: string
   entitlement: string
+  environment?: 'production' | 'sandbox'
 }
 
 export interface RuntimeEntitlementCheckWithAppRequest extends RuntimeEntitlementCheckRequest {

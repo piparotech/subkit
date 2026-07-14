@@ -78,7 +78,10 @@ test('runtime client omits appId from customer info requests', async () => {
 
   assert.equal(requests.length, 1)
   assert.equal(requests[0].request.headers.authorization, 'Bearer runtime_public_key')
-  assert.deepEqual(parseRequestBody(requests[0].request), { appUserId: 'user_123' })
+  assert.deepEqual(parseRequestBody(requests[0].request), {
+    appUserId: 'user_123',
+    environment: 'production',
+  })
 })
 
 test('runtime client omits appId from offerings requests', async () => {
@@ -102,6 +105,7 @@ test('runtime client omits appId from offerings requests', async () => {
   assert.equal(requests.length, 1)
   assert.deepEqual(parseRequestBody(requests[0].request), {
     appUserId: 'user_123',
+    environment: 'production',
     platform: 'ios',
   })
 })
@@ -142,6 +146,7 @@ test('runtime client omits appId from reconcile requests', async () => {
   assert.equal(requests.length, 1)
   assert.deepEqual(parseRequestBody(requests[0].request), {
     appUserId: 'user_123',
+    environment: 'production',
     installationId: 'install_123',
     platform: 'ios',
     purchases: [],

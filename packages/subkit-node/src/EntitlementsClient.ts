@@ -31,6 +31,7 @@ export class EntitlementsClient {
         appId: resolveAppId(input.appId, this.appId),
         appUserId: input.appUserId,
         entitlement: input.entitlement,
+        environment: input.environment,
       },
       responseSchema: serverEntitlementCheckResponseSchema,
     })
