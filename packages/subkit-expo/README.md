@@ -74,7 +74,7 @@ export function ProGate() {
 }
 ```
 
-`useSubKitEntitlement(...)` reads the latest known `CustomerInfo` from the configured SubKit singleton and refreshes it on mount when needed. It also updates when SDK calls such as `identify()`, `getCustomerInfo()`, restore, foreground sync, or purchase sync receive newer customer info. Use the returned `refresh()` function before access-sensitive actions or after a custom purchase flow if you need to force a fresh server read.
+`useSubKitEntitlement(...)` reads the latest known `CustomerInfo` from the configured SubKit singleton and refreshes it on mount when needed. It also updates when SDK calls such as `identify()`, `getCustomerInfo()`, restore, foreground sync, or purchase sync receive newer customer info. CustomerInfo is persisted per app/install/environment and hydrated on restart. A network failure changes the snapshot to `offline` without erasing a previously active entitlement before its known expiry. Use the returned `refresh()` function before access-sensitive actions or after a custom purchase flow if you need to force a fresh server read.
 
 If you need an immediate one-off check outside React, `identify()` and `getCustomerInfo()` still return `CustomerInfo`:
 
@@ -228,6 +228,8 @@ configureSubKit({
   },
   iap: {
     autoSync: true,
+    customerInfoStaleAfterMs: 24 * 60 * 60 * 1000,
+    nonExpiringEntitlementMaxOfflineAgeMs: 30 * 24 * 60 * 60 * 1000,
     syncOnAppStart: true,
     syncOnForeground: true,
     syncOnPurchaseEvent: true,
@@ -245,7 +247,7 @@ Advanced options:
 - `environment`: `production` by default. Use `sandbox` only for Store test builds; access and Store IDs are isolated by environment.
 - `appStateSource`: foreground/background source. The default uses React Native `AppState`.
 - `autoStart`: starts the SDK when `configureSubKit(...)` is called. Defaults to `true`. Override only for custom startup control or tests.
-- `iap`: automatic sync behavior. By default, the SDK syncs on app start, foreground, and purchase events.
+- `iap`: automatic sync and offline-cache behavior. By default, the SDK syncs on app start, foreground, and purchase events; CustomerInfo becomes stale after 24 hours, while non-expiring entitlements remain usable offline for at most 30 days after verification.
 - `platform`: store platform. The default uses React Native `Platform.OS` and supports `ios` and `android`.
 - `queue`: local purchase queue. The default is a durable, app/install/environment-scoped AsyncStorage queue. Override it for custom keys, limits, MMKV, encrypted storage, or tests.
 
@@ -293,6 +295,16 @@ The SDK can sync purchases automatically:
 - during manual restore
 
 Silent sync uses `getAvailablePurchases()` and never calls prompt-prone restore APIs. Manual restore uses `restorePurchases()` explicitly.
+
+## Offline CustomerInfo
+
+The default AsyncStorage cache is scoped to the runtime SDK key, installation ID, Store environment, and a hashed app-user identity. On startup the SDK publishes cached CustomerInfo before network sync completes.
+
+- Expiring entitlements remain active offline only until their server-provided `expiresAt`.
+- Non-expiring entitlements remain active for at most `nonExpiringEntitlementMaxOfflineAgeMs` after `verifiedAt` (30 days by default).
+- Cache age beyond `customerInfoStaleAfterMs` (24 hours by default) sets `freshness: "stale"` but does not itself revoke access.
+- A failed refresh with cached data sets the singleton state and CustomerInfo freshness to `offline`; the error remains available for UI/diagnostics.
+- Apps with stricter requirements can lower these limits or provide their own `customerInfoCache` implementation.
 
 ## Safety
 

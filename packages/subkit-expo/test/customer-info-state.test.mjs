@@ -133,6 +133,88 @@ test('configureSubKit resets customer info snapshot and refresh publishes latest
   }
 })
 
+test('client restart hydrates cached CustomerInfo before an offline sync fails', async () => {
+  let fail = false
+  const restoreFetch = installFetch(async () => {
+    if (fail) throw new Error('offline')
+    return jsonResponse(createCustomerInfo('user_restart', true))
+  })
+
+  try {
+    const firstClient = configureSubKit({
+      adapterBundle: { iap: createIapAdapter() },
+      appStateSource: {
+        getCurrentState: () => 'active',
+        subscribe: () => ({ remove() {} }),
+      },
+      appUserId: 'user_restart',
+      autoStart: false,
+      installationId: 'install_restart',
+      platform: 'ios',
+      sdkKey: 'runtime_public_key',
+    })
+    await firstClient.getCustomerInfo()
+    fail = true
+
+    const restartedClient = configureSubKit({
+      adapterBundle: { iap: createIapAdapter() },
+      appStateSource: {
+        getCurrentState: () => 'active',
+        subscribe: () => ({ remove() {} }),
+      },
+      appUserId: 'user_restart',
+      autoStart: false,
+      installationId: 'install_restart',
+      platform: 'ios',
+      sdkKey: 'runtime_public_key',
+    })
+    await assert.rejects(() => restartedClient.start(), /offline/)
+
+    const snapshot = getSubKitCustomerInfoSnapshot()
+    assert.equal(snapshot.state, 'offline')
+    assert.equal(snapshot.customerInfo.appUserId, 'user_restart')
+    assert.equal(snapshot.customerInfo.entitlements.pro.active, true)
+  } finally {
+    client.stop()
+    restoreFetch()
+  }
+})
+
+test('offline refresh keeps cached entitlement state visible', async () => {
+  let fail = false
+  const restoreFetch = installFetch(async () => {
+    if (fail) throw new Error('offline')
+    return jsonResponse(createCustomerInfo('user_offline', true))
+  })
+
+  try {
+    configureSubKit({
+      adapterBundle: { iap: createIapAdapter() },
+      appStateSource: {
+        getCurrentState: () => 'active',
+        subscribe: () => ({ remove() {} }),
+      },
+      appUserId: 'user_offline',
+      autoStart: false,
+      installationId: 'install_offline',
+      platform: 'ios',
+      sdkKey: 'runtime_public_key',
+    })
+
+    await refreshSubKitCustomerInfo()
+    fail = true
+    await assert.rejects(() => refreshSubKitCustomerInfo(), /offline/)
+
+    const snapshot = getSubKitCustomerInfoSnapshot()
+    assert.equal(snapshot.state, 'offline')
+    assert.equal(snapshot.customerInfo.freshness, 'offline')
+    assert.equal(snapshot.customerInfo.entitlements.pro.active, true)
+  } finally {
+    client.stop()
+    restoreFetch()
+  }
+})
+
 test('refresh publishes a failing customer info request once and rejects to callers', async () => {
   const restoreFetch = installFetch(
     async () =>

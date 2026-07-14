@@ -26,6 +26,11 @@ import {
   type SubKitIapLogger,
   createPurchaseSyncCoordinator,
 } from './coordinator.js'
+import {
+  type CustomerInfoCacheStore,
+  createCustomerInfoCacheStore,
+  evaluateOfflineCustomerInfo,
+} from './customerInfoCache.js'
 import { normalizeIapError } from './errors.js'
 import { MemoryIdentityStore } from './identity.js'
 import type { PurchaseQueueStore } from './queue.js'
@@ -47,6 +52,7 @@ export interface ConfigureSubKitOptions extends SubKitExpoIapConfig {
   adapterBundle?: SubKitIapAdapterBundle
   appStateSource?: SubKitAppStateSource
   autoStart?: boolean
+  customerInfoCache?: CustomerInfoCacheStore
   installationId: string
   logger?: SubKitIapLogger
   platform?: SubKitIapPlatform
@@ -152,6 +158,7 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   })
   const identity = new MemoryIdentityStore()
   const queue = options.queue ?? createDefaultPurchaseQueue(options)
+  const customerInfoCache = options.customerInfoCache ?? createDefaultCustomerInfoCache(options)
   let customerInfo: CustomerInfo | null = null
   let offeringsCache: RuntimeOfferingsResponse | null = null
   let sessionId = options.sessionId ?? createSessionId()
@@ -176,18 +183,33 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
     storeIdentityHints: () => customerInfo?.storeIdentityHints ?? currentIdentityHints(identity),
   })
 
-  function setCustomerInfo(info: CustomerInfo): CustomerInfo {
+  async function setCustomerInfo(info: CustomerInfo, persist = true): Promise<CustomerInfo> {
     customerInfo = info
     identity.identify(info.appUserId, info.storeIdentityHints)
     publishSubKitCustomerInfo(info, subKitClient)
+    if (persist) {
+      await customerInfoCache.write(info).catch((error: unknown) => {
+        options.logger?.warn('SubKit failed to persist CustomerInfo', error)
+      })
+    }
     return info
+  }
+
+  async function hydrateCustomerInfo(appUserId: string): Promise<CustomerInfo | null> {
+    try {
+      const cached = await customerInfoCache.read(appUserId)
+      return cached == null ? null : setCustomerInfo(cached, false)
+    } catch (error) {
+      options.logger?.warn('SubKit failed to hydrate CustomerInfo', error)
+      return null
+    }
   }
 
   async function internalSyncPurchases(
     input: SubKitSyncOptions,
   ): Promise<PurchaseSyncResult | null> {
     const result = await coordinator.syncPurchases(input)
-    if (result != null) setCustomerInfo(result.customerInfo)
+    if (result != null) await setCustomerInfo(result.customerInfo)
     return result
   }
 
@@ -197,14 +219,16 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
 
   async function handlePurchaseEvent(purchase: SubKitIapPurchase): Promise<void> {
     const result = await coordinator.handlePurchaseEvent(purchase)
-    if (result != null) setCustomerInfo(result.customerInfo)
+    if (result != null) await setCustomerInfo(result.customerInfo)
   }
 
   async function identify(appUserId: string): Promise<CustomerInfo> {
     return publishCustomerInfoErrorOnFailure(async () => {
       sessionId = createSessionId()
       offeringsCache = null
-      const info = setCustomerInfo(await runtime.getCustomerInfo(appUserId))
+      identity.identify(appUserId)
+      await hydrateCustomerInfo(appUserId)
+      const info = await setCustomerInfo(await runtime.getCustomerInfo(appUserId))
       const result = await internalSyncPurchases({ force: true, reason: 'identity_changed' })
       return result?.customerInfo ?? info
     })
@@ -215,6 +239,9 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
       const resolvedAppUserId = appUserId ?? identity.appUserId
       if (resolvedAppUserId == null || resolvedAppUserId.trim() === '')
         throw new Error('SubKit appUserId is required')
+      if (customerInfo?.appUserId !== resolvedAppUserId) {
+        await hydrateCustomerInfo(resolvedAppUserId)
+      }
       return setCustomerInfo(await runtime.getCustomerInfo(resolvedAppUserId))
     })
   }
@@ -318,6 +345,7 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   }
 
   async function startOnce(): Promise<void> {
+    if (identity.appUserId != null) await hydrateCustomerInfo(identity.appUserId)
     await adapterBundle.iap.initConnection()
     const listeners = adapterBundle.listeners
     if (
@@ -378,6 +406,9 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
     try {
       return await operation()
     } catch (error) {
+      if (customerInfo != null) {
+        await setCustomerInfo(evaluateOfflineCustomerInfo(customerInfo), false)
+      }
       publishSubKitCustomerInfoError(error, subKitClient)
       throw error
     }
@@ -398,12 +429,23 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
 }
 
 function createDefaultPurchaseQueue(options: ConfigureSubKitOptions): PurchaseQueueStore {
-  const environment = options.environment ?? 'production'
-  const scope = `${options.sdkKey}:${options.installationId}:${environment}`
+  const scope = createStorageScope(options)
   return createStoredPurchaseQueueStore({
     key: `subkit:iap:purchase-queue:v1:${hashStorageScope(scope)}`,
     storage: AsyncStorage,
   })
+}
+
+function createDefaultCustomerInfoCache(options: ConfigureSubKitOptions): CustomerInfoCacheStore {
+  return createCustomerInfoCacheStore({
+    keyPrefix: `subkit:customer-info:v1:${hashStorageScope(createStorageScope(options))}`,
+    policy: options.iap,
+    storage: AsyncStorage,
+  })
+}
+
+function createStorageScope(options: ConfigureSubKitOptions): string {
+  return `${options.sdkKey}:${options.installationId}:${options.environment ?? 'production'}`
 }
 
 function hashStorageScope(value: string): string {

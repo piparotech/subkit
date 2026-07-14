@@ -52,7 +52,9 @@ export interface SubKitExpoIapConfig {
   environment?: 'production' | 'sandbox'
   iap?: {
     autoSync?: boolean
+    customerInfoStaleAfterMs?: number
     foregroundMinIntervalMs?: number
+    nonExpiringEntitlementMaxOfflineAgeMs?: number
     sessionResumeThresholdMs?: number
     syncOnAppStart?: boolean
     syncOnForeground?: boolean

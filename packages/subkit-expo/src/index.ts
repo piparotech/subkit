@@ -19,6 +19,16 @@ export type {
   PurchaseSyncCoordinatorOptions,
   SubKitIapLogger,
 } from './coordinator.js'
+export {
+  DEFAULT_CUSTOMER_INFO_CACHE_POLICY,
+  createCustomerInfoCacheStore,
+  evaluateOfflineCustomerInfo,
+} from './customerInfoCache.js'
+export type {
+  CreateCustomerInfoCacheStoreOptions,
+  CustomerInfoCachePolicy,
+  CustomerInfoCacheStore,
+} from './customerInfoCache.js'
 export { normalizeIapError } from './errors.js'
 export type { NormalizedIapError } from './errors.js'
 export { buildPurchaseIdentityFields, MemoryIdentityStore } from './identity.js'

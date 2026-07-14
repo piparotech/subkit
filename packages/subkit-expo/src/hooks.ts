@@ -109,7 +109,7 @@ export function useSubKitEntitlement(
 }
 
 function shouldRefresh(state: SubKitCustomerInfoState): boolean {
-  return state === 'idle' || state === 'ready' || state === 'error'
+  return state === 'idle' || state === 'ready' || state === 'offline' || state === 'error'
 }
 
 function sanitizeRefreshIfOlderThanMs(value: number | undefined): number {

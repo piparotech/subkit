@@ -3,7 +3,7 @@ import type { CustomerInfo } from '@piparotech/subkit-core'
 import type { SubKitIapClient } from './SubKitIapClient.js'
 
 export type SubKitCustomerInfoState =
-  'unconfigured' | 'idle' | 'loading' | 'ready' | 'refreshing' | 'error'
+  'unconfigured' | 'idle' | 'loading' | 'ready' | 'refreshing' | 'offline' | 'error'
 
 export interface SubKitCustomerInfoSnapshot {
   clientConfigured: boolean
@@ -73,7 +73,12 @@ export function publishSubKitCustomerInfoError(
   updateSnapshot({
     clientConfigured: configuredClient != null,
     error: normalizedError,
-    state: configuredClient == null ? 'unconfigured' : 'error',
+    state:
+      configuredClient == null
+        ? 'unconfigured'
+        : snapshot.customerInfo == null
+          ? 'error'
+          : 'offline',
   })
   return normalizedError
 }
