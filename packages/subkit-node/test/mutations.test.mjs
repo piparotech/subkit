@@ -23,11 +23,11 @@ test('typed customer, contract, and access clients send scoped idempotent reques
   })
 
   const subject = await subkit.customers.upsertSubject(
-    { externalId: 'trainer-1', kind: 'app_user' },
+    { externalId: 'trainer-1', kind: 'app_user', reason: 'sync trainer identity' },
     { idempotencyKey: 'subject-1' },
   )
   const account = await subkit.customers.createBillingAccount(
-    { displayName: 'FC Example', kind: 'organization' },
+    { displayName: 'FC Example', kind: 'organization', reason: 'onboard club payer' },
     { idempotencyKey: 'account-1' },
   )
   const contract = await subkit.contracts.create(
@@ -35,6 +35,7 @@ test('typed customer, contract, and access clients send scoped idempotent reques
       billingAccountId: account.id,
       externalContractId: 'contract-1',
       planVersionId: 'version-1',
+      reason: 'activate signed club contract',
       termStart: new Date('2027-01-01T00:00:00Z'),
     },
     { idempotencyKey: 'contract-1' },
@@ -44,23 +45,44 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     { idempotencyKey: 'retire-version-1' },
   )
   await subkit.access.enrollFree(
-    { planVersionId: 'version-free', subjectId: subject.id },
+    {
+      planVersionId: 'version-free',
+      reason: 'enroll eligible basis user',
+      subjectId: subject.id,
+    },
     { idempotencyKey: 'free-enrollment-1' },
   )
   await subkit.access.redeemPromotionCode(
-    { code: 'SMART-COACH-30', subjectId: subject.id },
+    {
+      code: 'SMART-COACH-30',
+      reason: 'redeem customer promotion',
+      subjectId: subject.id,
+    },
     { idempotencyKey: 'promotion-redemption-1' },
   )
   await subkit.access.reserve(
-    { claimTokenHash: 'h'.repeat(64), poolId: contract.poolIds[0] },
+    {
+      claimTokenHash: 'h'.repeat(64),
+      poolId: contract.poolIds[0],
+      reason: 'invite named trainer',
+    },
     { idempotencyKey: 'reserve-1' },
   )
   await subkit.access.claim(
-    { claimTokenHash: 'h'.repeat(64), subjectId: subject.id },
+    {
+      claimTokenHash: 'h'.repeat(64),
+      reason: 'trainer accepted invitation',
+      subjectId: subject.id,
+    },
     { idempotencyKey: 'claim-1' },
   )
   await subkit.access.allocate(
-    { externalReference: 'direct-1', poolId: 'pool/a b', subjectId: subject.id },
+    {
+      externalReference: 'direct-1',
+      poolId: 'pool/a b',
+      reason: 'assign purchased seat',
+      subjectId: subject.id,
+    },
     { idempotencyKey: 'allocate-1' },
   )
   await subkit.access.updateAllocation(

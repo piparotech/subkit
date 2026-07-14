@@ -18,6 +18,7 @@ export interface CreateContractInput {
   externalContractId: string
   notes?: string | null
   planVersionId: string
+  reason: string
   signedAt?: Date | null
   termEnd?: Date | null
   termStart: Date

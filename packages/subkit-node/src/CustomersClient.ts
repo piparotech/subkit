@@ -20,6 +20,7 @@ export interface UpsertSubjectInput {
   externalId: string
   kind: 'app_user' | 'organization' | 'service_account'
   locale?: string | null
+  reason: string
 }
 
 export interface CreateBillingAccountInput {
@@ -27,6 +28,7 @@ export interface CreateBillingAccountInput {
   externalId?: string | null
   kind: 'individual' | 'organization'
   metadataJson?: string
+  reason: string
 }
 
 interface CustomersClientOptions {

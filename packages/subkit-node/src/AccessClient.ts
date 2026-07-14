@@ -48,12 +48,14 @@ export interface ReserveAccessInput {
   inviteeReferenceHash?: string | null
   poolId: string
   quantity?: number
+  reason: string
   subjectId?: string | null
 }
 
 export interface ClaimReservationInput {
   appId?: string
   claimTokenHash: string
+  reason: string
   subjectId: string
 }
 
@@ -61,6 +63,7 @@ export interface AllocateAccessInput {
   externalReference: string
   poolId: string
   quantity?: number
+  reason: string
   subjectId: string
 }
 
@@ -95,6 +98,7 @@ export interface RevokeReservationInput {
 export interface FreeEnrollmentInput {
   appId?: string
   planVersionId: string
+  reason: string
   subjectId: string
 }
 
@@ -107,6 +111,7 @@ export interface FreeEnrollmentResult {
 export interface RedeemPromotionCodeInput {
   appId?: string
   code: string
+  reason: string
   subjectId: string
 }
 

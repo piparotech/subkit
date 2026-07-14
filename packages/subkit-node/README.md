@@ -37,16 +37,21 @@ await subkit.products.updatePlanVersionLifecycle(
 
 ## Create customers and contracts
 
-Every mutation requires an explicit idempotency key.
+Every mutation requires an explicit idempotency key and an operator reason. SubKit records the server-key actor plus before/after evidence in its immutable audit log.
 
 ```ts
 const subject = await subkit.customers.upsertSubject(
-  { externalId: 'trainer_123', kind: 'app_user' },
+  { externalId: 'trainer_123', kind: 'app_user', reason: 'sync trainer identity' },
   { idempotencyKey: 'subject:trainer_123' },
 )
 
 const club = await subkit.customers.createBillingAccount(
-  { displayName: 'FC Example', externalId: 'club_123', kind: 'organization' },
+  {
+    displayName: 'FC Example',
+    externalId: 'club_123',
+    kind: 'organization',
+    reason: 'onboard club payer',
+  },
   { idempotencyKey: 'billing-account:club_123' },
 )
 
@@ -55,6 +60,7 @@ const contract = await subkit.contracts.create(
     billingAccountId: club.id,
     externalContractId: 'contract_123',
     planVersionId: 'plan-version_123',
+    reason: 'activate signed club contract',
     termStart: new Date('2027-01-01T00:00:00Z'),
   },
   { idempotencyKey: 'contract:contract_123' },
@@ -67,7 +73,11 @@ Free access is still server-verified and follows the normal Source → Pool → 
 
 ```ts
 const enrollment = await subkit.access.enrollFree(
-  { planVersionId: 'plan-version_basis', subjectId: subject.id },
+  {
+    planVersionId: 'plan-version_basis',
+    reason: 'enroll eligible basis user',
+    subjectId: subject.id,
+  },
   { idempotencyKey: 'free-enrollment:trainer_123' },
 )
 ```
@@ -78,7 +88,11 @@ Promotion codes create commercial promotion sources. They are separate from invi
 
 ```ts
 const promotion = await subkit.access.redeemPromotionCode(
-  { code: userEnteredCode, subjectId: subject.id },
+  {
+    code: userEnteredCode,
+    reason: 'redeem customer promotion',
+    subjectId: subject.id,
+  },
   { idempotencyKey: 'promotion-redemption:trainer_123' },
 )
 ```
@@ -92,6 +106,7 @@ const reservation = await subkit.access.reserve(
   {
     poolId: contract.poolIds[0],
     claimTokenHash: securelyHashInvitationToken(invitationToken),
+    reason: 'invite named trainer',
   },
   { idempotencyKey: 'invite:trainer_123' },
 )
@@ -99,6 +114,7 @@ const reservation = await subkit.access.reserve(
 const allocation = await subkit.access.claim(
   {
     claimTokenHash: securelyHashInvitationToken(invitationToken),
+    reason: 'trainer accepted invitation',
     subjectId: subject.id,
   },
   { idempotencyKey: 'claim:trainer_123' },
