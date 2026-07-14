@@ -4,6 +4,7 @@ import { CustomersClient } from './CustomersClient.js'
 import { EntitlementsClient } from './EntitlementsClient.js'
 import { HttpClient } from './HttpClient.js'
 import { OfferingsClient } from './OfferingsClient.js'
+import { PaymentsClient } from './PaymentsClient.js'
 import { ProductsClient } from './ProductsClient.js'
 
 export interface SubKitOptions {
@@ -21,6 +22,7 @@ export class SubKit {
   readonly customers: CustomersClient
   readonly entitlements: EntitlementsClient
   readonly offerings: OfferingsClient
+  readonly payments: PaymentsClient
   readonly products: ProductsClient
 
   constructor(options: SubKitOptions) {
@@ -37,6 +39,7 @@ export class SubKit {
     this.customers = new CustomersClient({ appId: options.appId, http })
     this.entitlements = new EntitlementsClient({ appId: options.appId, http })
     this.offerings = new OfferingsClient({ appId: options.appId, http })
+    this.payments = new PaymentsClient({ appId: options.appId, http })
     this.products = new ProductsClient({ appId: options.appId, http })
   }
 }

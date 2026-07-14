@@ -26,6 +26,7 @@ export type {
   CustomerRecord,
   UpsertSubjectInput,
 } from './CustomersClient.js'
+export type { PaymentResult, RecordPaymentInput } from './PaymentsClient.js'
 export type {
   PlanVersionLifecycleResult,
   UpdatePlanVersionLifecycleInput,
