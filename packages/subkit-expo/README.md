@@ -36,10 +36,11 @@ Create runtime SDK keys from a trusted backend context with a SubKit-issued `sk_
 curl -X POST https://subkit.example.com/api/server/runtime-sdk-keys \
   -H "Authorization: Bearer $SUBKIT_SCOPED_SERVER_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"appId":"app_123","name":"iOS production","scopes":["read","iap_reconcile"]}'
+  -H "Idempotency-Key: runtime-key:app_123:ios-production" \
+  -d '{"appId":"app_123","reason":"provision iOS production release"}'
 ```
 
-Use the returned `key` once in your Expo app config. SubKit stores only a keyed hash and key prefix server-side.
+Use the returned `key` once in your Expo app config. SubKit stores only a keyed hash on the app and an encrypted response for an identical idempotent retry; audit evidence contains hashes, never the plaintext key.
 
 If the user logs in later, configure without `appUserId` first, then identify after login:
 
