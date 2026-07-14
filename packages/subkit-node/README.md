@@ -1,6 +1,6 @@
 # @piparotech/subkit-node
 
-Node.js backend SDK for server-to-server SubKit queries.
+Node.js backend SDK for server-to-server SubKit queries and mutations.
 
 This package is for trusted backend code only. Do not ship its `secretKey` in mobile apps, web clients, Expo bundles, or other untrusted environments.
 
@@ -22,7 +22,7 @@ const subkit = new SubKit({
 })
 ```
 
-Use a server-side secret such as `subkit_server_live_...`. Public/mobile SDK keys are intentionally out of scope for this package.
+Use a SubKit-issued `sk_srv_…` server secret. Public/mobile SDK keys are intentionally out of scope for this package.
 
 ## Publish and retire Plan Versions
 
@@ -66,6 +66,33 @@ const contract = await subkit.contracts.create(
   { idempotencyKey: 'contract:contract_123' },
 )
 ```
+
+Creating the Contract provisions its verified Access Source and Pools. It does
+not fabricate a charge. Submit a separately verified PSP, invoice, or settlement
+result through a key with `payments:write`:
+
+```ts
+const payment = await subkit.payments.record(
+  {
+    accessSourceId: contract.accessSourceId,
+    amountMicros: 100_000_000,
+    billingAccountId: club.id,
+    currencyCode: 'EUR',
+    externalId: 'invoice_123:payment_1',
+    kind: 'charge',
+    occurredAt: new Date('2027-01-02T00:00:00Z'),
+    provider: 'external',
+    reason: 'record verified invoice settlement',
+    state: 'succeeded',
+  },
+  { idempotencyKey: 'payment:invoice_123:payment_1' },
+)
+```
+
+The normalized identity `(app, provider, externalId, kind)` is immutable. Exact
+retries are idempotent; conflicting amount, currency, payer, or Source evidence
+fails closed. CPQ, invoice/tax calculation, and monetary seat proration stay in
+the external commercial system.
 
 ## Enroll free access
 
@@ -224,7 +251,7 @@ await subkit.entitlements.check(
 The SDK calls server-authenticated SubKit endpoints for:
 
 - subjects and billing accounts
-- contracts and manual provisions
+- contracts, normalized external payments, and manual provisions
 - reservations, claims, allocations, and pool/allocation lifecycle actions
 - entitlement checks and customer info
 - offerings and products
