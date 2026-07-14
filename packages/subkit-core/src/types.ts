@@ -67,7 +67,13 @@ export interface CustomerUnclaimedPurchase {
   storeProductId: string
 }
 
+export interface RuntimeAccessContext {
+  expiresAt: string
+  token: string
+}
+
 export interface CustomerInfo {
+  accessContext: RuntimeAccessContext | null
   appId: string
   appUserId: string
   checkedAt: string

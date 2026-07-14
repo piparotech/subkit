@@ -74,6 +74,7 @@ export class CustomersClient {
     return this.http.post('/api/server/customer-info', {
       ...options,
       body: {
+        accessContext: input.accessContext,
         appId: resolveAppId(input.appId, this.appId),
         appUserId: input.appUserId,
         environment: input.environment,

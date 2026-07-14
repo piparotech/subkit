@@ -65,6 +65,7 @@ test('default purchase queue survives client reconfiguration', async () => {
         checkedAt: '2026-07-01T00:00:00.000Z',
         conflicts: [],
         customerInfo: {
+          accessContext: null,
           appId: 'app_123',
           appUserId: 'user_durable',
           checkedAt: '2026-07-01T00:00:00.000Z',

@@ -35,6 +35,7 @@ function createRuntimeRecorder() {
           checkedAt: '2026-07-01T00:00:00.000Z',
           conflicts: [],
           customerInfo: {
+            accessContext: null,
             appId: 'app_123',
             appUserId: input.appUserId ?? 'unknown',
             checkedAt: '2026-07-01T00:00:00.000Z',
@@ -205,6 +206,7 @@ test('purchase sync coordinator finishes transactions using the shared queue pur
           checkedAt: '2026-07-01T00:00:00.000Z',
           conflicts: [],
           customerInfo: {
+            accessContext: null,
             appId: 'app_123',
             appUserId: input.appUserId,
             checkedAt: '2026-07-01T00:00:00.000Z',
@@ -282,6 +284,7 @@ test('purchase sync coordinator marks rejected purchases as failed instead of re
           checkedAt: '2026-07-01T00:00:00.000Z',
           conflicts: [],
           customerInfo: {
+            accessContext: null,
             appId: 'app_123',
             appUserId: input.appUserId,
             checkedAt: '2026-07-01T00:00:00.000Z',

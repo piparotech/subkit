@@ -22,6 +22,15 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     secretKey: 'sk_srv_test',
   })
 
+  await subkit.entitlements.check({
+    accessContext: 'sk_ctx_v1.signed.production',
+    appUserId: 'trainer-1',
+    entitlement: 'smartcoach_access',
+  })
+  await subkit.customers.getCustomerInfo({
+    accessContext: 'sk_ctx_v1.signed.production',
+    appUserId: 'trainer-1',
+  })
   const subject = await subkit.customers.upsertSubject(
     { externalId: 'trainer-1', kind: 'app_user', reason: 'sync trainer identity' },
     { idempotencyKey: 'subject-1' },
@@ -134,10 +143,12 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     { idempotencyKey: 'manual-1' },
   )
 
-  assert.equal(requests.length, 15)
+  assert.equal(requests.length, 17)
   assert.deepEqual(
     requests.map(({ method, url }) => [method, new URL(url).pathname]),
     [
+      ['POST', '/api/server/entitlements/check'],
+      ['POST', '/api/server/customer-info'],
       ['POST', '/api/server/subjects/upsert'],
       ['POST', '/api/server/billing-accounts'],
       ['POST', '/api/server/contracts'],
@@ -156,33 +167,57 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     ],
   )
   for (const request of requests) {
+    const path = new URL(request.url).pathname
     if (
-      request.method !== 'POST' ||
-      new URL(request.url).pathname !== '/api/server/access-pools/pool-1'
+      path !== '/api/server/entitlements/check' &&
+      path !== '/api/server/customer-info' &&
+      (request.method !== 'POST' || path !== '/api/server/access-pools/pool-1')
     ) {
       assert.match(request.headers.get('idempotency-key'), /.+/)
     }
     assert.equal(request.headers.get('authorization'), 'Bearer sk_srv_test')
-    assert.equal(request.headers.get('user-agent'), '@piparotech/subkit-node/0.1.5')
+    assert.equal(request.headers.get('user-agent'), '@piparotech/subkit-node/0.1.6')
   }
-  assert.equal(requests[0].body.appId, 'smartcoach')
+  assert.equal(requests[0].body.accessContext, 'sk_ctx_v1.signed.production')
+  assert.equal(requests[1].body.accessContext, 'sk_ctx_v1.signed.production')
   assert.equal(requests[2].body.appId, 'smartcoach')
-  assert.equal(requests[2].body.termStart, '2027-01-01T00:00:00.000Z')
-  assert.equal(requests[3].body.appId, 'smartcoach')
-  assert.equal(requests[3].body.occurredAt, '2027-01-02T00:00:00.000Z')
-  assert.equal(requests[4].body.reason, 'superseded')
+  assert.equal(requests[4].body.appId, 'smartcoach')
+  assert.equal(requests[4].body.termStart, '2027-01-01T00:00:00.000Z')
   assert.equal(requests[5].body.appId, 'smartcoach')
-  assert.equal(requests[6].body.appId, 'smartcoach')
+  assert.equal(requests[5].body.occurredAt, '2027-01-02T00:00:00.000Z')
+  assert.equal(requests[6].body.reason, 'superseded')
+  assert.equal(requests[7].body.appId, 'smartcoach')
   assert.equal(requests[8].body.appId, 'smartcoach')
-  assert.equal(requests[11].body.effectiveAt, '2028-01-01T00:00:00.000Z')
-  assert.equal(requests[12].body.effectiveAt, '2028-01-01T00:00:00.000Z')
-  assert.equal(requests[13].body.reason, 'cancelled')
-  assert.equal(requests[14].body.appId, 'smartcoach')
-  assert.equal(requests[14].body.validFrom, '2027-02-01T00:00:00.000Z')
+  assert.equal(requests[10].body.appId, 'smartcoach')
+  assert.equal(requests[13].body.effectiveAt, '2028-01-01T00:00:00.000Z')
+  assert.equal(requests[14].body.effectiveAt, '2028-01-01T00:00:00.000Z')
+  assert.equal(requests[15].body.reason, 'cancelled')
+  assert.equal(requests[16].body.appId, 'smartcoach')
+  assert.equal(requests[16].body.validFrom, '2027-02-01T00:00:00.000Z')
 })
 
 function responseFor(url, method) {
   const path = new URL(url).pathname
+  if (path === '/api/server/entitlements/check') {
+    return {
+      allowed: true,
+      appId: 'smartcoach',
+      appUserId: 'trainer-1',
+      checkedAt: '2027-01-01T00:00:00.000Z',
+      entitlement: 'smartcoach_access',
+      grants: [],
+      reason: 'allowed',
+      status: 'active',
+    }
+  }
+  if (path === '/api/server/customer-info') {
+    return {
+      appId: 'smartcoach',
+      appUserId: 'trainer-1',
+      checkedAt: '2027-01-01T00:00:00.000Z',
+      entitlements: {},
+    }
+  }
   if (path === '/api/server/subjects/upsert') return { id: 'subject-1', status: 'active' }
   if (path === '/api/server/billing-accounts') return { id: 'account-1', status: 'active' }
   if (path === '/api/server/contracts') return { accessSourceId: 'source-1', poolIds: ['pool-1'] }

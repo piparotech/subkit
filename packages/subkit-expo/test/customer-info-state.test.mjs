@@ -29,6 +29,7 @@ function createIapAdapter() {
 
 function createCustomerInfo(appUserId, entitlementActive) {
   return {
+    accessContext: null,
     appId: 'app_123',
     appUserId,
     checkedAt: '2026-07-01T00:00:00.000Z',

@@ -7,7 +7,7 @@ SubKit is the entitlement authority. `expo-iap` is only the native store adapter
 ## Install
 
 ```sh
-pnpm add @piparotech/subkit-core@^0.1.4 @piparotech/subkit-expo@^0.1.5
+pnpm add @piparotech/subkit-core@^0.1.5 @piparotech/subkit-expo@^0.1.6
 ```
 
 Install the matching Core contract explicitly. The Expo SDK imports its runtime schemas from that host-provided package and will not auto-install a second unpublished copy.
@@ -84,7 +84,7 @@ export function ProGate() {
 }
 ```
 
-`useSubKitEntitlement(...)` reads the latest known `CustomerInfo` from the configured SubKit singleton and refreshes it on mount when needed. It also updates when SDK calls such as `identify()`, `getCustomerInfo()`, restore, foreground sync, or purchase sync receive newer customer info. CustomerInfo is persisted per app/install/environment and hydrated on restart. A network failure changes the snapshot to `offline` without erasing a previously active entitlement before its known expiry. Use the returned `refresh()` function before access-sensitive actions or after a custom purchase flow if you need to force a fresh server read.
+`useSubKitEntitlement(...)` reads the latest known `CustomerInfo` from the configured SubKit singleton and refreshes it on mount when needed. Fresh CustomerInfo also includes a short-lived opaque `accessContext` that a trusted app backend can forward to SubKit Server reads; the token binds app, app user and Store environment, and expires independently from offline entitlement visibility. It also updates when SDK calls such as `identify()`, `getCustomerInfo()`, restore, foreground sync, or purchase sync receive newer customer info. CustomerInfo is persisted per app/install/environment and hydrated on restart. A network failure changes the snapshot to `offline` without erasing a previously active entitlement before its known expiry. Use the returned `refresh()` function before access-sensitive actions or after a custom purchase flow if you need to force a fresh server read.
 
 If you need an immediate one-off check outside React, `identify()` and `getCustomerInfo()` still return `CustomerInfo`:
 
@@ -312,7 +312,7 @@ Silent sync uses `getAvailablePurchases()` and never calls prompt-prone restore 
 
 ## Offline CustomerInfo
 
-The default AsyncStorage cache is scoped to the runtime SDK key, installation ID, Store environment, and a hashed app-user identity. On startup the SDK publishes cached CustomerInfo before network sync completes.
+The default AsyncStorage cache is scoped to the selected runtime SDK key, installation ID, Store environment, and a hashed app-user identity. On startup the SDK publishes cached CustomerInfo before network sync completes. An expired `accessContext` is removed from cached/offline CustomerInfo even when the entitlement itself remains usable within its offline policy.
 
 - Expiring entitlements remain active offline only until their server-provided `expiresAt`.
 - Non-expiring entitlements remain active for at most `nonExpiringEntitlementMaxOfflineAgeMs` after `verifiedAt` (30 days by default).

@@ -94,6 +94,10 @@ function evaluateCachedCustomerInfo(
 ): CustomerInfo {
   return {
     ...info,
+    accessContext:
+      info.accessContext != null && Date.parse(info.accessContext.expiresAt) > options.now
+        ? info.accessContext
+        : null,
     entitlements: Object.fromEntries(
       Object.entries(info.entitlements).map(([key, entitlement]) => {
         if (!entitlement.active) return [key, entitlement]

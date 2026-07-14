@@ -28,6 +28,7 @@ export class EntitlementsClient {
     return this.http.post('/api/server/entitlements/check', {
       ...options,
       body: {
+        accessContext: input.accessContext,
         appId: resolveAppId(input.appId, this.appId),
         appUserId: input.appUserId,
         entitlement: input.entitlement,

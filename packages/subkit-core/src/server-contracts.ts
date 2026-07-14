@@ -13,6 +13,7 @@ export const serverEntitlementCheckReasonSchema = z.enum([
 export type ServerEntitlementCheckReason = z.infer<typeof serverEntitlementCheckReasonSchema>
 
 export const serverEntitlementCheckRequestSchema = z.object({
+  accessContext: z.string().min(1).optional(),
   appId: z.string().min(1),
   appUserId: z.string().min(1),
   entitlement: z.string().min(1),
@@ -54,6 +55,7 @@ export const serverCustomerEntitlementSchema = z.object({
 export type ServerCustomerEntitlement = z.infer<typeof serverCustomerEntitlementSchema>
 
 export const serverCustomerInfoRequestSchema = z.object({
+  accessContext: z.string().min(1).optional(),
   appId: z.string().min(1),
   appUserId: z.string().min(1),
   environment: z.enum(['sandbox', 'production']).optional(),

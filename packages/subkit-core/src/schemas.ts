@@ -80,7 +80,13 @@ export const customerUnclaimedPurchaseSchema = z.strictObject({
   storeProductId: z.string().min(1),
 })
 
+export const runtimeAccessContextSchema = z.strictObject({
+  expiresAt: z.string().min(1),
+  token: z.string().min(1),
+})
+
 export const customerInfoSchema = z.strictObject({
+  accessContext: runtimeAccessContextSchema.nullable(),
   appId: z.string().min(1),
   appUserId: z.string().min(1),
   checkedAt: z.string().min(1),

@@ -8,6 +8,7 @@ import {
 
 function createCustomerInfo(entitlements) {
   return {
+    accessContext: null,
     appId: 'app_123',
     appUserId: 'user_123',
     checkedAt: '2026-07-01T00:00:00.000Z',
@@ -81,6 +82,26 @@ test('cached subscription is disabled after its known expiry', async () => {
 
   assert.equal(cached.entitlements.pro.active, false)
   assert.equal(cached.entitlements.pro.status, 'expired')
+})
+
+test('expired Runtime access context is removed from cached CustomerInfo', () => {
+  const info = {
+    ...createCustomerInfo({}),
+    accessContext: {
+      expiresAt: '2026-07-01T00:15:00.000Z',
+      token: 'sk_ctx_v1.test',
+    },
+  }
+
+  const valid = evaluateOfflineCustomerInfo(info, {
+    now: Date.parse('2026-07-01T00:10:00.000Z'),
+  })
+  const expired = evaluateOfflineCustomerInfo(info, {
+    now: Date.parse('2026-07-01T00:15:00.001Z'),
+  })
+
+  assert.equal(valid.accessContext?.token, 'sk_ctx_v1.test')
+  assert.equal(expired.accessContext, null)
 })
 
 test('non-expiring entitlement remains offline only within verified max age', () => {
