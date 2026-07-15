@@ -85,23 +85,17 @@ export const serverProductsRequestSchema = z.object({
 })
 export type ServerProductsRequest = z.infer<typeof serverProductsRequestSchema>
 
-export const serverCreateRuntimeSdkKeyRequestSchema = z.object({
+export const serverCreateSdkKeyRequestSchema = z.object({
   appId: z.string().min(1),
-  environment: z.enum(['production', 'sandbox']),
   reason: z.string().trim().min(1),
 })
-export type ServerCreateRuntimeSdkKeyRequest = z.infer<
-  typeof serverCreateRuntimeSdkKeyRequestSchema
->
+export type ServerCreateSdkKeyRequest = z.infer<typeof serverCreateSdkKeyRequestSchema>
 
-export const serverCreateRuntimeSdkKeyResponseSchema = z.object({
+export const serverCreateSdkKeyResponseSchema = z.object({
   appId: z.string().min(1),
-  environment: z.enum(['production', 'sandbox']),
   key: z.string().min(1),
 })
-export type ServerCreateRuntimeSdkKeyResponse = z.infer<
-  typeof serverCreateRuntimeSdkKeyResponseSchema
->
+export type ServerCreateSdkKeyResponse = z.infer<typeof serverCreateSdkKeyResponseSchema>
 
 const serverStoreProductIdsSchema = z.object({
   apple: z.string().min(1).optional(),

@@ -258,15 +258,13 @@ export const iapReconcileResponseSchema = z.strictObject({
   verificationStatus: verificationStatusSchema,
 })
 
-const runtimeEnvironmentSchema = z.enum(['production', 'sandbox'])
-
 export const runtimeCustomerInfoRequestSchema = z.strictObject({
+  accessContext: z.string().min(1).optional(),
   appUserId: z.string().min(1),
 })
 
 export const runtimeCustomerInfoWithAppRequestSchema = runtimeCustomerInfoRequestSchema.extend({
   appId: z.string().min(1),
-  environment: runtimeEnvironmentSchema,
 })
 
 export const runtimeOfferingsRequestSchema = z.strictObject({
@@ -277,10 +275,10 @@ export const runtimeOfferingsRequestSchema = z.strictObject({
 
 export const runtimeOfferingsWithAppRequestSchema = runtimeOfferingsRequestSchema.extend({
   appId: z.string().min(1),
-  environment: runtimeEnvironmentSchema,
 })
 
 export const iapReconcileRequestSchema = z.strictObject({
+  accessContext: z.string().min(1).optional(),
   appUserId: z.string().min(1).optional(),
   installationId: z.string().min(1),
   platform: storePlatformSchema,
@@ -292,10 +290,10 @@ export const iapReconcileRequestSchema = z.strictObject({
 
 export const iapReconcileWithAppRequestSchema = iapReconcileRequestSchema.extend({
   appId: z.string().min(1),
-  environment: runtimeEnvironmentSchema,
 })
 
 export const runtimeEntitlementCheckRequestSchema = z.strictObject({
+  accessContext: z.string().min(1).optional(),
   appUserId: z.string().min(1),
   entitlement: z.string().min(1),
 })
@@ -303,7 +301,6 @@ export const runtimeEntitlementCheckRequestSchema = z.strictObject({
 export const runtimeEntitlementCheckWithAppRequestSchema =
   runtimeEntitlementCheckRequestSchema.extend({
     appId: z.string().min(1),
-    environment: runtimeEnvironmentSchema,
   })
 
 export type RuntimeCustomerInfoRequestInput = z.infer<typeof runtimeCustomerInfoRequestSchema>

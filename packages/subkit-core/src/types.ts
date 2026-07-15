@@ -264,12 +264,12 @@ export interface QueuedPurchase {
 }
 
 export interface RuntimeCustomerInfoRequest {
+  accessContext?: string
   appUserId: string
 }
 
 export interface RuntimeCustomerInfoWithAppRequest extends RuntimeCustomerInfoRequest {
   appId: string
-  environment: 'production' | 'sandbox'
 }
 
 export interface RuntimeOfferingsRequest {
@@ -280,10 +280,10 @@ export interface RuntimeOfferingsRequest {
 
 export interface RuntimeOfferingsWithAppRequest extends RuntimeOfferingsRequest {
   appId: string
-  environment: 'production' | 'sandbox'
 }
 
 export interface IapReconcileRequest {
+  accessContext?: string
   appUserId?: string
   installationId: string
   platform: StorePlatform
@@ -295,15 +295,14 @@ export interface IapReconcileRequest {
 
 export interface IapReconcileWithAppRequest extends IapReconcileRequest {
   appId: string
-  environment: 'production' | 'sandbox'
 }
 
 export interface RuntimeEntitlementCheckRequest {
+  accessContext?: string
   appUserId: string
   entitlement: string
 }
 
 export interface RuntimeEntitlementCheckWithAppRequest extends RuntimeEntitlementCheckRequest {
   appId: string
-  environment: 'production' | 'sandbox'
 }
