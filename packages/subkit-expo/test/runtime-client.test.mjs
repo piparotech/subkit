@@ -55,7 +55,7 @@ test('runtime request schemas reject caller-selected app and environment authori
   )
 })
 
-test('runtime client omits appId from customer info requests', async () => {
+test('runtime client omits appId and forwards only the signed access context for customer info', async () => {
   const requests = []
   const previousFetch = globalThis.fetch
   globalThis.fetch = async (url, request) => {
@@ -68,14 +68,17 @@ test('runtime client omits appId from customer info requests', async () => {
       apiBaseUrl: 'https://subkit.example.com',
       sdkKey: 'runtime_public_key',
     })
-    await client.getCustomerInfo('user_123')
+    await client.getCustomerInfo('user_123', 'sk_ctx_v1.signed')
   } finally {
     globalThis.fetch = previousFetch
   }
 
   assert.equal(requests.length, 1)
   assert.equal(requests[0].request.headers.authorization, 'Bearer runtime_public_key')
-  assert.deepEqual(parseRequestBody(requests[0].request), { appUserId: 'user_123' })
+  assert.deepEqual(parseRequestBody(requests[0].request), {
+    accessContext: 'sk_ctx_v1.signed',
+    appUserId: 'user_123',
+  })
 })
 
 test('runtime client omits appId from offerings requests', async () => {
@@ -125,6 +128,7 @@ test('runtime client omits appId from reconcile requests', async () => {
       sdkKey: 'runtime_public_key',
     })
     await client.reconcile({
+      accessContext: 'sk_ctx_v1.signed',
       appUserId: 'user_123',
       installationId: 'install_123',
       platform: 'ios',
@@ -138,6 +142,7 @@ test('runtime client omits appId from reconcile requests', async () => {
 
   assert.equal(requests.length, 1)
   assert.deepEqual(parseRequestBody(requests[0].request), {
+    accessContext: 'sk_ctx_v1.signed',
     appUserId: 'user_123',
     installationId: 'install_123',
     platform: 'ios',

@@ -6,7 +6,6 @@ import {
   endConnection,
   fetchProducts,
   finishTransaction,
-  getAppTransactionIOS,
   getAvailablePurchases,
   initConnection,
   purchaseErrorListener,
@@ -31,14 +30,6 @@ import type {
 
 export function createExpoIapAdapter(): SubKitIapAdapterBundle {
   const iap: SubKitExpoIapAdapter = {
-    async detectEnvironment() {
-      try {
-        const transaction = await getAppTransactionIOS()
-        return normalizeAppleEnvironment(transaction?.environment)
-      } catch {
-        return 'unknown'
-      }
-    },
     async endConnection() {
       await endConnection()
     },
@@ -64,7 +55,9 @@ export function createExpoIapAdapter(): SubKitIapAdapterBundle {
       return initConnection()
     },
     async requestPurchase(input) {
-      return requestPurchase(toExpoPurchaseRequest(input))
+      const purchases = await requestPurchase(toExpoPurchaseRequest(input))
+      if (purchases == null) return []
+      return (Array.isArray(purchases) ? purchases : [purchases]).map(normalizePurchase)
     },
     async restorePurchases() {
       await restorePurchases()
@@ -162,18 +155,12 @@ function normalizeSubscriptionOffers(
   if (product.type !== 'subs' || product.platform !== 'android') return undefined
   return product.subscriptionOffers.map((offer) => ({
     basePlanId: offer.basePlanIdAndroid ?? undefined,
+    currency: offer.currency ?? undefined,
+    displayPrice: offer.displayPrice,
     id: offer.id,
     offerToken: offer.offerTokenAndroid ?? undefined,
+    price: offer.price,
   }))
-}
-
-function normalizeAppleEnvironment(
-  value: string | null | undefined,
-): 'production' | 'sandbox' | 'unknown' {
-  const normalized = value?.trim().toLowerCase()
-  if (normalized === 'production') return 'production'
-  if (normalized === 'sandbox' || normalized === 'xcode') return 'sandbox'
-  return 'unknown'
 }
 
 function normalizePurchase(purchase: Purchase): SubKitIapPurchase {

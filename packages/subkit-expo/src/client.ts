@@ -52,8 +52,8 @@ export class SubKitRuntimeClient {
     this.sdkKey = options.sdkKey
   }
 
-  async getCustomerInfo(appUserId: string): Promise<CustomerInfo> {
-    const response = await this.post('/api/runtime/customer-info', { appUserId })
+  async getCustomerInfo(appUserId: string, accessContext?: string): Promise<CustomerInfo> {
+    const response = await this.post('/api/runtime/customer-info', { accessContext, appUserId })
     return customerInfoSchema.parse(response)
   }
 
@@ -69,6 +69,7 @@ export class SubKitRuntimeClient {
   }
 
   async reconcile(input: {
+    accessContext?: string
     appUserId?: string
     installationId: string
     platform: 'ios' | 'android'
@@ -78,6 +79,7 @@ export class SubKitRuntimeClient {
     storeIdentities?: StoreIdentityHints
   }): Promise<PurchaseSyncResult> {
     const request: IapReconcileRequest = {
+      accessContext: input.accessContext,
       appUserId: input.appUserId,
       installationId: input.installationId,
       platform: input.platform,

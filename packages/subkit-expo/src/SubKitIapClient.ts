@@ -44,8 +44,13 @@ import type {
   SubKitExpoIapConfig,
   SubKitIapPlatform,
   SubKitIapProduct,
+  SubKitIapProductType,
   SubKitIapPurchase,
+  SubKitOffering,
+  SubKitOfferingPackage,
+  SubKitOfferingsResponse,
   SubKitPurchaseRequest,
+  SubKitStoreProduct,
   SubKitSyncOptions,
 } from './types.js'
 
@@ -82,7 +87,7 @@ const DEFAULT_SUBKIT_IAP_OPTIONS: ResolvedSubKitIapOptions = {
 
 export interface SubKitIapClient {
   getCustomerInfo(appUserId?: string): Promise<CustomerInfo>
-  getOfferings(input?: { placement?: string }): Promise<RuntimeOfferingsResponse>
+  getOfferings(input?: { placement?: string }): Promise<SubKitOfferingsResponse>
   identify(appUserId: string): Promise<CustomerInfo>
   purchasePackage(packageId: string): Promise<PurchaseResult>
   restorePurchases(): Promise<PurchaseSyncResult | null>
@@ -152,17 +157,15 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   const appStateSource = options.appStateSource ?? createReactNativeAppStateSource()
   const iapOptions = resolveSubKitIapOptions(options.iap)
   const platform = options.platform ?? detectSubKitIapPlatform()
-  const credential = createRuntimeCredentialResolver(options, adapterBundle.iap, platform)
   const runtime = new SubKitRuntimeClient({
     apiBaseUrl: options.apiBaseUrl ?? DEFAULT_SUBKIT_API_BASE_URL,
-    sdkKey: credential.resolveKey,
+    sdkKey: options.sdkKey,
   })
   const identity = new MemoryIdentityStore()
-  const queue = options.queue ?? createDefaultPurchaseQueue(options, credential)
-  const customerInfoCache =
-    options.customerInfoCache ?? createDefaultCustomerInfoCache(options, credential)
+  const queue = options.queue ?? createDefaultPurchaseQueue(options)
+  const customerInfoCache = options.customerInfoCache ?? createDefaultCustomerInfoCache(options)
   let customerInfo: CustomerInfo | null = null
-  let offeringsCache: RuntimeOfferingsResponse | null = null
+  let offeringsCache: SubKitOfferingsResponse | null = null
   let sessionId = options.sessionId ?? createSessionId()
   const subscriptions: SubKitPurchaseListenerSubscription[] = []
   let appStateSubscription: { remove(): void } | null = null
@@ -173,6 +176,7 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   }
 
   const coordinator: PurchaseSyncCoordinator = createPurchaseSyncCoordinator({
+    accessContext: () => customerInfo?.accessContext?.token,
     appUserId: () => identity.appUserId,
     foregroundMinIntervalMs: iapOptions.foregroundMinIntervalMs,
     iap: adapterBundle.iap,
@@ -219,9 +223,12 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
     return publishCustomerInfoErrorOnFailure(() => internalSyncPurchases(input))
   }
 
-  async function handlePurchaseEvent(purchase: SubKitIapPurchase): Promise<void> {
+  async function handlePurchaseEvent(
+    purchase: SubKitIapPurchase,
+  ): Promise<PurchaseSyncResult | null> {
     const result = await coordinator.handlePurchaseEvent(purchase)
     if (result != null) await setCustomerInfo(result.customerInfo)
+    return result
   }
 
   async function identify(appUserId: string): Promise<CustomerInfo> {
@@ -230,7 +237,9 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
       offeringsCache = null
       identity.identify(appUserId)
       await hydrateCustomerInfo(appUserId)
-      const info = await setCustomerInfo(await runtime.getCustomerInfo(appUserId))
+      const info = await setCustomerInfo(
+        await runtime.getCustomerInfo(appUserId, customerInfo?.accessContext?.token),
+      )
       const result = await internalSyncPurchases({ force: true, reason: 'identity_changed' })
       return result?.customerInfo ?? info
     })
@@ -244,20 +253,27 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
       if (customerInfo?.appUserId !== resolvedAppUserId) {
         await hydrateCustomerInfo(resolvedAppUserId)
       }
-      return setCustomerInfo(await runtime.getCustomerInfo(resolvedAppUserId))
+      return setCustomerInfo(
+        await runtime.getCustomerInfo(resolvedAppUserId, customerInfo?.accessContext?.token),
+      )
     })
   }
 
   async function getOfferings(
     input: { placement?: string } = {},
-  ): Promise<RuntimeOfferingsResponse> {
+  ): Promise<SubKitOfferingsResponse> {
     const offerings = await runtime.getOfferings({
       appUserId: identity.appUserId,
       placement: input.placement,
       platform,
     })
-    if (input.placement == null) offeringsCache = offerings
-    return offerings
+    const resolvedOfferings = await resolveStoreProducts({
+      adapter: adapterBundle.iap,
+      offerings,
+      platform,
+    })
+    offeringsCache = resolvedOfferings
+    return resolvedOfferings
   }
 
   async function purchasePackage(packageId: string): Promise<PurchaseResult> {
@@ -333,8 +349,14 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
 
     await adapterBundle.iap.initConnection()
     try {
-      await adapterBundle.iap.requestPurchase(purchaseRequest)
-      return { purchaseId: productId, status: 'pending' }
+      const purchases = await adapterBundle.iap.requestPurchase(purchaseRequest)
+      let syncResult: PurchaseSyncResult | null = null
+      for (const purchase of purchases) {
+        syncResult = await handlePurchaseEvent(purchase)
+      }
+      return syncResult == null
+        ? { purchaseId: productId, status: 'pending' }
+        : { customerInfo: syncResult.customerInfo, status: 'verified' }
     } catch (error) {
       return purchaseResultFromIapError(error)
     }
@@ -450,6 +472,119 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   return subKitClient
 }
 
+async function resolveStoreProducts(input: {
+  adapter: SubKitExpoIapAdapter
+  offerings: RuntimeOfferingsResponse
+  platform: SubKitIapPlatform
+}): Promise<SubKitOfferingsResponse> {
+  const productRequests = new Map<
+    string,
+    { productId: string; productType: SubKitIapProductType }
+  >()
+  for (const offering of input.offerings.all) {
+    for (const item of offering.packages) {
+      const productId = storeProductId(item, input.platform)
+      if (productId == null) continue
+      const productType = item.product.kind === 'subscription' ? 'subs' : 'in-app'
+      productRequests.set(`${productType}:${productId}`, { productId, productType })
+    }
+  }
+
+  if (productRequests.size === 0)
+    return projectOfferings(input.offerings, input.platform, new Map())
+
+  await input.adapter.initConnection()
+  const products = new Map<string, SubKitIapProduct>()
+  for (const productType of ['subs', 'in-app'] as const) {
+    const skus = [...productRequests.values()]
+      .filter((request) => request.productType === productType)
+      .map((request) => request.productId)
+    if (skus.length === 0) continue
+    const fetched = await input.adapter.fetchProducts({
+      skus: [...new Set(skus)],
+      type: productType,
+    })
+    for (const product of fetched) products.set(`${productType}:${product.id}`, product)
+  }
+  return projectOfferings(input.offerings, input.platform, products)
+}
+
+function projectOfferings(
+  offerings: RuntimeOfferingsResponse,
+  platform: SubKitIapPlatform,
+  products: ReadonlyMap<string, SubKitIapProduct>,
+): SubKitOfferingsResponse {
+  const all = offerings.all.map((offering) => projectOffering(offering, platform, products))
+  return {
+    ...offerings,
+    all,
+    current:
+      offerings.current == null
+        ? null
+        : (all.find((offering) => offering.identifier === offerings.current?.identifier) ?? null),
+  }
+}
+
+function projectOffering(
+  offering: Offering,
+  platform: SubKitIapPlatform,
+  products: ReadonlyMap<string, SubKitIapProduct>,
+): SubKitOffering {
+  return {
+    ...offering,
+    packages: offering.packages.map((item) => projectOfferingPackage(item, platform, products)),
+  }
+}
+
+function projectOfferingPackage(
+  item: Offering['packages'][number],
+  platform: SubKitIapPlatform,
+  products: ReadonlyMap<string, SubKitIapProduct>,
+): SubKitOfferingPackage {
+  const productId = storeProductId(item, platform)
+  const productType = item.product.kind === 'subscription' ? 'subs' : 'in-app'
+  const product = productId == null ? undefined : products.get(`${productType}:${productId}`)
+  return { ...item, storeProduct: resolveStoreProduct(item, platform, product) }
+}
+
+function resolveStoreProduct(
+  item: Offering['packages'][number],
+  platform: SubKitIapPlatform,
+  product: SubKitIapProduct | undefined,
+): SubKitStoreProduct | null {
+  if (product == null) return null
+  if (platform === 'android' && item.product.kind === 'subscription') {
+    const basePlanId = item.product.storeProductIds.google?.basePlanId ?? null
+    const offerIds = item.product.storeProductIds.google?.offerIds ?? []
+    const offer = selectGoogleSubscriptionOffer(product, basePlanId, offerIds)
+    if (offer?.displayPrice == null || offer.displayPrice.trim() === '') return null
+    return {
+      currency: offer.currency ?? product.currency,
+      displayPrice: offer.displayPrice,
+      price: offer.price ?? product.price,
+      title: product.title,
+    }
+  }
+  if (product.displayPrice == null || product.displayPrice.trim() === '') return null
+  return {
+    currency: product.currency,
+    displayPrice: product.displayPrice,
+    price: product.price,
+    title: product.title,
+  }
+}
+
+function storeProductId(
+  item: Offering['packages'][number],
+  platform: SubKitIapPlatform,
+): string | null {
+  const productId =
+    platform === 'ios'
+      ? item.product.storeProductIds.apple?.productId
+      : item.product.storeProductIds.google?.productId
+  return productId == null || productId.trim() === '' ? null : productId
+}
+
 async function resolveGoogleOfferToken(input: {
   adapter: SubKitExpoIapAdapter
   basePlanId: string | null
@@ -489,137 +624,21 @@ function selectGoogleSubscriptionOffer(
   )
 }
 
-interface RuntimeCredentialResolver {
-  resolveEnvironment(): Promise<'production' | 'sandbox'>
-  resolveKey(): Promise<string>
+function createDefaultPurchaseQueue(options: ConfigureSubKitOptions): PurchaseQueueStore {
+  const key = hashStorageScope(`${options.sdkKey}:${options.installationId}`)
+  return createStoredPurchaseQueueStore({
+    key: `subkit:iap:purchase-queue:v1:${key}`,
+    storage: AsyncStorage,
+  })
 }
 
-function createRuntimeCredentialResolver(
-  options: ConfigureSubKitOptions,
-  adapter: SubKitExpoIapAdapter,
-  platform: SubKitIapPlatform,
-): RuntimeCredentialResolver {
-  if (options.sdkKey != null) {
-    return {
-      async resolveEnvironment() {
-        return 'production'
-      },
-      async resolveKey() {
-        return options.sdkKey ?? ''
-      },
-    }
-  }
-
-  let environmentPromise: Promise<'production' | 'sandbox'> | null = null
-  const resolveEnvironment = async (): Promise<'production' | 'sandbox'> => {
-    if (environmentPromise == null) {
-      environmentPromise = (async () => {
-        await adapter.initConnection()
-        const environment = await adapter.detectEnvironment?.()
-        if (environment !== 'production' && environment !== 'sandbox') {
-          throw new Error(
-            `SubKit could not derive a trusted ${platform} Store environment for Runtime credential selection`,
-          )
-        }
-        return environment
-      })()
-    }
-    return environmentPromise
-  }
-
-  return {
-    resolveEnvironment,
-    async resolveKey() {
-      const environment = await resolveEnvironment()
-      const key = options.sdkKeys?.[environment]
-      if (key == null || key.trim() === '') {
-        throw new Error(`SubKit ${environment} sdkKey is required`)
-      }
-      return key
-    },
-  }
-}
-
-function createDefaultPurchaseQueue(
-  options: ConfigureSubKitOptions,
-  credential: RuntimeCredentialResolver,
-): PurchaseQueueStore {
-  const stores = createEnvironmentStores(options, (key) =>
-    createStoredPurchaseQueueStore({
-      key: `subkit:iap:purchase-queue:v1:${key}`,
-      storage: AsyncStorage,
-    }),
-  )
-  return {
-    async enqueue(purchase, appUserId) {
-      return (await stores.current(credential)).enqueue(purchase, appUserId)
-    },
-    async enqueueMany(purchases, appUserId) {
-      return (await stores.current(credential)).enqueueMany(purchases, appUserId)
-    },
-    async listPending(appUserId) {
-      return (await stores.current(credential)).listPending(appUserId)
-    },
-    async markFailed(id, error) {
-      return (await stores.current(credential)).markFailed(id, error)
-    },
-    async markFinished(id) {
-      return (await stores.current(credential)).markFinished(id)
-    },
-    async markRejected(id, error) {
-      return (await stores.current(credential)).markRejected(id, error)
-    },
-    async markVerified(id) {
-      return (await stores.current(credential)).markVerified(id)
-    },
-  }
-}
-
-function createDefaultCustomerInfoCache(
-  options: ConfigureSubKitOptions,
-  credential: RuntimeCredentialResolver,
-): CustomerInfoCacheStore {
-  const stores = createEnvironmentStores(options, (key) =>
-    createCustomerInfoCacheStore({
-      keyPrefix: `subkit:customer-info:v1:${key}`,
-      policy: options.iap,
-      storage: AsyncStorage,
-    }),
-  )
-  return {
-    async read(appUserId) {
-      return (await stores.current(credential)).read(appUserId)
-    },
-    async write(info) {
-      return (await stores.current(credential)).write(info)
-    },
-  }
-}
-
-function createEnvironmentStores<Store>(
-  options: ConfigureSubKitOptions,
-  create: (key: string) => Store,
-): { current(credential: RuntimeCredentialResolver): Promise<Store> } {
-  const singleKey = options.sdkKey
-  if (singleKey != null) {
-    const store = create(hashStorageScope(`${singleKey}:${options.installationId}`))
-    return {
-      async current() {
-        return store
-      },
-    }
-  }
-  const production = create(
-    hashStorageScope(`${options.sdkKeys?.production ?? ''}:${options.installationId}`),
-  )
-  const sandbox = create(
-    hashStorageScope(`${options.sdkKeys?.sandbox ?? ''}:${options.installationId}`),
-  )
-  return {
-    async current(credential) {
-      return (await credential.resolveEnvironment()) === 'production' ? production : sandbox
-    },
-  }
+function createDefaultCustomerInfoCache(options: ConfigureSubKitOptions): CustomerInfoCacheStore {
+  const key = hashStorageScope(`${options.sdkKey}:${options.installationId}`)
+  return createCustomerInfoCacheStore({
+    keyPrefix: `subkit:customer-info:v1:${key}`,
+    policy: options.iap,
+    storage: AsyncStorage,
+  })
 }
 
 function hashStorageScope(value: string): string {
@@ -696,20 +715,8 @@ function detectSubKitIapPlatform(): SubKitIapPlatform {
 }
 
 function validateConfigureSubKitOptions(options: ConfigureSubKitOptions): void {
-  if (options.sdkKey != null && options.sdkKeys != null) {
-    throw new Error('Configure SubKit with sdkKey or sdkKeys, not both')
-  }
-  if (options.sdkKey == null && options.sdkKeys == null) {
-    throw new Error('SubKit sdkKey or sdkKeys are required')
-  }
-  if (options.sdkKey != null && options.sdkKey.trim() === '') {
+  if (options.sdkKey.trim() === '') {
     throw new Error('SubKit sdkKey is required')
-  }
-  if (
-    options.sdkKeys != null &&
-    (options.sdkKeys.production.trim() === '' || options.sdkKeys.sandbox.trim() === '')
-  ) {
-    throw new Error('SubKit production and sandbox sdkKeys are required')
   }
   if (options.installationId.trim() === '') throw new Error('SubKit installationId is required')
   const apiBaseUrl = options.apiBaseUrl ?? DEFAULT_SUBKIT_API_BASE_URL
@@ -769,10 +776,6 @@ function createLazyExpoIapAdapterBundle(): SubKitIapAdapterBundle {
   }
 
   const iap: SubKitExpoIapAdapter = {
-    async detectEnvironment() {
-      const bundle = await loadBundle()
-      return (await bundle.iap.detectEnvironment?.()) ?? 'unknown'
-    },
     async endConnection() {
       const bundle = await loadBundle()
       await bundle.iap.endConnection?.()

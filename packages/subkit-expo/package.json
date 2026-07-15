@@ -1,7 +1,7 @@
 {
   "name": "@piparotech/subkit-expo",
   "private": true,
-  "version": "0.1.6",
+  "version": "0.1.9",
   "type": "module",
   "sideEffects": false,
   "description": "Private SubKit Expo IAP SDK skeleton with automatic purchase sync.",

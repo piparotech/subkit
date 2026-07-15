@@ -1,4 +1,10 @@
-import type { PurchaseSyncReason, StoreIdentityHints } from '@piparotech/subkit-core'
+import type {
+  Offering,
+  OfferingPackage,
+  PurchaseSyncReason,
+  RuntimeOfferingsResponse,
+  StoreIdentityHints,
+} from '@piparotech/subkit-core'
 
 export type SubKitIapProductType = 'in-app' | 'subs'
 export type SubKitIapPlatform = 'ios' | 'android'
@@ -18,8 +24,31 @@ export interface SubKitIapProduct {
 
 export interface SubKitIapSubscriptionOffer {
   basePlanId?: string
+  currency?: string
+  displayPrice?: string
   id: string
   offerToken?: string
+  price?: number
+}
+
+export interface SubKitStoreProduct {
+  currency?: string
+  displayPrice: string
+  price?: number
+  title?: string
+}
+
+export interface SubKitOfferingPackage extends OfferingPackage {
+  storeProduct: SubKitStoreProduct | null
+}
+
+export interface SubKitOffering extends Omit<Offering, 'packages'> {
+  packages: SubKitOfferingPackage[]
+}
+
+export interface SubKitOfferingsResponse extends Omit<RuntimeOfferingsResponse, 'all' | 'current'> {
+  all: SubKitOffering[]
+  current: SubKitOffering | null
 }
 
 export interface SubKitIapPurchase {
@@ -66,11 +95,7 @@ export interface SubKitExpoIapConfig {
     syncOnForeground?: boolean
     syncOnPurchaseEvent?: boolean
   }
-  sdkKey?: string
-  sdkKeys?: {
-    production: string
-    sandbox: string
-  }
+  sdkKey: string
 }
 
 export interface SubKitIdentityState {

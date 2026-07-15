@@ -133,7 +133,7 @@ test('default purchase queue survives client reconfiguration', async () => {
   }
 })
 
-test('parallel runtime keys are selected from trusted native Store context', async () => {
+test('one app SDK key authenticates Offerings on iOS and Android before a purchase exists', async () => {
   const previousFetch = globalThis.fetch
   const headers = []
   globalThis.fetch = async (_url, request) => {
@@ -145,78 +145,44 @@ test('parallel runtime keys are selected from trusted native Store context', asy
   }
 
   try {
-    for (const environment of ['production', 'sandbox']) {
+    for (const platform of ['ios', 'android']) {
       const configuredClient = configureSubKit({
-        adapterBundle: {
-          iap: {
-            ...createIapAdapter(),
-            async detectEnvironment() {
-              return environment
-            },
-          },
-        },
+        adapterBundle: { iap: createIapAdapter() },
         appStateSource: {
           getCurrentState: () => 'active',
           subscribe: () => ({ remove() {} }),
         },
         appUserId: 'user_123',
         autoStart: false,
-        installationId: `install_${environment}`,
-        platform: 'ios',
-        sdkKeys: {
-          production: 'runtime_production_key',
-          sandbox: 'runtime_sandbox_key',
-        },
+        installationId: `install_${platform}`,
+        platform,
+        sdkKey: 'runtime_app_key',
       })
       await configuredClient.getOfferings()
     }
-    assert.deepEqual(headers, ['Bearer runtime_production_key', 'Bearer runtime_sandbox_key'])
+    assert.deepEqual(headers, ['Bearer runtime_app_key', 'Bearer runtime_app_key'])
   } finally {
     client.stop()
     globalThis.fetch = previousFetch
   }
 })
 
-test('unknown native Store context fails closed before Runtime HTTP', async () => {
-  const previousFetch = globalThis.fetch
-  let requestCount = 0
-  globalThis.fetch = async () => {
-    requestCount += 1
-    return new Response('{}', { status: 200 })
-  }
-
-  try {
-    const configuredClient = configureSubKit({
-      adapterBundle: {
-        iap: {
-          ...createIapAdapter(),
-          async detectEnvironment() {
-            return 'unknown'
-          },
+test('configuration requires exactly one non-empty SDK key', () => {
+  assert.throws(
+    () =>
+      configureSubKit({
+        adapterBundle: { iap: createIapAdapter() },
+        appStateSource: {
+          getCurrentState: () => 'active',
+          subscribe: () => ({ remove() {} }),
         },
-      },
-      appStateSource: {
-        getCurrentState: () => 'active',
-        subscribe: () => ({ remove() {} }),
-      },
-      appUserId: 'user_123',
-      autoStart: false,
-      installationId: 'install_unknown',
-      platform: 'ios',
-      sdkKeys: {
-        production: 'runtime_production_key',
-        sandbox: 'runtime_sandbox_key',
-      },
-    })
-    await assert.rejects(
-      () => configuredClient.getOfferings(),
-      /could not derive a trusted ios Store environment/,
-    )
-    assert.equal(requestCount, 0)
-  } finally {
-    client.stop()
-    globalThis.fetch = previousFetch
-  }
+        autoStart: false,
+        installationId: 'install_missing_key',
+        platform: 'ios',
+        sdkKey: '',
+      }),
+    /sdkKey is required/,
+  )
 })
 
 test('configureSubKit starts the client by default', async () => {

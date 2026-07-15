@@ -18,6 +18,7 @@ export interface SubKitIapLogger {
 }
 
 export interface PurchaseSyncCoordinatorOptions {
+  accessContext?: () => string | undefined
   appUserId: () => string | undefined
   foregroundMinIntervalMs?: number
   installationId: string
@@ -104,6 +105,7 @@ export function createPurchaseSyncCoordinator(
     )
 
     const result = await options.runtime.reconcile({
+      accessContext: options.accessContext?.(),
       appUserId,
       installationId: options.installationId,
       platform: options.platform,

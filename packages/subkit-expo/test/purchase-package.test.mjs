@@ -72,11 +72,34 @@ function createOfferings(google) {
   }
 }
 
-function installFetch(offerings) {
+function installFetch(offerings, reconciledPurchases = []) {
   const previousFetch = globalThis.fetch
-  globalThis.fetch = async (url) => {
+  globalThis.fetch = async (url, request) => {
     if (String(url).endsWith('/api/runtime/customer-info')) {
       return new Response(JSON.stringify(createCustomerInfo()), { status: 200 })
+    }
+    if (String(url).endsWith('/api/runtime/iap/reconcile')) {
+      const body = JSON.parse(request.body)
+      reconciledPurchases.push(body.purchases)
+      return new Response(
+        JSON.stringify({
+          acceptedPurchases: ['purchase_direct'],
+          checkedAt: '2026-07-01T00:00:00.000Z',
+          conflicts: [],
+          customerInfo: createCustomerInfo(),
+          finishableTransactions: [
+            {
+              isConsumable: false,
+              purchaseId: 'google_play:tx:purchase_direct',
+              store: 'google_play',
+              transactionId: 'purchase_direct',
+            },
+          ],
+          rejectedPurchases: [],
+          verificationStatus: 'verified',
+        }),
+        { status: 200 },
+      )
     }
     return new Response(JSON.stringify(offerings), { status: 200 })
   }
@@ -85,19 +108,25 @@ function installFetch(offerings) {
   }
 }
 
-function createAdapter(subscriptionOffers, requests) {
+function createAdapter(subscriptionOffers, requests, directPurchases = [], finished = []) {
   return {
     async fetchProducts() {
       return [
         {
+          currency: 'EUR',
+          displayPrice: 'from-product',
           id: 'com.acme.premium',
+          price: 99.99,
           raw: {},
           subscriptionOffers,
+          title: 'Premium',
           type: 'subs',
         },
       ]
     },
-    async finishTransaction() {},
+    async finishTransaction(input) {
+      finished.push(input)
+    },
     async getAvailablePurchases() {
       return []
     },
@@ -106,6 +135,7 @@ function createAdapter(subscriptionOffers, requests) {
     },
     async requestPurchase(request) {
       requests.push(request)
+      return directPurchases
     },
   }
 }
@@ -124,6 +154,54 @@ function configureAndroid(adapter) {
     sdkKey: 'runtime_public_key',
   })
 }
+
+test('getOfferings projects the exact configured Google base-plan price', async () => {
+  const requests = []
+  const restoreFetch = installFetch(
+    createOfferings({
+      basePlanId: 'monthly-base',
+      offerIds: [],
+      productId: 'com.acme.premium',
+    }),
+  )
+
+  try {
+    const configuredClient = configureAndroid(
+      createAdapter(
+        [
+          {
+            basePlanId: 'annual-base',
+            currency: 'EUR',
+            displayPrice: '49,99 €',
+            id: 'annual-base',
+            offerToken: 'annual-token',
+            price: 49.99,
+          },
+          {
+            basePlanId: 'monthly-base',
+            currency: 'EUR',
+            displayPrice: '5,99 €',
+            id: 'monthly-base',
+            offerToken: 'monthly-token',
+            price: 5.99,
+          },
+        ],
+        requests,
+      ),
+    )
+    const offerings = await configuredClient.getOfferings({ placement: 'paywall' })
+
+    assert.deepEqual(offerings.all[0].packages[0].storeProduct, {
+      currency: 'EUR',
+      displayPrice: '5,99 €',
+      price: 5.99,
+      title: 'Premium',
+    })
+  } finally {
+    client.stop()
+    restoreFetch()
+  }
+})
 
 test('purchasePackage resolves product, base plan and provider offer from Offerings', async () => {
   const requests = []
@@ -161,6 +239,51 @@ test('purchasePackage resolves product, base plan and provider offer from Offeri
         productType: 'subs',
       },
     ])
+  } finally {
+    client.stop()
+    restoreFetch()
+  }
+})
+
+test('purchasePackage immediately reconciles and finishes a directly returned Android purchase', async () => {
+  const requests = []
+  const reconciledPurchases = []
+  const finished = []
+  const directPurchase = {
+    productId: 'com.acme.premium',
+    purchaseToken: 'token_direct',
+    raw: { productId: 'com.acme.premium', store: 'google' },
+    receipt: 'token_direct',
+    store: 'google_play',
+    transactionId: 'purchase_direct',
+  }
+  const restoreFetch = installFetch(
+    createOfferings({
+      basePlanId: 'monthly-base',
+      offerIds: ['intro-7-day'],
+      productId: 'com.acme.premium',
+    }),
+    reconciledPurchases,
+  )
+
+  try {
+    const configuredClient = configureAndroid(
+      createAdapter(
+        [{ basePlanId: 'monthly-base', id: 'intro-7-day', offerToken: 'selected-token' }],
+        requests,
+        [directPurchase],
+        finished,
+      ),
+    )
+    await configuredClient.getCustomerInfo()
+    const result = await configuredClient.purchasePackage('monthly')
+
+    assert.equal(result.status, 'verified')
+    assert.equal(reconciledPurchases.length, 1)
+    assert.equal(reconciledPurchases[0][0].store, 'google_play')
+    assert.equal(reconciledPurchases[0][0].transactionId, 'purchase_direct')
+    assert.equal(finished.length, 1)
+    assert.equal(finished[0].purchase.transactionId, 'purchase_direct')
   } finally {
     client.stop()
     restoreFetch()

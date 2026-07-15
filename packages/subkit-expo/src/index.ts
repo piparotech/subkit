@@ -58,8 +58,12 @@ export type {
   SubKitIapPurchase,
   SubKitIapStore,
   SubKitIapSubscriptionOffer,
+  SubKitOffering,
+  SubKitOfferingPackage,
+  SubKitOfferingsResponse,
   SubKitIdentityState,
   SubKitPurchaseRequest,
+  SubKitStoreProduct,
   SubKitSyncOptions,
 } from './types.js'
 export { useSubKitEntitlement, useSubKitIapAutoSync } from './hooks.js'

@@ -7,7 +7,7 @@ SubKit is the entitlement authority. `expo-iap` is only the native store adapter
 ## Install
 
 ```sh
-pnpm add @piparotech/subkit-core@^0.1.5 @piparotech/subkit-expo@^0.1.6
+pnpm add @piparotech/subkit-core@^0.1.6 @piparotech/subkit-expo@^0.1.9
 ```
 
 Install the matching Core contract explicitly. The Expo SDK imports its runtime schemas from that host-provided package and will not auto-install a second unpublished copy.
@@ -21,12 +21,8 @@ Configure SubKit once at module scope during app startup, then import the shared
 import { configureSubKit } from '@piparotech/subkit-expo'
 
 configureSubKit({
-  // Parallel app-scoped public Runtime keys. Never use a server secret key here.
-  // On iOS SubKit selects the key from the native AppTransaction environment.
-  sdkKeys: {
-    production: 'runtime_production_key',
-    sandbox: 'runtime_sandbox_key',
-  },
+  // One public app-bound SDK Key for iOS and Android. Never use a Server API Key here.
+  sdkKey: 'sk_sdk_replace_me',
   // Stable id for this app install on this device. Generate once, persist locally, and reuse on every launch.
   installationId: 'install_abc',
   // Optional stable user id from your app/backend/auth system. Purchases require an identified user.
@@ -38,19 +34,19 @@ Call `configureSubKit(...)` at module level, not inside `useEffect` or a compone
 
 If `client` is used before configuration, it throws.
 
-Required fields are `installationId` plus either one already-selected `sdkKey` or the parallel `sdkKeys.production` and `sdkKeys.sandbox` pair. `appUserId` is optional. Runtime requests contain no app or environment selector; the authenticated key determines both. On iOS the SDK derives the Store context from native `AppTransaction.environment` and fails closed when it cannot select a trusted Production or Sandbox credential. A single `sdkKey` remains useful when the host already supplies the correctly scoped credential through a trusted build/track boundary. `apiBaseUrl` is optional and defaults to `https://subkit.piparo.tech`; pass it explicitly for local development or self-hosted SubKit deployments.
+Required fields are `sdkKey` and `installationId`; `appUserId` is optional. The same app-bound SDK Key is used on iOS and Android. Runtime requests contain no app or environment selector. Apple or Google verification determines the environment of each real purchase. A signed `accessContext` returned after verification binds later CustomerInfo and entitlement reads to that environment. `apiBaseUrl` is optional and defaults to `https://subkit.piparo.tech`; pass it explicitly for local development or self-hosted SubKit deployments.
 
-Create runtime SDK keys from a trusted backend context with a SubKit-issued `sk_srv_…` key carrying the `runtime_keys:write` capability, never from the mobile app:
+Create SDK keys from a trusted backend context with a SubKit-issued `sk_srv_…` key carrying the `sdk_keys:write` capability, never from the mobile app:
 
 ```sh
-curl -X POST https://subkit.example.com/api/server/runtime-sdk-keys \
+curl -X POST https://subkit.example.com/api/server/sdk-keys \
   -H "Authorization: Bearer $SUBKIT_SCOPED_SERVER_KEY" \
   -H "Content-Type: application/json" \
-  -H "Idempotency-Key: runtime-key:app_123:ios-production" \
-  -d '{"appId":"app_123","environment":"production","reason":"provision iOS production release"}'
+  -H "Idempotency-Key: sdk-key:app_123" \
+  -d '{"appId":"app_123","reason":"provision mobile SDK key"}'
 ```
 
-Issue both Production and Sandbox keys for the same app and use the returned plaintext values once in your Expo app config. SubKit stores one keyed hash per app/environment in `runtime_sdk_keys` plus an encrypted response for an identical idempotent retry; audit evidence contains hashes, never plaintext keys.
+Issue one SDK Key for the app and use the returned plaintext value once in your mobile configuration. SubKit stores one keyed hash per app in `sdk_keys` plus an encrypted response for an identical idempotent retry; audit evidence contains hashes, never plaintext keys.
 
 If the user logs in later, configure without `appUserId` first, then identify after login:
 
@@ -84,7 +80,7 @@ export function ProGate() {
 }
 ```
 
-`useSubKitEntitlement(...)` reads the latest known `CustomerInfo` from the configured SubKit singleton and refreshes it on mount when needed. Fresh CustomerInfo also includes a short-lived opaque `accessContext` that a trusted app backend can forward to SubKit Server reads; the token binds app, app user and Store environment, and expires independently from offline entitlement visibility. It also updates when SDK calls such as `identify()`, `getCustomerInfo()`, restore, foreground sync, or purchase sync receive newer customer info. CustomerInfo is persisted per app/install/environment and hydrated on restart. A network failure changes the snapshot to `offline` without erasing a previously active entitlement before its known expiry. Use the returned `refresh()` function before access-sensitive actions or after a custom purchase flow if you need to force a fresh server read.
+`useSubKitEntitlement(...)` reads the latest known `CustomerInfo` from the configured SubKit singleton and refreshes it on mount when needed. Fresh CustomerInfo includes a short-lived opaque `accessContext` after provider verification; a trusted app backend can forward it to SubKit Server reads. The token binds app, app user and the provider-verified Store environment, and expires independently from offline entitlement visibility. It updates when SDK calls such as `identify()`, `getCustomerInfo()`, restore, foreground sync or purchase sync receive newer customer info. CustomerInfo is persisted per app/install/user and hydrated on restart. A network failure changes the snapshot to `offline` without erasing a previously active entitlement before its known expiry. Use the returned `refresh()` function before access-sensitive actions or after a custom purchase flow if you need to force a fresh server read.
 
 If you need an immediate one-off check outside React, `identify()` and `getCustomerInfo()` still return `CustomerInfo`:
 
@@ -107,10 +103,13 @@ await client.identify('user_123')
 const offerings = await client.getOfferings()
 const selectedPackage = offerings.current?.packages[0]
 if (selectedPackage == null) throw new Error('No purchasable SubKit Offering is available')
+const displayPrice = selectedPackage.storeProduct?.displayPrice
 const result = await client.purchasePackage(selectedPackage.identifier)
 ```
 
-`purchasePackage(...)` starts the native store purchase and returns the current purchase outcome. Render package labels, prices, terms and trial copy from the returned Offering, then pass only the selected package's runtime `identifier`. Do not unlock paid features just because this call returned. SubKit entitlements are the source of truth.
+`getOfferings()` resolves every configured package against the current native Store catalog. `storeProduct.displayPrice` is the localized price for the exact Apple product or Google base plan that `purchasePackage(...)` will use. A missing `storeProduct` means the configured Store product is not currently purchasable and must not be replaced with a static catalog price.
+
+`purchasePackage(...)` starts the native store purchase and returns the current purchase outcome. Render translated package copy plus native Store prices from the returned Offering, then pass only the selected package's runtime `identifier`. Do not unlock paid features just because this call returned. SubKit entitlements are the source of truth.
 
 Handle every result status and keep thrown errors separate from expected purchase outcomes:
 
@@ -257,13 +256,12 @@ Advanced options:
 
 - `adapterBundle`: native store adapter. The default uses `expo-iap`. Override it for tests or a custom native purchase bridge.
 - `apiBaseUrl`: SubKit runtime API URL. Defaults to `https://subkit.piparo.tech`.
-- `sdkKey`: app-scoped public/runtime key. SubKit resolves the app from this bearer token.
-- `sdkKeys`: parallel Production and Sandbox Runtime credentials. On iOS the native Store context selects one; no environment field is sent to SubKit.
+- `sdkKey`: public app-bound SDK Key. SubKit resolves only the app from this bearer token; verified Apple or Google evidence determines Store environment.
 - `appStateSource`: foreground/background source. The default uses React Native `AppState`.
 - `autoStart`: starts the SDK when `configureSubKit(...)` is called. Defaults to `true`. Override only for custom startup control or tests.
 - `iap`: automatic sync and offline-cache behavior. By default, the SDK syncs on app start, foreground, and purchase events; CustomerInfo becomes stale after 24 hours, while non-expiring entitlements remain usable offline for at most 30 days after verification.
 - `platform`: store platform. The default uses React Native `Platform.OS` and supports `ios` and `android`.
-- `queue`: local purchase queue. The default is a durable, app/install/environment-scoped AsyncStorage queue. Override it for custom keys, limits, MMKV, encrypted storage, or tests.
+- `queue`: local purchase queue. The default is a durable SDK-key/install-scoped AsyncStorage queue; each queued purchase retains its own Store evidence. Override it for custom keys, limits, MMKV, encrypted storage, or tests.
 
 ## What `createStoredPurchaseQueueStore` does
 
@@ -279,7 +277,7 @@ Apple and Google already redeliver unfinished non-consumable and subscription tr
 
 The queue stores pending purchases locally and retries them on later syncs. A transaction is only finished after SubKit's runtime API says it is finishable.
 
-SubKit uses AsyncStorage by default and scopes its queue and CustomerInfo cache to the selected environment-scoped Runtime key plus installation ID. Production and Sandbox therefore never share durable state, and normal setup requires no queue configuration. Override the queue only when you need a custom key/size policy, encrypted storage, or another storage engine.
+SubKit uses AsyncStorage by default and scopes its queue and CustomerInfo cache to the app SDK Key plus installation ID. Queue entries retain provider transaction evidence, while Store-backed CustomerInfo is accepted only with an unexpired environment-bound access context issued by SubKit. Normal setup requires no queue configuration. Override the queue only when you need a custom key/size policy, encrypted storage, or another storage engine.
 
 For example, an app using MMKV can wrap it with the built-in adapter:
 
@@ -312,7 +310,7 @@ Silent sync uses `getAvailablePurchases()` and never calls prompt-prone restore 
 
 ## Offline CustomerInfo
 
-The default AsyncStorage cache is scoped to the selected runtime SDK key, installation ID, Store environment, and a hashed app-user identity. On startup the SDK publishes cached CustomerInfo before network sync completes. An expired `accessContext` is removed from cached/offline CustomerInfo even when the entitlement itself remains usable within its offline policy.
+The default AsyncStorage cache is scoped to the selected SDK key, installation ID, Store environment, and a hashed app-user identity. On startup the SDK publishes cached CustomerInfo before network sync completes. An expired `accessContext` is removed from cached/offline CustomerInfo even when the entitlement itself remains usable within its offline policy.
 
 - Expiring entitlements remain active offline only until their server-provided `expiresAt`.
 - Non-expiring entitlements remain active for at most `nonExpiringEntitlementMaxOfflineAgeMs` after `verifiedAt` (30 days by default).
