@@ -66,9 +66,11 @@ export type {
   SubKitStoreProduct,
   SubKitSyncOptions,
 } from './types.js'
-export { useSubKitEntitlement, useSubKitIapAutoSync } from './hooks.js'
+export { useSubKitEntitlement, useSubKitIapAutoSync, useSubKitOfferings } from './hooks.js'
 export type {
   UseSubKitEntitlementOptions,
   UseSubKitEntitlementResult,
   UseSubKitIapAutoSyncOptions,
+  UseSubKitOfferingsOptions,
+  UseSubKitOfferingsResult,
 } from './hooks.js'
