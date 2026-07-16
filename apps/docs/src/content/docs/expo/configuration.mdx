@@ -1,0 +1,112 @@
+---
+title: Configuration
+description: Configure the SubKit Expo SDK — required fields, installation ID, API base URL rules, iap options, and lifecycle.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+## Configure once at module scope
+
+```ts
+// src/subkit.ts
+import { configureSubKit } from '@piparotech/subkit-expo'
+
+configureSubKit({
+  sdkKey: 'sk_sdk_replace_me',
+  installationId: 'install_abc',
+  appUserId: 'user_123', // optional until login
+})
+```
+
+Call `configureSubKit(...)` at module level — not inside `useEffect` or a
+component. The SDK starts automatically (`autoStart` defaults to `true`) and
+begins syncing purchases, so the shared `client` is ready before paywalls,
+hooks, or entitlement checks use it. This also avoids reconfiguration on
+re-renders. Calling `configureSubKit` again stops the previous client and
+replaces it.
+
+If `client` is used before configuration, it throws.
+
+## Required fields
+
+- **`sdkKey`** — a public, app-bound SDK key (`sk_sdk_…`). The same key is used
+  on iOS and Android. It resolves only the app; verified Apple or Google
+  evidence determines the store environment of each purchase. Never use a
+  server key here.
+- **`installationId`** — a stable ID for this app install on this device.
+  Generate once, persist locally, and reuse on every launch:
+
+  ```ts
+  import AsyncStorage from '@react-native-async-storage/async-storage'
+  import * as Crypto from 'expo-crypto'
+
+  async function getInstallationId(): Promise<string> {
+    const existing = await AsyncStorage.getItem('subkit.installationId')
+    if (existing != null) return existing
+    const id = `install_${Crypto.randomUUID()}`
+    await AsyncStorage.setItem('subkit.installationId', id)
+    return id
+  }
+  ```
+
+  The SDK scopes its local queue and customer-info cache to
+  `sdkKey + installationId`, so a changing installation ID would orphan queued
+  purchases and cached access state.
+
+## `apiBaseUrl` and the HTTPS rule
+
+`apiBaseUrl` defaults to `https://subkit.piparo.tech`. Pass it explicitly for
+local development or self-hosted deployments. Validation enforces HTTPS
+everywhere except `localhost` and `127.0.0.1`:
+
+```ts
+configureSubKit({
+  sdkKey: 'sk_sdk_replace_me',
+  installationId,
+  apiBaseUrl: __DEV__ ? 'http://127.0.0.1:3010' : undefined,
+})
+```
+
+An invalid URL or plain HTTP against a non-local host throws at configure time.
+
+## `iap` options
+
+All sync and offline-cache behavior, with defaults:
+
+| Option                                  | Default | Effect                                                |
+| --------------------------------------- | ------- | ----------------------------------------------------- |
+| `autoSync`                              | `true`  | Master switch for automatic purchase sync             |
+| `syncOnAppStart`                        | `true`  | Sync once when the SDK starts                         |
+| `syncOnForeground`                      | `true`  | Sync when the app returns to foreground               |
+| `syncOnPurchaseEvent`                   | `true`  | Sync when a purchase listener event arrives           |
+| `foregroundMinIntervalMs`               | 15 min  | Minimum gap between foreground syncs                  |
+| `sessionResumeThresholdMs`              | 15 min  | Background time before foreground counts as a resume  |
+| `customerInfoStaleAfterMs`              | 24 h    | Cache age after which `freshness` becomes `stale`     |
+| `nonExpiringEntitlementMaxOfflineAgeMs` | 30 d    | Offline validity window for non-expiring entitlements |
+
+See [Offline access](/expo/offline/) for how the last two interact with cached
+entitlements.
+
+## Lifecycle: `autoStart`, `start()`, `stop()`
+
+By default the client starts when configured. Override `autoStart: false` only
+for custom startup control or tests, then call `client.start()` yourself.
+`start()` is idempotent — concurrent calls await the same startup. `stop()`
+tears down listeners and app-state subscriptions.
+
+## Advanced injection points
+
+`configureSubKit` also accepts `adapterBundle`, `appStateSource`, `queue`,
+`customerInfoCache`, `logger`, `platform`, and `sessionId`. These override
+defaults for tests or custom infrastructure — covered in
+[Advanced configuration](/expo/advanced/).
+
+<Aside type="danger" title="Key hygiene">
+  Only public `sk_sdk_…` keys belong in app code. SDK keys are issued from a trusted backend with a
+  server key carrying `sdk_keys:write` — never from the mobile app. See [Security
+  model](/operations/security/).
+</Aside>
+
+## Next
+
+- [Identifying users](/expo/identity/)
