@@ -1,0 +1,44 @@
+---
+title: Go-live checklist
+description: What to verify before taking a SubKit-backed product to production.
+---
+
+Work through this before your first production purchase.
+
+## Catalog
+
+- [ ] Products, plans, and the intended plan versions are published.
+- [ ] Each entitlement your app checks maps to at least one published plan.
+- [ ] Offerings resolve against the live store catalog with real prices.
+- [ ] Store bindings point at the correct Apple products / Google base plans.
+
+## Keys
+
+- [ ] A public SDK key (`sk_sdk_…`) is issued and used in the app config.
+- [ ] Server keys (`sk_srv_…`) are scoped per app with only the needed
+      capabilities and stored as secrets, never in client code.
+
+## Stores
+
+- [ ] Apple credentials and Server Notifications are configured and verified.
+- [ ] Google service account and RTDN are configured and verified.
+- [ ] Production vs. sandbox environments are separated.
+
+## Purchases and access
+
+- [ ] A real test purchase produces a verified source and an active entitlement.
+- [ ] The app unlocks only after `entitlements[KEY]?.active === true`.
+- [ ] Restore works after reinstall and device change.
+- [ ] The pending purchase path shows a confirming state and resolves via sync.
+
+## Operations
+
+- [ ] Observability covers verification failures, drift, and webhook/RTDN
+      delivery.
+- [ ] `SECRET_ENCRYPTION_KEY` is stable and backed up.
+- [ ] Store writes remain disabled unless explicitly needed and gated.
+
+## Related
+
+- [Security model](/operations/security/)
+- [Troubleshooting](/operations/troubleshooting/)
