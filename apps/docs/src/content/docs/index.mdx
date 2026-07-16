@@ -1,0 +1,67 @@
+---
+title: SubKit
+description: SubKit is the source of truth for product catalog, commerce, and access. Apps and backends read entitlements; store and payment providers are verified inputs.
+template: splash
+hero:
+  tagline: Catalog, commerce, and access — one source of truth for mobile and web products.
+  actions:
+    - text: Quickstart
+      link: /start/quickstart/
+      icon: right-arrow
+      variant: primary
+    - text: Choose an integration
+      link: /start/choose-an-integration/
+      icon: right-arrow
+      variant: minimal
+---
+
+import { Aside, Card, CardGrid } from '@astrojs/starlight/components'
+
+<Aside type="caution" title="Preview">
+  SubKit is unpublished. These docs describe the current greenfield model and may change before the
+  first public release.
+</Aside>
+
+SubKit owns versioned products and offerings, normalized subscriptions,
+purchases, contracts and payments, distributable access capacity, invitation
+reservations, allocations, and the resulting app-user or organization
+entitlements. Apple, Google, and payment providers feed SubKit through verified
+inputs — they never hold a competing license state.
+
+## Pick your path
+
+<CardGrid>
+  <Card title="Build a mobile app" icon="phone">
+    Integrate purchases and access in Expo / React Native with the `@piparotech/subkit-expo` SDK.
+    Render offerings, run purchases, and gate features on entitlements. [Start
+    here](/expo/overview/)
+  </Card>
+  <Card title="Build a backend" icon="laptop">
+    Drive commerce and access from trusted server code with `@piparotech/subkit-node`: customers,
+    contracts, payments, seats, and entitlement checks. [Start here](/node/overview/)
+  </Card>
+  <Card title="Operate the platform" icon="setting">
+    Connect stores, manage the catalog, and go live safely with verified reads and confirmed writes.
+    [Store setup](/stores/overview/)
+  </Card>
+</CardGrid>
+
+## The one rule that shapes everything
+
+App code never asks "does this user have a subscription or license?" It asks
+"does this **access subject** have this **entitlement**?" Every cause of access —
+free enrollment, store subscription, purchase, contract, trial, promotion, or
+manual provision — resolves through the same path:
+
+```text
+Access Source → Access Pool → Reservation/Allocation → Entitlement Grant
+```
+
+Read [Access model](/concepts/access-model/) to understand why this keeps app
+logic stable across single subscriptions, club seats, and every commerce cause.
+
+## Built for machines too
+
+Every page is available as clean Markdown, and SubKit publishes curated
+[`/llms.txt`](https://docs.subkit.piparo.tech/llms.txt) context files so coding
+agents can load the smallest useful context instead of scraping HTML.

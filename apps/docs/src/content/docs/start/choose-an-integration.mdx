@@ -1,0 +1,58 @@
+---
+title: Choose an integration
+description: Which SubKit surface you use — Expo SDK, Node SDK, Runtime API, or Server API — and the security boundary between them.
+---
+
+import { Aside, CardGrid, LinkCard } from '@astrojs/starlight/components'
+
+SubKit exposes four surfaces. The right one depends on where your code runs and
+what it is trusted to do.
+
+<CardGrid>
+  <LinkCard
+    title="Expo / React Native SDK"
+    href="/expo/overview/"
+    description="Public app-bound SDK key. Render offerings, run purchases, read entitlements on-device."
+  />
+  <LinkCard
+    title="Node.js backend SDK"
+    href="/node/overview/"
+    description="Server key with scoped capabilities. Create customers, contracts, payments, seats, and check entitlements."
+  />
+  <LinkCard
+    title="Runtime API"
+    href="/reference/overview/"
+    description="The HTTP surface the mobile SDK calls: offerings, customer info, entitlement checks, purchase reconcile."
+  />
+  <LinkCard
+    title="Server API"
+    href="/reference/overview/"
+    description="Tenant/app-scoped, capability-gated HTTP surface for trusted backend mutations and reads."
+  />
+</CardGrid>
+
+## The security boundary
+
+The single most important distinction is **which key runs where**:
+
+| Surface     | Key        | Runs in         | Can it mutate commerce/access?   |
+| ----------- | ---------- | --------------- | -------------------------------- |
+| Expo SDK    | `sk_sdk_…` | Mobile app      | No — reads and drives purchases  |
+| Runtime API | `sk_sdk_…` | Mobile app      | No — verified purchase reconcile |
+| Node SDK    | `sk_srv_…` | Trusted backend | Yes — with explicit capabilities |
+| Server API  | `sk_srv_…` | Trusted backend | Yes — with explicit capabilities |
+
+<Aside type="danger" title="Never ship a server key to a client">
+  Server keys (`sk_srv_…`) carry capabilities that mutate commerce and access. They belong only in
+  trusted backend environments. Mobile apps get a public, app-bound SDK key that resolves only the
+  app — verified store evidence determines the environment of each purchase.
+</Aside>
+
+## A common split
+
+Most products use more than one surface together:
+
+- The **mobile app** uses the Expo SDK to render paywalls and drive purchases.
+- The **app backend** uses the Node SDK to provision contracts, seats, and
+  free/promotional access, and to make server-side access decisions.
+- Both ultimately answer the same question through entitlements.
