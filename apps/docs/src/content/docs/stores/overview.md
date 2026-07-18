@@ -30,15 +30,24 @@ and normalizes.
 
 ## Apple
 
-Apple integration uses App Store Server Notifications, transaction validation,
-and environment separation (production vs. sandbox). Verified notifications
-create access sources; unverified client claims do not.
+Apple integration uses App Store Connect credentials, App Store Server
+Notifications V2, transaction validation, and environment separation
+(production vs. sandbox). Verified transactions create access sources;
+unverified client claims do not.
+
+Follow [Apple App Store setup](/stores/apple/) to configure credentials,
+subscriptions, store bindings, notifications, and Apple Sandbox testing.
 
 ## Google Play
 
-Google Play integration uses a service account, Real-Time Developer
-Notifications (RTDN), and package/app binding. The same verification boundary
-applies: only provider-verified evidence creates access.
+Google Play integration uses a Developer API service account, authenticated
+Cloud Pub/Sub delivery, Real-time Developer Notifications (RTDN), and exact
+package/product/base-plan bindings. The same verification boundary applies:
+only provider-verified evidence creates access.
+
+Follow [Google Play setup](/stores/google-play/) to configure service accounts,
+Pub/Sub, RTDN, subscriptions, store bindings, Internal Testing, and License
+Testing.
 
 ## The verification boundary
 
@@ -48,6 +57,8 @@ a store subscription and a contract can produce the same entitlement.
 
 ## Related
 
+- [Apple App Store setup](/stores/apple/)
+- [Google Play setup](/stores/google-play/)
 - [Catalog](/concepts/catalog/)
 - [Source of truth](/concepts/source-of-truth/)
 - [Go-live checklist](/operations/go-live/)

@@ -20,8 +20,12 @@ Work through this before your first production purchase.
 
 ## Stores
 
-- [ ] Apple credentials and Server Notifications are configured and verified.
-- [ ] Google service account and RTDN are configured and verified.
+- [ ] Apple catalog credentials validate, and a real Sandbox purchase proves
+      App Store Server API verification with the configured Apple key.
+- [ ] Apple Server Notifications V2 reach the configured SubKit endpoint.
+- [ ] Google service-account permissions cover app/catalog reads, financial
+      purchase data, and subscription management.
+- [ ] Google RTDN test delivery reaches SubKit through authenticated Pub/Sub.
 - [ ] Production vs. sandbox environments are separated.
 
 ## Purchases and access
@@ -40,5 +44,7 @@ Work through this before your first production purchase.
 
 ## Related
 
+- [Apple App Store setup](/stores/apple/)
+- [Google Play setup](/stores/google-play/)
 - [Security model](/operations/security/)
 - [Troubleshooting](/operations/troubleshooting/)

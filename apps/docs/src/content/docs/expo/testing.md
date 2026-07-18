@@ -97,6 +97,11 @@ Real end-to-end purchase verification needs the providers' test environments:
 Never put real keys in test fixtures; test SDK keys are still public app-bound
 keys, and server keys never appear in app or test code.
 
+Use the provider guides for the full server-side and console setup:
+
+- [Apple App Store setup](/stores/apple/)
+- [Google Play setup](/stores/google-play/)
+
 ## Next
 
 - [Recipes](/expo/recipes/)

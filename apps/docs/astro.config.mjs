@@ -132,7 +132,11 @@ export default defineConfig({
         },
         {
           label: 'Stores',
-          items: [{ label: 'Overview', slug: 'stores/overview' }],
+          items: [
+            { label: 'Overview', slug: 'stores/overview' },
+            { label: 'Apple App Store setup', slug: 'stores/apple' },
+            { label: 'Google Play setup', slug: 'stores/google-play' },
+          ],
         },
         {
           label: 'Reference',
