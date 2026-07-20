@@ -176,7 +176,7 @@ test('typed customer, contract, and access clients send scoped idempotent reques
       assert.match(request.headers.get('idempotency-key'), /.+/)
     }
     assert.equal(request.headers.get('authorization'), 'Bearer sk_srv_test')
-    assert.equal(request.headers.get('user-agent'), '@piparotech/subkit-node/0.1.7')
+    assert.equal(request.headers.get('user-agent'), '@piparotech/subkit-node/0.1.8')
   }
   assert.equal(requests[0].body.accessContext, 'sk_ctx_v1.signed.production')
   assert.equal(requests[1].body.accessContext, 'sk_ctx_v1.signed.production')

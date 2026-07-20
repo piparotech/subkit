@@ -1,6 +1,14 @@
 export { SubKit } from './SubKit.js'
 export type { SubKitOptions } from './SubKit.js'
+export type { OperatorContext } from './HttpClient.js'
 export { SubKitApiError, isSubKitApiError } from './errors.js'
+export type {
+  ContractLifecycleApplyInput,
+  ContractLifecyclePreview,
+  ContractLifecyclePreviewInput,
+  ContractLifecycleResult,
+  ListLicensesInput,
+} from './LicensesClient.js'
 export type {
   AllocateAccessInput,
   AllocationResult,
@@ -33,6 +41,8 @@ export type {
 } from './ProductsClient.js'
 export type { SubKitMutationOptions, SubKitRequestOptions } from './requestOptions.js'
 export type {
+  ServerContractPlanVersion,
+  ServerContractPlanVersionsResponse,
   ServerCustomerEntitlement,
   ServerCustomerInfoRequest,
   ServerCustomerInfoResponse,
@@ -41,7 +51,12 @@ export type {
   ServerEntitlementCheckResponse,
   ServerGrant,
   ServerGrantStatus,
+  ServerLicenseDetailResponse,
+  ServerLicenseKind,
+  ServerLicenseListResponse,
+  ServerLicenseSummary,
   ServerOfferingsRequest,
+  ServerOperatorContext,
   RuntimeOfferingsResponse,
   ServerProduct,
   ServerProductsRequest,

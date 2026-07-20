@@ -5,9 +5,16 @@ import { type SubKitErrorCode, subKitApiErrorResponseSchema } from '@piparotech/
 import { SubKitApiError } from './errors.js'
 import type { SubKitRequestOptions } from './requestOptions.js'
 
+export interface OperatorContext {
+  correlationId?: string
+  displayName?: string
+  userId: string
+}
+
 interface HttpClientOptions {
   apiBaseUrl: string
   fetchImpl: typeof fetch
+  operator?: OperatorContext
   secretKey: string
   timeoutMs: number
   userAgent: string
@@ -23,6 +30,7 @@ const legacyErrorSchema = z.object({ error: z.string().min(1) })
 export class HttpClient {
   private readonly apiBaseUrl: string
   private readonly fetchImpl: typeof fetch
+  private readonly operator: OperatorContext | undefined
   private readonly secretKey: string
   private readonly timeoutMs: number
   private readonly userAgent: string
@@ -30,9 +38,17 @@ export class HttpClient {
   constructor(options: HttpClientOptions) {
     this.apiBaseUrl = options.apiBaseUrl.replace(/\/+$/, '')
     this.fetchImpl = options.fetchImpl
+    this.operator = options.operator
     this.secretKey = options.secretKey
     this.timeoutMs = options.timeoutMs
     this.userAgent = options.userAgent
+  }
+
+  get<ResponseBody>(
+    path: string,
+    options: Omit<RequestOptions<ResponseBody>, 'body'>,
+  ): Promise<ResponseBody> {
+    return this.request('GET', path, { ...options, body: undefined })
   }
 
   post<ResponseBody>(path: string, options: RequestOptions<ResponseBody>): Promise<ResponseBody> {
@@ -48,7 +64,7 @@ export class HttpClient {
   }
 
   private async request<ResponseBody>(
-    method: 'DELETE' | 'PATCH' | 'POST',
+    method: 'DELETE' | 'GET' | 'PATCH' | 'POST',
     path: string,
     options: RequestOptions<ResponseBody>,
   ): Promise<ResponseBody> {
@@ -59,7 +75,7 @@ export class HttpClient {
 
     try {
       const response = await this.fetchImpl(`${this.apiBaseUrl}${path}`, {
-        body: JSON.stringify(options.body),
+        body: method === 'GET' ? undefined : JSON.stringify(options.body),
         headers: this.createHeaders(options.idempotencyKey),
         method,
         signal,
@@ -109,6 +125,7 @@ export class HttpClient {
       'user-agent': this.userAgent,
     })
     if (idempotencyKey != null) headers.set('idempotency-key', idempotencyKey)
+    if (this.operator != null) headers.set('x-subkit-operator', JSON.stringify(this.operator))
     return headers
   }
 }
