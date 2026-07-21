@@ -1,4 +1,5 @@
 # build output
 dist/
-# generated types
+# generated types and Nimbus build metadata
 .astro/
+.nimbus/

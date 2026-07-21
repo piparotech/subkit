@@ -1,0 +1,45 @@
+---
+import AgentDirective from '@/components/AgentDirective.astro'
+import Header from '@/components/Header.astro'
+import { SearchDialog } from '@/components/ui/search'
+import '@/styles/globals.css'
+import '@/styles/prose.css'
+import NimbusHead from 'nimbus-docs/components/NimbusHead.astro'
+import type { BasePageProps } from 'nimbus-docs/types'
+
+interface Props extends BasePageProps {}
+
+const props = Astro.props
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      window.__nbApplyTheme = () => {
+        let stored = null
+        try {
+          stored = localStorage.getItem('ui-mode')
+        } catch {}
+        const dark =
+          stored === 'dark' ||
+          (stored == null && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.dataset.mode = dark ? 'dark' : 'light'
+        document.querySelectorAll('[data-nb-theme-toggle]').forEach((button) => {
+          button.setAttribute('data-nb-state', dark ? 'dark' : 'light')
+        })
+      }
+      window.__nbApplyTheme()
+    </script>
+    <NimbusHead {...props} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <Header />
+    <slot />
+    <SearchDialog />
+    {props.markdownUrl && <AgentDirective markdownUrl={props.markdownUrl} />}
+  </body>
+</html>

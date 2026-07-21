@@ -1,0 +1,49 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+---
+
+<BaseLayout title="Page not found" description="The requested SubKit documentation page does not exist." noindex>
+  <main id="main-content" class="not-found" tabindex="-1">
+    <p class="status">404</p>
+    <h1>Page not found</h1>
+    <p>The documentation page does not exist or has moved.</p>
+    <a href="/">Back to SubKit docs</a>
+  </main>
+</BaseLayout>
+
+<style>
+  .not-found {
+    width: min(100% - 2rem, 44rem);
+    margin-inline: auto;
+    padding-block: clamp(5rem, 15vh, 9rem);
+  }
+
+  .status {
+    margin: 0;
+    color: var(--nb-primary);
+    font-weight: 800;
+  }
+
+  h1 {
+    margin: 0.4rem 0 0.75rem;
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  p {
+    max-width: 48ch;
+    color: var(--nb-muted-foreground);
+  }
+
+  a {
+    display: inline-flex;
+    margin-top: 1rem;
+    border-radius: 0.55rem;
+    background: var(--nb-primary);
+    padding: 0.65rem 0.9rem;
+    color: var(--nb-primary-foreground);
+    font-weight: 700;
+    text-decoration: none;
+  }
+</style>

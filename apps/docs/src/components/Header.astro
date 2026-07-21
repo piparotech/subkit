@@ -1,0 +1,97 @@
+---
+import { SearchTrigger } from '@/components/ui/search'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { config } from 'virtual:nimbus/config'
+---
+
+<header class="site-header">
+  <a class="brand" href="/" aria-label="SubKit documentation home">
+    <span class="brand-mark" aria-hidden="true">S</span>
+    <span>
+      <strong>SubKit</strong>
+      <small>Developer docs</small>
+    </span>
+  </a>
+
+  <div class="header-actions">
+    <SearchTrigger />
+    <a class="github-link" href={config.github ?? '#'} target="_blank" rel="noopener">
+      GitHub
+    </a>
+    <ThemeToggle />
+  </div>
+</header>
+
+<style>
+  .site-header {
+    position: sticky;
+    z-index: 30;
+    top: 0;
+    display: flex;
+    min-height: var(--nb-header-height);
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--nb-border);
+    background: color-mix(in oklch, var(--nb-background) 94%, transparent);
+    padding: 0.55rem clamp(1rem, 3vw, 2rem);
+    backdrop-filter: blur(12px);
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    color: var(--nb-foreground);
+    text-decoration: none;
+  }
+
+  .brand-mark {
+    display: grid;
+    width: 2rem;
+    height: 2rem;
+    place-items: center;
+    border-radius: 0.55rem;
+    background: var(--nb-primary);
+    color: var(--nb-primary-foreground);
+    font-weight: 800;
+  }
+
+  .brand strong,
+  .brand small {
+    display: block;
+    line-height: 1.2;
+  }
+
+  .brand small {
+    color: var(--nb-muted-foreground);
+    font-size: 0.72rem;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .github-link {
+    border-radius: 0.45rem;
+    padding: 0.4rem 0.55rem;
+    color: var(--nb-muted-foreground);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .github-link:hover {
+    background: var(--nb-accent);
+    color: var(--nb-foreground);
+  }
+
+  @media (max-width: 42rem) {
+    .github-link,
+    .brand small {
+      display: none;
+    }
+  }
+</style>

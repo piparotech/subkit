@@ -1,0 +1,151 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where([data-mode='dark'], [data-mode='dark'] *));
+
+:root {
+  color-scheme: light;
+  --nb-background: oklch(0.985 0.004 275);
+  --nb-foreground: oklch(0.225 0.025 275);
+  --nb-card: oklch(1 0 0);
+  --nb-card-foreground: var(--nb-foreground);
+  --nb-muted: oklch(0.955 0.008 275);
+  --nb-muted-foreground: oklch(0.46 0.025 275);
+  --nb-primary: oklch(0.52 0.2 285);
+  --nb-primary-foreground: oklch(0.99 0 0);
+  --nb-accent: oklch(0.94 0.024 285);
+  --nb-accent-foreground: oklch(0.3 0.08 285);
+  --nb-border: oklch(0.89 0.015 275);
+  --nb-border-strong: oklch(0.76 0.025 275);
+  --nb-ring: var(--nb-primary);
+  --nb-info: oklch(0.53 0.16 250);
+  --nb-info-muted: oklch(0.95 0.03 250);
+  --nb-success: oklch(0.48 0.13 150);
+  --nb-success-muted: oklch(0.95 0.03 150);
+  --nb-warning: oklch(0.55 0.14 80);
+  --nb-warning-muted: oklch(0.96 0.04 80);
+  --nb-danger: oklch(0.54 0.2 28);
+  --nb-danger-muted: oklch(0.95 0.035 28);
+  --nb-sidebar-width: 18.5rem;
+  --nb-toc-width: 16rem;
+  --nb-content-max: 46rem;
+  --nb-header-height: 4rem;
+  --nb-font-sans: 'Avenir Next', Avenir, 'Segoe UI', system-ui, sans-serif;
+  --nb-font-mono: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+}
+
+[data-mode='dark'] {
+  color-scheme: dark;
+  --nb-background: oklch(0.18 0.022 275);
+  --nb-foreground: oklch(0.94 0.008 275);
+  --nb-card: oklch(0.225 0.024 275);
+  --nb-card-foreground: var(--nb-foreground);
+  --nb-muted: oklch(0.27 0.022 275);
+  --nb-muted-foreground: oklch(0.72 0.02 275);
+  --nb-primary: oklch(0.72 0.16 285);
+  --nb-primary-foreground: oklch(0.17 0.03 285);
+  --nb-accent: oklch(0.31 0.05 285);
+  --nb-accent-foreground: oklch(0.96 0.01 285);
+  --nb-border: oklch(0.34 0.022 275);
+  --nb-border-strong: oklch(0.48 0.03 275);
+  --nb-info: oklch(0.72 0.12 250);
+  --nb-info-muted: oklch(0.25 0.04 250);
+  --nb-success: oklch(0.72 0.12 150);
+  --nb-success-muted: oklch(0.25 0.04 150);
+  --nb-warning: oklch(0.78 0.13 80);
+  --nb-warning-muted: oklch(0.28 0.04 80);
+  --nb-danger: oklch(0.72 0.16 28);
+  --nb-danger-muted: oklch(0.27 0.05 28);
+}
+
+@theme inline {
+  --color-background: var(--nb-background);
+  --color-foreground: var(--nb-foreground);
+  --color-card: var(--nb-card);
+  --color-card-foreground: var(--nb-card-foreground);
+  --color-muted: var(--nb-muted);
+  --color-muted-foreground: var(--nb-muted-foreground);
+  --color-primary: var(--nb-primary);
+  --color-primary-foreground: var(--nb-primary-foreground);
+  --color-accent: var(--nb-accent);
+  --color-accent-foreground: var(--nb-accent-foreground);
+  --color-border: var(--nb-border);
+  --color-border-strong: var(--nb-border-strong);
+  --color-ring: var(--nb-ring);
+  --color-info: var(--nb-info);
+  --color-info-muted: var(--nb-info-muted);
+  --color-success: var(--nb-success);
+  --color-success-muted: var(--nb-success-muted);
+  --color-warning: var(--nb-warning);
+  --color-warning-muted: var(--nb-warning-muted);
+  --color-danger: var(--nb-danger);
+  --color-danger-muted: var(--nb-danger-muted);
+  --font-sans: var(--nb-font-sans);
+  --font-mono: var(--nb-font-mono);
+  --shadow-default: 0 4px 8px color-mix(in oklch, var(--nb-foreground) 8%, transparent);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--nb-background);
+  scroll-padding-top: calc(var(--nb-header-height) + 1.5rem);
+}
+
+body {
+  margin: 0;
+  background: var(--nb-background);
+  color: var(--nb-foreground);
+  font-family: var(--nb-font-sans);
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: var(--nb-primary);
+  text-underline-offset: 0.18em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--nb-ring);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 0.75rem;
+  left: 0.75rem;
+  transform: translateY(-200%);
+  border-radius: 0.5rem;
+  background: var(--nb-primary);
+  color: var(--nb-primary-foreground);
+  padding: 0.6rem 0.9rem;
+  font-weight: 700;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

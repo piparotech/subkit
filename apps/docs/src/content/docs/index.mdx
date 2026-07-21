@@ -1,26 +1,11 @@
 ---
 title: SubKit
 description: SubKit is the source of truth for product catalog, commerce, and access. Apps and backends read entitlements; store and payment providers are verified inputs.
-template: splash
-hero:
-  tagline: Catalog, commerce, and access — one source of truth for mobile and web products.
-  actions:
-    - text: Quickstart
-      link: /start/quickstart/
-      icon: right-arrow
-      variant: primary
-    - text: Choose an integration
-      link: /start/choose-an-integration/
-      icon: right-arrow
-      variant: minimal
+mode: custom
+banner:
+  content: SubKit is unpublished. These docs describe the current greenfield model and may change before the first public release.
+  type: caution
 ---
-
-import { Aside, Card, CardGrid } from '@astrojs/starlight/components'
-
-<Aside type="caution" title="Preview">
-  SubKit is unpublished. These docs describe the current greenfield model and may change before the
-  first public release.
-</Aside>
 
 SubKit owns versioned products and offerings, normalized subscriptions,
 purchases, contracts and payments, distributable access capacity, invitation
@@ -31,16 +16,16 @@ inputs — they never hold a competing license state.
 ## Pick your path
 
 <CardGrid>
-  <Card title="Build a mobile app" icon="phone">
+  <Card title="Build a mobile app" icon="ph:device-mobile">
     Integrate purchases and access in Expo / React Native with the `@piparotech/subkit-expo` SDK.
     Render offerings, run purchases, and gate features on entitlements. [Start
     here](/expo/overview/)
   </Card>
-  <Card title="Build a backend" icon="laptop">
+  <Card title="Build a backend" icon="ph:terminal-window">
     Drive commerce and access from trusted server code with `@piparotech/subkit-node`: customers,
     contracts, payments, seats, and entitlement checks. [Start here](/node/overview/)
   </Card>
-  <Card title="Operate the platform" icon="setting">
+  <Card title="Operate the platform" icon="ph:gear-six">
     Connect stores, manage the catalog, and go live safely with verified reads and confirmed writes.
     [Store setup](/stores/overview/)
   </Card>

@@ -1,0 +1,121 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import { PageActions } from '@/components/ui/page-actions'
+import type { DocsPageProps } from 'nimbus-docs/types'
+
+interface Props extends DocsPageProps {}
+
+const props = Astro.props
+---
+
+<BaseLayout
+  title={props.title}
+  description={props.description}
+  noindex={props.noindex}
+  markdownUrl={props.markdownUrl}
+  socialImage={props.socialImage}
+  lastUpdated={props.lastUpdated}
+  head={props.head}
+  collection={props.collection}
+  entryId={props.entryId}
+>
+  {props.banner && <div class="site-banner">{props.banner.content}</div>}
+  <main id="main-content" class="landing" tabindex="-1" data-pagefind-body>
+    <header class="landing-header">
+      <p class="product-line">SubKit developer platform</p>
+      <h1>{props.title}</h1>
+      {props.description && <p class="lede">{props.description}</p>}
+      <div class="landing-actions">
+        <a class="primary-action" href="/start/quickstart/">Start the quickstart</a>
+        <a href="/start/choose-an-integration/">Choose an integration</a>
+      </div>
+      <PageActions markdownUrl={props.markdownUrl} lastUpdated={props.lastUpdated} />
+      {props.editUrl && (
+        <a class="edit-link" href={props.editUrl} target="_blank" rel="noopener">
+          Edit this page
+        </a>
+      )}
+    </header>
+    <article class="docs-prose landing-prose">
+      <slot />
+    </article>
+  </main>
+</BaseLayout>
+
+<style>
+  .site-banner {
+    border-bottom: 1px solid var(--nb-border);
+    background: var(--nb-warning-muted);
+    padding: 0.65rem 1rem;
+    text-align: center;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  .landing {
+    width: min(100% - 2rem, 72rem);
+    margin-inline: auto;
+    padding-block: clamp(3rem, 8vw, 7rem);
+  }
+
+  .landing-header {
+    max-width: 58rem;
+    margin-bottom: clamp(3rem, 8vw, 6rem);
+  }
+
+  .product-line {
+    margin: 0 0 0.8rem;
+    color: var(--nb-primary);
+    font-weight: 750;
+  }
+
+  h1 {
+    margin: 0;
+    max-width: 12ch;
+    font-size: clamp(4rem, 15vw, 6rem);
+    letter-spacing: -0.04em;
+    line-height: 0.92;
+    text-wrap: balance;
+  }
+
+  .lede {
+    max-width: 62ch;
+    margin: 1.5rem 0;
+    color: var(--nb-muted-foreground);
+    font-size: clamp(1.15rem, 2vw, 1.4rem);
+    text-wrap: pretty;
+  }
+
+  .landing-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.7rem 1rem;
+    margin-bottom: 1.3rem;
+  }
+
+  .landing-actions a {
+    border-radius: 0.55rem;
+    padding: 0.65rem 0.85rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .landing-actions .primary-action {
+    background: var(--nb-primary);
+    color: var(--nb-primary-foreground);
+  }
+
+  .edit-link {
+    display: inline-flex;
+    margin-top: 0.35rem;
+    color: var(--nb-muted-foreground);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .landing-prose {
+    max-width: 56rem;
+  }
+</style>

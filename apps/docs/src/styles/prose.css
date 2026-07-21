@@ -1,0 +1,123 @@
+.docs-prose {
+  min-width: 0;
+  max-width: var(--nb-content-max);
+  color: var(--nb-foreground);
+  font-size: 1rem;
+}
+
+.docs-prose > :first-child {
+  margin-top: 0;
+}
+
+.docs-prose h1,
+.docs-prose h2,
+.docs-prose h3,
+.docs-prose h4 {
+  color: var(--nb-foreground);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.docs-prose h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 6vw, 4rem);
+  letter-spacing: -0.035em;
+}
+
+.docs-prose h2 {
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  border-top: 1px solid var(--nb-border);
+  padding-top: 1.5rem;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+.docs-prose h3 {
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  font-size: 1.25rem;
+}
+
+.docs-prose p,
+.docs-prose li {
+  text-wrap: pretty;
+}
+
+.docs-prose p,
+.docs-prose ul,
+.docs-prose ol,
+.docs-prose table,
+.docs-prose pre,
+.docs-prose blockquote {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.docs-prose ul,
+.docs-prose ol {
+  padding-left: 1.5rem;
+}
+
+.docs-prose li + li {
+  margin-top: 0.35rem;
+}
+
+.docs-prose strong {
+  font-weight: 700;
+}
+
+.docs-prose code:not(:where(pre *)) {
+  border: 1px solid var(--nb-border);
+  border-radius: 0.3rem;
+  background: var(--nb-muted);
+  padding: 0.08rem 0.35rem;
+  color: var(--nb-foreground);
+  font-family: var(--nb-font-mono);
+  font-size: 0.875em;
+}
+
+.docs-prose pre {
+  overflow-x: auto;
+  border: 1px solid var(--nb-border);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  font-size: 0.875rem;
+}
+
+.docs-prose table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.docs-prose th,
+.docs-prose td {
+  border-bottom: 1px solid var(--nb-border);
+  padding: 0.7rem 0.85rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.docs-prose th {
+  background: var(--nb-muted);
+  font-weight: 700;
+}
+
+.docs-prose blockquote {
+  margin-inline: 0;
+  border: 1px solid var(--nb-border);
+  border-radius: 0.75rem;
+  background: var(--nb-card);
+  padding: 0.75rem 1rem;
+  color: var(--nb-muted-foreground);
+}
+
+.docs-prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+}

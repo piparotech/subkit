@@ -1,0 +1,12 @@
+---
+interface Props {
+  markdownUrl: string
+}
+
+const { markdownUrl } = Astro.props
+---
+
+<p data-ai-agent-directive hidden>
+  Prefer the clean Markdown alternate for this page: <a href={markdownUrl}>{markdownUrl}</a>.
+  Discover the smallest relevant SubKit context through <a href="/llms.txt">/llms.txt</a>.
+</p>

@@ -1,0 +1,441 @@
+{
+  "schemaVersion": 1,
+  "framework": {
+    "name": "@astrojs/starlight",
+    "version": "0.41.3",
+    "llmsPlugin": "starlight-llms-txt@0.11.0"
+  },
+  "site": "https://docs.subkit.piparo.tech",
+  "expected": {
+    "publicContentPages": 33,
+    "mdxPages": 4,
+    "llmsOutputs": 7,
+    "invariants": [
+      "SubKit is the source of truth for Catalog, Commerce, and Access.",
+      "Access always follows: Access Source -> Access Pool -> Reservation/Allocation -> Entitlement Grant.",
+      "Apps check entitlements, never subscription, plan, package, or store-product IDs.",
+      "Mobile apps use only public app-bound SDK keys. Server keys belong only in trusted backends.",
+      "Store purchases unlock access only after provider verification and an active entitlement.",
+      "Mutations require the documented capability, an idempotency key, and an audit reason.",
+      "Store reads may run automatically; store writes require preview, explicit confirmation, apply, then verify."
+    ]
+  },
+  "pages": [
+    {
+      "source": "index.mdx",
+      "sourceType": "mdx",
+      "route": "/",
+      "output": "index.html",
+      "title": "SubKit",
+      "description": "SubKit is the source of truth for product catalog, commerce, and access. Apps and backends read entitlements; store and payment providers are verified inputs.",
+      "htmlTitle": "SubKit | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/"
+    },
+    {
+      "source": "concepts/access-model.md",
+      "sourceType": "md",
+      "route": "/concepts/access-model/",
+      "output": "concepts/access-model/index.html",
+      "title": "Access model",
+      "description": "Source → Pool → Reservation/Allocation → Grant. Why every commerce cause resolves to the same access path.",
+      "htmlTitle": "Access model | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/concepts/access-model/"
+    },
+    {
+      "source": "concepts/catalog.md",
+      "sourceType": "md",
+      "route": "/concepts/catalog/",
+      "output": "concepts/catalog/index.html",
+      "title": "Catalog",
+      "description": "How SubKit models products, plans, immutable plan versions, prices, offers, offerings, and store bindings.",
+      "htmlTitle": "Catalog | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/concepts/catalog/"
+    },
+    {
+      "source": "concepts/commerce.md",
+      "sourceType": "md",
+      "route": "/concepts/commerce/",
+      "output": "concepts/commerce/index.html",
+      "title": "Commerce",
+      "description": "The normalized commerce causes SubKit recognizes, and how payment evidence stays separate from access.",
+      "htmlTitle": "Commerce | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/concepts/commerce/"
+    },
+    {
+      "source": "concepts/glossary.md",
+      "sourceType": "md",
+      "route": "/concepts/glossary/",
+      "output": "concepts/glossary/index.html",
+      "title": "Glossary",
+      "description": "SubKit terminology — public product terms, technical objects, and deliberately avoided legacy terms.",
+      "htmlTitle": "Glossary | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/concepts/glossary/"
+    },
+    {
+      "source": "concepts/identity-and-tenancy.md",
+      "sourceType": "md",
+      "route": "/concepts/identity-and-tenancy/",
+      "output": "concepts/identity-and-tenancy/index.html",
+      "title": "Identity and tenancy",
+      "description": "Tenants, apps, app users, organizations, access subjects, billing accounts, and store environments — and how they relate.",
+      "htmlTitle": "Identity and tenancy | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/concepts/identity-and-tenancy/"
+    },
+    {
+      "source": "concepts/source-of-truth.md",
+      "sourceType": "md",
+      "route": "/concepts/source-of-truth/",
+      "output": "concepts/source-of-truth/index.html",
+      "title": "Source of truth",
+      "description": "SubKit owns catalog, normalized commerce events, and derived access. Store and payment providers are verified inputs, never competing truth.",
+      "htmlTitle": "Source of truth | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/concepts/source-of-truth/"
+    },
+    {
+      "source": "expo/advanced.md",
+      "sourceType": "md",
+      "route": "/expo/advanced/",
+      "output": "expo/advanced/index.html",
+      "title": "Advanced configuration",
+      "description": "Override the purchase queue, CustomerInfo cache, app-state source, adapter bundle, and platform detection.",
+      "htmlTitle": "Advanced configuration | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/advanced/"
+    },
+    {
+      "source": "expo/configuration.mdx",
+      "sourceType": "mdx",
+      "route": "/expo/configuration/",
+      "output": "expo/configuration/index.html",
+      "title": "Configuration",
+      "description": "Configure the SubKit Expo SDK — required fields, installation ID, API base URL rules, iap options, and lifecycle.",
+      "htmlTitle": "Configuration | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/configuration/"
+    },
+    {
+      "source": "expo/conflicts.md",
+      "sourceType": "md",
+      "route": "/expo/conflicts/",
+      "output": "expo/conflicts/index.html",
+      "title": "Ownership & unclaimed purchases",
+      "description": "Ownership states, unclaimed purchases with claim hints, conflict resolution, and family sharing.",
+      "htmlTitle": "Ownership & unclaimed purchases | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/conflicts/"
+    },
+    {
+      "source": "expo/entitlements.md",
+      "sourceType": "md",
+      "route": "/expo/entitlements/",
+      "output": "expo/entitlements/index.html",
+      "title": "Checking entitlements",
+      "description": "The useSubKitEntitlement hook, imperative reads, entitlement status beyond active, and refresh control.",
+      "htmlTitle": "Checking entitlements | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/entitlements/"
+    },
+    {
+      "source": "expo/error-handling.md",
+      "sourceType": "md",
+      "route": "/expo/error-handling/",
+      "output": "expo/error-handling/index.html",
+      "title": "Error handling",
+      "description": "Domain results vs. thrown errors, retryable flags, normalized IAP errors, and redaction guarantees.",
+      "htmlTitle": "Error handling | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/error-handling/"
+    },
+    {
+      "source": "expo/hooks.md",
+      "sourceType": "md",
+      "route": "/expo/hooks/",
+      "output": "expo/hooks/index.html",
+      "title": "React hooks",
+      "description": "The complete React hook surface — useSubKitEntitlement, useSubKitOfferings, and useSubKitIapAutoSync.",
+      "htmlTitle": "React hooks | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/hooks/"
+    },
+    {
+      "source": "expo/identity.md",
+      "sourceType": "md",
+      "route": "/expo/identity/",
+      "output": "expo/identity/index.html",
+      "title": "Identifying users",
+      "description": "Anonymous start, identify() after login, identity switches, and automatic store identity hints.",
+      "htmlTitle": "Identifying users | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/identity/"
+    },
+    {
+      "source": "expo/installation.md",
+      "sourceType": "md",
+      "route": "/expo/installation/",
+      "output": "expo/installation/index.html",
+      "title": "Installation",
+      "description": "Install the SubKit Expo SDK, its core contract, and the expo-iap native adapter.",
+      "htmlTitle": "Installation | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/installation/"
+    },
+    {
+      "source": "expo/offerings.md",
+      "sourceType": "md",
+      "route": "/expo/offerings/",
+      "output": "expo/offerings/index.html",
+      "title": "Offerings & paywalls",
+      "description": "Load offerings, render packages with live store prices, and never fall back to static catalog values.",
+      "htmlTitle": "Offerings & paywalls | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/offerings/"
+    },
+    {
+      "source": "expo/offline.md",
+      "sourceType": "md",
+      "route": "/expo/offline/",
+      "output": "expo/offline/index.html",
+      "title": "Offline access",
+      "description": "How cached CustomerInfo behaves offline — freshness states, expiry rules, and the accessContext lifecycle.",
+      "htmlTitle": "Offline access | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/offline/"
+    },
+    {
+      "source": "expo/overview.md",
+      "sourceType": "md",
+      "route": "/expo/overview/",
+      "output": "expo/overview/index.html",
+      "title": "Expo / React Native",
+      "description": "How the SubKit Expo SDK is structured and where to find each integration task.",
+      "htmlTitle": "Expo / React Native | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/overview/"
+    },
+    {
+      "source": "expo/purchases.md",
+      "sourceType": "md",
+      "route": "/expo/purchases/",
+      "output": "expo/purchases/index.html",
+      "title": "Making purchases",
+      "description": "Run purchases and handle every outcome — verified, pending, cancelled, failed — plus thrown errors.",
+      "htmlTitle": "Making purchases | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/purchases/"
+    },
+    {
+      "source": "expo/recipes.md",
+      "sourceType": "md",
+      "route": "/expo/recipes/",
+      "output": "expo/recipes/index.html",
+      "title": "Recipes",
+      "description": "Complete patterns — gated screens, paywall preflight, trial and billing-issue UI, and restore with re-check.",
+      "htmlTitle": "Recipes | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/recipes/"
+    },
+    {
+      "source": "expo/restore-and-sync.md",
+      "sourceType": "md",
+      "route": "/expo/restore-and-sync/",
+      "output": "expo/restore-and-sync/index.html",
+      "title": "Restore & sync",
+      "description": "Manual restore, automatic sync triggers, sync reasons, and the useSubKitIapAutoSync hook.",
+      "htmlTitle": "Restore & sync | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/restore-and-sync/"
+    },
+    {
+      "source": "expo/testing.md",
+      "sourceType": "md",
+      "route": "/expo/testing/",
+      "output": "expo/testing/index.html",
+      "title": "Testing",
+      "description": "Test SubKit integrations deterministically with memory stores, injected adapters, and sandbox purchases.",
+      "htmlTitle": "Testing | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/testing/"
+    },
+    {
+      "source": "expo/troubleshooting.md",
+      "sourceType": "md",
+      "route": "/expo/troubleshooting/",
+      "output": "expo/troubleshooting/index.html",
+      "title": "Troubleshooting",
+      "description": "Expo SDK symptoms and their causes — configuration throws, missing store products, stuck pending, missing entitlements.",
+      "htmlTitle": "Troubleshooting | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/expo/troubleshooting/"
+    },
+    {
+      "source": "node/overview.md",
+      "sourceType": "md",
+      "route": "/node/overview/",
+      "output": "node/overview/index.html",
+      "title": "Node.js backend",
+      "description": "Drive SubKit commerce and access from trusted server code — customers, contracts, payments, seats, entitlement checks, idempotency, and errors.",
+      "htmlTitle": "Node.js backend | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/node/overview/"
+    },
+    {
+      "source": "operations/go-live.md",
+      "sourceType": "md",
+      "route": "/operations/go-live/",
+      "output": "operations/go-live/index.html",
+      "title": "Go-live checklist",
+      "description": "What to verify before taking a SubKit-backed product to production.",
+      "htmlTitle": "Go-live checklist | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/operations/go-live/"
+    },
+    {
+      "source": "operations/security.md",
+      "sourceType": "md",
+      "route": "/operations/security/",
+      "output": "operations/security/index.html",
+      "title": "Security model",
+      "description": "How SubKit handles keys, secrets, verification, and least privilege.",
+      "htmlTitle": "Security model | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/operations/security/"
+    },
+    {
+      "source": "operations/troubleshooting.md",
+      "sourceType": "md",
+      "route": "/operations/troubleshooting/",
+      "output": "operations/troubleshooting/index.html",
+      "title": "Troubleshooting",
+      "description": "Common SubKit integration symptoms and what to check first.",
+      "htmlTitle": "Troubleshooting | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/operations/troubleshooting/"
+    },
+    {
+      "source": "reference/overview.md",
+      "sourceType": "md",
+      "route": "/reference/overview/",
+      "output": "reference/overview/index.html",
+      "title": "Reference",
+      "description": "SubKit's public surfaces — SDK keys and capabilities, Runtime API, Server API, and the error model.",
+      "htmlTitle": "Reference | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/reference/overview/"
+    },
+    {
+      "source": "start/choose-an-integration.mdx",
+      "sourceType": "mdx",
+      "route": "/start/choose-an-integration/",
+      "output": "start/choose-an-integration/index.html",
+      "title": "Choose an integration",
+      "description": "Which SubKit surface you use — Expo SDK, Node SDK, Runtime API, or Server API — and the security boundary between them.",
+      "htmlTitle": "Choose an integration | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/start/choose-an-integration/"
+    },
+    {
+      "source": "start/quickstart.mdx",
+      "sourceType": "mdx",
+      "route": "/start/quickstart/",
+      "output": "start/quickstart/index.html",
+      "title": "Quickstart",
+      "description": "The smallest complete SubKit path — configure an app, identify a user, load an offering, run a purchase, and check an entitlement.",
+      "htmlTitle": "Quickstart | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/start/quickstart/"
+    },
+    {
+      "source": "stores/apple.md",
+      "sourceType": "md",
+      "route": "/stores/apple/",
+      "output": "stores/apple/index.html",
+      "title": "Apple App Store setup",
+      "description": "Connect App Store Connect, configure StoreKit products and Server Notifications V2, and verify an Apple Sandbox purchase through SubKit.",
+      "htmlTitle": "Apple App Store setup | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/stores/apple/"
+    },
+    {
+      "source": "stores/google-play.md",
+      "sourceType": "md",
+      "route": "/stores/google-play/",
+      "output": "stores/google-play/index.html",
+      "title": "Google Play setup",
+      "description": "Connect the Play Developer API, configure authenticated RTDN, bind subscriptions and base plans, and verify a License Tester purchase through SubKit.",
+      "htmlTitle": "Google Play setup | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/stores/google-play/"
+    },
+    {
+      "source": "stores/overview.md",
+      "sourceType": "md",
+      "route": "/stores/overview/",
+      "output": "stores/overview/index.html",
+      "title": "Stores",
+      "description": "How SubKit connects to Apple and Google — verified reads, confirmed writes, and the shared store boundary.",
+      "htmlTitle": "Stores | SubKit",
+      "canonical": "https://docs.subkit.piparo.tech/stores/overview/"
+    }
+  ],
+  "llms": [
+    {
+      "output": "llms.txt",
+      "bytes": 2032,
+      "sha256": "6d1acdac91d1c2d708fd00a2117fc5beb5ee6dcbaa11c8a2b18fb67c971164f1"
+    },
+    {
+      "output": "llms-small.txt",
+      "bytes": 104169,
+      "sha256": "1d971efadc37443c08c1b0ceb5fb4e3c5c2b77eb88c9370a00c3648e352e1cf1"
+    },
+    {
+      "output": "llms-full.txt",
+      "bytes": 138342,
+      "sha256": "8be2d80776ce69e84904bd25ff456ab8ea692af2e9088bf4f02a854d7dd4c26b"
+    },
+    {
+      "output": "_llms-txt/mobile-expo--react-native.txt",
+      "bytes": 62851,
+      "sha256": "a8e1914880c25d1c0b73c23ca1965a9029bc3c0f8305b17a840541d9bff36642"
+    },
+    {
+      "output": "_llms-txt/backend-nodejs.txt",
+      "bytes": 4194,
+      "sha256": "1782a7a5c1b3e9a9e5a0a1863f5ecd1f295aca51f517c6096d00aa62b014b9bf"
+    },
+    {
+      "output": "_llms-txt/concepts.txt",
+      "bytes": 14735,
+      "sha256": "3e2984596bcda32a92050dc20c925093b966c95100d7a34f235598605d5c4892"
+    },
+    {
+      "output": "_llms-txt/reference-and-operations.txt",
+      "bytes": 44798,
+      "sha256": "5deb0376d189d3d800de83529c422aa1d4694123d6e7da591ad3e912daaaa13e"
+    }
+  ],
+  "sitemap": {
+    "files": ["sitemap-0.xml", "sitemap-index.xml"],
+    "urls": [
+      "https://docs.subkit.piparo.tech/",
+      "https://docs.subkit.piparo.tech/concepts/access-model/",
+      "https://docs.subkit.piparo.tech/concepts/catalog/",
+      "https://docs.subkit.piparo.tech/concepts/commerce/",
+      "https://docs.subkit.piparo.tech/concepts/glossary/",
+      "https://docs.subkit.piparo.tech/concepts/identity-and-tenancy/",
+      "https://docs.subkit.piparo.tech/concepts/source-of-truth/",
+      "https://docs.subkit.piparo.tech/expo/advanced/",
+      "https://docs.subkit.piparo.tech/expo/configuration/",
+      "https://docs.subkit.piparo.tech/expo/conflicts/",
+      "https://docs.subkit.piparo.tech/expo/entitlements/",
+      "https://docs.subkit.piparo.tech/expo/error-handling/",
+      "https://docs.subkit.piparo.tech/expo/hooks/",
+      "https://docs.subkit.piparo.tech/expo/identity/",
+      "https://docs.subkit.piparo.tech/expo/installation/",
+      "https://docs.subkit.piparo.tech/expo/offerings/",
+      "https://docs.subkit.piparo.tech/expo/offline/",
+      "https://docs.subkit.piparo.tech/expo/overview/",
+      "https://docs.subkit.piparo.tech/expo/purchases/",
+      "https://docs.subkit.piparo.tech/expo/recipes/",
+      "https://docs.subkit.piparo.tech/expo/restore-and-sync/",
+      "https://docs.subkit.piparo.tech/expo/testing/",
+      "https://docs.subkit.piparo.tech/expo/troubleshooting/",
+      "https://docs.subkit.piparo.tech/node/overview/",
+      "https://docs.subkit.piparo.tech/operations/go-live/",
+      "https://docs.subkit.piparo.tech/operations/security/",
+      "https://docs.subkit.piparo.tech/operations/troubleshooting/",
+      "https://docs.subkit.piparo.tech/reference/overview/",
+      "https://docs.subkit.piparo.tech/sitemap-0.xml",
+      "https://docs.subkit.piparo.tech/start/choose-an-integration/",
+      "https://docs.subkit.piparo.tech/start/quickstart/",
+      "https://docs.subkit.piparo.tech/stores/apple/",
+      "https://docs.subkit.piparo.tech/stores/google-play/",
+      "https://docs.subkit.piparo.tech/stores/overview/"
+    ]
+  },
+  "search": {
+    "engine": "pagefind",
+    "fileCount": 48,
+    "bytes": 751782,
+    "entrypoint": "pagefind/pagefind.js"
+  },
+  "build": {
+    "htmlFileCount": 34,
+    "has404": true
+  }
+}

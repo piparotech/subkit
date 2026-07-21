@@ -3,8 +3,6 @@ title: Quickstart
 description: The smallest complete SubKit path — configure an app, identify a user, load an offering, run a purchase, and check an entitlement.
 ---
 
-import { Aside, Steps, TabItem, Tabs } from '@astrojs/starlight/components'
-
 This is the smallest end-to-end path through SubKit from a mobile app: configure
 the SDK, identify the user, load an offering, run a purchase, and gate a feature
 on an entitlement.
@@ -23,59 +21,66 @@ on an entitlement.
 ## Steps
 
 <Steps>
+  <Step title="Install the SDK and its contract">
 
-1. **Install the SDK and its contract.**
+```sh
+pnpm add @piparotech/subkit-core@^0.1.6 @piparotech/subkit-expo@^0.1.9
+```
 
-   ```sh
-   pnpm add @piparotech/subkit-core@^0.1.6 @piparotech/subkit-expo@^0.1.9
-   ```
+  </Step>
+  <Step title="Configure SubKit once at module scope">
+    Do this at module scope, not inside a component.
 
-2. **Configure SubKit once at module scope**, not inside a component.
+```ts
+// src/subkit.ts
+import { configureSubKit } from '@piparotech/subkit-expo'
 
-   ```ts
-   // src/subkit.ts
-   import { configureSubKit } from '@piparotech/subkit-expo'
+configureSubKit({
+  sdkKey: 'sk_sdk_replace_me',
+  installationId: 'install_abc', // generate once, persist locally, reuse
+  appUserId: 'user_123', // optional until the user logs in
+})
+```
 
-   configureSubKit({
-     sdkKey: 'sk_sdk_replace_me',
-     installationId: 'install_abc', // generate once, persist locally, reuse
-     appUserId: 'user_123', // optional until the user logs in
-   })
-   ```
+  </Step>
+  <Step title="Identify the user">
+    Identify the user when they log in.
 
-3. **Identify the user** when they log in.
+```ts
+import { client } from '@piparotech/subkit-expo'
 
-   ```ts
-   import { client } from '@piparotech/subkit-expo'
+await client.identify(user.id)
+```
 
-   await client.identify(user.id)
-   ```
+  </Step>
+  <Step title="Load an offering and run a purchase">
+    Prices and identifiers come from the runtime offering — never from static constants.
 
-4. **Load an offering and run a purchase.** Prices and identifiers come from the
-   runtime offering — never from static constants.
+```ts
+import { client } from '@piparotech/subkit-expo'
 
-   ```ts
-   import { client } from '@piparotech/subkit-expo'
+const offerings = await client.getOfferings()
+const pkg = offerings.current?.packages[0]
+if (pkg == null) throw new Error('No purchasable offering available')
 
-   const offerings = await client.getOfferings()
-   const pkg = offerings.current?.packages[0]
-   if (pkg == null) throw new Error('No purchasable offering available')
+const result = await client.purchasePackage(pkg.identifier)
+```
 
-   const result = await client.purchasePackage(pkg.identifier)
-   ```
+  </Step>
+  <Step title="Gate access on the entitlement">
+    Gate on the entitlement, not on the purchase call returning.
 
-5. **Gate access on the entitlement, not on the purchase call returning.**
+```ts
+const PRO = 'pro'
+const info = await client.getCustomerInfo()
+const hasPro = info.entitlements[PRO]?.active === true
 
-   ```ts
-   const PRO = 'pro'
-   const info = await client.getCustomerInfo()
-   const hasPro = info.entitlements[PRO]?.active === true
+if (hasPro) {
+  // unlock paid features
+}
+```
 
-   if (hasPro) {
-     // unlock paid features
-   }
-   ```
-
+  </Step>
 </Steps>
 
 <Aside type="caution" title="Never unlock early">
