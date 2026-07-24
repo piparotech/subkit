@@ -7,7 +7,7 @@ SubKit is the entitlement authority. `expo-iap` is only the native store adapter
 ## Install
 
 ```sh
-pnpm add @piparotech/subkit-core@^0.1.6 @piparotech/subkit-expo@^0.1.9
+pnpm add @piparotech/subkit-core@^0.1.8 @piparotech/subkit-expo@^0.1.10
 ```
 
 Install the matching Core contract explicitly. The Expo SDK imports its runtime schemas from that host-provided package and will not auto-install a second unpublished copy.

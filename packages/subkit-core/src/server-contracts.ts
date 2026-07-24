@@ -121,3 +121,174 @@ export const serverProductsResponseSchema = z.object({
   products: z.array(serverProductSchema),
 })
 export type ServerProductsResponse = z.infer<typeof serverProductsResponseSchema>
+
+/**
+ * Human operator behind a trusted Server API key call. A backend such as the
+ * SmartCoach CMS authenticates its own human admin (ZITADEL) and forwards that
+ * identity so SubKit audit evidence distinguishes the technical key from the
+ * person, and correlates the CMS action with the canonical mutation.
+ */
+export const serverOperatorContextSchema = z.object({
+  correlationId: z.string().trim().min(1).max(200).optional(),
+  displayName: z.string().trim().min(1).max(200).optional(),
+  userId: z.string().trim().min(1).max(200),
+})
+export type ServerOperatorContext = z.infer<typeof serverOperatorContextSchema>
+
+export const serverLicenseKindSchema = z.enum([
+  'store_subscription',
+  'store_purchase',
+  'direct_subscription',
+  'contract',
+  'trial',
+  'promotion',
+  'free_enrollment',
+  'manual',
+  'migration',
+])
+export type ServerLicenseKind = z.infer<typeof serverLicenseKindSchema>
+
+export const serverLicenseListRequestSchema = z.object({
+  appId: z.string().min(1),
+  cursor: z.string().min(1).nullable().optional(),
+  kind: z.enum(['individual', 'club']).optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+  query: z.string().trim().min(1).max(200).optional(),
+  state: z.enum(['pending', 'active', 'suspended', 'expired', 'revoked']).optional(),
+})
+export type ServerLicenseListRequest = z.infer<typeof serverLicenseListRequestSchema>
+
+export const serverLicenseSummarySchema = z.object({
+  billingAccountName: z.string().nullable(),
+  capacityAvailable: z.number().nullable(),
+  capacityTotal: z.number().nullable(),
+  capacityUsed: z.number(),
+  category: z.enum(['individual', 'club']),
+  createdAt: z.string(),
+  kind: serverLicenseKindSchema,
+  licenseeName: z.string(),
+  planVersionLabel: z.string(),
+  productName: z.string(),
+  sourceId: z.string(),
+  state: z.enum(['pending', 'active', 'suspended', 'expired', 'revoked', 'rejected']),
+  updatedAt: z.string(),
+  validUntil: z.string().nullable(),
+  verificationState: z.enum(['pending', 'verified', 'failed']),
+})
+export type ServerLicenseSummary = z.infer<typeof serverLicenseSummarySchema>
+
+export const serverLicenseListResponseSchema = z.object({
+  activeCount: z.number(),
+  expiringSoonCount: z.number(),
+  licenses: z.array(serverLicenseSummarySchema),
+  nextCursor: z.string().nullable(),
+  openReservationCount: z.number(),
+  totalCount: z.number(),
+})
+export type ServerLicenseListResponse = z.infer<typeof serverLicenseListResponseSchema>
+
+export const serverLicenseDetailRequestSchema = z.object({
+  appId: z.string().min(1),
+  sourceId: z.string().min(1),
+})
+export type ServerLicenseDetailRequest = z.infer<typeof serverLicenseDetailRequestSchema>
+
+const serverLicensePoolSchema = z.object({
+  available: z.string(),
+  capacity: z.string(),
+  id: z.string(),
+  key: z.string(),
+  reserved: z.number(),
+  state: z.string(),
+  used: z.number(),
+})
+
+const serverLicenseReservationSchema = z.object({
+  expiresAt: z.string().nullable(),
+  id: z.string(),
+  poolKey: z.string(),
+  quantity: z.number(),
+  state: z.string(),
+  subject: z.string().nullable(),
+})
+
+const serverLicenseAllocationSchema = z.object({
+  availableActions: z.array(z.enum(['suspend', 'resume', 'revoke'])),
+  id: z.string(),
+  poolKey: z.string(),
+  quantity: z.number(),
+  state: z.string(),
+  subject: z.string(),
+  validUntil: z.string().nullable(),
+})
+
+const serverLicenseGrantSchema = z.object({
+  allocationId: z.string(),
+  entitlement: z.string(),
+  id: z.string(),
+  poolKey: z.string(),
+  state: z.string(),
+  subject: z.string(),
+  validUntil: z.string().nullable(),
+})
+
+const serverLicensePaymentSchema = z.object({
+  amount: z.string(),
+  currencyCode: z.string(),
+  id: z.string(),
+  kind: z.string(),
+  occurredAt: z.string(),
+  provider: z.string(),
+  state: z.string(),
+})
+
+export const serverLicenseDetailResponseSchema = z.object({
+  allocations: z.array(serverLicenseAllocationSchema),
+  billingAccountId: z.string().nullable(),
+  billingAccountName: z.string().nullable(),
+  canManageContract: z.boolean(),
+  contractNumber: z.string().nullable(),
+  externalReference: z.string(),
+  grants: z.array(serverLicenseGrantSchema),
+  kind: serverLicenseKindSchema,
+  payments: z.array(serverLicensePaymentSchema),
+  planVersionId: z.string().nullable(),
+  planVersionLabel: z.string(),
+  pools: z.array(serverLicensePoolSchema),
+  productName: z.string(),
+  reservations: z.array(serverLicenseReservationSchema),
+  sourceId: z.string(),
+  state: z.enum(['pending', 'active', 'suspended', 'expired', 'revoked', 'rejected']),
+  termEnd: z.string().nullable(),
+  termStart: z.string().nullable(),
+  validUntil: z.string().nullable(),
+  verificationState: z.enum(['pending', 'verified', 'failed']),
+})
+export type ServerLicenseDetailResponse = z.infer<typeof serverLicenseDetailResponseSchema>
+
+export const serverContractPlanVersionsRequestSchema = z.object({
+  appId: z.string().min(1),
+})
+export type ServerContractPlanVersionsRequest = z.infer<
+  typeof serverContractPlanVersionsRequestSchema
+>
+
+export const serverContractPlanVersionSchema = z.object({
+  billingLabel: z.string(),
+  entitlementKeys: z.array(z.string()),
+  planKey: z.string(),
+  planVersion: z.number().int().positive(),
+  planVersionId: z.string(),
+  poolCapacityLabel: z.string(),
+  priceLabel: z.string().nullable(),
+  productKey: z.string(),
+  productName: z.string(),
+})
+export type ServerContractPlanVersion = z.infer<typeof serverContractPlanVersionSchema>
+
+export const serverContractPlanVersionsResponseSchema = z.object({
+  planVersions: z.array(serverContractPlanVersionSchema),
+})
+export type ServerContractPlanVersionsResponse = z.infer<
+  typeof serverContractPlanVersionsResponseSchema
+>

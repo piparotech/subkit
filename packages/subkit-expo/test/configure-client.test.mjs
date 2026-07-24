@@ -1,7 +1,12 @@
 import { strict as assert } from 'node:assert'
 import test from 'node:test'
 
-import { client, configureSubKit, getConfiguredSubKitClient } from '../dist/index.js'
+import {
+  client,
+  configureSubKit,
+  getConfiguredSubKitClient,
+  useSubKitOfferings,
+} from '../dist/index.js'
 
 function createIapAdapter() {
   return createIapAdapterWithPurchases([])
@@ -30,6 +35,10 @@ test('client throws before configureSubKit is called', () => {
     () => client.getCustomerInfo,
     /Call configureSubKit\(\.\.\.\) before accessing client/,
   )
+})
+
+test('Expo SDK exports the offerings hook documented by the public guide', () => {
+  assert.equal(typeof useSubKitOfferings, 'function')
 })
 
 test('configureSubKit installs the global client proxy target', async () => {
