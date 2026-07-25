@@ -132,6 +132,20 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     { reason: 'cancelled', reservationId: 'reservation/a b' },
     { idempotencyKey: 'revoke-reservation-1' },
   )
+  await subkit.devices.list({ environment: 'production' })
+  await subkit.devices.revoke(
+    { activationId: 'activation/a b', reason: 'support revoke' },
+    { idempotencyKey: 'device-revoke-1' },
+  )
+  await subkit.devices.resetChangeBudget(
+    {
+      activationGroupKey: 'pro',
+      beneficiarySubjectId: 'subject-1',
+      environment: 'production',
+      reason: 'support reset',
+    },
+    { idempotencyKey: 'device-budget-1' },
+  )
   await subkit.access.manualProvision(
     {
       originReference: 'support-1',
@@ -143,7 +157,7 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     { idempotencyKey: 'manual-1' },
   )
 
-  assert.equal(requests.length, 17)
+  assert.equal(requests.length, 20)
   assert.deepEqual(
     requests.map(({ method, url }) => [method, new URL(url).pathname]),
     [
@@ -163,6 +177,9 @@ test('typed customer, contract, and access clients send scoped idempotent reques
       ['POST', '/api/server/access-pools/pool-1'],
       ['PATCH', '/api/server/access-pools/pool-1'],
       ['DELETE', '/api/server/access-reservations/reservation%2Fa%20b'],
+      ['POST', '/api/server/devices'],
+      ['DELETE', '/api/server/devices/activation%2Fa%20b'],
+      ['POST', '/api/server/devices/budget-reset'],
       ['POST', '/api/server/manual-provisions'],
     ],
   )
@@ -171,6 +188,7 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     if (
       path !== '/api/server/entitlements/check' &&
       path !== '/api/server/customer-info' &&
+      path !== '/api/server/devices' &&
       (request.method !== 'POST' || path !== '/api/server/access-pools/pool-1')
     ) {
       assert.match(request.headers.get('idempotency-key'), /.+/)
@@ -193,7 +211,10 @@ test('typed customer, contract, and access clients send scoped idempotent reques
   assert.equal(requests[14].body.effectiveAt, '2028-01-01T00:00:00.000Z')
   assert.equal(requests[15].body.reason, 'cancelled')
   assert.equal(requests[16].body.appId, 'smartcoach')
-  assert.equal(requests[16].body.validFrom, '2027-02-01T00:00:00.000Z')
+  assert.equal(requests[17].body.reason, 'support revoke')
+  assert.equal(requests[18].body.beneficiarySubjectId, 'subject-1')
+  assert.equal(requests[19].body.appId, 'smartcoach')
+  assert.equal(requests[19].body.validFrom, '2027-02-01T00:00:00.000Z')
 })
 
 function responseFor(url, method) {
@@ -275,6 +296,26 @@ function responseFor(url, method) {
     }
   }
   if (path === '/api/server/access-pools/pool-1') return capacity({ poolId: 'pool-1' })
+  if (path === '/api/server/devices') return { devices: [] }
+  if (path.startsWith('/api/server/devices/') && method === 'DELETE') {
+    return {
+      activation: {
+        activationGroupKey: 'pro',
+        activationId: 'activation/a b',
+        beneficiarySubjectId: 'subject-1',
+        environment: 'production',
+        expiresAt: '2027-03-01T00:00:00.000Z',
+        installationLabel: null,
+        lastSeenAt: '2027-02-01T00:00:00.000Z',
+        policyVersionId: 'version-1',
+        state: 'revoked',
+      },
+      ok: true,
+    }
+  }
+  if (path === '/api/server/devices/budget-reset') {
+    return { ok: true, resetAt: '2027-02-01T00:00:00.000Z' }
+  }
   if (path.startsWith('/api/server/access-reservations/')) return { ok: true }
   throw new Error(`Unexpected request: ${path}`)
 }

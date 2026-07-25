@@ -1,5 +1,6 @@
 export { SubKit } from './SubKit.js'
 export type { SubKitOptions } from './SubKit.js'
+export type { ServerDeviceActivation } from './DevicesClient.js'
 export type { OperatorContext } from './HttpClient.js'
 export { SubKitApiError, isSubKitApiError } from './errors.js'
 export type {
