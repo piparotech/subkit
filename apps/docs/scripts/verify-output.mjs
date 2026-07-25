@@ -44,6 +44,14 @@ for (const page of baseline.pages) {
   }
   check(html.includes('application/ld+json'), `Missing JSON-LD for ${page.route}`)
   check(html.includes('type="text/markdown"'), `Missing Markdown alternate for ${page.route}`)
+  check(
+    html.includes('href="https://subkit.piparo.tech/docs/llms.txt"'),
+    `Missing base-path-correct LLM alternate for ${page.route}`,
+  )
+  check(
+    !html.includes('href="https://subkit.piparo.tech/llms.txt"'),
+    `Root-level LLM alternate escapes /docs for ${page.route}`,
+  )
   check(html.includes('data-ai-agent-directive'), `Missing agent directive for ${page.route}`)
   check(
     html.includes(sourceRepositoryUrl),

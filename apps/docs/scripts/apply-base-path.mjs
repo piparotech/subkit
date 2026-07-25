@@ -33,6 +33,7 @@ function withDocsBase(value) {
 
 function rewrite(content) {
   return content
+    .replaceAll('https://subkit.piparo.tech/llms.txt', 'https://subkit.piparo.tech/docs/llms.txt')
     .replaceAll('/docs_nimbus/', '/docs/_nimbus/')
     .replaceAll('/docsfavicon.svg', '/docs/favicon.png')
     .replaceAll('/docsfavicon.png', '/docs/favicon.png')
