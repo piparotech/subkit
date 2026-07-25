@@ -10,6 +10,7 @@ const distRoot = join(appRoot, 'dist')
 const baselinePath = join(appRoot, 'baseline/starlight-output.json')
 const baseline = await readJson(baselinePath)
 const errors = []
+const sourceRepositoryUrl = 'https://git.piparo.tech/piparo.tech/subkit'
 
 const intentionalLlmsReplacements = {
   '_llms-txt/mobile-expo--react-native.txt': 'llms-mobile.txt',
@@ -44,6 +45,14 @@ for (const page of baseline.pages) {
   check(html.includes('application/ld+json'), `Missing JSON-LD for ${page.route}`)
   check(html.includes('type="text/markdown"'), `Missing Markdown alternate for ${page.route}`)
   check(html.includes('data-ai-agent-directive'), `Missing agent directive for ${page.route}`)
+  check(
+    html.includes(sourceRepositoryUrl),
+    `Missing authoritative Forgejo source link for ${page.route}`,
+  )
+  check(
+    !html.includes('github.com/piparotech/subkit'),
+    `Stale GitHub source link for ${page.route}`,
+  )
 
   const markdownOutput =
     page.route === '/' ? 'index.md' : `${page.route.replace(/^\//u, '')}index.md`

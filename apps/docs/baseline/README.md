@@ -26,8 +26,8 @@ seven security-critical SubKit invariants remain in `/llms.txt`.
 
 - Canonical site: `https://docs.subkit.piparo.tech`
 - Locale: English root locale
-- GitHub: `https://github.com/piparotech/subkit`
-- Edit pattern: `https://github.com/piparotech/subkit/edit/main/apps/docs/{path}`
+- Source: `https://git.piparo.tech/piparo.tech/subkit`
+- Edit pattern: `https://git.piparo.tech/piparo.tech/subkit/_edit/main/apps/docs/{path}`
 - Status: unpublished preview
 - Navigation: explicit, user-task-oriented order from `apps/docs/astro.config.mjs`
 - Deployment: static and independent of Console sessions, databases, and OIDC
