@@ -1,36 +1,23 @@
 # @piparotech/subkit-core
 
-Shared SubKit API contracts used by the SubKit backend and `@piparotech/subkit-node`.
+Shared platform-neutral SubKit schemas, DTOs, error contracts, and types used by the Node and Expo SDKs.
 
-This package contains platform-neutral schemas, DTOs, and error codes. It must not import Expo, React Native, server credentials, Drizzle, or app runtime modules.
+## Install
 
-## Runtime IAP contracts
+Configure the private piparo.tech Forgejo registry, then install Core with the SDK that consumes it:
 
-The Expo SDK uses the runtime IAP contracts:
+```sh
+pnpm add @piparotech/subkit-core @piparotech/subkit-node
+# or
+pnpm add @piparotech/subkit-core @piparotech/subkit-expo
+```
 
-- `runtimeCustomerInfoRequestSchema`
-- `runtimeOfferingsRequestSchema`
-- `iapReconcileRequestSchema`
-- `iapReconcileResponseSchema`
-- `CustomerInfo`
-- `RuntimeOfferingsResponse`
-- `PurchaseSyncResult`
-- `StoreIdentityHints`
+Node and Expo declare Core as a required compatible peer dependency. Do not install mismatched versions.
 
-## Backend server contracts
+## Documentation
 
-The backend SDK uses the `server*` contracts:
+- [Choose an integration](https://subkit.piparo.tech/docs/start/choose-an-integration/)
+- [API reference](https://subkit.piparo.tech/docs/reference/api/)
+- [Error reference](https://subkit.piparo.tech/docs/reference/errors/)
 
-- `serverEntitlementCheckRequestSchema`
-- `serverEntitlementCheckResponseSchema`
-- `serverCustomerInfoRequestSchema`
-- `serverCustomerInfoResponseSchema`
-- `serverOfferingsRequestSchema`
-- `runtimeOfferingsResponseSchema` (shared by Runtime and Server offering endpoints)
-
-## Error contracts
-
-- `subKitErrorCodeSchema`
-- `subKitApiErrorResponseSchema`
-- `createSubKitError`
-- `isRetryableSubKitErrorCode`
+This package must remain independent of Expo, React Native, server credentials, Drizzle, and application runtime modules.
