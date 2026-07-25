@@ -53,7 +53,9 @@ const defaultFilters: PagefindFilters | undefined =
 export const provider: SearchProvider = {
   async init() {
     if (pagefind) return
-    const baseUrl = new URL(import.meta.env.BASE_URL ?? '/', window.location.origin)
+    const configuredBase = import.meta.env.BASE_URL ?? '/'
+    const basePath = configuredBase.endsWith('/') ? configuredBase : `${configuredBase}/`
+    const baseUrl = new URL(basePath, window.location.origin)
     const pagefindUrl = new URL('pagefind/pagefind.js', baseUrl)
     pagefind = (await import(/* @vite-ignore */ pagefindUrl.href)) as PagefindApi
     await pagefind.init()

@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises'
-import { extname, join, resolve } from 'node:path'
+import { extname, resolve } from 'node:path'
 
 import { walkFiles } from './docs-output-lib.mjs'
 
