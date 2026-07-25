@@ -61,6 +61,16 @@ updated separately through the manually dispatched SHA-bound GitOps promotion
 in the Infra repository. Pull request workflows never publish images or mutate
 GitOps.
 
+Image publication is forward-only. A registry or network failure can leave a
+partial set after one or two immutable SHA tags were accepted. Never overwrite
+or delete those tags as routine recovery, and never promote that SHA. Fix the
+cause, create a new release commit without changing the intended application
+content (for example, an audited release-evidence commit), rerun the complete
+validation and coherent image smoke, then let trusted `main` publish all three
+images under the new SHA. The Infra promotion refuses to proceed until the
+runtime, migration, and docs manifests all exist and pull as `linux/amd64`; the
+abandoned partial tags remain unreferenced evidence rather than mutable state.
+
 ## Required host behavior
 
 - Serve `.html` as `text/html; charset=utf-8`.
