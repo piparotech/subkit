@@ -25,10 +25,11 @@ contains the static site beneath `site/docs/`, the full source commit in
 `SOURCE_SHA`, a SHA-256 file manifest, and local serving instructions.
 
 This is deliberately portable review evidence rather than an automatically
-hosted review app. Pull request code receives no repository secrets, registry
-credentials, Kubernetes credentials, shared Docker daemon, or production
-network access. Reviewers can download the artifact from the workflow run and
-serve it locally:
+hosted review app. Both pull request workflows run only on the repository-scoped
+`subkit-pr` lane. Its job containers receive no Docker endpoint, private-registry
+credentials, Kubernetes service-account token, repository secrets, or routes to
+private, Tailnet, or cloud-metadata address space. Reviewers can download the
+artifact from the workflow run and serve it locally:
 
 ```sh
 python3 -m http.server 4173 --directory site
