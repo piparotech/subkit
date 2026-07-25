@@ -15,11 +15,20 @@ export interface SubKitJsonStorage {
   setItem(key: string, value: string): Promise<void>
 }
 
-export interface SubKitMmkvLikeStorage {
-  delete(key: string): void
+interface SubKitMmkvStorageBase {
   getString(key: string): string | undefined
   set(key: string, value: string): void
 }
+
+interface SubKitMmkvModernStorage extends SubKitMmkvStorageBase {
+  remove(key: string): boolean | void
+}
+
+interface SubKitMmkvLegacyStorage extends SubKitMmkvStorageBase {
+  delete(key: string): boolean | void
+}
+
+export type SubKitMmkvLikeStorage = SubKitMmkvModernStorage | SubKitMmkvLegacyStorage
 
 export function createMmkvJsonStorage(storage: SubKitMmkvLikeStorage): SubKitJsonStorage {
   return {
@@ -27,7 +36,8 @@ export function createMmkvJsonStorage(storage: SubKitMmkvLikeStorage): SubKitJso
       return storage.getString(key) ?? null
     },
     async removeItem(key) {
-      storage.delete(key)
+      if ('remove' in storage) storage.remove(key)
+      else storage.delete(key)
     },
     async setItem(key, value) {
       storage.set(key, value)

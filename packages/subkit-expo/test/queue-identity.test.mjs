@@ -269,14 +269,14 @@ test('stored queue enqueueMany persists many purchases with a single storage wri
   )
 })
 
-test('MMKV adapter exposes the async JSON storage shape used by the stored queue', async () => {
+test('MMKV adapter supports the current remove API', async () => {
   const values = new Map()
   const storage = createMmkvJsonStorage({
-    delete(key) {
-      values.delete(key)
-    },
     getString(key) {
       return values.get(key)
+    },
+    remove(key) {
+      return values.delete(key)
     },
     set(key, value) {
       values.set(key, value)
@@ -285,6 +285,24 @@ test('MMKV adapter exposes the async JSON storage shape used by the stored queue
 
   await storage.setItem('subkit:test', 'value')
   assert.equal(await storage.getItem('subkit:test'), 'value')
+
+  await storage.removeItem('subkit:test')
+  assert.equal(await storage.getItem('subkit:test'), null)
+})
+
+test('MMKV adapter preserves compatibility with the legacy delete API', async () => {
+  const values = new Map([['subkit:test', 'value']])
+  const storage = createMmkvJsonStorage({
+    delete(key) {
+      return values.delete(key)
+    },
+    getString(key) {
+      return values.get(key)
+    },
+    set(key, value) {
+      values.set(key, value)
+    },
+  })
 
   await storage.removeItem('subkit:test')
   assert.equal(await storage.getItem('subkit:test'), null)
