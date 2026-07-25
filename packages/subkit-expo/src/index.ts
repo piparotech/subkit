@@ -32,8 +32,19 @@ export type {
 export { normalizeIapError } from './errors.js'
 export type { NormalizedIapError } from './errors.js'
 export { buildPurchaseIdentityFields, MemoryIdentityStore } from './identity.js'
+export { createInstallationIdResolver } from './installationId.js'
+export type { SubKitInstallationIdResolver } from './installationId.js'
+export {
+  DEFAULT_INSTALLATION_ID_STORAGE_KEY,
+  createOrGetInstallationId,
+} from './installationStorage.js'
+export type {
+  CreateOrGetInstallationIdOptions,
+  SubKitInstallationIdStorage,
+} from './installationStorage.js'
 export type { PurchaseIdentityFields, StoreIdentityHintProvider } from './identity.js'
 export { noopSubKitIapLogger } from './noop.js'
+export { createRedactingLogger } from './redactingLogger.js'
 export { createMemoryPurchaseQueueStore, createPurchaseQueueId } from './queue.js'
 export type { PurchaseQueueItem, PurchaseQueueStore, QueueStatus } from './queue.js'
 export { createMmkvJsonStorage, createStoredPurchaseQueueStore } from './storageQueue.js'
@@ -46,6 +57,7 @@ export { client, configureSubKit, getConfiguredSubKitClient } from './SubKitIapC
 export type { ConfigureSubKitOptions, SubKitIapClient } from './SubKitIapClient.js'
 export {
   getSubKitCustomerInfoSnapshot,
+  isolateSubKitCustomerInfo,
   refreshSubKitCustomerInfo,
   subscribeSubKitCustomerInfo,
 } from './subKitState.js'
@@ -54,6 +66,7 @@ export type {
   SubKitExpoIapConfig,
   SubKitIapPlatform,
   SubKitIapProduct,
+  SubKitInstallationIdInput,
   SubKitIapProductType,
   SubKitIapPurchase,
   SubKitIapStore,

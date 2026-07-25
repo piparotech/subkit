@@ -1,10 +1,11 @@
 import {
+  type PurchaseQueueBinding,
   type PurchaseQueueItem,
   type PurchaseQueueStore,
   type QueueStatus,
   buildPurchaseQueueItem,
   createPurchaseQueueId,
-  purchaseQueueItemMatchesAppUser,
+  purchaseQueueItemMatchesBinding,
 } from './queue.js'
 import type { SubKitIapPurchase } from './types.js'
 
@@ -52,7 +53,7 @@ export function createStoredPurchaseQueueStore(
 
   async function enqueueItems(
     purchases: readonly SubKitIapPurchase[],
-    appUserId: string | undefined,
+    binding: PurchaseQueueBinding,
   ): Promise<PurchaseQueueItem[]> {
     if (purchases.length === 0) return []
     let items = await readItems(options.storage, key)
@@ -61,7 +62,7 @@ export function createStoredPurchaseQueueStore(
     for (const purchase of purchases) {
       const id = createPurchaseQueueId(purchase)
       const existing = items.find((item) => item.id === id)
-      const next = buildPurchaseQueueItem(purchase, existing, appUserId, timestamp)
+      const next = buildPurchaseQueueItem(purchase, existing, binding, timestamp)
       items = upsertItem(items, next)
       enqueued.push(next)
     }
@@ -70,19 +71,19 @@ export function createStoredPurchaseQueueStore(
   }
 
   return {
-    async enqueue(purchase, appUserId) {
-      const enqueued = await enqueueItems([purchase], appUserId)
+    async enqueue(purchase, binding) {
+      const enqueued = await enqueueItems([purchase], binding)
       const item = enqueued[0]
       if (item == null) throw new Error('Failed to enqueue purchase')
       return item
     },
-    async enqueueMany(purchases, appUserId) {
-      return enqueueItems(purchases, appUserId)
+    async enqueueMany(purchases, binding) {
+      return enqueueItems(purchases, binding)
     },
-    async listPending(appUserId) {
+    async listPending(binding) {
       const items = await readItems(options.storage, key)
       return items.filter(
-        (item) => isDrainedQueueStatus(item) && purchaseQueueItemMatchesAppUser(item, appUserId),
+        (item) => isDrainedQueueStatus(item) && purchaseQueueItemMatchesBinding(item, binding),
       )
     },
     async markFailed(id, error) {
@@ -218,7 +219,18 @@ function parsePurchaseQueueItem(value: unknown): PurchaseQueueItem | null {
 
   const id = readString(value, 'id')
   const productId = readString(value, 'productId')
-  if (id == null || productId == null) return null
+  const installationId = readString(value, 'installationId')
+  const identityGeneration = readNumber(value, 'identityGeneration')
+  if (
+    id == null ||
+    productId == null ||
+    installationId == null ||
+    identityGeneration == null ||
+    !Number.isInteger(identityGeneration) ||
+    identityGeneration < 0
+  ) {
+    return null
+  }
 
   return {
     anonymousId: readString(value, 'anonymousId'),
@@ -226,6 +238,8 @@ function parsePurchaseQueueItem(value: unknown): PurchaseQueueItem | null {
     createdAt,
     environment: readStoreEnvironment(value, 'environment'),
     id,
+    identityGeneration,
+    installationId,
     lastError: readString(value, 'lastError'),
     linkedPurchaseToken: readString(value, 'linkedPurchaseToken'),
     orderId: readString(value, 'orderId'),

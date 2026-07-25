@@ -21,7 +21,8 @@ export interface PurchaseSyncCoordinatorOptions {
   accessContext?: () => string | undefined
   appUserId: () => string | undefined
   foregroundMinIntervalMs?: number
-  installationId: string
+  identityGeneration: () => number
+  installationId: string | (() => Promise<string>)
   iap: SubKitExpoIapAdapter
   logger?: SubKitIapLogger
   platform: 'ios' | 'android'
@@ -68,10 +69,11 @@ export function createPurchaseSyncCoordinator(
     }
 
     return enqueueSync(async () => {
+      const binding = await currentQueueBinding(appUserId)
       await options.iap.initConnection()
       const availablePurchases = await options.iap.getAvailablePurchases()
-      await options.queue.enqueueMany(availablePurchases, appUserId)
-      const result = await drainQueue(input.reason, appUserId)
+      await options.queue.enqueueMany(availablePurchases, binding)
+      const result = await drainQueue(input.reason, binding)
       if (input.reason === 'foreground') lastForegroundSyncAt = now
       return result
     })
@@ -81,9 +83,10 @@ export function createPurchaseSyncCoordinator(
     purchase: SubKitIapPurchase,
   ): Promise<PurchaseSyncResult | null> {
     const appUserId = normalizeAppUserId(options.appUserId())
-    await options.queue.enqueue(purchase, appUserId)
     if (appUserId == null) return null
-    return enqueueSync(() => drainQueue('purchase_event', appUserId))
+    const binding = await currentQueueBinding(appUserId)
+    await options.queue.enqueue(purchase, binding)
+    return enqueueSync(() => drainQueue('purchase_event', binding))
   }
 
   function enqueueSync(
@@ -97,23 +100,24 @@ export function createPurchaseSyncCoordinator(
 
   async function drainQueue(
     reason: PurchaseSyncReason,
-    appUserId: string,
+    binding: { appUserId: string; identityGeneration: number; installationId: string },
   ): Promise<PurchaseSyncResult> {
-    const pending = await options.queue.listPending(appUserId)
+    const pending = await options.queue.listPending(binding)
     const purchases = pending.map((item) =>
       normalizePurchaseForReconcile(queueItemToPurchase(item)),
     )
 
     const result = await options.runtime.reconcile({
       accessContext: options.accessContext?.(),
-      appUserId,
-      installationId: options.installationId,
+      appUserId: binding.appUserId,
+      installationId: binding.installationId,
       platform: options.platform,
       purchases,
       reason,
       sessionId: options.sessionId(),
       storeIdentities: options.storeIdentityHints(),
     })
+    await assertBindingIsCurrent(binding)
 
     for (const rejected of result.rejectedPurchases) {
       const item = findQueueItemForRejectedPurchase(pending, rejected)
@@ -146,6 +150,36 @@ export function createPurchaseSyncCoordinator(
     }
 
     return result
+  }
+
+  async function currentQueueBinding(appUserId: string) {
+    return {
+      appUserId,
+      identityGeneration: options.identityGeneration(),
+      installationId:
+        typeof options.installationId === 'string'
+          ? options.installationId
+          : await options.installationId(),
+    }
+  }
+
+  async function assertBindingIsCurrent(binding: {
+    appUserId: string
+    identityGeneration: number
+    installationId: string
+  }): Promise<void> {
+    const currentAppUserId = normalizeAppUserId(options.appUserId())
+    const currentInstallationId =
+      typeof options.installationId === 'string'
+        ? options.installationId
+        : await options.installationId()
+    if (
+      currentAppUserId !== binding.appUserId ||
+      options.identityGeneration() !== binding.identityGeneration ||
+      currentInstallationId !== binding.installationId
+    ) {
+      throw new Error('SubKit discarded a stale reconcile result after identity changed')
+    }
   }
 
   return { handlePurchaseEvent, syncPurchases }

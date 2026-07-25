@@ -44,10 +44,15 @@ export function createCustomerInfoCacheStore(
 
   return {
     async read(appUserId) {
-      const raw = await options.storage.getItem(customerInfoCacheKey(options.keyPrefix, appUserId))
+      const key = customerInfoCacheKey(options.keyPrefix, appUserId)
+      const raw = await options.storage.getItem(key)
       if (raw == null || raw.trim() === '') return null
       const stored = parseStoredCustomerInfo(raw)
-      if (stored == null || stored.customerInfo.appUserId !== appUserId) return null
+      if (stored == null || stored.customerInfo.appUserId !== appUserId) {
+        await options.storage.setItem(`${key}:corrupt`, raw)
+        await options.storage.removeItem(key)
+        return null
+      }
       return evaluateCachedCustomerInfo(stored.customerInfo, {
         cachedAt: stored.cachedAt,
         freshness: now() - stored.cachedAt > policy.customerInfoStaleAfterMs ? 'stale' : 'fresh',
@@ -92,15 +97,30 @@ function evaluateCachedCustomerInfo(
     now: number
   },
 ): CustomerInfo {
+  const deviceAccessExpired =
+    info.deviceAccess?.accessExpiresAt != null &&
+    Date.parse(info.deviceAccess.accessExpiresAt) <= options.now
   return {
     ...info,
     accessContext:
       info.accessContext != null && Date.parse(info.accessContext.expiresAt) > options.now
         ? info.accessContext
         : null,
+    deviceAccess:
+      info.deviceAccess == null
+        ? undefined
+        : {
+            ...info.deviceAccess,
+            blockedReason: deviceAccessExpired
+              ? 'DEVICE_REPLACED'
+              : info.deviceAccess.blockedReason,
+          },
     entitlements: Object.fromEntries(
       Object.entries(info.entitlements).map(([key, entitlement]) => {
         if (!entitlement.active) return [key, entitlement]
+        if (deviceAccessExpired) {
+          return [key, { ...entitlement, active: false, status: 'expired' as const }]
+        }
         const validUntil = entitlement.expiresAt == null ? null : Date.parse(entitlement.expiresAt)
         const verifiedAt =
           entitlement.verifiedAt == null ? null : Date.parse(entitlement.verifiedAt)

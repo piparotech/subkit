@@ -18,6 +18,14 @@ const storage = {
 export default storage
 `
 
+const secureStoreStub = `
+const values = new Map()
+export const WHEN_UNLOCKED_THIS_DEVICE_ONLY = 1
+export async function deleteItemAsync(key) { values.delete(key) }
+export async function getItemAsync(key) { return values.get(key) ?? null }
+export async function setItemAsync(key, value) { values.set(key, value) }
+`
+
 const expoIapStub = `
 export async function endConnection() {}
 export async function fetchProducts() { return [] }
@@ -42,6 +50,12 @@ export async function resolve(specifier, context, nextResolve) {
     return {
       shortCircuit: true,
       url: `data:text/javascript,${encodeURIComponent(reactNativeStub)}`,
+    }
+  }
+  if (specifier === 'expo-secure-store') {
+    return {
+      shortCircuit: true,
+      url: `data:text/javascript,${encodeURIComponent(secureStoreStub)}`,
     }
   }
   if (specifier === 'expo-iap') {

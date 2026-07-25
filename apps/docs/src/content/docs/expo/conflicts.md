@@ -72,6 +72,28 @@ The SDK does not transfer ownership. Conflicted purchases are not reconciled
 under the current user, and queued purchases stay bound to the app user that
 first observed them.
 
+## Beneficiary and device conflicts
+
+Store restore first resolves a verified Store Purchase Lineage and its current Beneficiary. The installation ID is only a weak local input and never transfers ownership or creates a grant by itself.
+
+`customerInfo.deviceAccess` separates commercial access from installation access:
+
+| Field                | Meaning                                          |
+| -------------------- | ------------------------------------------------ |
+| `commerciallyActive` | The Beneficiary still has a valid purchase/grant |
+| `blockedReason`      | Why this installation cannot currently use it    |
+| `activation`         | Current redacted activation state, when present  |
+
+Handle device outcomes without telling the user to buy again:
+
+- `DEVICE_SELECTION_REQUIRED`: show the redacted device list and let the user choose an activation to replace.
+- `DEVICE_REPLACEMENT_COOLDOWN`: show `nextAllowedAt`; do not blame the user or retry in a loop.
+- `DEVICE_CHANGE_LIMIT_REACHED`: show the rolling `changeBudget` and `nextAllowedAt`.
+- `DEVICE_REPLACED`: this installation was superseded. Cached offline authorization can remain valid only until the server-issued expiry.
+- `LOGIN_REQUIRED` / `BENEFICIARY_CONFLICT`: require the documented account or support recovery path. Never silently transfer the Beneficiary.
+
+Management-session tokens and Device Access tokens are distinct, short-lived, opaque capabilities. Do not parse, log, or expose them in UI.
+
 ## Family sharing
 
 Family-shared access appears as a regular entitlement with
@@ -85,6 +107,7 @@ handling is required unless your product excludes shared access.
   logging in with the right account, not re-purchasing.
 - Never show "buy again" as the primary action when an unclaimed purchase with
   `restore_required` exists.
+- A valid purchase with blocked device access is not an inactive purchase. Keep commercial and installation messaging separate.
 
 ## Next
 

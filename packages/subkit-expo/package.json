@@ -11,12 +11,32 @@
     ".": {
       "types": "./dist/index.d.ts",
       "development": "./src/index.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./expo-iap": {
       "types": "./dist/expoIapAdapter.d.ts",
       "development": "./src/expoIapAdapter.ts",
-      "import": "./dist/expoIapAdapter.js"
+      "import": "./dist/expoIapAdapter.js",
+      "default": "./dist/expoIapAdapter.js"
+    },
+    "./expo-secure-store": {
+      "types": "./dist/expoSecureStore.d.ts",
+      "development": "./src/expoSecureStore.ts",
+      "import": "./dist/expoSecureStore.js",
+      "default": "./dist/expoSecureStore.js"
+    },
+    "./mmkv": {
+      "types": "./dist/mmkv.d.ts",
+      "development": "./src/mmkv.ts",
+      "import": "./dist/mmkv.js",
+      "default": "./dist/mmkv.js"
+    },
+    "./async-storage": {
+      "types": "./dist/asyncStorage.d.ts",
+      "development": "./src/asyncStorage.ts",
+      "import": "./dist/asyncStorage.js",
+      "default": "./dist/asyncStorage.js"
     }
   },
   "files": [
@@ -28,10 +48,10 @@
     "test": "pnpm --filter @piparotech/subkit-core build && pnpm run build && node --import ./test/register-loader.mjs --test test/*.test.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
-  "dependencies": {
-    "@react-native-async-storage/async-storage": "^3.1.1"
-  },
   "peerDependencies": {
+    "@react-native-async-storage/async-storage": "*",
+    "expo-secure-store": "*",
+    "react-native-mmkv": "*",
     "@piparotech/subkit-core": "workspace:^",
     "expo": "*",
     "expo-iap": "*",
@@ -41,11 +61,23 @@
   "peerDependenciesMeta": {
     "@piparotech/subkit-core": {
       "optional": true
+    },
+    "@react-native-async-storage/async-storage": {
+      "optional": true
+    },
+    "expo-secure-store": {
+      "optional": true
+    },
+    "react-native-mmkv": {
+      "optional": true
     }
   },
   "devDependencies": {
     "@piparotech/subkit-core": "workspace:*",
+    "@react-native-async-storage/async-storage": "^3.1.1",
     "@types/react": "catalog:",
+    "expo-secure-store": "^15.0.8",
+    "react-native-mmkv": "^4.1.2",
     "react": "catalog:",
     "typescript": "catalog:"
   }

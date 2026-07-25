@@ -64,6 +64,21 @@ Normal for the Expo IAP adapter. Confirmation arrives through SubKit sync:
   `unclaimedPurchases` ([Ownership & unclaimed](/expo/conflicts/)).
 - The second device simply has not synced: trigger restore or a manual sync.
 
+## Purchase is active but this installation is blocked
+
+Inspect `customerInfo.deviceAccess` or the extended entitlement-hook result. If `commerciallyActive` is true, keep purchase messaging positive and render the `blockedReason` recovery path instead:
+
+- select a redacted activation when `DEVICE_SELECTION_REQUIRED`;
+- wait until `nextAllowedAt` for cooldown/change-budget denials;
+- restore or re-claim after `DEVICE_REPLACED` when policy permits;
+- use login/support recovery for Beneficiary conflicts.
+
+Never display raw installation IDs, Store tokens, Lineage IDs, Subject IDs, management tokens, or Device Access tokens.
+
+## Reinstall or device transfer changed device access
+
+Installation IDs are best-effort local identifiers. Update normally preserves local storage; app-data clearing and uninstall commonly remove it, while SecureStore/backup behavior varies by platform. A copied identifier is not strong device authentication. Restore uses provider-verified Store evidence and Lineage semantics, not the installation ID alone.
+
 ## Access disappears while offline
 
 Expected once offline limits pass: expiring entitlements end at `expiresAt`;

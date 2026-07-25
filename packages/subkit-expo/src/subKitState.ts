@@ -3,7 +3,14 @@ import type { CustomerInfo } from '@piparotech/subkit-core'
 import type { SubKitIapClient } from './SubKitIapClient.js'
 
 export type SubKitCustomerInfoState =
-  'unconfigured' | 'idle' | 'loading' | 'ready' | 'refreshing' | 'offline' | 'error'
+  | 'unconfigured'
+  | 'initializing'
+  | 'idle'
+  | 'loading'
+  | 'ready'
+  | 'refreshing'
+  | 'offline'
+  | 'error'
 
 export interface SubKitCustomerInfoSnapshot {
   clientConfigured: boolean
@@ -40,12 +47,32 @@ export function configureSubKitCustomerInfoState(client: SubKitIapClient): void 
     error: null,
     lastRefreshAttemptAt: null,
     lastUpdatedAt: null,
-    state: 'idle',
+    state: 'initializing',
   })
+  client.ready().then(
+    () => publishSubKitInitializationReady(client),
+    (error: unknown) => publishSubKitCustomerInfoError(error, client),
+  )
+}
+
+export function publishSubKitInitializationReady(sourceClient: SubKitIapClient): void {
+  if (!isCurrentClient(sourceClient)) return
+  if (snapshot.state !== 'initializing') return
+  updateSnapshot({ error: null, state: 'idle' })
 }
 
 export function getSubKitCustomerInfoSnapshot(): SubKitCustomerInfoSnapshot {
   return snapshot
+}
+
+export function isolateSubKitCustomerInfo(sourceClient?: SubKitIapClient): void {
+  if (!isCurrentClient(sourceClient)) return
+  updateSnapshot({
+    customerInfo: null,
+    error: null,
+    lastUpdatedAt: null,
+    state: 'loading',
+  })
 }
 
 export function publishSubKitCustomerInfo(

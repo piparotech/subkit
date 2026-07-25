@@ -23,10 +23,15 @@ export async function buildPurchaseIdentityFields(
 
 export class MemoryIdentityStore implements StoreIdentityHintProvider {
   private appUserIdValue: string | undefined
+  private generationValue = 0
   private storeIdentityHintsValue: StoreIdentityHints | undefined
 
   get appUserId(): string | undefined {
     return this.appUserIdValue
+  }
+
+  get generation(): number {
+    return this.generationValue
   }
 
   get storeIdentityHints(): StoreIdentityHints | undefined {
@@ -34,11 +39,13 @@ export class MemoryIdentityStore implements StoreIdentityHintProvider {
   }
 
   identify(appUserId: string, hints?: StoreIdentityHints): void {
+    if (this.appUserIdValue !== appUserId) this.generationValue += 1
     this.appUserIdValue = appUserId
     this.storeIdentityHintsValue = hints
   }
 
   reset(): void {
+    this.generationValue += 1
     this.appUserIdValue = undefined
     this.storeIdentityHintsValue = undefined
   }

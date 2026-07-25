@@ -73,15 +73,35 @@ function createIapAdapter(availablePurchases = []) {
 
 test('memory queue lists pending purchases only for the requested app user', async () => {
   const queue = createMemoryPurchaseQueueStore()
-  await queue.enqueue(userAPurchase, 'user_a')
-  await queue.enqueue(userBPurchase, 'user_b')
+  await queue.enqueue(userAPurchase, {
+    appUserId: 'user_a',
+    identityGeneration: 1,
+    installationId: 'install_a',
+  })
+  await queue.enqueue(userBPurchase, {
+    appUserId: 'user_b',
+    identityGeneration: 2,
+    installationId: 'install_b',
+  })
 
   assert.deepEqual(
-    (await queue.listPending('user_a')).map((item) => item.transactionId),
+    (
+      await queue.listPending({
+        appUserId: 'user_a',
+        identityGeneration: 1,
+        installationId: 'install_a',
+      })
+    ).map((item) => item.transactionId),
     ['tx_user_a'],
   )
   assert.deepEqual(
-    (await queue.listPending('user_b')).map((item) => item.transactionId),
+    (
+      await queue.listPending({
+        appUserId: 'user_b',
+        identityGeneration: 2,
+        installationId: 'install_b',
+      })
+    ).map((item) => item.transactionId),
     ['tx_user_b'],
   )
 })
@@ -102,11 +122,114 @@ test('stored queue keeps the first associated app user when the same purchase is
     },
   })
 
-  await queue.enqueue(userAPurchase, 'user_a')
-  await queue.enqueue(userAPurchase, 'user_b')
+  await queue.enqueue(userAPurchase, {
+    appUserId: 'user_a',
+    identityGeneration: 1,
+    installationId: 'install_a',
+  })
+  await queue.enqueue(userAPurchase, {
+    appUserId: 'user_b',
+    identityGeneration: 2,
+    installationId: 'install_b',
+  })
 
-  assert.equal((await queue.listPending('user_a')).length, 1)
-  assert.equal((await queue.listPending('user_b')).length, 0)
+  assert.equal(
+    (
+      await queue.listPending({
+        appUserId: 'user_a',
+        identityGeneration: 1,
+        installationId: 'install_a',
+      })
+    ).length,
+    1,
+  )
+  assert.equal(
+    (
+      await queue.listPending({
+        appUserId: 'user_b',
+        identityGeneration: 2,
+        installationId: 'install_b',
+      })
+    ).length,
+    0,
+  )
+})
+
+test('queue entries never move to another identity generation or installation', async () => {
+  const queue = createMemoryPurchaseQueueStore()
+  await queue.enqueue(userAPurchase, {
+    appUserId: 'user_a',
+    identityGeneration: 1,
+    installationId: 'install_a',
+  })
+  await queue.enqueue(userAPurchase, {
+    appUserId: 'user_a',
+    identityGeneration: 2,
+    installationId: 'install_b',
+  })
+
+  assert.equal(
+    (
+      await queue.listPending({
+        appUserId: 'user_a',
+        identityGeneration: 1,
+        installationId: 'install_a',
+      })
+    ).length,
+    1,
+  )
+  assert.equal(
+    (
+      await queue.listPending({
+        appUserId: 'user_a',
+        identityGeneration: 2,
+        installationId: 'install_b',
+      })
+    ).length,
+    0,
+  )
+})
+
+test('legacy stored queue entries without installation binding fail closed', async () => {
+  const values = new Map([
+    [
+      'subkit:iap:purchase-queue:v1',
+      JSON.stringify([
+        {
+          attempts: 0,
+          createdAt: 1,
+          id: 'legacy',
+          platform: 'ios',
+          productId: 'pro',
+          status: 'pending',
+          store: 'apple_app_store',
+          updatedAt: 1,
+          userId: 'user_a',
+        },
+      ]),
+    ],
+  ])
+  const queue = createStoredPurchaseQueueStore({
+    storage: {
+      async getItem(key) {
+        return values.get(key) ?? null
+      },
+      async removeItem(key) {
+        values.delete(key)
+      },
+      async setItem(key, value) {
+        values.set(key, value)
+      },
+    },
+  })
+  assert.deepEqual(
+    await queue.listPending({
+      appUserId: 'user_a',
+      identityGeneration: 1,
+      installationId: 'install_a',
+    }),
+    [],
+  )
 })
 
 test('stored queue enqueueMany persists many purchases with a single storage write', async () => {
@@ -127,10 +250,23 @@ test('stored queue enqueueMany persists many purchases with a single storage wri
     },
   })
 
-  await queue.enqueueMany([userAPurchase, userBPurchase], 'user_a')
+  await queue.enqueueMany([userAPurchase, userBPurchase], {
+    appUserId: 'user_a',
+    identityGeneration: 1,
+    installationId: 'install_a',
+  })
 
   assert.equal(writes, 1)
-  assert.equal((await queue.listPending('user_a')).length, 2)
+  assert.equal(
+    (
+      await queue.listPending({
+        appUserId: 'user_a',
+        identityGeneration: 1,
+        installationId: 'install_a',
+      })
+    ).length,
+    2,
+  )
 })
 
 test('MMKV adapter exposes the async JSON storage shape used by the stored queue', async () => {
@@ -162,6 +298,7 @@ test('purchase sync coordinator does not reconcile one user pending purchase as 
   const coordinator = createPurchaseSyncCoordinator({
     appUserId: () => currentAppUserId,
     iap: createIapAdapter(),
+    identityGeneration: () => 1,
     installationId: 'install_123',
     platform: 'ios',
     queue,
@@ -184,6 +321,68 @@ test('purchase sync coordinator does not reconcile one user pending purchase as 
   assert.deepEqual(calls[1].purchases, [])
 })
 
+test('late user A purchase event cannot reconcile after identity changes to user B', async () => {
+  let currentAppUserId = 'user_a'
+  let generation = 1
+  let releaseReconcile
+  const queue = createMemoryPurchaseQueueStore()
+  const calls = []
+  const coordinator = createPurchaseSyncCoordinator({
+    appUserId: () => currentAppUserId,
+    iap: createIapAdapter(),
+    identityGeneration: () => generation,
+    installationId: 'install_123',
+    platform: 'ios',
+    queue,
+    runtime: {
+      async reconcile(input) {
+        calls.push(input)
+        await new Promise((resolve) => {
+          releaseReconcile = resolve
+        })
+        return {
+          acceptedPurchases: [],
+          checkedAt: '2026-07-01T00:00:00.000Z',
+          conflicts: [],
+          customerInfo: {
+            accessContext: null,
+            appId: 'app_123',
+            appUserId: input.appUserId,
+            checkedAt: '2026-07-01T00:00:00.000Z',
+            entitlements: {},
+            freshness: 'fresh',
+            purchases: [],
+            unclaimedPurchases: [],
+          },
+          finishableTransactions: [],
+          rejectedPurchases: [],
+          verificationStatus: 'failed',
+        }
+      },
+    },
+    sessionId: () => 'session_123',
+    storeIdentityHints: () => undefined,
+  })
+
+  const lateEvent = coordinator.handlePurchaseEvent(userAPurchase)
+  await new Promise((resolve) => setTimeout(resolve, 0))
+  currentAppUserId = 'user_b'
+  generation = 2
+  releaseReconcile()
+  await assert.rejects(lateEvent, /identity changed/)
+
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0].appUserId, 'user_a')
+  assert.deepEqual(
+    await queue.listPending({
+      appUserId: 'user_b',
+      identityGeneration: 2,
+      installationId: 'install_123',
+    }),
+    [],
+  )
+})
+
 test('purchase sync coordinator finishes transactions using the shared queue purchase id', async () => {
   const queue = createMemoryPurchaseQueueStore()
   const finished = []
@@ -196,6 +395,7 @@ test('purchase sync coordinator finishes transactions using the shared queue pur
         finished.push(input.purchase.transactionId)
       },
     },
+    identityGeneration: () => 1,
     installationId: 'install_123',
     platform: 'ios',
     queue,
@@ -235,7 +435,14 @@ test('purchase sync coordinator finishes transactions using the shared queue pur
   await coordinator.handlePurchaseEvent(userAPurchase)
 
   assert.deepEqual(finished, ['tx_user_a'])
-  assert.deepEqual(await queue.listPending('user_a'), [])
+  assert.deepEqual(
+    await queue.listPending({
+      appUserId: 'user_a',
+      identityGeneration: 1,
+      installationId: 'install_a',
+    }),
+    [],
+  )
 })
 
 test('purchase sync coordinator forwards receipt proof fields to reconcile', async () => {
@@ -250,6 +457,7 @@ test('purchase sync coordinator forwards receipt proof fields to reconcile', asy
   const coordinator = createPurchaseSyncCoordinator({
     appUserId: () => 'user_a',
     iap: createIapAdapter(),
+    identityGeneration: () => 1,
     installationId: 'install_123',
     platform: 'ios',
     queue: createMemoryPurchaseQueueStore(),
@@ -273,6 +481,7 @@ test('purchase sync coordinator marks rejected purchases as failed instead of re
   const coordinator = createPurchaseSyncCoordinator({
     appUserId: () => 'user_a',
     iap: createIapAdapter(),
+    identityGeneration: () => 1,
     installationId: 'install_123',
     platform: 'ios',
     queue,

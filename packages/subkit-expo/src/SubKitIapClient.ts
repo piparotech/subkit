@@ -1,11 +1,12 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Platform } from 'react-native'
 
 import type {
   CustomerInfo,
+  DeviceManagementSession,
   Offering,
   PurchaseResult,
   PurchaseSyncResult,
+  RuntimeDeviceActivationResult,
   RuntimeOfferingsResponse,
   StoreIdentityHints,
 } from '@piparotech/subkit-core'
@@ -33,10 +34,13 @@ import {
 } from './customerInfoCache.js'
 import { normalizeIapError } from './errors.js'
 import { MemoryIdentityStore } from './identity.js'
+import { createInstallationIdResolver } from './installationId.js'
 import type { PurchaseQueueStore } from './queue.js'
+import { createRedactingLogger } from './redactingLogger.js'
 import { createStoredPurchaseQueueStore } from './storageQueue.js'
 import {
   configureSubKitCustomerInfoState,
+  isolateSubKitCustomerInfo,
   publishSubKitCustomerInfo,
   publishSubKitCustomerInfoError,
 } from './subKitState.js'
@@ -46,6 +50,7 @@ import type {
   SubKitIapProduct,
   SubKitIapProductType,
   SubKitIapPurchase,
+  SubKitInstallationIdInput,
   SubKitOffering,
   SubKitOfferingPackage,
   SubKitOfferingsResponse,
@@ -54,12 +59,14 @@ import type {
   SubKitSyncOptions,
 } from './types.js'
 
+declare const process: { env?: { NODE_ENV?: string } } | undefined
+
 export interface ConfigureSubKitOptions extends SubKitExpoIapConfig {
   adapterBundle?: SubKitIapAdapterBundle
   appStateSource?: SubKitAppStateSource
   autoStart?: boolean
   customerInfoCache?: CustomerInfoCacheStore
-  installationId: string
+  installationId: SubKitInstallationIdInput
   logger?: SubKitIapLogger
   platform?: SubKitIapPlatform
   queue?: PurchaseQueueStore
@@ -87,9 +94,27 @@ const DEFAULT_SUBKIT_IAP_OPTIONS: ResolvedSubKitIapOptions = {
 
 export interface SubKitIapClient {
   getCustomerInfo(appUserId?: string): Promise<CustomerInfo>
+  getDeviceActivations(input: {
+    activationGroupKey: string
+    managementToken: string
+  }): Promise<RuntimeDeviceActivationResult>
   getOfferings(input?: { placement?: string }): Promise<SubKitOfferingsResponse>
   identify(appUserId: string): Promise<CustomerInfo>
   purchasePackage(packageId: string): Promise<PurchaseResult>
+  ready(): Promise<void>
+  reset(): Promise<void>
+  removeDevice(input: {
+    activationGroupKey: string
+    activationId: string
+    idempotencyKey: string
+    managementToken: string
+  }): Promise<RuntimeDeviceActivationResult>
+  replaceDevice(input: {
+    activationGroupKey: string
+    idempotencyKey: string
+    managementToken: string
+    replaceActivationId: string
+  }): Promise<RuntimeDeviceActivationResult>
   restorePurchases(): Promise<PurchaseSyncResult | null>
   start(): Promise<void>
   stop(): void
@@ -99,7 +124,9 @@ export interface SubKitIapClient {
 export function configureSubKit(options: ConfigureSubKitOptions): SubKitIapClient {
   validateConfigureSubKitOptions(options)
   configuredSubKitClient?.stop()
-  const nextClient = createSubKitClient(options)
+  const generation = configuredClientGeneration + 1
+  configuredClientGeneration = generation
+  const nextClient = createSubKitClient(options, generation)
   configuredSubKitClient = nextClient
   configureSubKitCustomerInfoState(nextClient)
   if (options.autoStart !== false) {
@@ -117,6 +144,9 @@ const unconfiguredClientTarget: SubKitIapClient = {
   getCustomerInfo() {
     return rejectSubKitNotConfigured()
   },
+  getDeviceActivations() {
+    return rejectSubKitNotConfigured()
+  },
   getOfferings() {
     return rejectSubKitNotConfigured()
   },
@@ -124,6 +154,18 @@ const unconfiguredClientTarget: SubKitIapClient = {
     return rejectSubKitNotConfigured()
   },
   purchasePackage() {
+    return rejectSubKitNotConfigured()
+  },
+  ready() {
+    return rejectSubKitNotConfigured()
+  },
+  reset() {
+    return rejectSubKitNotConfigured()
+  },
+  removeDevice() {
+    return rejectSubKitNotConfigured()
+  },
+  replaceDevice() {
     return rejectSubKitNotConfigured()
   },
   restorePurchases() {
@@ -151,9 +193,14 @@ export const client = new Proxy(unconfiguredClientTarget, {
 })
 
 let configuredSubKitClient: SubKitIapClient | null = null
+let configuredClientGeneration = 0
 
-function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
+function createSubKitClient(
+  options: ConfigureSubKitOptions,
+  clientGeneration: number,
+): SubKitIapClient {
   const adapterBundle = options.adapterBundle ?? createLazyExpoIapAdapterBundle()
+  const logger = createRedactingLogger(options.logger)
   const appStateSource = options.appStateSource ?? createReactNativeAppStateSource()
   const iapOptions = resolveSubKitIapOptions(options.iap)
   const platform = options.platform ?? detectSubKitIapPlatform()
@@ -162,14 +209,20 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
     sdkKey: options.sdkKey,
   })
   const identity = new MemoryIdentityStore()
+  const installationId = createInstallationIdResolver(options.installationId)
   const queue = options.queue ?? createDefaultPurchaseQueue(options)
   const customerInfoCache = options.customerInfoCache ?? createDefaultCustomerInfoCache(options)
+  const deviceTokenStore = createDeviceTokenStore(options)
   let customerInfo: CustomerInfo | null = null
   let offeringsCache: SubKitOfferingsResponse | null = null
   let sessionId = options.sessionId ?? createSessionId()
   const subscriptions: SubKitPurchaseListenerSubscription[] = []
   let appStateSubscription: { remove(): void } | null = null
   let startPromise: Promise<void> | null = null
+  let purchasePromise: Promise<PurchaseResult> | null = null
+  let restorePromise: Promise<PurchaseSyncResult | null> | null = null
+  let operationChain: Promise<unknown> = Promise.resolve()
+  let stopped = false
 
   if (options.appUserId != null && options.appUserId.trim() !== '') {
     identity.identify(options.appUserId)
@@ -180,8 +233,9 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
     appUserId: () => identity.appUserId,
     foregroundMinIntervalMs: iapOptions.foregroundMinIntervalMs,
     iap: adapterBundle.iap,
-    installationId: options.installationId,
-    logger: options.logger,
+    identityGeneration: () => identity.generation,
+    installationId: () => installationId.get(),
+    logger,
     platform,
     queue,
     runtime,
@@ -189,13 +243,20 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
     storeIdentityHints: () => customerInfo?.storeIdentityHints ?? currentIdentityHints(identity),
   })
 
-  async function setCustomerInfo(info: CustomerInfo, persist = true): Promise<CustomerInfo> {
+  async function setCustomerInfo(
+    info: CustomerInfo,
+    persist = true,
+    expectedGeneration = identity.generation,
+  ): Promise<CustomerInfo> {
+    if (expectedGeneration !== identity.generation) {
+      throw new Error('SubKit discarded a stale CustomerInfo response after identity change')
+    }
     customerInfo = info
     identity.identify(info.appUserId, info.storeIdentityHints)
     publishSubKitCustomerInfo(info, subKitClient)
     if (persist) {
       await customerInfoCache.write(info).catch((error: unknown) => {
-        options.logger?.warn('SubKit failed to persist CustomerInfo', error)
+        logger?.warn('SubKit failed to persist CustomerInfo', error)
       })
     }
     return info
@@ -206,62 +267,168 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
       const cached = await customerInfoCache.read(appUserId)
       return cached == null ? null : setCustomerInfo(cached, false)
     } catch (error) {
-      options.logger?.warn('SubKit failed to hydrate CustomerInfo', error)
+      logger?.warn('SubKit failed to hydrate CustomerInfo', error)
       return null
     }
+  }
+
+  async function ensureReady(): Promise<void> {
+    await installationId.get()
+    if (stopped || clientGeneration !== configuredClientGeneration) {
+      throw new Error('SubKit client was replaced during initialization')
+    }
+  }
+
+  function enqueueOperation<T>(operation: () => Promise<T>): Promise<T> {
+    const previous = operationChain.catch(() => undefined)
+    const pending = previous.then(operation)
+    operationChain = pending.catch(() => undefined)
+    return pending
   }
 
   async function internalSyncPurchases(
     input: SubKitSyncOptions,
   ): Promise<PurchaseSyncResult | null> {
+    await ensureReady()
+    const generation = identity.generation
     const result = await coordinator.syncPurchases(input)
-    if (result != null) await setCustomerInfo(result.customerInfo)
-    return result
+    if (result == null) return null
+    const coordinated = await coordinateDeviceAccess(result, input.reason)
+    await setCustomerInfo(coordinated.customerInfo, true, generation)
+    return coordinated
   }
 
   async function syncPurchases(input: SubKitSyncOptions): Promise<PurchaseSyncResult | null> {
-    return publishCustomerInfoErrorOnFailure(() => internalSyncPurchases(input))
+    return enqueueOperation(() =>
+      publishCustomerInfoErrorOnFailure(() => internalSyncPurchases(input)),
+    )
+  }
+
+  async function processPurchaseEvent(
+    purchase: SubKitIapPurchase,
+  ): Promise<PurchaseSyncResult | null> {
+    const generation = identity.generation
+    const result = await coordinator.handlePurchaseEvent(purchase)
+    if (result == null) return null
+    const coordinated = await coordinateDeviceAccess(result, 'purchase_event')
+    await setCustomerInfo(coordinated.customerInfo, true, generation)
+    return coordinated
   }
 
   async function handlePurchaseEvent(
     purchase: SubKitIapPurchase,
   ): Promise<PurchaseSyncResult | null> {
-    const result = await coordinator.handlePurchaseEvent(purchase)
-    if (result != null) await setCustomerInfo(result.customerInfo)
-    return result
+    return enqueueOperation(() => processPurchaseEvent(purchase))
+  }
+
+  async function coordinateDeviceAccess(
+    result: PurchaseSyncResult,
+    reason: string,
+  ): Promise<PurchaseSyncResult> {
+    const managementSession = result.managementSession
+    if (managementSession == null || managementSession.activationGroupKeys.length === 0) {
+      return result
+    }
+    await deviceTokenStore.writeManagementSession(managementSession)
+    let info = result.customerInfo
+    for (const activationGroupKey of managementSession.activationGroupKeys) {
+      const activation = await runtime.mutateDeviceActivation({
+        activationGroupKey,
+        idempotencyKey: `device:${reason}:${sessionId}:${activationGroupKey}`,
+        installationId: await installationId.get(),
+        managementToken: managementSession.token,
+        operation: 'claim',
+        platform,
+      })
+      if (activation.deviceAccessToken != null) {
+        await deviceTokenStore.writeDeviceAccessToken(
+          activationGroupKey,
+          activation.deviceAccessToken,
+        )
+      }
+      info = {
+        ...info,
+        deviceAccess: {
+          accessExpiresAt: activation.deviceAccessToken?.expiresAt ?? null,
+          activation: activation.activation ?? null,
+          blockedReason: activation.blockedReason ?? null,
+          commerciallyActive: Object.values(info.entitlements).some(
+            (entitlement) => entitlement.active,
+          ),
+        },
+      }
+    }
+    return { ...result, customerInfo: info }
   }
 
   async function identify(appUserId: string): Promise<CustomerInfo> {
-    return publishCustomerInfoErrorOnFailure(async () => {
-      sessionId = createSessionId()
-      offeringsCache = null
-      identity.identify(appUserId)
-      await hydrateCustomerInfo(appUserId)
-      const info = await setCustomerInfo(
-        await runtime.getCustomerInfo(appUserId, customerInfo?.accessContext?.token),
-      )
-      const result = await internalSyncPurchases({ force: true, reason: 'identity_changed' })
-      return result?.customerInfo ?? info
-    })
+    return enqueueOperation(() =>
+      publishCustomerInfoErrorOnFailure(async () => {
+        await ensureReady()
+        sessionId = createSessionId()
+        offeringsCache = null
+        customerInfo = null
+        identity.identify(appUserId)
+        const generation = identity.generation
+        isolateSubKitCustomerInfo(subKitClient)
+        const hydrated = await hydrateCustomerInfo(appUserId)
+        const info = await setCustomerInfo(
+          await runtime.getCustomerInfo(
+            appUserId,
+            hydrated?.accessContext?.token,
+            await deviceTokenStore.readDeviceAccessToken(),
+          ),
+          true,
+          generation,
+        )
+        const result = await internalSyncPurchases({ force: true, reason: 'identity_changed' })
+        return result?.customerInfo ?? info
+      }),
+    )
   }
 
   async function getCustomerInfo(appUserId?: string): Promise<CustomerInfo> {
-    return publishCustomerInfoErrorOnFailure(async () => {
-      const resolvedAppUserId = appUserId ?? identity.appUserId
-      if (resolvedAppUserId == null || resolvedAppUserId.trim() === '')
-        throw new Error('SubKit appUserId is required')
-      if (customerInfo?.appUserId !== resolvedAppUserId) {
-        await hydrateCustomerInfo(resolvedAppUserId)
-      }
-      return setCustomerInfo(
-        await runtime.getCustomerInfo(resolvedAppUserId, customerInfo?.accessContext?.token),
-      )
+    return enqueueOperation(() =>
+      publishCustomerInfoErrorOnFailure(async () => {
+        await ensureReady()
+        const generation = identity.generation
+        const resolvedAppUserId = appUserId ?? identity.appUserId
+        if (resolvedAppUserId == null || resolvedAppUserId.trim() === '')
+          throw new Error('SubKit appUserId is required')
+        if (customerInfo?.appUserId !== resolvedAppUserId) {
+          await hydrateCustomerInfo(resolvedAppUserId)
+        }
+        return setCustomerInfo(
+          await runtime.getCustomerInfo(
+            resolvedAppUserId,
+            customerInfo?.accessContext?.token,
+            await deviceTokenStore.readDeviceAccessToken(),
+          ),
+          true,
+          generation,
+        )
+      }),
+    )
+  }
+
+  async function getDeviceActivations(input: {
+    activationGroupKey: string
+    managementToken: string
+  }): Promise<RuntimeDeviceActivationResult> {
+    return enqueueOperation(async () => {
+      await ensureReady()
+      const generation = identity.generation
+      const result = await runtime.listDeviceActivations(input)
+      assertCurrentIdentityGeneration(generation)
+      return result
     })
   }
 
-  async function getOfferings(
+  async function getOfferingsOnce(
     input: { placement?: string } = {},
   ): Promise<SubKitOfferingsResponse> {
+    await ensureReady()
+    const generation = identity.generation
     const offerings = await runtime.getOfferings({
       appUserId: identity.appUserId,
       placement: input.placement,
@@ -272,11 +439,31 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
       offerings,
       platform,
     })
+    assertCurrentIdentityGeneration(generation)
     offeringsCache = resolvedOfferings
     return resolvedOfferings
   }
 
+  async function getOfferings(
+    input: { placement?: string } = {},
+  ): Promise<SubKitOfferingsResponse> {
+    return enqueueOperation(() => getOfferingsOnce(input))
+  }
+
   async function purchasePackage(packageId: string): Promise<PurchaseResult> {
+    if (purchasePromise != null) return purchasePromise
+    const pending = enqueueOperation(() => purchasePackageOnce(packageId))
+    purchasePromise = pending
+    try {
+      return await pending
+    } finally {
+      if (purchasePromise === pending) purchasePromise = null
+    }
+  }
+
+  async function purchasePackageOnce(packageId: string): Promise<PurchaseResult> {
+    await ensureReady()
+    const generation = identity.generation
     const appUserId = identity.appUserId
     if (appUserId == null || appUserId.trim() === '') {
       return {
@@ -289,7 +476,7 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
       }
     }
 
-    const offerings = offeringsCache ?? (await getOfferings())
+    const offerings = offeringsCache ?? (await getOfferingsOnce())
     const selected = findOfferingPackage(offerings.all, packageId)
     if (selected == null) {
       return {
@@ -352,7 +539,17 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
       const purchases = await adapterBundle.iap.requestPurchase(purchaseRequest)
       let syncResult: PurchaseSyncResult | null = null
       for (const purchase of purchases) {
-        syncResult = await handlePurchaseEvent(purchase)
+        syncResult = await processPurchaseEvent(purchase)
+      }
+      if (generation !== identity.generation) {
+        return {
+          error: {
+            code: 'validation_failed',
+            message: 'SubKit discarded a stale purchase result after identity change',
+            retryable: false,
+          },
+          status: 'failed',
+        }
       }
       return syncResult == null
         ? { purchaseId: productId, status: 'pending' }
@@ -362,13 +559,76 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
     }
   }
 
-  async function restorePurchases(): Promise<PurchaseSyncResult | null> {
-    return publishCustomerInfoErrorOnFailure(async () => {
-      if (adapterBundle.iap.restorePurchases != null) {
-        await adapterBundle.iap.restorePurchases()
-      }
-      return internalSyncPurchases({ force: true, reason: 'manual_restore' })
+  async function replaceDevice(input: {
+    activationGroupKey: string
+    idempotencyKey: string
+    managementToken: string
+    replaceActivationId: string
+  }): Promise<RuntimeDeviceActivationResult> {
+    return enqueueOperation(async () => {
+      await ensureReady()
+      const generation = identity.generation
+      const result = await runtime.mutateDeviceActivation({
+        ...input,
+        installationId: await installationId.get(),
+        operation: 'replace',
+        platform,
+      })
+      assertCurrentIdentityGeneration(generation)
+      return result
     })
+  }
+
+  async function removeDevice(input: {
+    activationGroupKey: string
+    activationId: string
+    idempotencyKey: string
+    managementToken: string
+  }): Promise<RuntimeDeviceActivationResult> {
+    return enqueueOperation(async () => {
+      await ensureReady()
+      const generation = identity.generation
+      const result = await runtime.revokeDeviceActivation(input)
+      assertCurrentIdentityGeneration(generation)
+      return result
+    })
+  }
+
+  async function restorePurchases(): Promise<PurchaseSyncResult | null> {
+    if (restorePromise != null) return restorePromise
+    const pending = enqueueOperation(() =>
+      publishCustomerInfoErrorOnFailure(async () => {
+        await ensureReady()
+        const generation = identity.generation
+        if (adapterBundle.iap.restorePurchases != null) await adapterBundle.iap.restorePurchases()
+        const result = await internalSyncPurchases({ force: true, reason: 'manual_restore' })
+        if (generation !== identity.generation) {
+          throw new Error('SubKit discarded a stale restore result after identity change')
+        }
+        return result
+      }),
+    )
+    restorePromise = pending
+    try {
+      return await pending
+    } finally {
+      if (restorePromise === pending) restorePromise = null
+    }
+  }
+
+  function assertCurrentIdentityGeneration(generation: number): void {
+    if (generation !== identity.generation) {
+      throw new Error('SubKit discarded a stale operation result after identity change')
+    }
+  }
+
+  async function reset(): Promise<void> {
+    await ensureReady()
+    identity.reset()
+    customerInfo = null
+    offeringsCache = null
+    sessionId = createSessionId()
+    isolateSubKitCustomerInfo(subKitClient)
   }
 
   async function start(): Promise<void> {
@@ -389,6 +649,8 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   }
 
   async function startOnce(): Promise<void> {
+    stopped = false
+    await ensureReady()
     if (identity.appUserId != null) await hydrateCustomerInfo(identity.appUserId)
     await adapterBundle.iap.initConnection()
     const listeners = adapterBundle.listeners
@@ -402,13 +664,13 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
         listeners.addPurchaseUpdatedListener((purchase) => {
           handlePurchaseEvent(purchase).catch((error: unknown) => {
             publishSubKitCustomerInfoError(error, subKitClient)
-            options.logger?.error('SubKit purchase event sync failed', error)
+            logger?.error('SubKit purchase event sync failed', error)
           })
         }),
       )
       subscriptions.push(
         listeners.addPurchaseErrorListener((error) => {
-          options.logger?.warn('SubKit observed IAP purchase error', error)
+          logger?.warn('SubKit observed IAP purchase error', error)
         }),
       )
     }
@@ -416,7 +678,7 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
     if (iapOptions.autoSync && iapOptions.syncOnForeground && appStateSubscription == null) {
       appStateSubscription = createSubKitAppStateSync({
         appStateSource,
-        logger: options.logger,
+        logger,
         minBackgroundDurationMs: iapOptions.sessionResumeThresholdMs,
         onBecameActive: async () => {
           sessionId = createSessionId()
@@ -431,6 +693,7 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
   }
 
   function stop(): void {
+    stopped = true
     startPromise = null
     offeringsCache = null
     appStateSubscription?.remove()
@@ -440,7 +703,7 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
       subscription?.remove()
     }
     adapterBundle.iap.endConnection?.().catch((error: unknown) => {
-      options.logger?.warn('SubKit failed to end IAP connection', error)
+      logger?.warn('SubKit failed to end IAP connection', error)
     })
   }
 
@@ -460,9 +723,14 @@ function createSubKitClient(options: ConfigureSubKitOptions): SubKitIapClient {
 
   const subKitClient: SubKitIapClient = {
     getCustomerInfo,
+    getDeviceActivations,
     getOfferings,
     identify,
     purchasePackage,
+    ready: ensureReady,
+    reset,
+    removeDevice,
+    replaceDevice,
     restorePurchases,
     start,
     stop,
@@ -624,21 +892,99 @@ function selectGoogleSubscriptionOffer(
   )
 }
 
+interface DeviceTokenStore {
+  readDeviceAccessToken(): Promise<string | undefined>
+  writeDeviceAccessToken(
+    activationGroupKey: string,
+    token: { expiresAt: string; token: string },
+  ): Promise<void>
+  writeManagementSession(session: DeviceManagementSession): Promise<void>
+}
+
+function createDeviceTokenStore(options: ConfigureSubKitOptions): DeviceTokenStore {
+  const persistence = requirePersistence(options)
+  const prefix = `${persistence.keyPrefix}:device-tokens:v1`
+  return {
+    async readDeviceAccessToken() {
+      const index = await persistence.storage.getItem(`${prefix}:access:current`)
+      if (index == null) return undefined
+      const raw = await persistence.storage.getItem(`${prefix}:access:${encodeURIComponent(index)}`)
+      if (raw == null) return undefined
+      try {
+        const parsed: unknown = JSON.parse(raw)
+        if (
+          typeof parsed === 'object' &&
+          parsed != null &&
+          'token' in parsed &&
+          typeof parsed.token === 'string'
+        )
+          return parsed.token
+      } catch {
+        return undefined
+      }
+      return undefined
+    },
+    async writeDeviceAccessToken(activationGroupKey, token) {
+      await persistence.storage.setItem(
+        `${prefix}:access:${encodeURIComponent(activationGroupKey)}`,
+        JSON.stringify(token),
+      )
+      await persistence.storage.setItem(`${prefix}:access:current`, activationGroupKey)
+    },
+    async writeManagementSession(session) {
+      await persistence.storage.setItem(`${prefix}:management`, JSON.stringify(session))
+    },
+  }
+}
+
 function createDefaultPurchaseQueue(options: ConfigureSubKitOptions): PurchaseQueueStore {
-  const key = hashStorageScope(`${options.sdkKey}:${options.installationId}`)
+  const persistence = requirePersistence(options)
   return createStoredPurchaseQueueStore({
-    key: `subkit:iap:purchase-queue:v1:${key}`,
-    storage: AsyncStorage,
+    key: `${persistence.keyPrefix}:purchase-queue:v1`,
+    storage: persistence.storage,
   })
 }
 
 function createDefaultCustomerInfoCache(options: ConfigureSubKitOptions): CustomerInfoCacheStore {
-  const key = hashStorageScope(`${options.sdkKey}:${options.installationId}`)
+  const persistence = requirePersistence(options)
   return createCustomerInfoCacheStore({
-    keyPrefix: `subkit:customer-info:v1:${key}`,
+    keyPrefix: `${persistence.keyPrefix}:customer-info:v1`,
     policy: options.iap,
-    storage: AsyncStorage,
+    storage: persistence.storage,
   })
+}
+
+function requirePersistence(options: ConfigureSubKitOptions): {
+  keyPrefix: string
+  storage: NonNullable<ConfigureSubKitOptions['persistence']>['storage']
+} {
+  const persistence = options.persistence
+  if (persistence == null) {
+    if (options.adapterBundle != null) {
+      return {
+        keyPrefix: `subkit:test:${hashStorageScope(options.sdkKey)}`,
+        storage: testPersistenceStorage,
+      }
+    }
+    throw new Error(
+      'SubKit persistence.storage is required unless custom queue and customerInfoCache stores are provided',
+    )
+  }
+  const keyPrefix = persistence.keyPrefix?.trim() || `subkit:${hashStorageScope(options.sdkKey)}`
+  return { keyPrefix, storage: persistence.storage }
+}
+
+const testPersistenceValues = new Map<string, string>()
+const testPersistenceStorage: NonNullable<ConfigureSubKitOptions['persistence']>['storage'] = {
+  async getItem(key) {
+    return testPersistenceValues.get(key) ?? null
+  },
+  async removeItem(key) {
+    testPersistenceValues.delete(key)
+  },
+  async setItem(key, value) {
+    testPersistenceValues.set(key, value)
+  },
 }
 
 function hashStorageScope(value: string): string {
@@ -718,7 +1064,18 @@ function validateConfigureSubKitOptions(options: ConfigureSubKitOptions): void {
   if (options.sdkKey.trim() === '') {
     throw new Error('SubKit sdkKey is required')
   }
-  if (options.installationId.trim() === '') throw new Error('SubKit installationId is required')
+  if (typeof options.installationId === 'string' && options.installationId.trim() === '') {
+    throw new Error('SubKit installationId is required')
+  }
+  if (
+    options.adapterBundle == null &&
+    options.persistence == null &&
+    (options.queue == null || options.customerInfoCache == null)
+  ) {
+    throw new Error(
+      'SubKit persistence.storage is required unless custom queue and customerInfoCache stores are provided',
+    )
+  }
   const apiBaseUrl = options.apiBaseUrl ?? DEFAULT_SUBKIT_API_BASE_URL
   try {
     const parsed = new URL(apiBaseUrl)

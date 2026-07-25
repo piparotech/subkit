@@ -4,12 +4,14 @@ import {
   type NormalizedStorePurchase,
   type PurchaseSyncReason,
   type PurchaseSyncResult,
+  type RuntimeDeviceActivationResult,
   type RuntimeOfferingsResponse,
   type StoreIdentityHints,
   type SubKitErrorCode,
   customerInfoSchema,
   iapReconcileResponseSchema,
   isRetryableSubKitErrorCode,
+  runtimeDeviceActivationResultSchema,
   runtimeOfferingsResponseSchema,
   subKitApiErrorResponseSchema,
 } from '@piparotech/subkit-core'
@@ -52,8 +54,16 @@ export class SubKitRuntimeClient {
     this.sdkKey = options.sdkKey
   }
 
-  async getCustomerInfo(appUserId: string, accessContext?: string): Promise<CustomerInfo> {
-    const response = await this.post('/api/runtime/customer-info', { accessContext, appUserId })
+  async getCustomerInfo(
+    appUserId: string,
+    accessContext?: string,
+    deviceAccessToken?: string,
+  ): Promise<CustomerInfo> {
+    const response = await this.post('/api/runtime/customer-info', {
+      accessContext,
+      appUserId,
+      deviceAccessToken,
+    })
     return customerInfoSchema.parse(response)
   }
 
@@ -66,6 +76,38 @@ export class SubKitRuntimeClient {
   ): Promise<RuntimeOfferingsResponse> {
     const response = await this.post('/api/runtime/offerings', input)
     return runtimeOfferingsResponseSchema.parse(response)
+  }
+
+  async listDeviceActivations(input: {
+    activationGroupKey: string
+    managementToken: string
+  }): Promise<RuntimeDeviceActivationResult> {
+    const response = await this.post('/api/runtime/devices/list', input)
+    return runtimeDeviceActivationResultSchema.parse(response)
+  }
+
+  async mutateDeviceActivation(input: {
+    activationGroupKey: string
+    idempotencyKey: string
+    installationId: string
+    managementToken: string
+    operation: 'claim' | 'renew' | 'replace'
+    platform: 'ios' | 'android'
+    replaceActivationId?: string
+  }): Promise<RuntimeDeviceActivationResult> {
+    const { operation, ...payload } = input
+    const response = await this.post(`/api/runtime/devices/${operation}`, payload)
+    return runtimeDeviceActivationResultSchema.parse(response)
+  }
+
+  async revokeDeviceActivation(input: {
+    activationGroupKey: string
+    activationId: string
+    idempotencyKey: string
+    managementToken: string
+  }): Promise<RuntimeDeviceActivationResult> {
+    const response = await this.post('/api/runtime/devices/revoke', input)
+    return runtimeDeviceActivationResultSchema.parse(response)
   }
 
   async reconcile(input: {

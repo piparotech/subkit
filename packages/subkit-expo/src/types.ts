@@ -9,6 +9,7 @@ import type {
 export type SubKitIapProductType = 'in-app' | 'subs'
 export type SubKitIapPlatform = 'ios' | 'android'
 export type SubKitIapStore = 'apple_app_store' | 'google_play'
+export type SubKitInstallationIdInput = string | (() => string | Promise<string>)
 
 export interface SubKitIapProduct {
   currency?: string
@@ -94,6 +95,10 @@ export interface SubKitExpoIapConfig {
     syncOnAppStart?: boolean
     syncOnForeground?: boolean
     syncOnPurchaseEvent?: boolean
+  }
+  persistence?: {
+    keyPrefix?: string
+    storage: import('./storageQueue.js').SubKitJsonStorage
   }
   sdkKey: string
 }

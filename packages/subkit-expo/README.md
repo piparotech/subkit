@@ -23,8 +23,10 @@ import { configureSubKit } from '@piparotech/subkit-expo'
 configureSubKit({
   // One public app-bound SDK Key for iOS and Android. Never use a Server API Key here.
   sdkKey: 'sk_sdk_replace_me',
-  // Stable id for this app install on this device. Generate once, persist locally, and reuse on every launch.
+  // Stable id for this app install on this device. A lazy sync/async provider is also accepted.
   installationId: 'install_abc',
+  // Queue and CustomerInfo persistence is explicit and independent from the installation-id storage.
+  persistence: { storage: appJsonStorage, keyPrefix: 'my-app.subkit.v1' },
   // Optional stable user id from your app/backend/auth system. Purchases require an identified user.
   appUserId: 'user_123',
 })
@@ -34,7 +36,7 @@ Call `configureSubKit(...)` at module level, not inside `useEffect` or a compone
 
 If `client` is used before configuration, it throws.
 
-Required fields are `sdkKey` and `installationId`; `appUserId` is optional. The same app-bound SDK Key is used on iOS and Android. Runtime requests contain no app or environment selector. Apple or Google verification determines the environment of each real purchase. A signed `accessContext` returned after verification binds later CustomerInfo and entitlement reads to that environment. `apiBaseUrl` is optional and defaults to `https://subkit.piparo.tech`; pass it explicitly for local development or self-hosted SubKit deployments.
+Required fields are `sdkKey`, `installationId`, and `persistence.storage` for normal host configuration; `appUserId` is optional. Injected test adapter bundles may use explicit in-memory stores. The same app-bound SDK Key is used on iOS and Android. Runtime requests contain no app or environment selector. Apple or Google verification determines the environment of each real purchase. A signed `accessContext` returned after verification binds later CustomerInfo and entitlement reads to that environment. `apiBaseUrl` is optional and defaults to `https://subkit.piparo.tech`; pass it explicitly for local development or self-hosted SubKit deployments.
 
 Create SDK keys from a trusted backend context with a SubKit-issued `sk_srv_…` key carrying the `sdk_keys:write` capability, never from the mobile app:
 
@@ -56,6 +58,59 @@ import { client } from '@piparotech/subkit-expo'
 await client.identify(user.id)
 ```
 
+## Installation ID and persistence
+
+The installation ID is weak, best-effort local identity—not a Principal, hardware identifier, fingerprint, ownership proof, or security boundary. It may change after reinstall, app-data clearing, backup/restore behavior, or device migration, and a copied ID is not proof that two requests came from the same physical device.
+
+Static provider:
+
+```ts
+configureSubKit({
+  sdkKey,
+  installationId: 'host-persisted-installation-id',
+  persistence: { storage: appJsonStorage, keyPrefix: 'my-app.subkit.v1' },
+})
+```
+
+Expo SecureStore provider:
+
+```ts
+import { configureSubKit, createMmkvJsonStorage } from '@piparotech/subkit-expo'
+import { createOrGetInstallationId } from '@piparotech/subkit-expo/expo-secure-store'
+
+configureSubKit({
+  sdkKey,
+  installationId: createOrGetInstallationId({
+    storageKey: 'my-app.subkit.installation-id.v1',
+  }),
+  persistence: {
+    keyPrefix: 'my-app.subkit.v1',
+    storage: createMmkvJsonStorage(mmkv),
+  },
+})
+```
+
+`configureSubKit()` remains synchronous. The SDK resolves the lazy provider internally through `client.ready()` before native IAP startup. Resolution is single-flight, retries after a failed attempt, and is immutable for that client after success.
+
+Available installation-ID provider subpaths:
+
+- `@piparotech/subkit-expo/expo-secure-store`: device-local SecureStore defaults (`WHEN_UNLOCKED_THIS_DEVICE_ONLY`, no biometric prompt).
+- `@piparotech/subkit-expo/mmkv`: MMKV-backed best-effort alternative.
+- `@piparotech/subkit-expo/async-storage`: AsyncStorage-backed best-effort alternative.
+
+Install only the provider library your host imports; they are optional peers. The main package export does not implicitly load any provider. Keep Queue/CustomerInfo storage separate from installation-ID storage: changing the asynchronous ID must not rename or orphan the durable purchase queue.
+
+Storage behavior varies by platform and OS policy:
+
+| Event                  | SecureStore                                  | MMKV / AsyncStorage              |
+| ---------------------- | -------------------------------------------- | -------------------------------- |
+| Normal restart/update  | Normally retained                            | Normally retained                |
+| App-data clear         | Lost                                         | Lost                             |
+| Uninstall/reinstall    | Platform-dependent; do not promise retention | Normally lost                    |
+| Backup/device transfer | Platform/configuration-dependent             | Platform/configuration-dependent |
+
+A storage read error fails closed. SubKit does not mint a replacement ID unless the provider successfully reports that the value is absent.
+
 ## Checking whether the user is subscribed
 
 SubKit exposes entitlements, not just a raw `isSubscribed` flag. Your app should check the entitlement your product grants, for example `pro` or `premium`. This keeps your app logic stable even if multiple App Store / Play Store products grant the same access.
@@ -66,7 +121,14 @@ import { useSubKitEntitlement } from '@piparotech/subkit-expo'
 const PRO_ENTITLEMENT = 'pro' // the entitlement key configured in SubKit
 
 export function ProGate() {
-  const { active: hasPro, isLoading, refresh } = useSubKitEntitlement(PRO_ENTITLEMENT)
+  const {
+    active: hasPro,
+    commerciallyActive,
+    blockedReason,
+    deviceActivation,
+    isLoading,
+    refresh,
+  } = useSubKitEntitlement(PRO_ENTITLEMENT)
 
   if (isLoading) {
     return <LoadingState />
@@ -79,6 +141,8 @@ export function ProGate() {
   return <Paywall onPurchaseFinished={refresh} />
 }
 ```
+
+`active` requires both commercial entitlement and current installation access. `commerciallyActive` remains true when the purchase/grant is valid but this installation is blocked; inspect `blockedReason` and `deviceActivation` to render a device-specific recovery state without telling the user their purchase is inactive.
 
 `useSubKitEntitlement(...)` reads the latest known `CustomerInfo` from the configured SubKit singleton and refreshes it on mount when needed. Fresh CustomerInfo includes a short-lived opaque `accessContext` after provider verification; a trusted app backend can forward it to SubKit Server reads. The token binds app, app user and the provider-verified Store environment, and expires independently from offline entitlement visibility. It updates when SDK calls such as `identify()`, `getCustomerInfo()`, restore, foreground sync or purchase sync receive newer customer info. CustomerInfo is persisted per app/install/user and hydrated on restart. A network failure changes the snapshot to `offline` without erasing a previously active entitlement before its known expiry. Use the returned `refresh()` function before access-sensitive actions or after a custom purchase flow if you need to force a fresh server read.
 

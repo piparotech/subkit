@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 
-import type { CustomerEntitlement, CustomerInfo, EntitlementStatus } from '@piparotech/subkit-core'
+import type {
+  CustomerEntitlement,
+  CustomerInfo,
+  DeviceActivationSummary,
+  DeviceBlockedReason,
+  EntitlementStatus,
+} from '@piparotech/subkit-core'
 
 import { client } from './SubKitIapClient.js'
 import type { SubKitIapLogger } from './coordinator.js'
@@ -29,7 +35,10 @@ export interface UseSubKitEntitlementOptions {
 
 export interface UseSubKitEntitlementResult {
   active: boolean
+  blockedReason: DeviceBlockedReason | null
+  commerciallyActive: boolean
   customerInfo: CustomerInfo | null
+  deviceActivation: DeviceActivationSummary | null
   entitlement: CustomerEntitlement | null
   error: Error | null
   isLoading: boolean
@@ -108,9 +117,15 @@ export function useSubKitEntitlement(
 
   return useMemo(() => {
     const entitlement = snapshot.customerInfo?.entitlements[entitlementKey] ?? null
+    const commerciallyActive =
+      snapshot.customerInfo?.deviceAccess?.commerciallyActive ?? entitlement?.active === true
+    const blockedReason = snapshot.customerInfo?.deviceAccess?.blockedReason ?? null
     return {
-      active: entitlement?.active === true,
+      active: commerciallyActive && blockedReason == null,
+      blockedReason,
+      commerciallyActive,
       customerInfo: snapshot.customerInfo,
+      deviceActivation: snapshot.customerInfo?.deviceAccess?.activation ?? null,
       entitlement,
       error: snapshot.error,
       isLoading: snapshot.state === 'loading',

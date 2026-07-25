@@ -8,13 +8,19 @@ export interface PurchaseQueueItem extends QueuedPurchase {
   status: QueueStatus
 }
 
+export interface PurchaseQueueBinding {
+  appUserId?: string
+  identityGeneration: number
+  installationId: string
+}
+
 export interface PurchaseQueueStore {
-  enqueue(purchase: SubKitIapPurchase, appUserId?: string): Promise<PurchaseQueueItem>
+  enqueue(purchase: SubKitIapPurchase, binding: PurchaseQueueBinding): Promise<PurchaseQueueItem>
   enqueueMany(
     purchases: readonly SubKitIapPurchase[],
-    appUserId?: string,
+    binding: PurchaseQueueBinding,
   ): Promise<PurchaseQueueItem[]>
-  listPending(appUserId?: string): Promise<PurchaseQueueItem[]>
+  listPending(binding: PurchaseQueueBinding): Promise<PurchaseQueueItem[]>
   markFailed(id: string, error: string): Promise<void>
   markFinished(id: string): Promise<void>
   markRejected(id: string, error: string): Promise<void>
@@ -26,7 +32,7 @@ const MAX_QUEUE_ATTEMPTS = 3
 export function buildPurchaseQueueItem(
   purchase: SubKitIapPurchase,
   existing: PurchaseQueueItem | undefined,
-  appUserId: string | undefined,
+  binding: PurchaseQueueBinding,
   timestamp: number,
 ): PurchaseQueueItem {
   return {
@@ -35,6 +41,8 @@ export function buildPurchaseQueueItem(
     createdAt: existing?.createdAt ?? timestamp,
     environment: purchase.environment,
     id: createPurchaseQueueId(purchase),
+    identityGeneration: existing?.identityGeneration ?? binding.identityGeneration,
+    installationId: existing?.installationId ?? binding.installationId,
     lastError: existing?.lastError,
     linkedPurchaseToken: purchase.linkedPurchaseToken,
     orderId: purchase.orderId,
@@ -51,7 +59,7 @@ export function buildPurchaseQueueItem(
     store: purchase.store,
     transactionId: purchase.transactionId,
     updatedAt: timestamp,
-    userId: resolvePurchaseQueueUserId(existing, appUserId),
+    userId: resolvePurchaseQueueUserId(existing, binding.appUserId),
   }
 }
 
@@ -62,28 +70,29 @@ export function createMemoryPurchaseQueueStore(
 
   function upsert(
     purchase: SubKitIapPurchase,
-    appUserId: string | undefined,
+    binding: PurchaseQueueBinding,
     timestamp: number,
   ): PurchaseQueueItem {
     const id = createPurchaseQueueId(purchase)
-    const next = buildPurchaseQueueItem(purchase, items.get(id), appUserId, timestamp)
+    const next = buildPurchaseQueueItem(purchase, items.get(id), binding, timestamp)
     items.set(id, next)
     return next
   }
 
   return {
-    async enqueue(purchase, appUserId) {
-      return upsert(purchase, appUserId, now())
+    async enqueue(purchase, binding) {
+      return upsert(purchase, binding, now())
     },
-    async enqueueMany(purchases, appUserId) {
+    async enqueueMany(purchases, binding) {
       const timestamp = now()
-      return purchases.map((purchase) => upsert(purchase, appUserId, timestamp))
+      return purchases.map((purchase) => upsert(purchase, binding, timestamp))
     },
-    async listPending(appUserId) {
-      const normalizedAppUserId = normalizeQueueAppUserId(appUserId)
+    async listPending(binding) {
+      const normalizedAppUserId = normalizeQueueAppUserId(binding.appUserId)
       return [...items.values()].filter(
         (item) =>
-          isDrainedQueueStatus(item) && purchaseQueueItemMatchesAppUser(item, normalizedAppUserId),
+          isDrainedQueueStatus(item) &&
+          purchaseQueueItemMatchesBinding(item, { ...binding, appUserId: normalizedAppUserId }),
       )
     },
     async markFailed(id, error) {
@@ -134,14 +143,25 @@ export function resolvePurchaseQueueUserId(
   return normalizeQueueAppUserId(appUserId)
 }
 
+export function purchaseQueueItemMatchesBinding(
+  item: PurchaseQueueItem,
+  binding: PurchaseQueueBinding,
+): boolean {
+  const normalizedAppUserId = normalizeQueueAppUserId(binding.appUserId)
+  const itemUserId = normalizeQueueAppUserId(item.userId)
+  return (
+    itemUserId === normalizedAppUserId &&
+    item.identityGeneration === binding.identityGeneration &&
+    item.installationId === binding.installationId
+  )
+}
+
 export function purchaseQueueItemMatchesAppUser(
   item: PurchaseQueueItem,
   appUserId: string | undefined,
 ): boolean {
-  const normalizedAppUserId = normalizeQueueAppUserId(appUserId)
-  if (normalizedAppUserId == null) return true
   const itemUserId = normalizeQueueAppUserId(item.userId)
-  return itemUserId == null || itemUserId === normalizedAppUserId
+  return itemUserId === normalizeQueueAppUserId(appUserId)
 }
 
 function normalizeQueueAppUserId(appUserId: string | undefined): string | undefined {

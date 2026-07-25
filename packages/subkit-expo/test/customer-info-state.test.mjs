@@ -115,8 +115,11 @@ test('configureSubKit resets customer info snapshot and refresh publishes latest
       sdkKey: 'runtime_public_key',
     })
 
-    assert.equal(getSubKitCustomerInfoSnapshot().state, 'idle')
+    assert.equal(getSubKitCustomerInfoSnapshot().state, 'initializing')
     assert.equal(getSubKitCustomerInfoSnapshot().customerInfo, null)
+    await client.ready()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    assert.equal(getSubKitCustomerInfoSnapshot().state, 'idle')
 
     const info = await refreshSubKitCustomerInfo()
 
