@@ -14,7 +14,7 @@
     "check": "astro check",
     "lint": "nimbus-docs lint --format=json",
     "baseline:capture": "node scripts/capture-baseline.mjs",
-    "verify": "node scripts/verify-output.mjs && node scripts/verify-links.mjs && node scripts/verify-contrast.mjs"
+    "verify": "node scripts/verify-output.mjs && node scripts/verify-links.mjs && node scripts/verify-external-links.mjs && node scripts/verify-contrast.mjs"
   },
   "dependencies": {
     "@iconify-json/ph": "1.2.2",
