@@ -79,9 +79,17 @@ for (const subpath of [
     stdio: 'inherit',
   })
   execFileSync('node', ['consumer.mjs'], { cwd: temporary, stdio: 'inherit' })
-  const lockfile = readFileSync(join(temporary, 'pnpm-lock.yaml'), 'utf8')
-  if (!lockfile.includes('git.piparo.tech/api/packages/piparo.tech/npm/')) {
-    throw new Error('Consumer lockfile does not prove Forgejo registry resolution')
+  for (const [name, expected] of [
+    ['@piparotech/subkit-core', versions.core],
+    ['@piparotech/subkit-node', versions.node],
+    ['@piparotech/subkit-expo', versions.expo],
+  ]) {
+    const installed = JSON.parse(
+      readFileSync(join(temporary, 'node_modules', ...name.split('/'), 'package.json'), 'utf8'),
+    )
+    if (installed.name !== name || installed.version !== expected) {
+      throw new Error(`Unexpected installed package identity for ${name}`)
+    }
   }
   console.log(
     `Verified Forgejo registry consumer for Core ${versions.core}, Node ${versions.node}, and Expo ${versions.expo}.`,
