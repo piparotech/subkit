@@ -61,6 +61,10 @@ for (const page of baseline.pages) {
     !html.includes('github.com/piparotech/subkit'),
     `Stale GitHub source link for ${page.route}`,
   )
+  check(
+    !/SubKit is unpublished|before the first public release/iu.test(html),
+    `Preview-only release messaging for ${page.route}`,
+  )
 
   const markdownOutput =
     page.route === '/' ? 'index.md' : `${page.route.replace(/^\//u, '')}index.md`
