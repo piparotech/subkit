@@ -26,6 +26,100 @@ export const purchaseSyncReasonSchema = z.enum([
   'queue_retry',
 ])
 export const verificationStatusSchema = z.enum(['verified', 'failed'])
+export const purchaseBeneficiaryPolicySchema = z.enum([
+  'store_portable',
+  'claim_to_account',
+  'account_required',
+])
+export const devicePolicyEnforcementModeSchema = z.enum(['shadow', 'grace', 'enforce'])
+export const deviceOverflowModeSchema = z.enum(['auto_replace_single', 'explicit_selection'])
+export const deviceBlockedReasonSchema = z.enum([
+  'LOGIN_REQUIRED',
+  'BENEFICIARY_CONFLICT',
+  'DEVICE_SELECTION_REQUIRED',
+  'DEVICE_REPLACEMENT_COOLDOWN',
+  'DEVICE_CHANGE_LIMIT_REACHED',
+  'DEVICE_REPLACED',
+])
+
+export const deviceActivationPolicySchema = z.strictObject({
+  activationGroupKey: z.string().min(1),
+  changeWindowIso: z.string().min(1).nullable(),
+  enforcementMode: devicePolicyEnforcementModeSchema,
+  leaseTtlIso: z.string().min(1),
+  maxActiveDevices: z.number().int().positive().nullable(),
+  maxDistinctInstallations: z.number().int().positive().nullable(),
+  minimumReplacementIntervalIso: z.string().min(1).nullable(),
+  offlineGraceIso: z.string().min(1),
+  overflowMode: deviceOverflowModeSchema,
+  renewBeforeIso: z.string().min(1),
+  resolutionRank: z.number().int().nonnegative(),
+})
+
+export const deviceActivationSummarySchema = z.strictObject({
+  activationGroupKey: z.string().min(1),
+  activationId: z.string().min(1),
+  expiresAt: z.string().min(1),
+  installationLabel: z.string().min(1).nullable(),
+  lastSeenAt: z.string().min(1).nullable(),
+  policyVersionId: z.string().min(1),
+  state: z.enum(['active', 'renewed', 'replaced', 'revoked', 'expired', 'migrated']),
+})
+
+export const customerDeviceAccessSchema = z.strictObject({
+  accessExpiresAt: z.string().min(1).nullable(),
+  activation: deviceActivationSummarySchema.nullable(),
+  blockedReason: deviceBlockedReasonSchema.nullable(),
+  commerciallyActive: z.boolean(),
+})
+
+export const deviceManagementSessionSchema = z.strictObject({
+  activationGroupKeys: z.array(z.string().min(1)),
+  allowedOperations: z.array(z.enum(['list', 'claim', 'renew', 'replace', 'revoke'])),
+  beneficiarySubjectId: z.string().min(1),
+  expiresAt: z.string().min(1),
+  token: z.string().min(1),
+})
+
+export const runtimeDeviceMutationRequestSchema = z.strictObject({
+  activationGroupKey: z.string().min(1),
+  idempotencyKey: z.string().min(1),
+  installationId: z.string().min(1),
+  managementToken: z.string().min(1),
+  platform: storePlatformSchema,
+  replaceActivationId: z.string().min(1).optional(),
+})
+
+export const runtimeDeviceListRequestSchema = z.strictObject({
+  activationGroupKey: z.string().min(1),
+  managementToken: z.string().min(1),
+})
+
+export const runtimeDeviceRevokeRequestSchema = z.strictObject({
+  activationGroupKey: z.string().min(1),
+  activationId: z.string().min(1),
+  idempotencyKey: z.string().min(1),
+  managementToken: z.string().min(1),
+})
+
+export const deviceChangeBudgetSummarySchema = z.strictObject({
+  limit: z.number().int().positive(),
+  remaining: z.number().int().nonnegative(),
+  used: z.number().int().nonnegative(),
+  windowEndsAt: z.string().min(1),
+})
+
+export const runtimeDeviceActivationResultSchema = z.strictObject({
+  activation: deviceActivationSummarySchema.optional(),
+  blockedReason: deviceBlockedReasonSchema.optional(),
+  changeBudget: deviceChangeBudgetSummarySchema.optional(),
+  deviceAccessToken: z
+    .strictObject({ expiresAt: z.string().min(1), token: z.string().min(1) })
+    .optional(),
+  devices: z.array(deviceActivationSummarySchema),
+  nextAllowedAt: z.string().nullable().optional(),
+  status: z.enum(['activated', 'renewed', 'replaced', 'revoked', 'blocked']),
+})
 
 export const storeIdentityHintsSchema = z.strictObject({
   apple: z
@@ -91,6 +185,7 @@ export const customerInfoSchema = z.strictObject({
   appUserId: z.string().min(1),
   checkedAt: z.string().min(1),
   entitlements: z.record(z.string(), customerEntitlementSchema),
+  deviceAccess: customerDeviceAccessSchema.optional(),
   freshness: customerInfoFreshnessSchema,
   purchases: z.array(customerPurchaseSchema),
   storeIdentityHints: storeIdentityHintsSchema.optional(),
@@ -254,6 +349,7 @@ export const iapReconcileResponseSchema = z.strictObject({
   conflicts: z.array(purchaseOwnershipConflictSchema),
   customerInfo: customerInfoSchema,
   finishableTransactions: z.array(finishableTransactionSchema),
+  managementSession: deviceManagementSessionSchema.optional(),
   rejectedPurchases: z.array(rejectedPurchaseSchema),
   verificationStatus: verificationStatusSchema,
 })
@@ -261,6 +357,7 @@ export const iapReconcileResponseSchema = z.strictObject({
 export const runtimeCustomerInfoRequestSchema = z.strictObject({
   accessContext: z.string().min(1).optional(),
   appUserId: z.string().min(1),
+  deviceAccessToken: z.string().min(1).optional(),
 })
 
 export const runtimeCustomerInfoWithAppRequestSchema = runtimeCustomerInfoRequestSchema.extend({
@@ -295,6 +392,7 @@ export const iapReconcileWithAppRequestSchema = iapReconcileRequestSchema.extend
 export const runtimeEntitlementCheckRequestSchema = z.strictObject({
   accessContext: z.string().min(1).optional(),
   appUserId: z.string().min(1),
+  deviceAccessToken: z.string().min(1).optional(),
   entitlement: z.string().min(1),
 })
 

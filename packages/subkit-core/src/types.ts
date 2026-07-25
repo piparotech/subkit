@@ -25,6 +25,93 @@ export type PurchaseResultStatus = 'cancelled' | 'pending' | 'verified' | 'faile
 export type VerificationStatus = 'verified' | 'failed'
 export type OwnershipConflictResolution =
   'login_original_account' | 'manual_review' | 'support_required'
+export type PurchaseBeneficiaryPolicy = 'store_portable' | 'claim_to_account' | 'account_required'
+export type DevicePolicyEnforcementMode = 'shadow' | 'grace' | 'enforce'
+export type DeviceOverflowMode = 'auto_replace_single' | 'explicit_selection'
+export type DeviceBlockedReason =
+  | 'LOGIN_REQUIRED'
+  | 'BENEFICIARY_CONFLICT'
+  | 'DEVICE_SELECTION_REQUIRED'
+  | 'DEVICE_REPLACEMENT_COOLDOWN'
+  | 'DEVICE_CHANGE_LIMIT_REACHED'
+  | 'DEVICE_REPLACED'
+
+export interface DeviceActivationPolicy {
+  activationGroupKey: string
+  changeWindowIso: string | null
+  enforcementMode: DevicePolicyEnforcementMode
+  leaseTtlIso: string
+  maxActiveDevices: number | null
+  maxDistinctInstallations: number | null
+  minimumReplacementIntervalIso: string | null
+  offlineGraceIso: string
+  overflowMode: DeviceOverflowMode
+  renewBeforeIso: string
+  resolutionRank: number
+}
+
+export interface DeviceActivationSummary {
+  activationGroupKey: string
+  activationId: string
+  expiresAt: string
+  installationLabel: string | null
+  lastSeenAt: string | null
+  policyVersionId: string
+  state: 'active' | 'renewed' | 'replaced' | 'revoked' | 'expired' | 'migrated'
+}
+
+export interface CustomerDeviceAccess {
+  accessExpiresAt: string | null
+  activation: DeviceActivationSummary | null
+  blockedReason: DeviceBlockedReason | null
+  commerciallyActive: boolean
+}
+
+export interface DeviceManagementSession {
+  activationGroupKeys: string[]
+  allowedOperations: Array<'list' | 'claim' | 'renew' | 'replace' | 'revoke'>
+  beneficiarySubjectId: string
+  expiresAt: string
+  token: string
+}
+
+export interface RuntimeDeviceMutationRequest {
+  activationGroupKey: string
+  idempotencyKey: string
+  installationId: string
+  managementToken: string
+  platform: StorePlatform
+  replaceActivationId?: string
+}
+
+export interface RuntimeDeviceListRequest {
+  activationGroupKey: string
+  managementToken: string
+}
+
+export interface RuntimeDeviceRevokeRequest {
+  activationGroupKey: string
+  activationId: string
+  idempotencyKey: string
+  managementToken: string
+}
+
+export interface DeviceChangeBudgetSummary {
+  limit: number
+  remaining: number
+  used: number
+  windowEndsAt: string
+}
+
+export interface RuntimeDeviceActivationResult {
+  activation?: DeviceActivationSummary
+  blockedReason?: DeviceBlockedReason
+  changeBudget?: DeviceChangeBudgetSummary
+  deviceAccessToken?: RuntimeAccessContext
+  devices: DeviceActivationSummary[]
+  nextAllowedAt?: string | null
+  status: 'activated' | 'renewed' | 'replaced' | 'revoked' | 'blocked'
+}
 
 export interface StoreIdentityHints {
   apple?: {
@@ -78,6 +165,7 @@ export interface CustomerInfo {
   appUserId: string
   checkedAt: string
   entitlements: Record<string, CustomerEntitlement>
+  deviceAccess?: CustomerDeviceAccess
   freshness: CustomerInfoFreshness
   purchases: CustomerPurchase[]
   storeIdentityHints?: StoreIdentityHints
@@ -222,6 +310,7 @@ export interface PurchaseSyncResult {
   conflicts: PurchaseOwnershipConflict[]
   customerInfo: CustomerInfo
   finishableTransactions: FinishableTransaction[]
+  managementSession?: DeviceManagementSession
   rejectedPurchases: RejectedPurchase[]
   verificationStatus: VerificationStatus
 }
@@ -245,6 +334,8 @@ export interface QueuedPurchase {
   createdAt: number
   environment?: StoreEnvironment
   id: string
+  identityGeneration: number
+  installationId: string
   lastError?: string
   linkedPurchaseToken?: string
   orderId?: string
