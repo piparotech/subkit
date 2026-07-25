@@ -17,10 +17,13 @@ pnpm add @piparotech/subkit-core@^0.1.8 @piparotech/subkit-node@^0.1.8
 ```ts
 import { SubKit } from '@piparotech/subkit-node'
 
+const secretKey = process.env.SUBKIT_SECRET_KEY
+if (secretKey == null) throw new Error('SUBKIT_SECRET_KEY is required')
+
 const subkit = new SubKit({
   apiBaseUrl: 'https://subkit.piparo.tech',
   appId: 'app_123',
-  secretKey: process.env.SUBKIT_SECRET_KEY!,
+  secretKey,
 })
 
 const access = await subkit.entitlements.check({
