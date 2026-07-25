@@ -6,9 +6,13 @@ import { join, resolve } from 'node:path'
 const root = resolve(import.meta.dirname, '..')
 const temporary = mkdtempSync(join(tmpdir(), 'subkit-registry-consumer-'))
 const registry = process.env.SUBKIT_NPM_REGISTRY
+const token = process.env.NODE_AUTH_TOKEN
 
 if (registry !== 'https://git.piparo.tech/api/packages/piparo.tech/npm/') {
   throw new Error('SUBKIT_NPM_REGISTRY must be the piparo.tech Forgejo npm registry')
+}
+if (token == null || token.length === 0) {
+  throw new Error('NODE_AUTH_TOKEN is required for the Forgejo registry consumer')
 }
 
 function version(packageDirectory) {
@@ -22,6 +26,11 @@ const versions = {
 }
 
 try {
+  writeFileSync(
+    join(temporary, '.npmrc'),
+    `@piparotech:registry=${registry}\n//git.piparo.tech/api/packages/piparo.tech/npm/:_authToken=\${NODE_AUTH_TOKEN}\nalways-auth=true\n`,
+    { mode: 0o600 },
+  )
   writeFileSync(
     join(temporary, 'package.json'),
     `${JSON.stringify(
@@ -70,6 +79,10 @@ for (const subpath of [
     stdio: 'inherit',
   })
   execFileSync('node', ['consumer.mjs'], { cwd: temporary, stdio: 'inherit' })
+  const lockfile = readFileSync(join(temporary, 'pnpm-lock.yaml'), 'utf8')
+  if (!lockfile.includes('git.piparo.tech/api/packages/piparo.tech/npm/')) {
+    throw new Error('Consumer lockfile does not prove Forgejo registry resolution')
+  }
   console.log(
     `Verified Forgejo registry consumer for Core ${versions.core}, Node ${versions.node}, and Expo ${versions.expo}.`,
   )
