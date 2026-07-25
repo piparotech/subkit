@@ -8,7 +8,7 @@ none of this page.
 
 ## Full example
 
-```ts
+```ts compile
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { AppState, Platform } from 'react-native'
 
@@ -59,12 +59,12 @@ is finishable.
 
 ## Custom queue storage (MMKV)
 
-```ts
-import { MMKV } from 'react-native-mmkv'
+```ts compile
+import { createMMKV } from 'react-native-mmkv'
 
 import { createMmkvJsonStorage, createStoredPurchaseQueueStore } from '@piparotech/subkit-expo'
 
-const mmkv = new MMKV({ id: 'subkit' })
+const mmkv = createMMKV({ id: 'subkit' })
 const queue = createStoredPurchaseQueueStore({
   storage: createMmkvJsonStorage(mmkv),
 })
@@ -87,7 +87,7 @@ The default cache is scoped to SDK key + installation ID + hashed user
 identity. Provide your own via `customerInfoCache`, or build one with the
 exported helper:
 
-```ts
+```ts compile
 import { createCustomerInfoCacheStore } from '@piparotech/subkit-expo'
 
 const customerInfoCache = createCustomerInfoCacheStore({

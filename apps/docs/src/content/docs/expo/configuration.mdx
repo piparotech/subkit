@@ -5,7 +5,7 @@ description: Configure the SubKit Expo SDK — required fields, installation ID,
 
 ## Configure once at module scope
 
-```ts
+```ts compile
 // src/subkit.ts
 import { configureSubKit } from '@piparotech/subkit-expo'
 
@@ -57,7 +57,7 @@ If `client` is used before configuration, it throws.
 local development or self-hosted deployments. Validation enforces HTTPS
 everywhere except `localhost` and `127.0.0.1`:
 
-```ts
+```ts compile
 configureSubKit({
   sdkKey: 'sk_sdk_replace_me',
   installationId,

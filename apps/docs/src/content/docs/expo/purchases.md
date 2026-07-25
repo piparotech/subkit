@@ -9,7 +9,7 @@ because the call returned.
 
 ## The result union
 
-```ts
+```ts compile
 type PurchaseResult =
   | { status: 'cancelled' }
   | { status: 'pending'; purchaseId: string }
@@ -22,7 +22,7 @@ type PurchaseResult =
 
 ## A complete handler
 
-```ts
+```ts compile
 import { client } from '@piparotech/subkit-expo'
 
 const PRO = 'pro' // the entitlement key configured in SubKit

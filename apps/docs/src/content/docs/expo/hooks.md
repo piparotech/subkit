@@ -18,7 +18,7 @@ The SDK ships three React hooks. All read from the configured singleton — call
 The primary gate. Subscribes to the shared customer-info snapshot and refreshes
 on mount when data is older than `refreshIfOlderThanMs`:
 
-```tsx
+```tsx compile
 import { useSubKitEntitlement } from '@piparotech/subkit-expo'
 
 const PRO = 'pro'
@@ -34,7 +34,7 @@ export function ProGate() {
 
 **Signature:**
 
-```ts
+```text
 useSubKitEntitlement(
   entitlementKey: string,
   options?: {
@@ -65,7 +65,7 @@ customer info. Full guidance: [Checking entitlements](/docs/expo/entitlements/).
 Loads offerings for paywall rendering, with loading/refresh state and
 out-of-order response protection:
 
-```tsx
+```tsx compile
 import { useSubKitOfferings } from '@piparotech/subkit-expo'
 
 export function Paywall() {
@@ -83,7 +83,7 @@ export function Paywall() {
 
 **Signature:**
 
-```ts
+```text
 useSubKitOfferings(options?: {
   enabled?: boolean // default true; false defers loading
   placement?: string // optional placement filter
@@ -112,18 +112,18 @@ Behavior:
 Triggers exactly one `app_start` purchase sync on first mount. Only needed when
 you disable `syncOnAppStart` or want the sync tied to a specific screen:
 
-```tsx
+```tsx compile
 import { useSubKitIapAutoSync } from '@piparotech/subkit-expo'
 
 export function AppRoot() {
   useSubKitIapAutoSync()
-  return <Navigation />
+  return <AppNavigation />
 }
 ```
 
 **Signature:**
 
-```ts
+```text
 useSubKitIapAutoSync(options?: {
   enabled?: boolean // default true
   syncOnMount?: boolean // default true

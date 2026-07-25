@@ -10,7 +10,7 @@ prices** from the response, and passes only the selected package's runtime
 
 ## Load offerings
 
-```ts
+```ts compile
 import { client } from '@piparotech/subkit-expo'
 
 const offerings = await client.getOfferings()
@@ -20,7 +20,7 @@ const all = offerings.all // every offering configured for this app
 
 Target a specific placement when your app has more than one paywall surface:
 
-```ts
+```ts compile
 const offerings = await client.getOfferings({ placement: 'settings_upgrade' })
 ```
 
@@ -29,7 +29,7 @@ const offerings = await client.getOfferings({ placement: 'settings_upgrade' })
 Each offering contains packages; each package resolves a `storeProduct` from
 the native store:
 
-```ts
+```ts compile
 for (const pkg of offerings.current?.packages ?? []) {
   pkg.identifier // runtime package ID — pass this to purchasePackage(...)
   pkg.storeProduct?.displayPrice // localized price for the exact store product
@@ -47,7 +47,7 @@ A package with `storeProduct: null` means the configured store product is not
 currently purchasable on this device. **Do not** substitute a static catalog
 price and do not offer the package for purchase:
 
-```tsx
+```tsx compile
 function PaywallPackage({ pkg }: { pkg: SubKitOfferingPackage }) {
   if (pkg.storeProduct == null) {
     return null // hide, or show an "unavailable" state — never a fake price
@@ -56,7 +56,7 @@ function PaywallPackage({ pkg }: { pkg: SubKitOfferingPackage }) {
 }
 ```
 
-```ts
+```ts compile
 import type { SubKitOfferingPackage } from '@piparotech/subkit-expo'
 ```
 
@@ -66,8 +66,8 @@ In React components, prefer the hook over manual `useEffect` wiring. It loads
 on mount, tracks loading/refresh state, and guards against out-of-order
 responses:
 
-```tsx
-import { useSubKitOfferings } from '@piparotech/subkit-expo'
+```tsx compile
+import { type SubKitOfferingPackage, useSubKitOfferings } from '@piparotech/subkit-expo'
 
 export function Paywall({ onPurchased }: { onPurchased: () => void }) {
   const { current, isLoading, error, refresh } = useSubKitOfferings({
@@ -84,7 +84,7 @@ export function Paywall({ onPurchased }: { onPurchased: () => void }) {
   return (
     <PackageList
       packages={purchasable}
-      onSelect={(pkg) => runPurchase(pkg.identifier, onPurchased)}
+      onSelect={(pkg: SubKitOfferingPackage) => runPurchase(pkg.identifier, onPurchased)}
     />
   )
 }
@@ -95,7 +95,7 @@ export function Paywall({ onPurchased }: { onPurchased: () => void }) {
 
 ### Result and options
 
-```ts
+```ts compile
 const {
   current, // SubKitOffering | null — the default offering
   offerings, // SubKitOfferingsResponse | null — full response (current + all)
@@ -121,7 +121,7 @@ See the [hooks reference](/docs/expo/hooks/) for all React APIs.
 Before showing a high-stakes paywall you can force a purchase sync so the
 paywall reflects any purchase that completed outside the app:
 
-```ts
+```ts compile
 await client.syncPurchases({ reason: 'paywall_preflight' })
 ```
 

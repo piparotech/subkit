@@ -11,7 +11,7 @@ entitlement-first, no early unlock, no static store values.
 Gate a whole screen (or route) on an entitlement, with loading and offline
 handled:
 
-```tsx
+```tsx compile
 import { useSubKitEntitlement } from '@piparotech/subkit-expo'
 
 const PRO = 'pro'
@@ -43,7 +43,7 @@ Force a fresh sync before showing a paywall, so a purchase completed on
 another device (or a stuck pending purchase) is reflected before the user is
 asked to pay again:
 
-```ts
+```ts compile
 import { client } from '@piparotech/subkit-expo'
 
 const PRO = 'pro'
@@ -68,7 +68,7 @@ async function openPaywall(navigate: (route: string) => void) {
 
 Use `status` for nuance while `active` stays the only unlock signal:
 
-```tsx
+```tsx compile
 import { useSubKitEntitlement } from '@piparotech/subkit-expo'
 
 const PRO = 'pro'
@@ -103,7 +103,7 @@ the status table in [Checking entitlements](/docs/expo/entitlements/#active-vs-s
 
 The complete restore flow behind an explicit settings button:
 
-```tsx
+```tsx compile
 import { useState } from 'react'
 
 import { client } from '@piparotech/subkit-expo'
@@ -143,7 +143,7 @@ export function RestorePurchasesButton() {
 Before asking a user to buy, surface an existing unclaimed purchase with the
 right action instead of "buy again":
 
-```tsx
+```tsx compile
 const info = await client.getCustomerInfo()
 const unclaimed = info.unclaimedPurchases[0]
 

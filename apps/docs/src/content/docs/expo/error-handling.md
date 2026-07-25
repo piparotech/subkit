@@ -15,7 +15,7 @@ The SDK separates three kinds of "something didn't happen":
 
 `allowed`-style checks and purchase failures return values:
 
-```ts
+```ts compile
 const result = await client.purchasePackage(pkg.identifier)
 
 if (result.status === 'failed') {
@@ -27,7 +27,7 @@ if (result.status === 'failed') {
 }
 ```
 
-```ts
+```ts compile
 import { client } from '@piparotech/subkit-expo'
 ```
 
@@ -39,7 +39,7 @@ unexpected throws belong in your error reporter.
 Anything the SDK cannot express as a domain outcome throws. Always wrap
 purchase and restore flows:
 
-```ts
+```ts compile
 try {
   const result = await client.purchasePackage(pkg.identifier)
   handleResult(result)
@@ -75,7 +75,7 @@ yourself.
 
 Refresh failures never erase cached access. The hook exposes them:
 
-```tsx
+```tsx compile
 const { active, state, error } = useSubKitEntitlement('pro')
 
 if (state === 'offline') {
@@ -86,7 +86,7 @@ if (state === 'error') {
 }
 ```
 
-```ts
+```ts compile
 import { useSubKitEntitlement } from '@piparotech/subkit-expo'
 ```
 

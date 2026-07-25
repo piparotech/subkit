@@ -11,7 +11,7 @@ network, or persisted state.
 Replace the durable pieces with memory implementations and inject a fake
 adapter:
 
-```ts
+```ts compile
 import {
   type SubKitIapAdapterBundle,
   configureSubKit,
@@ -78,7 +78,7 @@ Focus tests on your app's decisions, not the SDK's internals:
 to a `CustomerInfo` value — useful for testing expiry behavior with controlled
 clocks:
 
-```ts
+```ts compile
 import { evaluateOfflineCustomerInfo } from '@piparotech/subkit-expo'
 
 const offline = evaluateOfflineCustomerInfo(cachedInfo, { now: Date.now() })

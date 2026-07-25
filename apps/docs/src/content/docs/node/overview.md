@@ -13,12 +13,15 @@ Never ship this key in mobile apps, web clients, or Expo bundles.
 pnpm add @piparotech/subkit-core@^0.1.8 @piparotech/subkit-node@^0.1.8
 ```
 
-```ts
+```ts compile
 import { SubKit } from '@piparotech/subkit-node'
+
+const secretKey = process.env.SUBKIT_SECRET_KEY
+if (secretKey == null) throw new Error('SUBKIT_SECRET_KEY is required')
 
 const subkit = new SubKit({
   apiBaseUrl: 'https://subkit.example.com',
-  secretKey: process.env.SUBKIT_SECRET_KEY,
+  secretKey,
   appId: 'app_123',
 })
 ```
@@ -40,7 +43,7 @@ closed.
 
 ## Customers and access subjects
 
-```ts
+```ts compile
 const subject = await subkit.customers.upsertSubject(
   { externalId: 'trainer_123', kind: 'app_user', reason: 'sync trainer identity' },
   { idempotencyKey: 'subject:trainer_123' },
@@ -62,7 +65,7 @@ const club = await subkit.customers.createBillingAccount(
 Creating a contract provisions its verified access source and pools. It does not
 fabricate a charge — record payment evidence separately.
 
-```ts
+```ts compile
 const contract = await subkit.contracts.create(
   {
     billingAccountId: club.id,
@@ -77,7 +80,7 @@ const contract = await subkit.contracts.create(
 
 Reserve capacity for an invite, then claim it into an allocation:
 
-```ts
+```ts compile
 const reservation = await subkit.access.reserve(
   {
     poolId: contract.poolIds[0],
@@ -105,7 +108,7 @@ submit only its hash.
 A Contract creates a Source and Pools; it does not claim money moved. Record a
 separately verified PSP, settlement, or invoice event with `payments:write`:
 
-```ts
+```ts compile
 await subkit.payments.record(
   {
     accessSourceId: contract.accessSourceId,
@@ -131,7 +134,7 @@ payer, Source, or external identity fails closed.
 
 Eligibility comes from the published Plan Version, not caller input:
 
-```ts
+```ts compile
 const enrollment = await subkit.access.enrollFree(
   {
     planVersionId: 'plan-version_basis',
@@ -148,7 +151,7 @@ Promotion codes are distinct from invitation tokens. A promotion creates a
 commercial Source; an invitation only claims capacity already reserved from an
 existing Pool. SubKit hashes and safely stores the submitted code.
 
-```ts
+```ts compile
 const promotion = await subkit.access.redeemPromotionCode(
   {
     code: userEnteredCode,
@@ -164,7 +167,7 @@ const promotion = await subkit.access.redeemPromotionCode(
 Manual provision is a privileged, auditable exception for migration or support,
 not a shortcut around normal access derivation:
 
-```ts
+```ts compile
 const allocation = await subkit.access.manualProvision(
   {
     originReference: 'migration:legacy-contract-123',
@@ -189,7 +192,7 @@ idempotency key and reason.
 
 ## Check an entitlement
 
-```ts
+```ts compile
 const result = await subkit.entitlements.check({ appUserId: 'user_123', entitlement: 'pro' })
 
 if (!result.allowed) {
@@ -202,7 +205,7 @@ if (!result.allowed) {
 Domain denials (`allowed: false`) are normal results. Network, auth, invalid
 response, and non-2xx API responses throw `SubKitApiError`:
 
-```ts
+```ts compile
 import { isSubKitApiError } from '@piparotech/subkit-node'
 
 try {

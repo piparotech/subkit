@@ -34,7 +34,7 @@ do:
 | `login_required`   | Ask the user to log in with the owning account                            |
 | `support_required` | Route to support — automatic resolution is not safe                       |
 
-```tsx
+```tsx compile
 const info = await client.getCustomerInfo()
 
 for (const unclaimed of info.unclaimedPurchases) {
@@ -52,7 +52,7 @@ for (const unclaimed of info.unclaimedPurchases) {
 }
 ```
 
-```ts
+```ts compile
 import { client } from '@piparotech/subkit-expo'
 ```
 

@@ -31,7 +31,7 @@ pnpm add @piparotech/subkit-core@^0.1.8 @piparotech/subkit-expo@^0.1.10
   <Step title="Configure SubKit once at module scope">
     Do this at module scope, not inside a component.
 
-```ts
+```ts compile
 // src/subkit.ts
 import { configureSubKit } from '@piparotech/subkit-expo'
 
@@ -46,7 +46,7 @@ configureSubKit({
   <Step title="Identify the user">
     Identify the user when they log in.
 
-```ts
+```ts compile
 import { client } from '@piparotech/subkit-expo'
 
 await client.identify(user.id)
@@ -56,7 +56,7 @@ await client.identify(user.id)
   <Step title="Load an offering and run a purchase">
     Prices and identifiers come from the runtime offering — never from static constants.
 
-```ts
+```ts compile
 import { client } from '@piparotech/subkit-expo'
 
 const offerings = await client.getOfferings()
@@ -70,7 +70,7 @@ const result = await client.purchasePackage(pkg.identifier)
   <Step title="Gate access on the entitlement">
     Gate on the entitlement, not on the purchase call returning.
 
-```ts
+```ts compile
 const PRO = 'pro'
 const info = await client.getCustomerInfo()
 const hasPro = info.entitlements[PRO]?.active === true

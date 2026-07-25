@@ -30,7 +30,7 @@ Provide a restore action for reinstalls, device changes, and stuck pending
 purchases. Restore may prompt the user (store login), so it belongs behind an
 explicit button:
 
-```ts
+```ts compile
 import { client } from '@piparotech/subkit-expo'
 
 const PRO = 'pro'
@@ -66,7 +66,7 @@ carries one of these reasons, which SubKit receives as diagnostic context:
 | `paywall_preflight` | Fresh state before showing a paywall |
 | `queue_retry`       | Retrying queued purchases            |
 
-```ts
+```ts compile
 await client.syncPurchases({ reason: 'paywall_preflight' })
 ```
 
@@ -77,12 +77,12 @@ Pass `force: true` to bypass throttling.
 For apps that disable `syncOnAppStart` or want the sync tied to a specific
 screen mount:
 
-```tsx
+```tsx compile
 import { useSubKitIapAutoSync } from '@piparotech/subkit-expo'
 
 export function AppRoot() {
   useSubKitIapAutoSync() // one app_start sync on first mount
-  return <Navigation />
+  return <AppNavigation />
 }
 ```
 

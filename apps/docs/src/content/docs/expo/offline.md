@@ -58,14 +58,14 @@ A failed refresh with cached data sets the snapshot state and freshness to
 known expiry. The error remains available for UI and diagnostics via the
 hook's `error` field.
 
-```tsx
+```tsx compile
 const { active, state, error } = useSubKitEntitlement('pro')
 
 // active stays true offline until expiry rules say otherwise
 // state === 'offline' lets you show a subtle connectivity notice
 ```
 
-```ts
+```ts compile
 import { useSubKitEntitlement } from '@piparotech/subkit-expo'
 ```
 

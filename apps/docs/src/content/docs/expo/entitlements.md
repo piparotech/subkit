@@ -9,7 +9,7 @@ even when multiple store products or a club contract grant the same access.
 
 ## The hook
 
-```tsx
+```tsx compile
 import { useSubKitEntitlement } from '@piparotech/subkit-expo'
 
 const PRO = 'pro'
@@ -31,7 +31,7 @@ purchase sync — receive newer customer info.
 
 ### Full result
 
-```ts
+```ts compile
 const {
   active, // boolean — the only unlock signal
   status, // EntitlementStatus | null — for UI nuance
@@ -48,7 +48,7 @@ const {
 
 ### Options
 
-```ts
+```ts compile
 useSubKitEntitlement(PRO, {
   enabled: true, // set false to pause the hook
   refreshOnMount: true, // set false to skip the mount refresh
@@ -85,7 +85,7 @@ Never unlock on status alone — check `active`.
 
 `CustomerEntitlement` carries the evidence behind the state:
 
-```ts
+```ts compile
 entitlement.entitlementKey // 'pro'
 entitlement.expiresAt // ISO date or null (non-expiring)
 entitlement.productIdentifier // which product granted it
@@ -97,7 +97,7 @@ entitlement.verifiedAt // last verification time
 
 ## Imperative checks outside React
 
-```ts
+```ts compile
 import { client } from '@piparotech/subkit-expo'
 
 const PREMIUM = 'premium'

@@ -12,7 +12,7 @@ Purchases require an identified user. Reads work anonymously, but
 If the user is not logged in at startup, configure without `appUserId`, then
 identify after login:
 
-```ts
+```ts compile
 import { client } from '@piparotech/subkit-expo'
 
 const customerInfo = await client.identify(user.id)
