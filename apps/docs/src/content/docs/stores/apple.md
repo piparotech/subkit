@@ -299,5 +299,5 @@ pass. Correct the provider or catalog mapping and repeat the test.
 - [Apple: App Store Connect API](https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api)
 - [Apple: Generate In-App Purchase keys](https://developer.apple.com/help/app-store-connect/configure-in-app-purchase-settings/generate-keys-for-in-app-purchases)
 - [Apple: Auto-renewable subscriptions](https://developer.apple.com/help/app-store-connect/manage-subscriptions/offer-auto-renewable-subscriptions)
-- [Apple: Server Notification URLs](https://developer.apple.com/help/app-store-connect/configure-in-app-purchase-settings/enter-server-urls-for-app-store-server-notifications)
+- [Apple: App Store Server Notifications](https://developer.apple.com/documentation/appstoreservernotifications)
 - [Apple: Sandbox testing](https://developer.apple.com/help/app-store-connect/test-in-app-purchases/overview-of-testing-in-sandbox)
