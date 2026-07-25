@@ -45,22 +45,21 @@ Apple exposes two related but distinct key families:
 | **App Store Connect API key** | App discovery, catalog import, prices, builds, reviews, provisioning metadata, and reports |
 | **In-App Purchase key**       | App Store Server API requests and promotional-offer signing                                |
 
-SubKit Preview currently exposes one workspace Apple credential form and uses
-the uploaded Key ID, Issuer ID, and `.p8` material for both catalog operations
-and App Store Server API transaction lookups. This combined path was exercised
-by the pilot, but it is not yet a separate credential model in the Console.
+SubKit stores these key families in separate encrypted slots. The App Store
+Connect API key is used only for app discovery, catalog sync, monitoring, and
+reports. The In-App Purchase key is used only for App Store Server API
+transaction lookups. Runtime purchase verification fails closed when the
+separate In-App Purchase key is missing or invalid; the catalog key is never a
+silent fallback.
 
-Before a production launch, validate both of these operations with the uploaded
-key:
+Before a production launch, validate both operations independently:
 
-1. App Store Connect catalog validation succeeds.
+1. App Store Connect catalog validation succeeds with the catalog key.
 2. A real Apple Sandbox transaction is verified through the App Store Server
-   API and activates the expected entitlement.
+   API with the In-App Purchase key and activates the expected entitlement.
 
 If either operation fails, do not substitute a broader key or bypass
-verification. Use an Apple In-App Purchase key for server verification when
-SubKit exposes the separate credential slot, or keep the Apple launch blocked
-until the credential model is updated.
+verification. Rotate the affected key family and repeat its validation.
 
 ## Values you will need
 
@@ -100,12 +99,15 @@ can discover and import multiple apps in that Apple team.
 4. Upload the private `.p8` file.
 5. Enter the **Vendor Number** only if you want Sales and Trends report imports.
 6. Save and validate the connection.
-7. Review the capability results. App listing and the subscription/IAP catalog
-   must be available for the setup in this guide.
+7. In the separate **App Store Server API** section, enter the Key ID and Issuer
+   ID of an Apple **In-App Purchase key** and upload its `.p8` file.
+8. Review the capability results. App listing and the subscription/IAP catalog
+   must be available for the setup in this guide. The IAP server-key status must
+   also be configured before native purchases can reconcile.
 
-SubKit encrypts the private key and never displays it again. To rotate the key,
-upload a new `.p8` file, validate it, then revoke the old key in App Store
-Connect.
+SubKit encrypts both private keys independently and never displays them again.
+To rotate a key, upload a new `.p8` file in the matching slot, validate it, then
+revoke only the replaced key in App Store Connect.
 
 ## 3. Create or select the SubKit app
 
