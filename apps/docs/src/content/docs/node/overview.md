@@ -38,8 +38,8 @@ Every mutation requires:
 - an operator **reason** (recorded in the immutable audit log),
 - the required **capability** on the key.
 
-Exact retries with the same idempotency key are safe; conflicting evidence fails
-closed.
+Exact retries reuse the same idempotency key and the same audit reason. They are
+safe only for the same logical mutation; conflicting evidence fails closed.
 
 ## Customers and access subjects
 
@@ -192,6 +192,9 @@ idempotency key and reason.
 
 ## Check an entitlement
 
+The app-scoped server key needs the `access:read` capability and a fixed Store
+environment. `allowed: false` remains a normal domain result.
+
 ```ts compile
 const result = await subkit.entitlements.check({ appUserId: 'user_123', entitlement: 'pro' })
 
@@ -221,7 +224,7 @@ try {
 Sensitive values — bearer tokens, receipts, purchase tokens, raw store payloads
 — are never included in SDK errors. Retry only codes marked retryable in the
 [error reference](/docs/reference/errors/), using bounded backoff and the same
-idempotency key for the same mutation.
+idempotency key and audit reason for the same mutation.
 
 ## Related
 
