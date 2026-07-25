@@ -50,8 +50,8 @@ native module is needed the first time a store operation runs.
 
 If your app uses `react-native-mmkv`, you can back the purchase queue with it
 instead of AsyncStorage — see
-[Advanced configuration](/expo/advanced/#custom-queue-storage-mmkv).
+[Advanced configuration](/docs/expo/advanced/#custom-queue-storage-mmkv).
 
 ## Next
 
-- [Configuration](/expo/configuration/) — set up keys and options.
+- [Configuration](/docs/expo/configuration/) — set up keys and options.

@@ -43,9 +43,9 @@ authoritative, and external inputs are verified before they change access.
 
 Store writes never run automatically. They require preview, explicit typed
 confirmation, apply, then verify, behind a feature flag. See
-[Stores](/stores/overview/).
+[Stores](/docs/stores/overview/).
 
 ## Related
 
-- [Reference](/reference/overview/)
-- [Go-live checklist](/operations/go-live/)
+- [Reference](/docs/reference/overview/)
+- [Go-live checklist](/docs/operations/go-live/)

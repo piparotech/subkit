@@ -47,6 +47,6 @@ purchasable price and identifier_.
 
 ## Related
 
-- [Commerce](/concepts/commerce/)
-- [Access model](/concepts/access-model/)
-- [Stores](/stores/overview/)
+- [Commerce](/docs/concepts/commerce/)
+- [Access model](/docs/concepts/access-model/)
+- [Stores](/docs/stores/overview/)

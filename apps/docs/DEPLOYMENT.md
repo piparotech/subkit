@@ -12,8 +12,10 @@ pnpm docs:build
 pnpm docs:verify
 ```
 
-Deploy `apps/docs/dist/` to `https://docs.subkit.piparo.tech`. Preview deploys
-must run the same commands and publish the same directory.
+Build `apps/docs/dist/` for the `/docs/` base path and package it with
+`Dockerfile.docs`. Production serves it at `https://subkit.piparo.tech/docs/`
+through the authoritative GitOps Ingress. Preview builds must run the same
+checks and preserve the same base path.
 
 ## Required host behavior
 
@@ -22,10 +24,10 @@ must run the same commands and publish the same directory.
 - Serve `.mdx` as `text/mdx; charset=utf-8` when supported; otherwise
   `text/plain; charset=utf-8` is acceptable.
 - Serve `.txt` as `text/plain; charset=utf-8`.
-- Preserve trailing-slash HTML routes such as `/expo/configuration/`.
-- Publish `404.html` as the host's not-found document.
+- Preserve trailing-slash HTML routes such as `/docs/expo/configuration/`.
+- Return the built `404.html` body with HTTP 404 for unknown `/docs/**` paths.
 - Do not rewrite `.md`, `.mdx`, `llms*.txt`, `robots.txt`, Pagefind assets, or
-  sitemap files to the HTML app shell.
+  sitemap files to an HTML app shell.
 - Cache fingerprinted `/_astro/` and `/pagefind/` assets immutably; revalidate
   HTML, Markdown twins, LLM corpora, robots, and sitemaps on deploy.
 
@@ -33,12 +35,12 @@ must run the same commands and publish the same directory.
 
 For a release candidate, record URLs for:
 
-- `/`, `/expo/configuration/`, and `/404`;
-- `/pagefind/pagefind.js` and one successful search;
-- `/sitemap-index.xml` and `/robots.txt`;
-- `/llms.txt`, `/llms-small.txt`, `/llms-full.txt`, and all topic corpora;
-- `/index.md`, `/index.mdx`, `/expo/configuration/index.md`, and
-  `/expo/configuration/index.mdx`.
+- `/docs/`, `/docs/expo/configuration/`, and a missing `/docs/**` URL returning 404;
+- `/docs/pagefind/pagefind.js` and one successful search;
+- `/docs/sitemap-index.xml` and `/docs/robots.txt`;
+- `/docs/llms.txt`, `/docs/llms-small.txt`, `/docs/llms-full.txt`, and all topic corpora;
+- `/docs/index.md`, `/docs/index.mdx`, `/docs/expo/configuration/index.md`, and
+  `/docs/expo/configuration/index.mdx`.
 
 ## Rollback
 

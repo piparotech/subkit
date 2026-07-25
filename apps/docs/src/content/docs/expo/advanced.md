@@ -114,4 +114,4 @@ missing.
 
 ## Next
 
-- [Testing](/expo/testing/)
+- [Testing](/docs/expo/testing/)

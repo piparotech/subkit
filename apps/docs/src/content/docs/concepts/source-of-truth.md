@@ -48,6 +48,6 @@ always tell what caused a given access state.
 
 ## Related
 
-- [Catalog](/concepts/catalog/)
-- [Commerce](/concepts/commerce/)
-- [Access model](/concepts/access-model/)
+- [Catalog](/docs/concepts/catalog/)
+- [Commerce](/docs/concepts/commerce/)
+- [Access model](/docs/concepts/access-model/)

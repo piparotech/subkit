@@ -117,9 +117,9 @@ later syncs. iOS **consumables** do not come back from the store once lost —
 the SDK's durable queue preserves consumable purchase events across app
 restarts until SubKit reconciles them. This is a key reason not to replace the
 default queue with a memory queue in production. See
-[Advanced configuration](/expo/advanced/).
+[Advanced configuration](/docs/expo/advanced/).
 
 ## Next
 
-- [Checking entitlements](/expo/entitlements/)
-- [Restore & sync](/expo/restore-and-sync/)
+- [Checking entitlements](/docs/expo/entitlements/)
+- [Restore & sync](/docs/expo/restore-and-sync/)

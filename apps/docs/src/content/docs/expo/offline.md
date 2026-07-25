@@ -82,8 +82,8 @@ mobile app treats it as opaque — never parse or persist it separately. Device 
 Apps with stricter requirements can lower `customerInfoStaleAfterMs` and
 `nonExpiringEntitlementMaxOfflineAgeMs`, or provide their own
 `customerInfoCache` implementation — see
-[Advanced configuration](/expo/advanced/#custom-customerinfo-cache).
+[Advanced configuration](/docs/expo/advanced/#custom-customerinfo-cache).
 
 ## Next
 
-- [Ownership & unclaimed](/expo/conflicts/)
+- [Ownership & unclaimed](/docs/expo/conflicts/)

@@ -11,8 +11,9 @@ const distRoot = join(appRoot, 'dist')
 const errors = []
 
 function htmlOutput(urlPath) {
-  if (urlPath === '/') return join(distRoot, 'index.html')
-  const clean = urlPath.replace(/^\//u, '').replace(/\/$/u, '')
+  const docsPath = urlPath.replace(/^\/docs\/?/u, '/')
+  if (docsPath === '/') return join(distRoot, 'index.html')
+  const clean = docsPath.replace(/^\//u, '').replace(/\/$/u, '')
   return join(distRoot, clean, 'index.html')
 }
 
@@ -30,7 +31,7 @@ for (const sourcePath of contentFiles) {
 
   for (const href of links) {
     if (href.startsWith('/llms')) continue
-    const url = new URL(href, 'https://docs.subkit.piparo.tech')
+    const url = new URL(href, 'https://subkit.piparo.tech/docs/')
     const output = htmlOutput(url.pathname)
     if (!(await pathExists(output))) {
       errors.push(`${sourcePath}: missing internal route ${url.pathname}`)

@@ -29,7 +29,11 @@ for (const page of baseline.pages) {
 
   const html = await readFile(htmlPath, 'utf8')
   const metadata = extractHtmlMetadata(html)
-  check(metadata.canonical === page.canonical, `Canonical changed for ${page.route}`)
+  const expectedCanonical = new URL(
+    page.route.replace(/^\//u, ''),
+    'https://subkit.piparo.tech/docs/',
+  ).href
+  check(metadata.canonical === expectedCanonical, `Canonical changed for ${page.route}`)
   check(
     metadata.title?.startsWith(page.title) === true,
     `Title no longer starts with "${page.title}" for ${page.route}`,
@@ -149,6 +153,25 @@ if (await pathExists(pagefindRoot)) {
 
 check(await pathExists(join(distRoot, 'sitemap-index.xml')), 'Missing sitemap-index.xml')
 check(await pathExists(join(distRoot, '404.html')), 'Missing static 404.html')
+
+const htmlFiles = (await walkFiles(distRoot)).filter((path) => path.endsWith('.html'))
+for (const path of htmlFiles) {
+  const html = await readFile(path, 'utf8')
+  check(
+    !/(?:href|src)="\/(?!docs\/|\/)/u.test(html),
+    `Root-relative URL escapes the /docs base path in ${path}`,
+  )
+}
+
+const sitemap = await readFile(join(distRoot, 'sitemap-0.xml'), 'utf8')
+check(
+  !sitemap.includes('<loc>https://subkit.piparo.tech/</loc>'),
+  'Sitemap exposes the dashboard root as a docs URL',
+)
+check(
+  sitemap.includes('<loc>https://subkit.piparo.tech/docs/</loc>'),
+  'Sitemap is missing the /docs canonical root',
+)
 
 const publicTextFiles = (await walkFiles(distRoot)).filter((path) =>
   ['.md', '.mdx', '.txt'].some((extension) => path.endsWith(extension)),

@@ -28,11 +28,11 @@ quick flag.
 attributed to the current user. Each carries a `claimHint` telling you what to
 do:
 
-| `claimHint`        | UI action                                                            |
-| ------------------ | -------------------------------------------------------------------- |
-| `restore_required` | Offer the restore button ([Restore & sync](/expo/restore-and-sync/)) |
-| `login_required`   | Ask the user to log in with the owning account                       |
-| `support_required` | Route to support — automatic resolution is not safe                  |
+| `claimHint`        | UI action                                                                 |
+| ------------------ | ------------------------------------------------------------------------- |
+| `restore_required` | Offer the restore button ([Restore & sync](/docs/expo/restore-and-sync/)) |
+| `login_required`   | Ask the user to log in with the owning account                            |
+| `support_required` | Route to support — automatic resolution is not safe                       |
 
 ```tsx
 const info = await client.getCustomerInfo()
@@ -111,4 +111,4 @@ handling is required unless your product excludes shared access.
 
 ## Next
 
-- [Error handling](/expo/error-handling/)
+- [Error handling](/docs/expo/error-handling/)

@@ -5,7 +5,7 @@ description: SubKit's public surfaces — SDK keys and capabilities, Runtime API
 
 SubKit exposes two authenticated HTTP surfaces plus two SDKs that wrap them.
 This section is the contract-level reference. For task-oriented guides, see
-[Expo](/expo/overview/) and [Node.js](/node/overview/).
+[Expo](/docs/expo/overview/) and [Node.js](/docs/node/overview/).
 
 ## Keys and capabilities
 
@@ -59,5 +59,5 @@ SDK guides show the supported operations and their request/response shapes.
 
 ## Related
 
-- [Choose an integration](/start/choose-an-integration/)
-- [Security model](/operations/security/)
+- [Choose an integration](/docs/start/choose-an-integration/)
+- [Security model](/docs/operations/security/)

@@ -99,9 +99,9 @@ keys, and server keys never appear in app or test code.
 
 Use the provider guides for the full server-side and console setup:
 
-- [Apple App Store setup](/stores/apple/)
-- [Google Play setup](/stores/google-play/)
+- [Apple App Store setup](/docs/stores/apple/)
+- [Google Play setup](/docs/stores/google-play/)
 
 ## Next
 
-- [Recipes](/expo/recipes/)
+- [Recipes](/docs/expo/recipes/)

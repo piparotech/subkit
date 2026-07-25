@@ -5,7 +5,7 @@ description: The complete React hook surface — useSubKitEntitlement, useSubKit
 
 The SDK ships three React hooks. All read from the configured singleton — call
 `configureSubKit(...)` at module scope before any component renders
-([Configuration](/expo/configuration/)).
+([Configuration](/docs/expo/configuration/)).
 
 | Hook                                            | Purpose                         |
 | ----------------------------------------------- | ------------------------------- |
@@ -58,7 +58,7 @@ useSubKitEntitlement(
 
 It updates automatically whenever any SDK call — `identify()`,
 `getCustomerInfo()`, restore, foreground sync, purchase sync — publishes newer
-customer info. Full guidance: [Checking entitlements](/expo/entitlements/).
+customer info. Full guidance: [Checking entitlements](/docs/expo/entitlements/).
 
 ## `useSubKitOfferings`
 
@@ -105,7 +105,7 @@ Behavior:
 - Unlike `useSubKitEntitlement`, offerings are fetched per hook use, not from a
   shared snapshot; two paywalls with different placements load independently.
 - Packages without a `storeProduct` are not purchasable — filter them out
-  ([Offerings & paywalls](/expo/offerings/#missing-storeproduct-means-not-purchasable)).
+  ([Offerings & paywalls](/docs/expo/offerings/#missing-storeproduct-means-not-purchasable)).
 
 ## `useSubKitIapAutoSync`
 
@@ -133,13 +133,13 @@ useSubKitIapAutoSync(options?: {
 
 Sync failures are logged via `logger.warn` (never thrown into render). With
 default configuration the SDK already syncs on app start, so most apps do not
-need this hook — see [Restore & sync](/expo/restore-and-sync/).
+need this hook — see [Restore & sync](/docs/expo/restore-and-sync/).
 
 ## Rules that apply to all hooks
 
 - Hooks read the configured singleton; using them before `configureSubKit`
   reports `state: 'unconfigured'` / throws on action.
 - `active` is the only unlock signal — never unlock on `status` or a returned
-  purchase call ([Making purchases](/expo/purchases/)).
+  purchase call ([Making purchases](/docs/expo/purchases/)).
 - Hooks are safe under React strict mode; mount effects guard against
   double-invocation.

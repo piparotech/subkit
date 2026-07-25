@@ -28,7 +28,7 @@ Before starting, make sure:
 - you can manage App Store Connect API keys, subscriptions, and app
   information;
 - the iOS app has the native IAP dependency described in
-  [Expo installation](/expo/installation/);
+  [Expo installation](/docs/expo/installation/);
 - SubKit is reachable through HTTPS from the device and, for notifications,
   from Apple.
 
@@ -166,7 +166,7 @@ Production and Sandbox are separate bindings even when their Apple Product ID
 is identical. SubKit serves the Apple identifier only when the visible
 bindings are consistent. The app must not carry a fallback Product ID or price.
 
-See [Catalog](/concepts/catalog/) for the Product → Plan → Plan Version →
+See [Catalog](/docs/concepts/catalog/) for the Product → Plan → Plan Version →
 Offering → Store Binding model.
 
 ## 6. Configure App Store Server Notifications V2
@@ -291,11 +291,11 @@ pass. Correct the provider or catalog mapping and repeat the test.
 
 ## Related
 
-- [Google Play setup](/stores/google-play/)
-- [Store integration overview](/stores/overview/)
-- [Expo testing](/expo/testing/)
-- [Security model](/operations/security/)
-- [Go-live checklist](/operations/go-live/)
+- [Google Play setup](/docs/stores/google-play/)
+- [Store integration overview](/docs/stores/overview/)
+- [Expo testing](/docs/expo/testing/)
+- [Security model](/docs/operations/security/)
+- [Go-live checklist](/docs/operations/go-live/)
 - [Apple: App Store Connect API](https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api)
 - [Apple: Generate In-App Purchase keys](https://developer.apple.com/help/app-store-connect/configure-in-app-purchase-settings/generate-keys-for-in-app-purchases)
 - [Apple: Auto-renewable subscriptions](https://developer.apple.com/help/app-store-connect/manage-subscriptions/offer-auto-renewable-subscriptions)

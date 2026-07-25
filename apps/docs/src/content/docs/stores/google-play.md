@@ -31,7 +31,7 @@ Before starting, make sure:
 - you can manage Google Cloud projects, service accounts, Pub/Sub, and Play
   Console permissions;
 - the Android app has the native IAP dependency described in
-  [Expo installation](/expo/installation/);
+  [Expo installation](/docs/expo/installation/);
 - SubKit is reachable through public HTTPS for RTDN delivery.
 
 Use a device-reachable HTTPS origin for local app testing. `localhost` on an
@@ -190,7 +190,7 @@ The app must not contain static Google Product IDs, prices, or offer tokens.
 SubKit supplies the configured identifiers; the native billing adapter loads
 eligible offers and localized prices from Google Play.
 
-See [Catalog](/concepts/catalog/) for the shared catalog model.
+See [Catalog](/docs/concepts/catalog/) for the shared catalog model.
 
 ## 7. Enable RTDN in Play Console
 
@@ -330,11 +330,11 @@ to make a test pass. Correct the identity, credential, or catalog mismatch.
 
 ## Related
 
-- [Apple App Store setup](/stores/apple/)
-- [Store integration overview](/stores/overview/)
-- [Expo testing](/expo/testing/)
-- [Security model](/operations/security/)
-- [Go-live checklist](/operations/go-live/)
+- [Apple App Store setup](/docs/stores/apple/)
+- [Store integration overview](/docs/stores/overview/)
+- [Expo testing](/docs/expo/testing/)
+- [Security model](/docs/operations/security/)
+- [Go-live checklist](/docs/operations/go-live/)
 - [Google: Play Developer API setup](https://developers.google.com/android-publisher/getting_started)
 - [Google: Billing and RTDN setup](https://developer.android.com/google/play/billing/getting-ready)
 - [Google: Test your billing integration](https://developer.android.com/google/play/billing/test)

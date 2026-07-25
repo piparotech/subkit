@@ -82,7 +82,7 @@ All sync and offline-cache behavior, with defaults:
 | `customerInfoStaleAfterMs`              | 24 h    | Cache age after which `freshness` becomes `stale`     |
 | `nonExpiringEntitlementMaxOfflineAgeMs` | 30 d    | Offline validity window for non-expiring entitlements |
 
-See [Offline access](/expo/offline/) for how the last two interact with cached
+See [Offline access](/docs/expo/offline/) for how the last two interact with cached
 entitlements.
 
 ## Lifecycle: `autoStart`, `start()`, `stop()`
@@ -97,14 +97,14 @@ tears down listeners and app-state subscriptions.
 `configureSubKit` also accepts `adapterBundle`, `appStateSource`, `queue`,
 `customerInfoCache`, `logger`, `platform`, and `sessionId`. These override
 defaults for tests or custom infrastructure — covered in
-[Advanced configuration](/expo/advanced/).
+[Advanced configuration](/docs/expo/advanced/).
 
 <Aside type="danger" title="Key hygiene">
   Only public `sk_sdk_…` keys belong in app code. SDK keys are issued from a trusted backend with a
   server key carrying `sdk_keys:write` — never from the mobile app. See [Security
-  model](/operations/security/).
+  model](/docs/operations/security/).
 </Aside>
 
 ## Next
 
-- [Identifying users](/expo/identity/)
+- [Identifying users](/docs/expo/identity/)

@@ -97,4 +97,4 @@ raw store payloads. You can log them safely.
 
 ## Next
 
-- [Advanced configuration](/expo/advanced/)
+- [Advanced configuration](/docs/expo/advanced/)

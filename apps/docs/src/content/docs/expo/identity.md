@@ -53,4 +53,4 @@ provider-side transactions with the app user during verification.
 
 ## Next
 
-- [Offerings & paywalls](/expo/offerings/)
+- [Offerings & paywalls](/docs/expo/offerings/)

@@ -45,6 +45,6 @@ asks about entitlements and never needs to know which cause paid for them.
 
 ## Related
 
-- [Source of truth](/concepts/source-of-truth/)
-- [Access model](/concepts/access-model/)
-- [Node.js backend](/node/overview/)
+- [Source of truth](/docs/concepts/source-of-truth/)
+- [Access model](/docs/concepts/access-model/)
+- [Node.js backend](/docs/node/overview/)

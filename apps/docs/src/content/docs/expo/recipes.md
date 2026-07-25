@@ -97,7 +97,7 @@ function trialLabel(expiresAt: string | null | undefined): string {
 ```
 
 Pair `expired` with a winback paywall and `paused` with a resume prompt — see
-the status table in [Checking entitlements](/expo/entitlements/#active-vs-status).
+the status table in [Checking entitlements](/docs/expo/entitlements/#active-vs-status).
 
 ## Restore & re-check access
 
@@ -154,8 +154,8 @@ if (unclaimed != null) {
 }
 ```
 
-See [Ownership & unclaimed](/expo/conflicts/) for the full model.
+See [Ownership & unclaimed](/docs/expo/conflicts/) for the full model.
 
 ## Next
 
-- [Troubleshooting](/expo/troubleshooting/)
+- [Troubleshooting](/docs/expo/troubleshooting/)

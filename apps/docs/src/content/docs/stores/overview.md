@@ -35,7 +35,7 @@ Notifications V2, transaction validation, and environment separation
 (production vs. sandbox). Verified transactions create access sources;
 unverified client claims do not.
 
-Follow [Apple App Store setup](/stores/apple/) to configure credentials,
+Follow [Apple App Store setup](/docs/stores/apple/) to configure credentials,
 subscriptions, store bindings, notifications, and Apple Sandbox testing.
 
 ## Google Play
@@ -45,7 +45,7 @@ Cloud Pub/Sub delivery, Real-time Developer Notifications (RTDN), and exact
 package/product/base-plan bindings. The same verification boundary applies:
 only provider-verified evidence creates access.
 
-Follow [Google Play setup](/stores/google-play/) to configure service accounts,
+Follow [Google Play setup](/docs/stores/google-play/) to configure service accounts,
 Pub/Sub, RTDN, subscriptions, store bindings, Internal Testing, and License
 Testing.
 
@@ -57,8 +57,8 @@ a store subscription and a contract can produce the same entitlement.
 
 ## Related
 
-- [Apple App Store setup](/stores/apple/)
-- [Google Play setup](/stores/google-play/)
-- [Catalog](/concepts/catalog/)
-- [Source of truth](/concepts/source-of-truth/)
-- [Go-live checklist](/operations/go-live/)
+- [Apple App Store setup](/docs/stores/apple/)
+- [Google Play setup](/docs/stores/google-play/)
+- [Catalog](/docs/concepts/catalog/)
+- [Source of truth](/docs/concepts/source-of-truth/)
+- [Go-live checklist](/docs/operations/go-live/)

@@ -5,7 +5,7 @@ description: Expo SDK symptoms and their causes — configuration throws, missin
 
 SDK-specific symptoms, ordered by how early they occur. For platform-wide
 issues (webhooks, drift, catalog) see the
-[general troubleshooting](/operations/troubleshooting/) page.
+[general troubleshooting](/docs/operations/troubleshooting/) page.
 
 ## `client` throws before any call works
 
@@ -21,7 +21,7 @@ issues (webhooks, drift, catalog) see the
 
 `expo-iap` is a native module. Use a development build or EAS Build, a real
 device for Apple purchases, and store-side test configuration
-([Installation](/expo/installation/#native-prerequisites)).
+([Installation](/docs/expo/installation/#native-prerequisites)).
 
 ## Package has no `storeProduct`
 
@@ -40,7 +40,7 @@ the product's store state in the SubKit console.
 
 Purchases require an identified user. Call `client.identify(userId)` (or pass
 `appUserId` at configure time) before offering purchases —
-[Identifying users](/expo/identity/).
+[Identifying users](/docs/expo/identity/).
 
 ## Purchase stays `pending`
 
@@ -61,7 +61,7 @@ Normal for the Expo IAP adapter. Confirmation arrives through SubKit sync:
 ## Entitlement active on one device, missing on another
 
 - Different app users are identified on the two devices — check ownership and
-  `unclaimedPurchases` ([Ownership & unclaimed](/expo/conflicts/)).
+  `unclaimedPurchases` ([Ownership & unclaimed](/docs/expo/conflicts/)).
 - The second device simply has not synced: trigger restore or a manual sync.
 
 ## Purchase is active but this installation is blocked
@@ -83,7 +83,7 @@ Installation IDs are best-effort local identifiers. Update normally preserves lo
 
 Expected once offline limits pass: expiring entitlements end at `expiresAt`;
 non-expiring entitlements end after the offline age limit (default 30 days).
-A reconnect and refresh restores access — [Offline access](/expo/offline/).
+A reconnect and refresh restores access — [Offline access](/docs/expo/offline/).
 
 ## Hook never leaves `isLoading`
 
@@ -93,5 +93,5 @@ A reconnect and refresh restores access — [Offline access](/expo/offline/).
 
 ## Related
 
-- [Error handling](/expo/error-handling/)
-- [General troubleshooting](/operations/troubleshooting/)
+- [Error handling](/docs/expo/error-handling/)
+- [General troubleshooting](/docs/operations/troubleshooting/)

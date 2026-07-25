@@ -133,6 +133,6 @@ Sensitive values — bearer tokens, receipts, purchase tokens, raw store payload
 
 ## Related
 
-- [Commerce](/concepts/commerce/)
-- [Access model](/concepts/access-model/)
-- [Reference](/reference/overview/)
+- [Commerce](/docs/concepts/commerce/)
+- [Access model](/docs/concepts/access-model/)
+- [Reference](/docs/reference/overview/)

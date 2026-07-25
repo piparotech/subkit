@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node scripts/apply-base-path.mjs && pagefind --site dist",
     "preview": "astro preview",
     "check": "astro check",
     "lint": "nimbus-docs lint --format=json",
@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.9",
+    "@bruits/satteri-linux-x64-musl": "0.9.5",
     "@tailwindcss/vite": "4.2.2",
     "tailwindcss": "4.2.2"
   }

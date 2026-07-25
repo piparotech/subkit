@@ -22,7 +22,7 @@ Silent sync uses the store's `getAvailablePurchases()` and never calls
 prompt-prone restore APIs — users see no login sheets from background syncs.
 
 All triggers are configurable via the `iap` options — see
-[Configuration](/expo/configuration/#iap-options).
+[Configuration](/docs/expo/configuration/#iap-options).
 
 ## Manual restore
 
@@ -95,8 +95,8 @@ failures. The hook guards against duplicate syncs across re-renders.
 `conflicts`, `finishableTransactions`, `verificationStatus`, `checkedAt`, and
 fresh `customerInfo`. Transactions are finished in the store **only after**
 SubKit returns them as finishable — see
-[Ownership & unclaimed](/expo/conflicts/) for the conflict cases.
+[Ownership & unclaimed](/docs/expo/conflicts/) for the conflict cases.
 
 ## Next
 
-- [Offline access](/expo/offline/)
+- [Offline access](/docs/expo/offline/)

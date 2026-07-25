@@ -36,30 +36,30 @@ One configured singleton (`client`) with a small surface:
 | `start()` / `stop()`           | Lifecycle control (automatic by default)           |
 
 Plus three React hooks: `useSubKitEntitlement(key)`, `useSubKitOfferings()`,
-and `useSubKitIapAutoSync()` — see the [hooks reference](/expo/hooks/).
+and `useSubKitIapAutoSync()` — see the [hooks reference](/docs/expo/hooks/).
 
 ## Section map
 
 Work through these in order for a first integration:
 
-1. [Installation](/expo/installation/) — packages, peer dependencies, native prerequisites.
-2. [Configuration](/expo/configuration/) — keys, installation ID, options, lifecycle.
-3. [Identifying users](/expo/identity/) — anonymous to identified, `identify()`.
-4. [Offerings & paywalls](/expo/offerings/) — render packages with live store prices.
-5. [Making purchases](/expo/purchases/) — handle all four purchase outcomes.
-6. [Checking entitlements](/expo/entitlements/) — hook and imperative reads.
-7. [React hooks](/expo/hooks/) — the complete hook reference.
-8. [Restore & sync](/expo/restore-and-sync/) — restore, auto-sync, sync reasons.
-9. [Offline access](/expo/offline/) — cache freshness and offline policy.
+1. [Installation](/docs/expo/installation/) — packages, peer dependencies, native prerequisites.
+2. [Configuration](/docs/expo/configuration/) — keys, installation ID, options, lifecycle.
+3. [Identifying users](/docs/expo/identity/) — anonymous to identified, `identify()`.
+4. [Offerings & paywalls](/docs/expo/offerings/) — render packages with live store prices.
+5. [Making purchases](/docs/expo/purchases/) — handle all four purchase outcomes.
+6. [Checking entitlements](/docs/expo/entitlements/) — hook and imperative reads.
+7. [React hooks](/docs/expo/hooks/) — the complete hook reference.
+8. [Restore & sync](/docs/expo/restore-and-sync/) — restore, auto-sync, sync reasons.
+9. [Offline access](/docs/expo/offline/) — cache freshness and offline policy.
 
 For hardening and production:
 
-- [Ownership & unclaimed purchases](/expo/conflicts/)
-- [Error handling](/expo/error-handling/)
-- [Advanced configuration](/expo/advanced/)
-- [Testing](/expo/testing/)
-- [Recipes](/expo/recipes/)
-- [Troubleshooting](/expo/troubleshooting/)
+- [Ownership & unclaimed purchases](/docs/expo/conflicts/)
+- [Error handling](/docs/expo/error-handling/)
+- [Advanced configuration](/docs/expo/advanced/)
+- [Testing](/docs/expo/testing/)
+- [Recipes](/docs/expo/recipes/)
+- [Troubleshooting](/docs/expo/troubleshooting/)
 
 ## The rules that never change
 
@@ -69,5 +69,5 @@ For hardening and production:
 - Prices, product IDs, and offer tokens come from the runtime offering — never
   from constants.
 
-New to SubKit? Start with the [Quickstart](/start/quickstart/) for the smallest
+New to SubKit? Start with the [Quickstart](/docs/start/quickstart/) for the smallest
 end-to-end path, then return here for depth.

@@ -42,8 +42,8 @@ Organized by symptom. Each points at the most likely cause.
 - Apple Server Notifications or Google RTDN are misconfigured or unauthenticated.
 - Unverified events create no access, so missing notifications look like missing
   entitlements. Verify provider configuration and delivery.
-- For provider-specific checks, use [Apple App Store setup](/stores/apple/) or
-  [Google Play setup](/stores/google-play/).
+- For provider-specific checks, use [Apple App Store setup](/docs/stores/apple/) or
+  [Google Play setup](/docs/stores/google-play/).
 
 ## Auth / capability denied
 
@@ -54,5 +54,5 @@ Organized by symptom. Each points at the most likely cause.
 
 ## Related
 
-- [Expo / React Native](/expo/overview/)
-- [Security model](/operations/security/)
+- [Expo / React Native](/docs/expo/overview/)
+- [Security model](/docs/operations/security/)

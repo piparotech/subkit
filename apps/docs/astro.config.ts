@@ -4,7 +4,7 @@ import { defineConfig } from 'astro/config'
 import nimbus, { defineConfig as defineNimbusConfig } from 'nimbus-docs'
 
 export const nimbusConfig = defineNimbusConfig({
-  site: 'https://docs.subkit.piparo.tech',
+  site: 'https://subkit.piparo.tech/docs/',
   title: 'SubKit',
   description:
     'SubKit is the source of truth for product catalog, commerce, and access. Apps and backends read entitlements; store and payment providers are verified inputs.',
@@ -66,6 +66,7 @@ export const nimbusConfig = defineNimbusConfig({
 
 export default defineConfig({
   site: nimbusConfig.site,
+  base: '/docs',
   integrations: [
     icon({ include: { ph: ['*'] } }),
     nimbus(nimbusConfig, {

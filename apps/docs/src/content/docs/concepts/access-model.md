@@ -58,6 +58,6 @@ whatever verified cause created it.
 
 ## Related
 
-- [Commerce](/concepts/commerce/)
-- [Identity and tenancy](/concepts/identity-and-tenancy/)
-- [Node.js backend](/node/overview/)
+- [Commerce](/docs/concepts/commerce/)
+- [Identity and tenancy](/docs/concepts/identity-and-tenancy/)
+- [Node.js backend](/docs/node/overview/)

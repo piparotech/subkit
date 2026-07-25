@@ -62,7 +62,7 @@ The shared customer-info snapshot moves through:
 `unconfigured → idle → loading → ready ⇄ refreshing`, with `offline` when a
 refresh fails but cached data exists, and `error` when a refresh fails with no
 data. A network failure never erases a previously active entitlement before
-its known expiry — see [Offline access](/expo/offline/).
+its known expiry — see [Offline access](/docs/expo/offline/).
 
 ## `active` vs. `status`
 
@@ -110,6 +110,6 @@ actions or after a custom purchase flow when you need a fresh server read.
 
 ## Next
 
-- [React hooks](/expo/hooks/) — the complete hook reference
-- [Restore & sync](/expo/restore-and-sync/)
-- [Offline access](/expo/offline/)
+- [React hooks](/docs/expo/hooks/) — the complete hook reference
+- [Restore & sync](/docs/expo/restore-and-sync/)
+- [Offline access](/docs/expo/offline/)

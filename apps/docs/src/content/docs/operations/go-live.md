@@ -44,7 +44,7 @@ Work through this before your first production purchase.
 
 ## Related
 
-- [Apple App Store setup](/stores/apple/)
-- [Google Play setup](/stores/google-play/)
-- [Security model](/operations/security/)
-- [Troubleshooting](/operations/troubleshooting/)
+- [Apple App Store setup](/docs/stores/apple/)
+- [Google Play setup](/docs/stores/google-play/)
+- [Security model](/docs/operations/security/)
+- [Troubleshooting](/docs/operations/troubleshooting/)

@@ -45,5 +45,5 @@ must not be confused with them.
 
 ## Related
 
-- [Access model](/concepts/access-model/)
-- [Glossary](/concepts/glossary/)
+- [Access model](/docs/concepts/access-model/)
+- [Glossary](/docs/concepts/glossary/)

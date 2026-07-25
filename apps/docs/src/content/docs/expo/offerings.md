@@ -91,7 +91,7 @@ export function Paywall({ onPurchased }: { onPurchased: () => void }) {
 ```
 
 `runPurchase` handles the four purchase outcomes — see
-[Making purchases](/expo/purchases/).
+[Making purchases](/docs/expo/purchases/).
 
 ### Result and options
 
@@ -114,7 +114,7 @@ can change eligibility — for example a completed purchase or `identify()`.
 Store prices come from the native store, so a paywall that stays mounted for a
 long time can also `refresh()` on foreground.
 
-See the [hooks reference](/expo/hooks/) for all React APIs.
+See the [hooks reference](/docs/expo/hooks/) for all React APIs.
 
 ## Optional: preflight sync
 
@@ -136,4 +136,4 @@ await client.syncPurchases({ reason: 'paywall_preflight' })
 
 ## Next
 
-- [Making purchases](/expo/purchases/)
+- [Making purchases](/docs/expo/purchases/)
