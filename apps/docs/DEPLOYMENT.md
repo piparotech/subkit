@@ -17,6 +17,49 @@ Build `apps/docs/dist/` for the `/docs/` base path and package it with
 through the authoritative GitOps Ingress. Preview builds must run the same
 checks and preserve the same base path.
 
+## Pull request preview
+
+`.forgejo/workflows/preview-docs.yml` builds and verifies every pull request,
+then uploads a 14-day `subkit-docs-preview-<sha>` Forgejo artifact. The artifact
+contains the static site beneath `site/docs/`, the full source commit in
+`SOURCE_SHA`, a SHA-256 file manifest, and local serving instructions.
+
+This is deliberately portable review evidence rather than an automatically
+hosted review app. Pull request code receives no repository secrets, registry
+credentials, Kubernetes credentials, shared Docker daemon, or production
+network access. Reviewers can download the artifact from the workflow run and
+serve it locally:
+
+```sh
+python3 -m http.server 4173 --directory site
+```
+
+Then open `http://127.0.0.1:4173/docs/`. The artifact smoke covers representative
+HTML, Pagefind, LLM output, the production base path, and an unknown-path 404.
+The production image smoke remains authoritative for nginx MIME types, response
+headers, non-root execution, and read-only-container behavior.
+
+Do not add an automatic privileged `pull_request` deployment. A hosted review
+app requires a separately approved GitOps design with all of these properties:
+
+- an isolated namespace and hostname that cannot route production traffic;
+- non-production data and independently scoped secrets, never production
+  Runtime, OIDC, encryption, registry, or Store credentials;
+- immutable commit-SHA images built only after explicit trust approval;
+- declarative creation, expiry, and pull-request-close cleanup;
+- resource quotas, network policy, observability, and an auditable owner.
+
+Until that contract exists, the short-lived Forgejo artifact is the only PR
+preview surface.
+
+## Production deployment
+
+Trusted `main` pushes build, smoke, and publish the coherent dashboard,
+migration, and docs image set under one immutable full commit SHA. Production is
+updated separately through the manually dispatched SHA-bound GitOps promotion
+in the Infra repository. Pull request workflows never publish images or mutate
+GitOps.
+
 ## Required host behavior
 
 - Serve `.html` as `text/html; charset=utf-8`.
