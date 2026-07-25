@@ -28,7 +28,7 @@ const versions = {
 try {
   writeFileSync(
     join(temporary, '.npmrc'),
-    `@piparotech:registry=${registry}\n//git.piparo.tech/api/packages/piparo.tech/npm/:_authToken=\${NODE_AUTH_TOKEN}\nalways-auth=true\n`,
+    `@piparotech:registry=${registry}\n//git.piparo.tech/api/packages/piparo.tech/npm/:_authToken=\${NODE_AUTH_TOKEN}\n`,
     { mode: 0o600 },
   )
   writeFileSync(
