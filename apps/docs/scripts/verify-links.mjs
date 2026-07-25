@@ -14,6 +14,7 @@ function htmlOutput(urlPath) {
   const docsPath = urlPath.replace(/^\/docs\/?/u, '/')
   if (docsPath === '/') return join(distRoot, 'index.html')
   const clean = docsPath.replace(/^\//u, '').replace(/\/$/u, '')
+  if (extname(clean) !== '') return join(distRoot, clean)
   return join(distRoot, clean, 'index.html')
 }
 

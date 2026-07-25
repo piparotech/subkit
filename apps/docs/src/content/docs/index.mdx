@@ -45,6 +45,17 @@ Access Source → Access Pool → Reservation/Allocation → Entitlement Grant
 Read [Access model](/docs/concepts/access-model/) to understand why this keeps app
 logic stable across single subscriptions, club seats, and every commerce cause.
 
+## Architecture in one minute
+
+![SubKit architecture: consumers use authenticated Runtime and Server interfaces; canonical catalog, commerce, and access domains derive grants from verified provider inputs and persistent state.](/subkit-architecture.svg)
+
+Mobile apps use the Runtime API with public, app-bound keys. Trusted backends and
+operators use the capability-scoped Server API. Both meet the same canonical
+Catalog, Commerce, and Access domains. Store and payment systems remain outside
+that boundary: adapters verify their evidence, then SubKit persists normalized
+Sources and derives Pools, Allocations, and Grants. No consumer or provider
+maintains a parallel license truth.
+
 ## Built for machines too
 
 Every page is available as clean Markdown, and SubKit publishes curated

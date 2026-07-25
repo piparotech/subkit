@@ -20,6 +20,7 @@ const routePrefixes = [
   'sitemap',
   'start',
   'stores',
+  'subkit-',
 ]
 
 function withDocsBase(value) {

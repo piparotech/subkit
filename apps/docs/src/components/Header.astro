@@ -6,7 +6,7 @@ import { config } from 'virtual:nimbus/config'
 
 <header class="site-header">
   <a class="brand" href="/" aria-label="SubKit documentation home">
-    <span class="brand-mark" aria-hidden="true">S</span>
+    <img class="brand-mark" src="/subkit-logo.svg" alt="" width="32" height="32" />
     <span>
       <strong>SubKit</strong>
       <small>Developer docs</small>
@@ -47,14 +47,9 @@ import { config } from 'virtual:nimbus/config'
   }
 
   .brand-mark {
-    display: grid;
     width: 2rem;
     height: 2rem;
-    place-items: center;
     border-radius: 0.55rem;
-    background: var(--nb-primary);
-    color: var(--nb-primary-foreground);
-    font-weight: 800;
   }
 
   .brand strong,

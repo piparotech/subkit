@@ -127,12 +127,58 @@ SubKit does not perform CPQ, invoicing, tax calculation, or monetary seat
 proration. Exact payment retries are idempotent; conflicting amount, currency,
 payer, Source, or external identity fails closed.
 
-## Other access sources
+## Enroll free access
 
-Free enrollment, promotion redemption, and manual provision all use the normal
-Source → Pool → Allocation → Grant path. They are not direct entitlement writes.
-Promotion codes are distinct from invitation tokens: a promotion creates a
-commercial Source; an invitation claims already reserved pool capacity.
+Eligibility comes from the published Plan Version, not caller input:
+
+```ts
+const enrollment = await subkit.access.enrollFree(
+  {
+    planVersionId: 'plan-version_basis',
+    reason: 'enroll eligible basis user',
+    subjectId: subject.id,
+  },
+  { idempotencyKey: 'free-enrollment:trainer_123' },
+)
+```
+
+## Redeem a promotion
+
+Promotion codes are distinct from invitation tokens. A promotion creates a
+commercial Source; an invitation only claims capacity already reserved from an
+existing Pool. SubKit hashes and safely stores the submitted code.
+
+```ts
+const promotion = await subkit.access.redeemPromotionCode(
+  {
+    code: userEnteredCode,
+    reason: 'redeem customer promotion',
+    subjectId: subject.id,
+  },
+  { idempotencyKey: 'promotion-redemption:trainer_123' },
+)
+```
+
+## Provision exceptional access
+
+Manual provision is a privileged, auditable exception for migration or support,
+not a shortcut around normal access derivation:
+
+```ts
+const allocation = await subkit.access.manualProvision(
+  {
+    originReference: 'migration:legacy-contract-123',
+    planVersionId: 'plan-version_premium',
+    reason: 'migrate verified legacy contract',
+    subjectId: subject.id,
+    validFrom: new Date('2027-01-01T00:00:00Z'),
+  },
+  { idempotencyKey: 'manual-provision:legacy-contract-123' },
+)
+```
+
+All three flows still create the normal Source → Pool → Allocation → Grant path.
+They never write an entitlement directly.
 
 ## Capacity changes
 

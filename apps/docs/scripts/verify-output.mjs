@@ -158,7 +158,13 @@ for (const output of requiredAgentOutputs.filter((path) => path.endsWith('.txt')
   check(content.trim().length >= 40, `${output} is unexpectedly small`)
   const maxBytes = agentOutputMaxBytes[output]
   if (maxBytes !== undefined) {
-    check(Buffer.byteLength(content) <= maxBytes, `${output} exceeds its ${maxBytes}-byte budget`)
+    const bytes = Buffer.byteLength(content)
+    const estimatedTokens = Math.ceil(content.length / 4)
+    const maxEstimatedTokens = Math.ceil(maxBytes / 4)
+    check(
+      bytes <= maxBytes,
+      `${output} exceeds its ${maxBytes}-byte / ~${maxEstimatedTokens}-token budget (${bytes} bytes / ~${estimatedTokens} tokens)`,
+    )
   }
   check(
     !/<(Aside|Card|CardGrid|LinkCard|Steps|Step)\b/u.test(content),

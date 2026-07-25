@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-labelledby="title description">
+  <title id="title">SubKit</title>
+  <desc id="description">Three connected layers forming an abstract letter S.</desc>
+  <rect width="48" height="48" rx="13" fill="#6246c7"/>
+  <path d="M34 12H19a7 7 0 0 0 0 14h10a3 3 0 0 1 0 6H14" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="34" cy="12" r="3" fill="#b8f2d0"/>
+  <circle cx="14" cy="36" r="3" fill="#b8f2d0"/>
+</svg>
