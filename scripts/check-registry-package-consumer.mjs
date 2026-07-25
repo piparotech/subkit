@@ -3,6 +3,8 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 
+import { readPackageVersion } from './package-manifest-version.mjs'
+
 const root = resolve(import.meta.dirname, '..')
 const temporary = mkdtempSync(join(tmpdir(), 'subkit-registry-consumer-'))
 const registry = process.env.SUBKIT_NPM_REGISTRY
@@ -15,14 +17,10 @@ if (token == null || token.length === 0) {
   throw new Error('NODE_AUTH_TOKEN is required for the Forgejo registry consumer')
 }
 
-function version(packageDirectory) {
-  return JSON.parse(readFileSync(join(root, packageDirectory, 'package.json'), 'utf8').version)
-}
-
 const versions = {
-  core: version('packages/subkit-core'),
-  expo: version('packages/subkit-expo'),
-  node: version('packages/subkit-node'),
+  core: readPackageVersion(root, 'packages/subkit-core'),
+  expo: readPackageVersion(root, 'packages/subkit-expo'),
+  node: readPackageVersion(root, 'packages/subkit-node'),
 }
 
 try {
