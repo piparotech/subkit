@@ -100,6 +100,47 @@ const allocation = await subkit.access.claim(
 Invitation tokens stay outside SubKit — send the opaque token to the invitee and
 submit only its hash.
 
+## Record verified payment evidence
+
+A Contract creates a Source and Pools; it does not claim money moved. Record a
+separately verified PSP, settlement, or invoice event with `payments:write`:
+
+```ts
+await subkit.payments.record(
+  {
+    accessSourceId: contract.accessSourceId,
+    amountMicros: 100_000_000,
+    billingAccountId: club.id,
+    currencyCode: 'EUR',
+    externalId: 'invoice_123:payment_1',
+    kind: 'charge',
+    occurredAt: new Date('2027-01-02T00:00:00Z'),
+    provider: 'external',
+    reason: 'record verified invoice settlement',
+    state: 'succeeded',
+  },
+  { idempotencyKey: 'payment:invoice_123:payment_1' },
+)
+```
+
+SubKit does not perform CPQ, invoicing, tax calculation, or monetary seat
+proration. Exact payment retries are idempotent; conflicting amount, currency,
+payer, Source, or external identity fails closed.
+
+## Other access sources
+
+Free enrollment, promotion redemption, and manual provision all use the normal
+Source → Pool → Allocation → Grant path. They are not direct entitlement writes.
+Promotion codes are distinct from invitation tokens: a promotion creates a
+commercial Source; an invitation claims already reserved pool capacity.
+
+## Capacity changes
+
+Preview a capacity change before applying it. The preview evaluates current
+used/reserved quantities, effective date, renewal policy, cooldowns, and the
+published Plan Version. Apply only the operator-confirmed result with a new
+idempotency key and reason.
+
 ## Check an entitlement
 
 ```ts
@@ -129,7 +170,9 @@ try {
 ```
 
 Sensitive values — bearer tokens, receipts, purchase tokens, raw store payloads
-— are never included in SDK errors.
+— are never included in SDK errors. Retry only codes marked retryable in the
+[error reference](/docs/reference/errors/), using bounded backoff and the same
+idempotency key for the same mutation.
 
 ## Related
 

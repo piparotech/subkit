@@ -72,6 +72,28 @@ check(
   'Baseline MDX page count is inconsistent',
 )
 
+const contentRoot = join(appRoot, 'src/content/docs')
+const publicSources = (await walkFiles(contentRoot)).filter(
+  (path) => path.endsWith('.md') || path.endsWith('.mdx'),
+)
+for (const sourcePath of publicSources) {
+  const relative = sourcePath.slice(contentRoot.length + 1)
+  const slug = relative.replace(/\.(?:md|mdx)$/u, '')
+  const outputBase = slug === 'index' ? 'index' : slug
+  const htmlOutput = outputBase === 'index' ? 'index.html' : `${outputBase}/index.html`
+  const markdownOutput = outputBase === 'index' ? 'index.md' : `${outputBase}/index.md`
+  const sourceOutput = outputBase === 'index' ? 'index.mdx' : `${outputBase}/index.mdx`
+  check(await pathExists(join(distRoot, htmlOutput)), `Missing public HTML page ${htmlOutput}`)
+  check(
+    await pathExists(join(distRoot, markdownOutput)),
+    `Missing public Markdown twin ${markdownOutput}`,
+  )
+  check(
+    await pathExists(join(distRoot, sourceOutput)),
+    `Missing public source twin ${sourceOutput}`,
+  )
+}
+
 for (const llms of baseline.llms) {
   const output = intentionalLlmsReplacements[llms.output] ?? llms.output
   const path = join(distRoot, output)
@@ -197,6 +219,6 @@ if (errors.length > 0) {
   process.exitCode = 1
 } else {
   console.log(
-    `Verified ${baseline.pages.length} baseline HTML routes and twins, ${requiredAgentOutputs.length} agent surfaces, Pagefind, sitemap, 404, JSON-LD, alternates, and ${baseline.expected.invariants.length} llms.txt invariants.`,
+    `Verified ${publicSources.length} public HTML routes and twins (${baseline.pages.length} historical baseline routes), ${requiredAgentOutputs.length} agent surfaces, Pagefind, sitemap, 404, JSON-LD, alternates, and ${baseline.expected.invariants.length} llms.txt invariants.`,
   )
 }

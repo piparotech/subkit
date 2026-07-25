@@ -61,7 +61,7 @@ export const nimbusConfig = defineNimbusConfig({
         label: 'Stores',
         items: ['stores/overview', 'stores/apple', 'stores/google-play'],
       },
-      { label: 'Reference', items: ['reference/overview'] },
+      { label: 'Reference', items: ['reference/overview', 'reference/api', 'reference/errors'] },
       {
         label: 'Operations',
         items: ['operations/security', 'operations/go-live', 'operations/troubleshooting'],

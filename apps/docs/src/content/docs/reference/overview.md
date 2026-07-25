@@ -51,11 +51,10 @@ capability.
 - Some error codes are retryable; others fail closed. The SDKs never include
   secrets, receipts, or raw store payloads in errors.
 
-<div class="sl-hidden">
-Full endpoint-by-endpoint schemas, capability lists, and error-code tables are
-being migrated here from the internal runtime documentation. Until then, the
-SDK guides show the supported operations and their request/response shapes.
-</div>
+## Detailed reference
+
+- [HTTP API](/docs/reference/api/) — endpoint inventory, auth, capabilities, and mutation headers.
+- [Error model](/docs/reference/errors/) — codes, statuses, retry policy, and safe reactions.
 
 ## Related
 
