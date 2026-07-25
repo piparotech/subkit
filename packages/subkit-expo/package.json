@@ -14,31 +14,26 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "development": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
     "./expo-iap": {
       "types": "./dist/expoIapAdapter.d.ts",
-      "development": "./src/expoIapAdapter.ts",
       "import": "./dist/expoIapAdapter.js",
       "default": "./dist/expoIapAdapter.js"
     },
     "./expo-secure-store": {
       "types": "./dist/expoSecureStore.d.ts",
-      "development": "./src/expoSecureStore.ts",
       "import": "./dist/expoSecureStore.js",
       "default": "./dist/expoSecureStore.js"
     },
     "./mmkv": {
       "types": "./dist/mmkv.d.ts",
-      "development": "./src/mmkv.ts",
       "import": "./dist/mmkv.js",
       "default": "./dist/mmkv.js"
     },
     "./async-storage": {
       "types": "./dist/asyncStorage.d.ts",
-      "development": "./src/asyncStorage.ts",
       "import": "./dist/asyncStorage.js",
       "default": "./dist/asyncStorage.js"
     }

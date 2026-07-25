@@ -17,12 +17,36 @@ function run(command, args, cwd = root) {
   execFileSync(command, args, { cwd, stdio: 'inherit' })
 }
 
+function exportTargets(exports) {
+  const targets = []
+  const visit = (value) => {
+    if (typeof value === 'string') {
+      targets.push(value)
+      return
+    }
+    if (value == null || typeof value !== 'object') return
+    for (const nested of Object.values(value)) visit(nested)
+  }
+  visit(exports)
+  return targets
+}
+
 function pack(directory) {
   const packageJson = readPackageJson(directory)
   run('pnpm', ['--filter', packageJson.name, 'pack', '--pack-destination', packDirectory])
   const filename = `${packageJson.name.slice(1).replace('/', '-')}-${packageJson.version}.tgz`
   const path = join(packDirectory, filename)
   if (!existsSync(path)) throw new Error(`Expected package tarball ${path}`)
+
+  const archiveEntries = new Set(
+    execFileSync('tar', ['-tzf', path], { encoding: 'utf8' }).trim().split('\n'),
+  )
+  for (const target of exportTargets(packageJson.exports)) {
+    const archivePath = `package/${target.replace(/^\.\//u, '')}`
+    if (!archiveEntries.has(archivePath)) {
+      throw new Error(`${packageJson.name} export target is absent from tarball: ${target}`)
+    }
+  }
   return { packageJson, path }
 }
 
