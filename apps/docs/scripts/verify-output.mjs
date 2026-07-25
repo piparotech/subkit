@@ -154,6 +154,33 @@ for (const output of requiredAgentOutputs) {
   check(await pathExists(join(distRoot, output)), `Missing required agent surface ${output}`)
 }
 
+const expectedSmallCorpusHeadings = [
+  'SubKit abridged documentation',
+  'Access model',
+  'Source of truth',
+  'Configuration',
+  'Checking entitlements',
+  'Expo / React Native',
+  'Making purchases',
+  'SubKit',
+  'Node.js backend',
+  'Security model',
+  'Choose an integration',
+  'Quickstart',
+]
+const smallCorpusPath = join(distRoot, 'llms-small.txt')
+if (await pathExists(smallCorpusPath)) {
+  const smallCorpus = await readFile(smallCorpusPath, 'utf8')
+  const headings = smallCorpus
+    .split('\n')
+    .filter((line) => line.startsWith('# '))
+    .map((line) => line.slice(2))
+  check(
+    JSON.stringify(headings) === JSON.stringify(expectedSmallCorpusHeadings),
+    `llms-small.txt page set changed: ${headings.join(', ')}`,
+  )
+}
+
 const invariantOutputs = [
   'llms.txt',
   'llms-small.txt',
