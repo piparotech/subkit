@@ -1,9 +1,13 @@
 {
   "name": "@piparotech/subkit-core",
   "version": "0.1.8",
-  "private": true,
   "type": "module",
   "description": "Shared backend API contracts for SubKit.",
+  "license": "UNLICENSED",
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://git.piparo.tech/api/packages/piparo.tech/npm/"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

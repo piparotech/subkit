@@ -1,9 +1,13 @@
 {
   "name": "@piparotech/subkit-node",
   "version": "0.1.8",
-  "private": true,
   "type": "module",
   "description": "Node.js backend SDK for querying SubKit.",
+  "license": "UNLICENSED",
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://git.piparo.tech/api/packages/piparo.tech/npm/"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -26,11 +30,6 @@
   },
   "peerDependencies": {
     "@piparotech/subkit-core": "workspace:^"
-  },
-  "peerDependenciesMeta": {
-    "@piparotech/subkit-core": {
-      "optional": true
-    }
   },
   "devDependencies": {
     "@piparotech/subkit-core": "workspace:*",
