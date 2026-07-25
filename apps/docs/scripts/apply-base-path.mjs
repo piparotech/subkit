@@ -33,7 +33,8 @@ function withDocsBase(value) {
 function rewrite(content) {
   return content
     .replaceAll('/docs_nimbus/', '/docs/_nimbus/')
-    .replaceAll('/docsfavicon.svg', '/docs/favicon.svg')
+    .replaceAll('/docsfavicon.svg', '/docs/favicon.png')
+    .replaceAll('/docsfavicon.png', '/docs/favicon.png')
     .replace(/(["'(=])\/(?!\/)([^"')\s<]*)/gu, (_match, prefix, rest) => {
       const original = `/${rest}`
       return `${prefix}${withDocsBase(original)}`

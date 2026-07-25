@@ -9,6 +9,13 @@ export const nimbusConfig = defineNimbusConfig({
   description:
     'SubKit is the source of truth for product catalog, commerce, and access. Apps and backends read entitlements; store and payment providers are verified inputs.',
   locale: 'en',
+  socialImage: '/docs/og.png',
+  head: [
+    {
+      tag: 'link',
+      attrs: { rel: 'icon', type: 'image/png', href: '/docs/favicon.png' },
+    },
+  ],
   github: 'https://github.com/piparotech/subkit',
   editPattern: 'https://github.com/piparotech/subkit/edit/main/apps/docs/{path}',
   sidebar: {

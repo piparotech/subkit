@@ -153,6 +153,8 @@ if (await pathExists(pagefindRoot)) {
 
 check(await pathExists(join(distRoot, 'sitemap-index.xml')), 'Missing sitemap-index.xml')
 check(await pathExists(join(distRoot, '404.html')), 'Missing static 404.html')
+check(await pathExists(join(distRoot, 'favicon.png')), 'Missing production favicon')
+check(await pathExists(join(distRoot, 'og.png')), 'Missing production Open Graph image')
 
 const htmlFiles = (await walkFiles(distRoot)).filter((path) => path.endsWith('.html'))
 for (const path of htmlFiles) {
