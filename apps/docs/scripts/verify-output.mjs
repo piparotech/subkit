@@ -228,6 +228,15 @@ if (await pathExists(pagefindRoot)) {
 }
 
 check(await pathExists(join(distRoot, 'sitemap-index.xml')), 'Missing sitemap-index.xml')
+const robots = await readFile(join(distRoot, 'robots.txt'), 'utf8')
+check(
+  robots.includes('Sitemap: https://subkit.piparo.tech/docs/sitemap-index.xml'),
+  'robots.txt is missing the /docs sitemap URL',
+)
+check(
+  !robots.includes('Sitemap: https://subkit.piparo.tech/sitemap-index.xml'),
+  'robots.txt exposes a root-level sitemap URL',
+)
 check(await pathExists(join(distRoot, '404.html')), 'Missing static 404.html')
 check(await pathExists(join(distRoot, 'favicon.png')), 'Missing production favicon')
 check(await pathExists(join(distRoot, 'og.png')), 'Missing production Open Graph image')
