@@ -25,19 +25,36 @@ const request = (url, method) =>
     method,
     redirect: 'follow',
     signal: AbortSignal.timeout(15_000),
-    headers: { 'user-agent': 'SubKit docs link verifier' },
+    headers: {
+      'user-agent':
+        'Mozilla/5.0 (compatible; SubKitDocsVerifier/1.0; +https://subkit.piparo.tech/docs/)',
+    },
   })
 
 const wait = (duration) => new Promise((resolveWait) => setTimeout(resolveWait, duration))
+
+async function requestWithGetFallback(url) {
+  try {
+    const response = await request(url, 'HEAD')
+    if (
+      response.ok ||
+      (response.status !== 403 &&
+        response.status !== 405 &&
+        response.status !== 429 &&
+        response.status < 500)
+    ) {
+      return response
+    }
+  } catch {}
+
+  return request(url, 'GET')
+}
 
 async function verifyUrl(url) {
   let lastError
   for (let attempt = 0; attempt <= retryDelays.length; attempt += 1) {
     try {
-      let response = await request(url, 'HEAD')
-      if (response.status === 405 || response.status === 403) {
-        response = await request(url, 'GET')
-      }
+      const response = await requestWithGetFallback(url)
       if (response.ok || (response.status !== 429 && response.status < 500)) return response
       lastError = new Error(`HTTP ${response.status}`)
     } catch (error) {
