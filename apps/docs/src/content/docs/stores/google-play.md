@@ -134,9 +134,12 @@ Google Play credentials are configured for the specific SubKit app.
 3. Enter the exact **Android Package Name**.
 4. Upload the Developer API service-account JSON key. SubKit extracts the
    service-account email and private key.
-5. Enter the exact RTDN URL in **Pub/Sub Audience**.
-6. Enter the keyless push identity in **Pub/Sub Push E-Mail**.
-7. Choose **Connect Google Play** or validate the existing connection.
+5. Optional for financial reporting: enter the private Play reporting bucket ID
+   (`pubsite_prod_rev_*`). The service account needs global **View financial data**
+   permission; SubKit requests only the `devstorage.read_only` scope.
+6. Enter the exact RTDN URL in **Pub/Sub Audience**.
+7. Enter the keyless push identity in **Pub/Sub Push E-Mail**.
+8. Choose **Connect Google Play** or validate the existing connection.
 
 SubKit validates Developer API access against the exact package before it
 stores the connection. A failed validation does not leave partially connected
@@ -167,6 +170,25 @@ the same app.
 Product ID and Base Plan ID are different identifiers. SubKit binds a plan
 version to the exact package name, Product ID, Base Plan ID, and optional Offer
 IDs.
+
+## Controlled catalog writes
+
+SubKit never writes to Google Play automatically. Existing product listing
+metadata can be updated only through **Preview → `APPLY GOOGLE` → Apply → Verify**
+and only when `SUBKIT_ENABLE_STORE_WRITES` is enabled. Product IDs, package names,
+base-plan/purchase-option identities, billing periods, prices, states, offers,
+create and delete operations remain blocked in this conservative first scope.
+Products with multiple localized listings are also blocked rather than replacing
+all translations with one canonical name.
+
+## Financial report imports
+
+Google Play financial exports are monthly ZIP/CSV objects in the private
+`pubsite_prod_rev_*` Cloud Storage bucket, not Android Publisher report endpoints.
+SubKit supports **Estimated Sales** and **Earnings** imports, handles UTF-16/UTF-8
+CSV files, and persists only rows whose Package ID exactly matches the connected
+app. Imports are idempotent per app, report type and month. Reports usually appear
+3–7 days after activity and never grant or revoke access.
 
 ## 6. Model the Google catalog in SubKit
 
