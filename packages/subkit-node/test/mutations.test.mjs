@@ -43,6 +43,7 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     {
       billingAccountId: account.id,
       externalContractId: 'contract-1',
+      licenseeSubjectId: 'club-subject-1',
       planVersionId: 'version-1',
       reason: 'activate signed club contract',
       termStart: new Date('2027-01-01T00:00:00Z'),
@@ -200,6 +201,7 @@ test('typed customer, contract, and access clients send scoped idempotent reques
   assert.equal(requests[1].body.accessContext, 'sk_ctx_v1.signed.production')
   assert.equal(requests[2].body.appId, 'smartcoach')
   assert.equal(requests[4].body.appId, 'smartcoach')
+  assert.equal(requests[4].body.licenseeSubjectId, 'club-subject-1')
   assert.equal(requests[4].body.termStart, '2027-01-01T00:00:00.000Z')
   assert.equal(requests[5].body.appId, 'smartcoach')
   assert.equal(requests[5].body.occurredAt, '2027-01-02T00:00:00.000Z')

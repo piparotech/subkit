@@ -16,6 +16,7 @@ export interface CreateContractInput {
   billingAccountId: string
   contractNumber?: string | null
   externalContractId: string
+  licenseeSubjectId?: string | null
   notes?: string | null
   planVersionId: string
   reason: string
