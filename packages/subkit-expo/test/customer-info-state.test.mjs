@@ -131,6 +131,12 @@ test('configureSubKit resets customer info snapshot and refresh publishes latest
 
     assert.equal(identifiedInfo.entitlements.pro.active, true)
     assert.equal(getSubKitCustomerInfoSnapshot().customerInfo.entitlements.pro.active, true)
+
+    const access = await client.getAccess('pro')
+    assert.equal(access.state, 'granted')
+    assert.equal(await client.hasAccess('pro'), true)
+    assert.equal((await client.getAccess('missing')).state, 'missing')
+    assert.equal(await client.hasAccess('missing'), false)
   } finally {
     client.stop()
     restoreFetch()
@@ -172,7 +178,10 @@ test('client restart hydrates cached CustomerInfo before an offline sync fails',
       platform: 'ios',
       sdkKey: 'runtime_public_key',
     })
-    await assert.rejects(() => restartedClient.start(), /offline/)
+    await assert.rejects(
+      () => restartedClient.start(),
+      (error) => error.code === 'network',
+    )
 
     const snapshot = getSubKitCustomerInfoSnapshot()
     assert.equal(snapshot.state, 'offline')
@@ -207,7 +216,10 @@ test('offline refresh keeps cached entitlement state visible', async () => {
 
     await refreshSubKitCustomerInfo()
     fail = true
-    await assert.rejects(() => refreshSubKitCustomerInfo(), /offline/)
+    await assert.rejects(
+      () => refreshSubKitCustomerInfo(),
+      (error) => error.code === 'network',
+    )
 
     const snapshot = getSubKitCustomerInfoSnapshot()
     assert.equal(snapshot.state, 'offline')

@@ -8,8 +8,9 @@ The SDK separates three kinds of "something didn't happen":
 1. **Domain outcomes** — expected results like `{ status: 'failed' }` or
    `entitlements[key]` being inactive. Not exceptions.
 2. **Thrown errors** — network, store, runtime, or unexpected native failures.
-3. **Snapshot errors** — refresh failures surfaced on the customer-info
-   snapshot without destroying cached state.
+3. **Access lifecycle states** — refresh failures become `offline_unavailable`
+   or `error` when no bounded cached decision exists. Valid cached decisions
+   remain regular states with offline evidence.
 
 ## Domain outcomes are not exceptions
 
@@ -71,24 +72,29 @@ adapter level. Store-sheet cancellations are detected from the native error and
 normalized to the `cancelled` purchase status, so you rarely handle them
 yourself.
 
-## Snapshot errors
+## Access lifecycle errors
 
-Refresh failures never erase cached access. The hook exposes them:
+Refresh failures never erase still-valid cached access. The access hook keeps
+transport lifecycle separate from commercial decisions:
 
 ```tsx compile
-const { active, state, error } = useSubKitEntitlement('pro')
+import { useSubKitAccess } from '@piparotech/subkit-expo'
 
-if (state === 'offline') {
-  // cached data shown; error explains the failed refresh
+const access = useSubKitAccess('pro')
+
+if (access.state === 'granted' && access.evidence.freshness === 'offline') {
+  // bounded cached access remains usable
 }
-if (state === 'error') {
-  // no usable data at all — show a retry surface
+if (access.state === 'offline_unavailable') {
+  // network unavailable and no usable cache — keep access locked
+}
+if (access.state === 'error') {
+  reportPurchaseError(access.error)
 }
 ```
 
-```ts compile
-import { useSubKitEntitlement } from '@piparotech/subkit-expo'
-```
+Calling `access.refresh()` resolves to the latest union even when refresh
+fails, so recovery UI can switch on `state` rather than reconstructing policy.
 
 ## Redaction guarantees
 

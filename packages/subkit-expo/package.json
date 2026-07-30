@@ -1,6 +1,6 @@
 {
   "name": "@piparotech/subkit-expo",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "type": "module",
   "sideEffects": false,
   "description": "SubKit Expo IAP SDK with automatic purchase sync.",
@@ -40,7 +40,8 @@
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

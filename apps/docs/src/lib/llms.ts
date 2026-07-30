@@ -5,11 +5,11 @@ import { getCollection } from 'astro:content'
 export const invariants = [
   'SubKit is the source of truth for Catalog, Commerce, and Access.',
   'Access always follows: Access Source -> Access Pool -> Reservation/Allocation -> Entitlement Grant.',
-  'Apps check entitlements, never subscription, plan, package, or store-product IDs.',
+  'Apps name entitlements, never subscription, plan, package, or store-product IDs.',
   'Mobile apps use only public app-bound SDK keys. Server keys belong only in trusted backends.',
   'A mobile installation ID is generated once, persisted locally, and reused on every launch.',
-  'Only CustomerInfo.entitlements[key]?.active === true unlocks access.',
-  'Store purchases unlock access only after provider verification and an active entitlement.',
+  'Only the Effective Access decision (`access.state === granted`) unlocks access; apps never combine raw entitlement and device fields.',
+  'Store purchases unlock access only after provider verification and a granted Effective Access decision.',
   'Mutations require the documented capability, an idempotency key, and an audit reason.',
   'Store reads may run automatically; store writes require preview, explicit confirmation, apply, then verify.',
 ] as const

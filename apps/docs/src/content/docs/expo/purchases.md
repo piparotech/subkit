@@ -25,21 +25,19 @@ type PurchaseResult =
 ```ts compile
 import { client } from '@piparotech/subkit-expo'
 
-const PRO = 'pro' // the entitlement key configured in SubKit
-
 async function buySelectedPackage(packageIdentifier: string) {
   try {
     const result = await client.purchasePackage(packageIdentifier)
 
     switch (result.status) {
       case 'verified': {
-        const hasPro = result.customerInfo.entitlements[PRO]?.active === true
-        if (hasPro) {
+        const access = await client.getAccess('pro')
+        if (access.state === 'granted') {
           unlockPaidAccess()
           return
         }
-        // Verified, but the expected entitlement is not active. Keep access
-        // locked and show a confirmation/support state.
+        // Verified commerce evidence can still resolve to inactive, missing,
+        // or device recovery. Keep access locked and render that decision.
         showVerifiedWithoutEntitlement()
         return
       }
@@ -49,10 +47,8 @@ async function buySelectedPackage(packageIdentifier: string) {
         // confirmed the entitlement yet. Normal for Expo IAP. Do not unlock.
         showPurchasePendingMessage()
 
-        const info = await client.getCustomerInfo()
-        if (info.entitlements[PRO]?.active === true) {
-          unlockPaidAccess()
-        }
+        const access = await client.getAccess('pro')
+        if (access.state === 'granted') unlockPaidAccess()
         return
       }
 
@@ -85,7 +81,7 @@ async function buySelectedPackage(packageIdentifier: string) {
   purchase for a different product does not grant your entitlement.
 - **`pending`** — the common outcome with the Expo IAP adapter. Entitlement
   confirmation happens through SubKit sync (automatic, foreground, or a later
-  `getCustomerInfo()`). Show a confirming state.
+  `getAccess()`). Show a confirming state.
 - **`cancelled`** — user intent, not an error. Store-sheet cancellations are
   detected from the native error and normalized to this status.
 - **`failed`** — an expected domain failure. Known codes include:
@@ -121,5 +117,5 @@ default queue with a memory queue in production. See
 
 ## Next
 
-- [Checking entitlements](/docs/expo/entitlements/)
+- [Checking effective access](/docs/expo/entitlements/)
 - [Restore & sync](/docs/expo/restore-and-sync/)

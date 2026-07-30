@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 
-import type {
-  CustomerEntitlement,
-  CustomerInfo,
-  DeviceActivationSummary,
-  DeviceBlockedReason,
-  EntitlementStatus,
-} from '@piparotech/subkit-core'
+import type { CustomerInfo } from '@piparotech/subkit-core'
 
 import { client } from './SubKitIapClient.js'
+import {
+  type SubKitEntitlementAccess,
+  refreshSubKitAccess,
+  resolveSubKitEntitlementAccess,
+} from './access.js'
 import type { SubKitIapLogger } from './coordinator.js'
 import {
   type SubKitCustomerInfoState,
@@ -27,26 +26,14 @@ export interface UseSubKitIapAutoSyncOptions {
   syncOnMount?: boolean
 }
 
-export interface UseSubKitEntitlementOptions {
+export interface UseSubKitAccessOptions {
   enabled?: boolean
   refreshIfOlderThanMs?: number
   refreshOnMount?: boolean
 }
 
-export interface UseSubKitEntitlementResult {
-  active: boolean
-  blockedReason: DeviceBlockedReason | null
-  commerciallyActive: boolean
-  customerInfo: CustomerInfo | null
-  deviceActivation: DeviceActivationSummary | null
-  entitlement: CustomerEntitlement | null
-  error: Error | null
-  isLoading: boolean
-  isRefreshing: boolean
-  lastUpdatedAt: number | null
-  refresh(): Promise<CustomerInfo | null>
-  state: SubKitCustomerInfoState
-  status: EntitlementStatus | null
+export type UseSubKitAccessResult = SubKitEntitlementAccess & {
+  refresh(): Promise<SubKitEntitlementAccess>
 }
 
 export interface UseSubKitOfferingsOptions {
@@ -83,16 +70,16 @@ export function useSubKitIapAutoSync(options: UseSubKitIapAutoSyncOptions = {}):
   }, [options.enabled, options.syncOnMount])
 }
 
-export function useSubKitEntitlement(
+export function useSubKitAccess(
   entitlementKey: string,
-  options: UseSubKitEntitlementOptions = {},
-): UseSubKitEntitlementResult {
+  options: UseSubKitAccessOptions = {},
+): UseSubKitAccessResult {
   const snapshot = useSyncExternalStore(
     subscribeSubKitCustomerInfo,
     getSubKitCustomerInfoSnapshot,
     getSubKitCustomerInfoSnapshot,
   )
-  const refresh = useCallback(() => refreshSubKitCustomerInfo(), [])
+  const refresh = useCallback(() => refreshSubKitAccess(entitlementKey), [entitlementKey])
 
   useEffect(() => {
     if (options.enabled === false || options.refreshOnMount === false) return
@@ -115,27 +102,20 @@ export function useSubKitEntitlement(
     snapshot.state,
   ])
 
-  return useMemo(() => {
-    const entitlement = snapshot.customerInfo?.entitlements[entitlementKey] ?? null
-    const commerciallyActive =
-      snapshot.customerInfo?.deviceAccess?.commerciallyActive ?? entitlement?.active === true
-    const blockedReason = snapshot.customerInfo?.deviceAccess?.blockedReason ?? null
-    return {
-      active: commerciallyActive && blockedReason == null,
-      blockedReason,
-      commerciallyActive,
-      customerInfo: snapshot.customerInfo,
-      deviceActivation: snapshot.customerInfo?.deviceAccess?.activation ?? null,
-      entitlement,
-      error: snapshot.error,
-      isLoading: snapshot.state === 'loading',
-      isRefreshing: snapshot.state === 'refreshing',
-      lastUpdatedAt: snapshot.lastUpdatedAt,
+  return useMemo(
+    () => ({
+      ...resolveSubKitEntitlementAccess(snapshot, entitlementKey),
       refresh,
-      state: snapshot.state,
-      status: entitlement?.status ?? null,
-    }
-  }, [entitlementKey, refresh, snapshot])
+    }),
+    [entitlementKey, refresh, snapshot],
+  )
+}
+
+export function useSubKitHasAccess(
+  entitlementKey: string,
+  options: UseSubKitAccessOptions = {},
+): boolean {
+  return useSubKitAccess(entitlementKey, options).state === 'granted'
 }
 
 export function useSubKitOfferings(

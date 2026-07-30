@@ -46,7 +46,7 @@ Purchases require an identified user. Call `client.identify(userId)` (or pass
 
 Normal for the Expo IAP adapter. Confirmation arrives through SubKit sync:
 
-- keep the confirming state visible and re-check via `getCustomerInfo()`,
+- keep the confirming state visible and re-check via `getAccess(key)`,
 - verify the app can reach the SubKit runtime API,
 - if it persists across launches, offer restore — the durable queue retries
   queued purchases with capped attempts.
@@ -66,7 +66,9 @@ Normal for the Expo IAP adapter. Confirmation arrives through SubKit sync:
 
 ## Purchase is active but this installation is blocked
 
-Inspect `customerInfo.deviceAccess` or the extended entitlement-hook result. If `commerciallyActive` is true, keep purchase messaging positive and render the `blockedReason` recovery path instead:
+Read `useSubKitAccess(key)` or `client.getAccess(key)`. When it returns
+`device_blocked`, keep purchase messaging positive and render the typed
+`reason` recovery path instead:
 
 - select a redacted activation when `DEVICE_SELECTION_REQUIRED`;
 - wait until `nextAllowedAt` for cooldown/change-budget denials;

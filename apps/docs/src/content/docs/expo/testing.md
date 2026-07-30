@@ -69,8 +69,11 @@ Focus tests on your app's decisions, not the SDK's internals:
 
 - paywall renders only packages with a `storeProduct`,
 - every `PurchaseResult` status leads to the right UI state,
-- features unlock only when `entitlements[KEY]?.active === true`,
-- restore path re-checks entitlements afterward.
+- features unlock only when the Effective Access decision is `granted`,
+- an active different entitlement never grants the requested key,
+- `device_blocked` always includes a typed recovery reason,
+- local native state cannot override an inactive/loading SubKit decision,
+- restore re-checks `getAccess(key)` afterward.
 
 ## Offline evaluation without a device
 
@@ -79,10 +82,12 @@ to a `CustomerInfo` value — useful for testing expiry behavior with controlled
 clocks:
 
 ```ts compile
+import { resolveEntitlementAccess } from '@piparotech/subkit-core'
 import { evaluateOfflineCustomerInfo } from '@piparotech/subkit-expo'
 
 const offline = evaluateOfflineCustomerInfo(cachedInfo, { now: Date.now() })
-expect(offline.entitlements.pro?.active).toBe(false) // past expiresAt
+const access = resolveEntitlementAccess(offline, 'pro')
+expect(access.state).toBe('inactive') // past expiresAt
 ```
 
 ## Sandbox and test purchases

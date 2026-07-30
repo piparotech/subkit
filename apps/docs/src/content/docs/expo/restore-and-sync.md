@@ -38,12 +38,10 @@ const PRO = 'pro'
 async function restoreAndCheckAccess() {
   await client.restorePurchases()
 
-  const info = await client.getCustomerInfo()
-  if (info.entitlements[PRO]?.active === true) {
-    unlockPaidAccess()
-  } else {
-    showNothingToRestore()
-  }
+  const access = await client.getAccess(PRO)
+  if (access.state === 'granted') unlockPaidAccess()
+  else if (access.state === 'device_blocked') showDeviceRecovery(access.reason)
+  else showNothingToRestore()
 }
 ```
 
@@ -93,8 +91,9 @@ failures. The hook guards against duplicate syncs across re-renders.
 
 `PurchaseSyncResult` contains `acceptedPurchases`, `rejectedPurchases`,
 `conflicts`, `finishableTransactions`, `verificationStatus`, `checkedAt`, and
-fresh `customerInfo`. Transactions are finished in the store **only after**
-SubKit returns them as finishable — see
+fresh `customerInfo`. Do not interpret it into access yourself; read
+`getAccess(key)` or the access hook after restore. Transactions are finished in
+the store **only after** SubKit returns them as finishable — see
 [Ownership & unclaimed](/docs/expo/conflicts/) for the conflict cases.
 
 ## Next

@@ -43,18 +43,21 @@ Invitations reserve capacity first, then a claim turns a reservation into an
 allocation. This prevents overselling seats: capacity is held the moment an
 invite is sent, not only when it is accepted.
 
-## Effective entitlement
+## Entitlement grant and effective access
 
-An **effective entitlement** is the authoritative access state. It is computed
-from a verified source, an active pool, an active allocation, and the derived
-grant. This is what runtime APIs answer, and what your app checks.
+An active **entitlement grant** is the commercial result computed from a
+verified source, active pool, active allocation, and derived grant. Mobile
+feature access may additionally depend on an authorized installation and
+bounded offline evidence. SubKit combines these inputs into the **Effective
+Access decision** that an app checks.
 
 ## Why this design
 
 Because a store subscription and a club contract both end in the same grant,
-your app logic is stable across commerce types. You check
-`entitlements[key]?.active`, and SubKit is responsible for tracing that back to
-whatever verified cause created it.
+your app logic is stable across commerce types. You name the entitlement in
+`getAccess(key)` or `useSubKitAccess(key)` and unlock only from `state:
+'granted'`. SubKit traces the result to the verified commercial cause and
+applies device/offline policy without app-level reconstruction.
 
 ## Related
 

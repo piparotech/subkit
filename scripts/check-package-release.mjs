@@ -50,6 +50,17 @@ function pack(directory) {
   return { packageJson, path }
 }
 
+function requireTarballDeclaration(path, declarationPath, names) {
+  const declaration = execFileSync('tar', ['-xOzf', path, `package/${declarationPath}`], {
+    encoding: 'utf8',
+  })
+  for (const name of names) {
+    if (!declaration.includes(name)) {
+      throw new Error(`${basename(path)} is missing declaration ${name} in ${declarationPath}`)
+    }
+  }
+}
+
 function writeConsumer(name, dependencies, source) {
   const directory = join(temporary, name)
   run('mkdir', ['-p', directory])
@@ -95,7 +106,7 @@ try {
   writeConsumer(
     'core-consumer',
     { '@piparotech/subkit-core': `file:${core.path}` },
-    `import { customerInfoSchema } from '@piparotech/subkit-core'\nif (typeof customerInfoSchema.parse !== 'function') throw new Error('core schema unavailable')\n`,
+    `import { customerInfoSchema, resolveEntitlementAccess } from '@piparotech/subkit-core'\nif (typeof customerInfoSchema.parse !== 'function') throw new Error('core schema unavailable')\nif (typeof resolveEntitlementAccess !== 'function') throw new Error('effective access resolver unavailable')\n`,
   )
 
   writeConsumer(
@@ -106,6 +117,14 @@ try {
     },
     `import { SubKit } from '@piparotech/subkit-node'\nif (typeof SubKit !== 'function') throw new Error('node client unavailable')\n`,
   )
+
+  requireTarballDeclaration(expo.path, 'dist/index.d.ts', [
+    'getSubKitAccessSnapshot',
+    'resolveSubKitEntitlementAccess',
+    'useSubKitAccess',
+    'useSubKitHasAccess',
+  ])
+  requireTarballDeclaration(expo.path, 'dist/SubKitIapClient.d.ts', ['getAccess(', 'hasAccess('])
 
   writeConsumer(
     'expo-consumer',

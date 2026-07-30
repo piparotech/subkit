@@ -1,14 +1,16 @@
 import { Platform } from 'react-native'
 
-import type {
-  CustomerInfo,
-  DeviceManagementSession,
-  Offering,
-  PurchaseResult,
-  PurchaseSyncResult,
-  RuntimeDeviceActivationResult,
-  RuntimeOfferingsResponse,
-  StoreIdentityHints,
+import {
+  type CustomerInfo,
+  type DeviceManagementSession,
+  type EntitlementAccessDecision,
+  type Offering,
+  type PurchaseResult,
+  type PurchaseSyncResult,
+  type RuntimeDeviceActivationResult,
+  type RuntimeOfferingsResponse,
+  type StoreIdentityHints,
+  resolveEntitlementAccess,
 } from '@piparotech/subkit-core'
 
 import type {
@@ -93,7 +95,9 @@ const DEFAULT_SUBKIT_IAP_OPTIONS: ResolvedSubKitIapOptions = {
 }
 
 export interface SubKitIapClient {
+  getAccess(entitlementKey: string, appUserId?: string): Promise<EntitlementAccessDecision>
   getCustomerInfo(appUserId?: string): Promise<CustomerInfo>
+  hasAccess(entitlementKey: string, appUserId?: string): Promise<boolean>
   getDeviceActivations(input: {
     activationGroupKey: string
     managementToken: string
@@ -141,6 +145,9 @@ export function getConfiguredSubKitClient(): SubKitIapClient {
 }
 
 const unconfiguredClientTarget: SubKitIapClient = {
+  getAccess() {
+    return rejectSubKitNotConfigured()
+  },
   getCustomerInfo() {
     return rejectSubKitNotConfigured()
   },
@@ -148,6 +155,9 @@ const unconfiguredClientTarget: SubKitIapClient = {
     return rejectSubKitNotConfigured()
   },
   getOfferings() {
+    return rejectSubKitNotConfigured()
+  },
+  hasAccess() {
     return rejectSubKitNotConfigured()
   },
   identify() {
@@ -387,6 +397,13 @@ function createSubKitClient(
     )
   }
 
+  async function getAccess(
+    entitlementKey: string,
+    appUserId?: string,
+  ): Promise<EntitlementAccessDecision> {
+    return resolveEntitlementAccess(await getCustomerInfo(appUserId), entitlementKey)
+  }
+
   async function getCustomerInfo(appUserId?: string): Promise<CustomerInfo> {
     return enqueueOperation(() =>
       publishCustomerInfoErrorOnFailure(async () => {
@@ -409,6 +426,10 @@ function createSubKitClient(
         )
       }),
     )
+  }
+
+  async function hasAccess(entitlementKey: string, appUserId?: string): Promise<boolean> {
+    return (await getAccess(entitlementKey, appUserId)).state === 'granted'
   }
 
   async function getDeviceActivations(input: {
@@ -722,9 +743,11 @@ function createSubKitClient(
   }
 
   const subKitClient: SubKitIapClient = {
+    getAccess,
     getCustomerInfo,
     getDeviceActivations,
     getOfferings,
+    hasAccess,
     identify,
     purchasePackage,
     ready: ensureReady,

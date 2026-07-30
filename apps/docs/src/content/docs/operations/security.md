@@ -27,8 +27,10 @@ authoritative, and external inputs are verified before they change access.
 ## Verification, not trust
 
 - Unverified client claims never create access.
-- Store purchases unlock access only after provider verification and an active
-  entitlement.
+- Store purchases unlock access only after provider verification and a
+  `granted` Effective Access decision.
+- Application code never reconstructs access policy by combining raw
+  entitlement, device, or offline fields. That policy remains inside SubKit.
 - Webhooks and notifications (Apple Server Notifications, Google RTDN) are
   authenticated before they create sources.
 

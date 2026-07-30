@@ -9,8 +9,13 @@ description: SubKit terminology — public product terms, technical objects, and
   your code gates on.
 - **Entitlement Grant** — the derived result that makes an entitlement active
   for a subject. Never edited directly.
-- **Effective entitlement** — the authoritative access state, computed from a
-  verified source, active pool, active allocation, and grant.
+- **Commercial entitlement state** — whether the requested entitlement has an
+  active derived grant, independent of installation recovery.
+- **Effective Access decision** — the authoritative feature-gate union that
+  combines the requested entitlement, installation/device authorization, and
+  bounded offline evidence. Only `granted` unlocks.
+- **Device recovery** — a `device_blocked` Effective Access state with a typed
+  reason and recovery path; it is not an inactive purchase.
 - **Access Source** — verified normalization of a commerce object for the access
   domain.
 - **Access Pool** — the capacity of a source; capacity 1 for a single
@@ -50,5 +55,5 @@ description: SubKit terminology — public product terms, technical objects, and
 - **License / Lizenz** stays product and contract language, but is **not** a
   generic technical root object. Access is modeled as sources, pools,
   allocations, and grants — not as a root "license" record.
-- Do not phrase app checks as "has a subscription/license"; phrase them as "has
-  entitlement X".
+- Do not phrase app checks as "has a subscription/license". Name entitlement X
+  in the Effective Access API and gate on its `granted` decision.

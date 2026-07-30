@@ -7,7 +7,7 @@ Expo / React Native SDK for SubKit offerings, purchases, restore/sync, CustomerI
 Configure the private piparo.tech Forgejo registry, then install Expo with its required Core peer and the optional storage adapters your app uses:
 
 ```sh
-pnpm add @piparotech/subkit-core@^0.1.8 @piparotech/subkit-expo@^0.1.10
+pnpm add @piparotech/subkit-core@^0.1.9 @piparotech/subkit-expo@^0.1.11
 ```
 
 ## Minimal setup
@@ -23,7 +23,14 @@ configureSubKit({
 })
 ```
 
-Mobile apps use only a public app-bound `sk_sdk_…` key. Keep the installation ID persistent, render package identifiers and native prices from Runtime Offerings, and unlock only from an active SubKit entitlement. A `pending` purchase never grants access.
+Mobile apps use only a public app-bound `sk_sdk_…` key. Keep the installation ID persistent, render package identifiers and native prices from Runtime Offerings, and unlock only from SubKit's Effective Access decision. A `pending` purchase never grants access.
+
+```ts
+const access = await client.getAccess('pro')
+if (access.state === 'granted') unlockPaidFeatures()
+```
+
+React apps use `useSubKitAccess('pro')` for recovery/status UI or the fail-closed `useSubKitHasAccess('pro')` Boolean. Do not combine raw entitlement and device fields in application code.
 
 Public adapters are available at:
 
@@ -38,5 +45,6 @@ Public adapters are available at:
 - [Installation](https://subkit.piparo.tech/docs/expo/installation/)
 - [Configuration and persistence](https://subkit.piparo.tech/docs/expo/configuration/)
 - [Purchases](https://subkit.piparo.tech/docs/expo/purchases/)
-- [Entitlements and offline behavior](https://subkit.piparo.tech/docs/expo/entitlements/)
+- [Effective access and offline behavior](https://subkit.piparo.tech/docs/expo/entitlements/)
+- [Migration from manual access checks](https://subkit.piparo.tech/docs/expo/migrating-effective-access/)
 - [Troubleshooting](https://subkit.piparo.tech/docs/expo/troubleshooting/)

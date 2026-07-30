@@ -1,3 +1,11 @@
+export { isEntitlementAccessGranted, resolveEntitlementAccess } from './access.js'
+export type {
+  ActiveCustomerEntitlement,
+  EntitlementAccessDecision,
+  EntitlementAccessEvidence,
+  GrantedEntitlementAccess,
+  InactiveCustomerEntitlement,
+} from './access.js'
 export {
   createSubKitError,
   isRetryableSubKitErrorCode,

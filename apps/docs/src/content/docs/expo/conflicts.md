@@ -76,13 +76,11 @@ first observed them.
 
 Store restore first resolves a verified Store Purchase Lineage and its current Beneficiary. The installation ID is only a weak local input and never transfers ownership or creates a grant by itself.
 
-`customerInfo.deviceAccess` separates commercial access from installation access:
-
-| Field                | Meaning                                          |
-| -------------------- | ------------------------------------------------ |
-| `commerciallyActive` | The Beneficiary still has a valid purchase/grant |
-| `blockedReason`      | Why this installation cannot currently use it    |
-| `activation`         | Current redacted activation state, when present  |
+The Effective Access union separates commercial access from installation
+recovery. When the requested entitlement is active but this installation
+cannot use it, `useSubKitAccess(key)` returns `state: 'device_blocked'` with a
+typed `reason`. Raw `customerInfo.deviceAccess` remains available only for
+advanced device-management diagnostics.
 
 Handle device outcomes without telling the user to buy again:
 
@@ -98,8 +96,8 @@ Management-session tokens and Device Access tokens are distinct, short-lived, op
 
 Family-shared access appears as a regular entitlement with
 `source: 'family_shared'`; the underlying purchase carries
-`ownershipType: 'family_shared'`. Gate on `active` as usual — no special
-handling is required unless your product excludes shared access.
+`ownershipType: 'family_shared'`. Gate through `useSubKitAccess(key)` as usual —
+no special handling is required unless your product excludes shared access.
 
 ## Design guidance
 

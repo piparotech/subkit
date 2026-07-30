@@ -159,7 +159,7 @@ const expectedSmallCorpusHeadings = [
   'Access model',
   'Source of truth',
   'Configuration',
-  'Checking entitlements',
+  'Checking effective access',
   'Expo / React Native',
   'Making purchases',
   'SubKit',

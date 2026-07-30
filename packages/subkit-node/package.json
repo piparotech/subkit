@@ -1,6 +1,6 @@
 {
   "name": "@piparotech/subkit-node",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "type": "module",
   "description": "Node.js backend SDK for querying SubKit.",
   "license": "UNLICENSED",
@@ -18,7 +18,8 @@
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

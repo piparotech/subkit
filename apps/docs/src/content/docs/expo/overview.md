@@ -28,15 +28,18 @@ One configured singleton (`client`) with a small surface:
 | Method                         | Purpose                                            |
 | ------------------------------ | -------------------------------------------------- |
 | `identify(appUserId)`          | Bind the install to a known app user               |
-| `getCustomerInfo(appUserId?)`  | Read the effective access state                    |
+| `getAccess(key, appUserId?)`   | Read one effective, impossible-state-safe decision |
+| `hasAccess(key, appUserId?)`   | Read a fail-closed Boolean access decision         |
+| `getCustomerInfo(appUserId?)`  | Read advanced diagnostic and recovery details      |
 | `getOfferings({ placement? })` | Load purchasable packages with live store prices   |
 | `purchasePackage(packageId)`   | Run a native purchase for a runtime package        |
 | `restorePurchases()`           | Explicit restore for reinstalls and device changes |
 | `syncPurchases({ reason })`    | Trigger a purchase sync manually                   |
 | `start()` / `stop()`           | Lifecycle control (automatic by default)           |
 
-Plus three React hooks: `useSubKitEntitlement(key)`, `useSubKitOfferings()`,
-and `useSubKitIapAutoSync()` — see the [hooks reference](/docs/expo/hooks/).
+The primary React gates are `useSubKitAccess(key)` and
+`useSubKitHasAccess(key)`, plus `useSubKitOfferings()` and
+`useSubKitIapAutoSync()` — see the [hooks reference](/docs/expo/hooks/).
 
 ## Section map
 
@@ -47,7 +50,7 @@ Work through these in order for a first integration:
 3. [Identifying users](/docs/expo/identity/) — anonymous to identified, `identify()`.
 4. [Offerings & paywalls](/docs/expo/offerings/) — render packages with live store prices.
 5. [Making purchases](/docs/expo/purchases/) — handle all four purchase outcomes.
-6. [Checking entitlements](/docs/expo/entitlements/) — hook and imperative reads.
+6. [Checking effective access](/docs/expo/entitlements/) — one canonical decision for feature gates.
 7. [React hooks](/docs/expo/hooks/) — the complete hook reference.
 8. [Restore & sync](/docs/expo/restore-and-sync/) — restore, auto-sync, sync reasons.
 9. [Offline access](/docs/expo/offline/) — cache freshness and offline policy.
@@ -63,8 +66,9 @@ For hardening and production:
 
 ## The rules that never change
 
-- Check **entitlements**, never subscription, package, or store-product IDs.
-- Never unlock before `entitlements[KEY]?.active === true`.
+- Name an **entitlement**, never a subscription, package, or store-product ID.
+- Never reconstruct access from raw CustomerInfo fields. Unlock only from
+  `access.state === 'granted'` or `useSubKitHasAccess(key)`.
 - Never ship a server key (`sk_srv_…`) in the app.
 - Prices, product IDs, and offer tokens come from the runtime offering — never
   from constants.

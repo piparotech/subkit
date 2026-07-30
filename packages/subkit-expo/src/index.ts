@@ -1,3 +1,11 @@
+export {
+  getSubKitAccessSnapshot,
+  getSubKitHasAccessSnapshot,
+  refreshSubKitAccess,
+  resolveSubKitEntitlementAccess,
+  subscribeSubKitAccess,
+} from './access.js'
+export type { SubKitAccessLifecycle, SubKitEntitlementAccess } from './access.js'
 export type {
   SubKitExpoIapAdapter,
   SubKitIapAdapterBundle,
@@ -79,10 +87,15 @@ export type {
   SubKitStoreProduct,
   SubKitSyncOptions,
 } from './types.js'
-export { useSubKitEntitlement, useSubKitIapAutoSync, useSubKitOfferings } from './hooks.js'
+export {
+  useSubKitAccess,
+  useSubKitHasAccess,
+  useSubKitIapAutoSync,
+  useSubKitOfferings,
+} from './hooks.js'
 export type {
-  UseSubKitEntitlementOptions,
-  UseSubKitEntitlementResult,
+  UseSubKitAccessOptions,
+  UseSubKitAccessResult,
   UseSubKitIapAutoSyncOptions,
   UseSubKitOfferingsOptions,
   UseSubKitOfferingsResult,

@@ -136,14 +136,23 @@ export class SubKitRuntimeClient {
 
   private async post(path: string, payload: unknown): Promise<unknown> {
     const sdkKey = typeof this.sdkKey === 'string' ? this.sdkKey : await this.sdkKey()
-    const response = await fetch(`${this.apiBaseUrl}${path}`, {
-      body: JSON.stringify(payload),
-      headers: {
-        authorization: `Bearer ${sdkKey}`,
-        'content-type': 'application/json',
-      },
-      method: 'POST',
-    })
+    let response: Response
+    try {
+      response = await fetch(`${this.apiBaseUrl}${path}`, {
+        body: JSON.stringify(payload),
+        headers: {
+          authorization: `Bearer ${sdkKey}`,
+          'content-type': 'application/json',
+        },
+        method: 'POST',
+      })
+    } catch {
+      throw new SubKitRuntimeError({
+        code: 'network',
+        message: 'SubKit runtime network request failed',
+        status: 0,
+      })
+    }
 
     const body = await response.json().catch(() => null)
     if (!response.ok) {

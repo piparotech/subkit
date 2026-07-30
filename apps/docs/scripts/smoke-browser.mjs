@@ -94,8 +94,12 @@ try {
     const dialog = page.getByRole('dialog', { name: 'Search documentation' })
     await dialog.waitFor({ state: 'visible' })
     const input = dialog.getByRole('combobox')
-    await input.fill('entitlement')
-    await page.getByRole('option').first().waitFor({ state: 'visible' })
+    for (const query of ['access', 'entitlement', 'feature gate', 'device blocked', 'Pro']) {
+      await input.fill(query)
+      await page.getByRole('option').first().waitFor({ state: 'visible' })
+      const accessResult = page.getByRole('option').filter({ hasText: 'Checking effective access' })
+      await accessResult.first().waitFor({ state: 'visible' })
+    }
     await page.keyboard.press('Escape')
     if (await dialog.isVisible()) throw new Error('Search dialog did not close with Escape')
 

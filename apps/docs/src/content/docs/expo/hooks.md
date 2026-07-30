@@ -1,64 +1,69 @@
 ---
 title: React hooks
-description: The complete React hook surface — useSubKitEntitlement, useSubKitOfferings, and useSubKitIapAutoSync.
+description: The complete React hook surface — effective access, Boolean gates, offerings, and automatic IAP sync.
 ---
 
-The SDK ships three React hooks. All read from the configured singleton — call
-`configureSubKit(...)` at module scope before any component renders
-([Configuration](/docs/expo/configuration/)).
+Call `configureSubKit(...)` at module scope before any component renders. Hooks
+read the configured singleton and update when SDK operations publish newer
+CustomerInfo.
 
-| Hook                                            | Purpose                         |
-| ----------------------------------------------- | ------------------------------- |
-| [`useSubKitEntitlement`](#usesubkitentitlement) | Gate features on an entitlement |
-| [`useSubKitOfferings`](#usesubkitofferings)     | Load offerings for a paywall    |
-| [`useSubKitIapAutoSync`](#usesubkitiapautosync) | One purchase sync on mount      |
+| Hook                      | Purpose                                     |
+| ------------------------- | ------------------------------------------- |
+| `useSubKitAccess(key)`    | Detailed impossible-state-safe access union |
+| `useSubKitHasAccess(key)` | Fail-closed Boolean feature gate            |
+| `useSubKitOfferings()`    | Load offerings for a paywall                |
+| `useSubKitIapAutoSync()`  | Trigger one purchase sync on mount          |
 
-## `useSubKitEntitlement`
+## `useSubKitAccess`
 
-The primary gate. Subscribes to the shared customer-info snapshot and refreshes
-on mount when data is older than `refreshIfOlderThanMs`:
+The primary detailed gate:
 
 ```tsx compile
-import { useSubKitEntitlement } from '@piparotech/subkit-expo'
-
-const PRO = 'pro'
+import { useSubKitAccess } from '@piparotech/subkit-expo'
 
 export function ProGate() {
-  const { active, isLoading, refresh } = useSubKitEntitlement(PRO)
+  const access = useSubKitAccess('pro')
 
-  if (isLoading) return <LoadingState />
-  if (active) return <PaidFeatures />
-  return <Paywall onPurchaseFinished={refresh} />
+  if (access.state === 'loading') return <LoadingState />
+  if (access.state === 'granted') return <PaidFeatures />
+  return <Paywall onPurchaseFinished={access.refresh} />
 }
 ```
 
 **Signature:**
 
 ```text
-useSubKitEntitlement(
+useSubKitAccess(
   entitlementKey: string,
   options?: {
-    enabled?: boolean // default true
-    refreshOnMount?: boolean // default true
-    refreshIfOlderThanMs?: number // default 60_000
+    enabled?: boolean
+    refreshOnMount?: boolean
+    refreshIfOlderThanMs?: number
   },
-): {
-  active: boolean // the only unlock signal
-  status: EntitlementStatus | null // 'trialing', 'grace_period', …
-  entitlement: CustomerEntitlement | null
-  customerInfo: CustomerInfo | null
-  state: SubKitCustomerInfoState // 'ready' | 'offline' | 'error' | …
-  isLoading: boolean
-  isRefreshing: boolean
-  error: Error | null
-  lastUpdatedAt: number | null
-  refresh(): Promise<CustomerInfo | null>
+): SubKitEntitlementAccess & {
+  refresh(): Promise<SubKitEntitlementAccess>
 }
 ```
 
-It updates automatically whenever any SDK call — `identify()`,
-`getCustomerInfo()`, restore, foreground sync, purchase sync — publishes newer
-customer info. Full guidance: [Checking entitlements](/docs/expo/entitlements/).
+The union states are `granted`, `missing`, `inactive`, `device_blocked`,
+`loading`, `offline_unavailable`, `error`, and `unconfigured`. State-specific
+fields exist only in their valid branch.
+
+## `useSubKitHasAccess`
+
+Use this when a component only needs a Boolean and has no recovery/status UI:
+
+```tsx compile
+import { useSubKitHasAccess } from '@piparotech/subkit-expo'
+
+export function ProFeature() {
+  const hasPro = useSubKitHasAccess('pro')
+  return hasPro ? <PaidFeatures /> : <Paywall />
+}
+```
+
+It delegates to the same resolver as `useSubKitAccess`; it is not a separate
+policy implementation. Lifecycle and error states fail closed to `false`.
 
 ## `useSubKitOfferings`
 
@@ -68,7 +73,7 @@ out-of-order response protection:
 ```tsx compile
 import { useSubKitOfferings } from '@piparotech/subkit-expo'
 
-export function Paywall() {
+export function PaywallPackages() {
   const { current, isLoading, error, refresh } = useSubKitOfferings()
 
   if (isLoading) return <PaywallSkeleton />
@@ -81,36 +86,13 @@ export function Paywall() {
 }
 ```
 
-**Signature:**
-
-```text
-useSubKitOfferings(options?: {
-  enabled?: boolean // default true; false defers loading
-  placement?: string // optional placement filter
-}): {
-  current: SubKitOffering | null // the default offering
-  offerings: SubKitOfferingsResponse | null // full response (current + all)
-  isLoading: boolean // first load, no data yet
-  isRefreshing: boolean // reload with data present
-  error: Error | null
-  refresh(): Promise<SubKitOfferingsResponse | null>
-}
-```
-
-Behavior:
-
-- Loads on mount (unless `enabled: false`) and reloads when `placement`
-  changes.
-- `refresh()` after purchases or `identify()` — offer eligibility can change.
-- Unlike `useSubKitEntitlement`, offerings are fetched per hook use, not from a
-  shared snapshot; two paywalls with different placements load independently.
-- Packages without a `storeProduct` are not purchasable — filter them out
-  ([Offerings & paywalls](/docs/expo/offerings/#missing-storeproduct-means-not-purchasable)).
+Offerings are fetched per hook use. Packages without `storeProduct` are not
+purchasable.
 
 ## `useSubKitIapAutoSync`
 
-Triggers exactly one `app_start` purchase sync on first mount. Only needed when
-you disable `syncOnAppStart` or want the sync tied to a specific screen:
+With default configuration the SDK already syncs on app start. Use this hook
+only when startup sync is disabled or tied to a specific component:
 
 ```tsx compile
 import { useSubKitIapAutoSync } from '@piparotech/subkit-expo'
@@ -121,25 +103,15 @@ export function AppRoot() {
 }
 ```
 
-**Signature:**
-
-```text
-useSubKitIapAutoSync(options?: {
-  enabled?: boolean // default true
-  syncOnMount?: boolean // default true
-  logger?: { warn(message: string, error?: unknown): void }
-}): void
-```
-
-Sync failures are logged via `logger.warn` (never thrown into render). With
-default configuration the SDK already syncs on app start, so most apps do not
-need this hook — see [Restore & sync](/docs/expo/restore-and-sync/).
+Sync failures are logged through the optional logger and never thrown into
+render.
 
 ## Rules that apply to all hooks
 
-- Hooks read the configured singleton; using them before `configureSubKit`
-  reports `state: 'unconfigured'` / throws on action.
-- `active` is the only unlock signal — never unlock on `status` or a returned
-  purchase call ([Making purchases](/docs/expo/purchases/)).
-- Hooks are safe under React strict mode; mount effects guard against
-  double-invocation.
+- `useSubKitAccess` is the detailed access authority.
+- `useSubKitHasAccess` is a fail-closed convenience derived from that authority.
+- Do not combine raw entitlement and device fields in app code.
+- A purchase result alone never grants access.
+- Hooks are safe under React strict mode.
+
+Full guidance: [Checking effective access](/docs/expo/entitlements/).

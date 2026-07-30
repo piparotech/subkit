@@ -18,7 +18,7 @@ Organized by symptom. Each points at the most likely cause.
   sync, not the returned call.
 - Show a confirming state and wait for automatic sync, foreground sync, or a
   later `getCustomerInfo()`.
-- Do not unlock until `entitlements[KEY]?.active === true`.
+- Do not unlock until `getAccess(KEY).state === 'granted'`.
 
 ## Entitlement missing after a verified purchase
 

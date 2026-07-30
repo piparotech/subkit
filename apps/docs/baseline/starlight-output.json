@@ -13,11 +13,11 @@
     "invariants": [
       "SubKit is the source of truth for Catalog, Commerce, and Access.",
       "Access always follows: Access Source -> Access Pool -> Reservation/Allocation -> Entitlement Grant.",
-      "Apps check entitlements, never subscription, plan, package, or store-product IDs.",
+      "Apps name entitlements, never subscription, plan, package, or store-product IDs.",
       "Mobile apps use only public app-bound SDK keys. Server keys belong only in trusted backends.",
       "A mobile installation ID is generated once, persisted locally, and reused on every launch.",
-      "Only CustomerInfo.entitlements[key]?.active === true unlocks access.",
-      "Store purchases unlock access only after provider verification and an active entitlement.",
+      "Only the Effective Access decision (`access.state === granted`) unlocks access; apps never combine raw entitlement and device fields.",
+      "Store purchases unlock access only after provider verification and a granted Effective Access decision.",
       "Mutations require the documented capability, an idempotency key, and an audit reason.",
       "Store reads may run automatically; store writes require preview, explicit confirmation, apply, then verify."
     ]
@@ -128,8 +128,8 @@
       "sourceType": "md",
       "route": "/expo/entitlements/",
       "output": "expo/entitlements/index.html",
-      "title": "Checking entitlements",
-      "description": "The useSubKitEntitlement hook, imperative reads, entitlement status beyond active, and refresh control.",
+      "title": "Checking effective access",
+      "description": "Gate features with one impossible-state-safe SubKit access decision instead of combining entitlement and device fields in app code.",
       "htmlTitle": "Checking entitlements | SubKit",
       "canonical": "https://docs.subkit.piparo.tech/expo/entitlements/"
     },
@@ -149,7 +149,7 @@
       "route": "/expo/hooks/",
       "output": "expo/hooks/index.html",
       "title": "React hooks",
-      "description": "The complete React hook surface — useSubKitEntitlement, useSubKitOfferings, and useSubKitIapAutoSync.",
+      "description": "The complete React hook surface — effective access, Boolean gates, offerings, and automatic IAP sync.",
       "htmlTitle": "React hooks | SubKit",
       "canonical": "https://docs.subkit.piparo.tech/expo/hooks/"
     },
@@ -219,7 +219,7 @@
       "route": "/expo/recipes/",
       "output": "expo/recipes/index.html",
       "title": "Recipes",
-      "description": "Complete patterns — gated screens, paywall preflight, trial and billing-issue UI, and restore with re-check.",
+      "description": "Complete Effective Access patterns — gated screens, paywall preflight, commercial-status UI, restore, and platform facades.",
       "htmlTitle": "Recipes | SubKit",
       "canonical": "https://docs.subkit.piparo.tech/expo/recipes/"
     },

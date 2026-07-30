@@ -19,16 +19,22 @@ This section is the contract-level reference. For task-oriented guides, see
 Neither runtime nor app backends may write grants directly. Commerce and access
 mutations go through typed source, contract, pool, and allocation endpoints.
 
-## Runtime API
+## Runtime API and Expo decision surface
 
-Per-app authenticated, scoped surface the mobile SDK calls. It answers
-authorization questions from the effective access state and reconciles verified
-purchases:
+Per-app authenticated, scoped surface the mobile SDK calls. It reconciles
+verified purchases and publishes CustomerInfo. The Expo SDK converts that raw
+read model into the public `EntitlementAccessDecision` plus separate lifecycle
+states. Apps use `getAccess(key)`, `hasAccess(key)`, `useSubKitAccess(key)`, or
+`useSubKitHasAccess(key)` instead of combining raw fields:
 
 - offerings for a placement/platform,
 - customer info,
 - entitlement checks,
 - IAP reconcile.
+
+Raw CustomerInfo remains an advanced diagnostics/recovery surface. A resolved
+commercial entitlement is not automatically granted when installation policy
+requires device recovery.
 
 ## Server API
 

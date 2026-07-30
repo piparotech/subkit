@@ -118,6 +118,7 @@ function createApplicationDeclarations() {
 
 declare global {
   type CustomerInfo = import('@piparotech/subkit-core').CustomerInfo
+  type DeviceBlockedReason = import('@piparotech/subkit-core').DeviceBlockedReason
   type SubKitSerializableError = import('@piparotech/subkit-core').SubKitSerializableError
   type SubKitOfferingPackage = import('@piparotech/subkit-expo').SubKitOfferingPackage
 
@@ -128,6 +129,8 @@ declare global {
   const LoadingState: PlaceholderComponent
   const Navigation: PlaceholderComponent
   const OfflineNotice: PlaceholderComponent
+  const ConfigurationError: PlaceholderComponent
+  const DeviceRecovery: PlaceholderComponent
   const PackageList: PlaceholderComponent
   const PaidFeatures: PlaceholderComponent
   const Paywall: PlaceholderComponent
@@ -153,7 +156,8 @@ declare global {
   const pkg: SubKitOfferingPackage
   const subject: { id: string }
   const subkit: import('@piparotech/subkit-node').SubKit
-  const useSubKitEntitlement: typeof import('@piparotech/subkit-expo').useSubKitEntitlement
+  const useSubKitAccess: typeof import('@piparotech/subkit-expo').useSubKitAccess
+  const useSubKitHasAccess: typeof import('@piparotech/subkit-expo').useSubKitHasAccess
   const useSubKitOfferings: typeof import('@piparotech/subkit-expo').useSubKitOfferings
   const user: { id: string }
   const userEnteredCode: string
@@ -161,9 +165,11 @@ declare global {
   function expect(value: unknown): { toBe(expected: unknown): void }
   function handleResult(value: unknown): void
   function hash(value: string): string
+  function renderAccessState(access: import('@piparotech/subkit-expo').SubKitEntitlementAccess): void
   function reportPurchaseError(error: unknown): void
   function runPurchase(packageIdentifier: string, onPurchased: () => void): void
   function showLoginPrompt(): void
+  function showDeviceRecovery(reason: DeviceBlockedReason): void
   function showNothingToRestore(): void
   function showPurchaseFailedMessage(): void
   function showPurchasePendingMessage(): void

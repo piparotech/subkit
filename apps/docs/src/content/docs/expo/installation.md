@@ -6,7 +6,7 @@ description: Install the SubKit Expo SDK, its core contract, and the expo-iap na
 ## Packages
 
 ```sh
-pnpm add @piparotech/subkit-core@^0.1.8 @piparotech/subkit-expo@^0.1.10
+pnpm add @piparotech/subkit-core@^0.1.9 @piparotech/subkit-expo@^0.1.11
 ```
 
 Install the matching core contract explicitly. The Expo SDK imports its runtime
@@ -17,12 +17,12 @@ unpublished copy.
 
 The SDK declares these peers — your app provides them:
 
-| Peer            | Why                                                    |
-| --------------- | ------------------------------------------------------ |
-| `expo`          | Expo runtime                                           |
-| `expo-iap`      | Native store adapter (StoreKit / Play Billing)         |
-| `react` (>= 18) | Hooks (`useSubKitEntitlement`, `useSubKitIapAutoSync`) |
-| `react-native`  | `AppState`, `Platform` defaults                        |
+| Peer            | Why                                                                     |
+| --------------- | ----------------------------------------------------------------------- |
+| `expo`          | Expo runtime                                                            |
+| `expo-iap`      | Native store adapter (StoreKit / Play Billing)                          |
+| `react` (>= 18) | Hooks (`useSubKitAccess`, `useSubKitHasAccess`, `useSubKitIapAutoSync`) |
+| `react-native`  | `AppState`, `Platform` defaults                                         |
 
 `@react-native-async-storage/async-storage` ships as a regular dependency and
 backs the default durable purchase queue and customer-info cache.

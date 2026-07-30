@@ -53,20 +53,23 @@ Client-clock rollback detection can be used only as a best-effort diagnostic sig
 
 ## Failure semantics
 
-A failed refresh with cached data sets the snapshot state and freshness to
-`offline` — it does **not** clear a previously active entitlement before its
-known expiry. The error remains available for UI and diagnostics via the
-hook's `error` field.
+A failed refresh with valid cached data returns a normal access decision with
+`evidence.freshness === 'offline'`. It does **not** clear previously granted
+access before known expiry. Without usable cached evidence, the lifecycle state
+is `offline_unavailable` and access stays fail-closed.
 
 ```tsx compile
-const { active, state, error } = useSubKitEntitlement('pro')
+import { useSubKitAccess } from '@piparotech/subkit-expo'
 
-// active stays true offline until expiry rules say otherwise
-// state === 'offline' lets you show a subtle connectivity notice
-```
+const access = useSubKitAccess('pro')
 
-```ts compile
-import { useSubKitEntitlement } from '@piparotech/subkit-expo'
+if (access.state === 'granted' && access.evidence.freshness === 'offline') {
+  // bounded cached access is still valid; optionally show a connectivity note
+}
+
+if (access.state === 'offline_unavailable') {
+  // no bounded decision exists — keep the feature locked and offer retry
+}
 ```
 
 ## What `accessContext` is

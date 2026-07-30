@@ -20,6 +20,8 @@ async function requireExports(moduleName, sourcePath, names) {
 
 await requireExports('@piparotech/subkit-core', join(root, 'packages/subkit-core/src/index.ts'), [
   'customerInfoSchema',
+  'isEntitlementAccessGranted',
+  'resolveEntitlementAccess',
   'iapReconcileRequestSchema',
   'runtimeOfferingsResponseSchema',
   'subKitApiErrorResponseSchema',
@@ -34,7 +36,12 @@ await requireExports('@piparotech/subkit-expo', join(root, 'packages/subkit-expo
   'configureSubKit',
   'createMmkvJsonStorage',
   'createStoredPurchaseQueueStore',
-  'useSubKitEntitlement',
+  'getSubKitAccessSnapshot',
+  'getSubKitHasAccessSnapshot',
+  'refreshSubKitAccess',
+  'subscribeSubKitAccess',
+  'useSubKitAccess',
+  'useSubKitHasAccess',
   'useSubKitIapAutoSync',
   'useSubKitOfferings',
 ])

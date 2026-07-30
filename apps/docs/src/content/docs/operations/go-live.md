@@ -31,7 +31,7 @@ Work through this before your first production purchase.
 ## Purchases and access
 
 - [ ] A real test purchase produces a verified source and an active entitlement.
-- [ ] The app unlocks only after `entitlements[KEY]?.active === true`.
+- [ ] Every protected feature unlocks only after the Effective Access decision is `granted`; app code does not combine raw entitlement and device fields.
 - [ ] Restore works after reinstall and device change.
 - [ ] The pending purchase path shows a confirming state and resolves via sync.
 

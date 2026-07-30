@@ -7,7 +7,7 @@ export const GET: APIRoute = async ({ site }) => {
   const lines = [
     '# SubKit',
     '',
-    '> SubKit is the source of truth for product catalog, commerce, and access across mobile and web products. Apps and backends read entitlements; Apple, Google, and payment providers are verified inputs, never competing sources of truth.',
+    "> SubKit is the source of truth for product catalog, commerce, and access across mobile and web products. Apps name an entitlement and read SubKit's Effective Access decision; Apple, Google, and payment providers are verified inputs, never competing sources of truth.",
     '',
     '## Invariants an integration must never break',
     '',

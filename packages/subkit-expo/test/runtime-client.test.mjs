@@ -33,6 +33,30 @@ function parseRequestBody(request) {
   return JSON.parse(request.body)
 }
 
+test('runtime network failures become a structured retryable error', async () => {
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async () => {
+    throw new Error('socket unavailable')
+  }
+
+  try {
+    const runtime = new SubKitRuntimeClient({
+      apiBaseUrl: 'https://subkit.example.test',
+      sdkKey: 'sk_sdk_test',
+    })
+    await assert.rejects(
+      () => runtime.getCustomerInfo('user_123'),
+      (error) =>
+        error.name === 'SubKitRuntimeError' &&
+        error.code === 'network' &&
+        error.retryable === true &&
+        error.status === 0,
+    )
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
 test('runtime request schemas reject caller-selected app and environment authority', () => {
   assert.equal(
     runtimeCustomerInfoRequestSchema.safeParse({

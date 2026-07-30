@@ -45,8 +45,20 @@ evidence resolves the environment.
 | `/api/runtime/devices/replace`    | Replace an activation within policy       |
 | `/api/runtime/devices/revoke`     | Revoke a selected activation              |
 
-Only provider verification and effective entitlement state unlock access. A
-successful purchase transport response is not authority by itself.
+Only provider verification followed by a `granted` Effective Access decision
+unlocks a mobile feature. A successful purchase transport response or one raw
+CustomerInfo field is not authority by itself.
+
+The Expo decision surface is:
+
+```ts compile
+const detailed = await client.getAccess('pro')
+const allowed = await client.hasAccess('pro')
+```
+
+`detailed` is a discriminated union; `device_blocked` requires a typed recovery
+reason, while `granted` cannot carry one. Raw `/customer-info` remains available
+for diagnostics and advanced recovery UI.
 
 ## Server API reads
 

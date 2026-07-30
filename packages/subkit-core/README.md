@@ -14,6 +14,18 @@ pnpm add @piparotech/subkit-core @piparotech/subkit-expo
 
 Node and Expo declare Core as a required compatible peer dependency. Do not install mismatched versions.
 
+## Effective Access contract
+
+Core exports `resolveEntitlementAccess(customerInfo, entitlementKey)` and the
+`EntitlementAccessDecision` discriminated union. The union has no redundant
+access Boolean: `state: 'granted'` is the effective decision, while
+`device_blocked` requires a typed recovery reason. Valid branches cannot
+represent contradictory states.
+
+App code normally uses the Expo hooks/client rather than calling the resolver
+directly. The pure resolver is useful for backend, adapter, and deterministic
+contract tests.
+
 ## Documentation
 
 - [Choose an integration](https://subkit.piparo.tech/docs/start/choose-an-integration/)

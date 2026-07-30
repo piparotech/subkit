@@ -61,12 +61,19 @@ auth, capability, ownership, beneficiary, or idempotency conflicts unchanged.
 | `server_error`                | 500            | Yes              | Retry safely and retain the request ID for support.            |
 | `unknown`                     | 500            | No by default    | Fail closed; capture the request ID.                           |
 
-## Domain denials
+## Domain decisions versus technical failure
 
-Entitlement checks return `allowed: false` with a domain reason when the request
-succeeded but access is not effective. Do not turn this into a retry loop or an
-exceptional crash. Render the matching paywall, login, restore, device, or
-support state.
+`inactive` and `device_blocked` are Effective Access decisions, not transport
+errors. `device_blocked` means the requested commercial entitlement is active
+but this installation needs recovery. Render the typed recovery path; do not
+ask the user to buy again.
+
+`offline_unavailable` and `error` are separate lifecycle states: no bounded
+access decision is currently available. Keep access fail-closed and offer the
+appropriate retry or diagnostics UI.
+
+Server entitlement checks similarly return `allowed: false` with a domain
+reason. Do not turn a domain denial into an unbounded retry loop or crash.
 
 ## Secret hygiene
 

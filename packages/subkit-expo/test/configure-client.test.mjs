@@ -116,7 +116,7 @@ test('default purchase queue survives client reconfiguration', async () => {
 
     await assert.rejects(
       () => firstClient.syncPurchases({ force: true, reason: 'app_start' }),
-      /offline/,
+      (error) => error.code === 'network',
     )
     shouldFail = false
 
