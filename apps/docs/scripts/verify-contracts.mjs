@@ -65,6 +65,7 @@ const documentedRoutes = new Set([
   '/api/server/billing-accounts',
   '/api/server/contract-plan-versions',
   '/api/server/contracts',
+  '/api/server/contracts/$sourceId/licensee',
   '/api/server/contracts/$sourceId/lifecycle',
   '/api/server/customer-info',
   '/api/server/devices',
@@ -75,12 +76,14 @@ const documentedRoutes = new Set([
   '/api/server/licenses',
   '/api/server/licenses/$sourceId',
   '/api/server/manual-provisions',
+  '/api/server/organizations/$organizationSubjectId/memberships',
   '/api/server/offerings',
   '/api/server/payments',
   '/api/server/plan-versions/$planVersionId',
   '/api/server/products',
   '/api/server/promotion-codes/redeem',
   '/api/server/sdk-keys',
+  '/api/server/subjects/$subjectId/aliases',
   '/api/server/subjects/upsert',
 ])
 
@@ -89,7 +92,7 @@ for (const path of await walkFiles(routeRoot)) {
   if (!basename(path).startsWith('api.runtime.') && !basename(path).startsWith('api.server.'))
     continue
   const source = await readFile(path, 'utf8')
-  const match = source.match(/createFileRoute\('([^']+)'\)/u)
+  const match = source.match(/createFileRoute\(\s*'([^']+)'\s*,?\s*\)/u)
   if (match?.[1] != null) actualRoutes.add(match[1])
 }
 

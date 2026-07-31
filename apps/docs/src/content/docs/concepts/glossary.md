@@ -29,8 +29,26 @@ description: SubKit terminology — public product terms, technical objects, and
 - **Organization** — a group subject (e.g. a club) that receives distributed
   access.
 - **Access Subject** — the recipient of access; an app user or organization.
-- **Billing Account** — the payer, distinct from the recipient.
-- **Console / operator user** — a user of the SubKit console, not an app user.
+- **Billing Account** — the tenant-scoped commercial identity. It can
+  participate as payer, contract holder, sponsor, or previous payer and remains
+  distinct from every access subject.
+- **Payer** — the billing account that funds a purchase or contract.
+- **Contract Holder** — the billing account that legally or operationally holds
+  a contract. It may be the same row as the payer, but the role stays explicit.
+- **Licensee** — the organization access subject that holds an organization
+  license. A licensee relationship does not itself allocate capacity or grant
+  an entitlement.
+- **Recipient** — the app-user or organization subject receiving an allocation
+  or benefiting from an entitlement grant.
+- **Store Lineage** — a system-managed subject for portable Apple/Google
+  ownership history. It is never silently merged with an app user.
+- **Lifecycle Event** — one append-only, provider-neutral explanation of an
+  evidenced business or support change. It never grants access.
+- **Participation** — a role-bearing link from one lifecycle event to a subject
+  or billing account, allowing one canonical event to appear in several
+  customer views.
+- **Console / operator user** — a user of the SubKit console and an actor in
+  audit evidence, not an app user.
 
 ## Catalog
 

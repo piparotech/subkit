@@ -28,7 +28,7 @@ function createIapAdapter() {
 }
 
 function createCustomerInfo(appUserId, entitlementActive) {
-  const verifiedAt = new Date().toISOString()
+  const verifiedAt = new Date(Date.now() - 60_000).toISOString()
   return {
     accessContext: null,
     appId: 'app_123',

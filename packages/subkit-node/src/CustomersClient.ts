@@ -10,8 +10,16 @@ import type { HttpClient } from './HttpClient.js'
 import type { SubKitMutationOptions, SubKitRequestOptions } from './requestOptions.js'
 
 const customerRecordSchema = z.object({ id: z.string(), status: z.string() })
+const subjectAliasResultSchema = z.object({ aliasId: z.string(), subjectId: z.string() })
+const organizationMembershipResultSchema = z.object({
+  membershipId: z.string(),
+  roleIds: z.array(z.string()),
+  status: z.enum(['active', 'ended']),
+})
 
 export type CustomerRecord = z.infer<typeof customerRecordSchema>
+export type SubjectAliasResult = z.infer<typeof subjectAliasResultSchema>
+export type OrganizationMembershipResult = z.infer<typeof organizationMembershipResultSchema>
 
 export interface UpsertSubjectInput {
   appId?: string
@@ -22,6 +30,41 @@ export interface UpsertSubjectInput {
   locale?: string | null
   reason: string
 }
+
+export interface AddSubjectAliasInput {
+  alias: string
+  appId?: string
+  reason: string
+  subjectId: string
+}
+
+export interface StartOrganizationMembershipInput {
+  appId?: string
+  effectiveAt: Date
+  memberSubjectId: string
+  organizationSubjectId: string
+  reason: string
+  roles?: Array<'admin' | 'trainer'>
+}
+
+export type MutateOrganizationMembershipInput =
+  | {
+      action: 'assign_role' | 'end_role'
+      appId?: string
+      effectiveAt: Date
+      membershipId: string
+      organizationSubjectId: string
+      reason: string
+      role: 'admin' | 'trainer'
+    }
+  | {
+      action: 'end'
+      appId?: string
+      effectiveAt: Date
+      membershipId: string
+      organizationSubjectId: string
+      reason: string
+    }
 
 export interface CreateBillingAccountInput {
   displayName: string
@@ -43,6 +86,55 @@ export class CustomersClient {
   constructor(options: CustomersClientOptions) {
     this.appId = options.appId
     this.http = options.http
+  }
+
+  addSubjectAlias(
+    input: AddSubjectAliasInput,
+    options: SubKitMutationOptions,
+  ): Promise<SubjectAliasResult> {
+    return this.http.post(`/api/server/subjects/${encodeURIComponent(input.subjectId)}/aliases`, {
+      ...options,
+      body: {
+        alias: input.alias,
+        appId: resolveAppId(input.appId, this.appId),
+        reason: input.reason,
+      },
+      responseSchema: subjectAliasResultSchema,
+    })
+  }
+
+  startOrganizationMembership(
+    input: StartOrganizationMembershipInput,
+    options: SubKitMutationOptions,
+  ): Promise<OrganizationMembershipResult> {
+    return this.http.post(
+      `/api/server/organizations/${encodeURIComponent(input.organizationSubjectId)}/memberships`,
+      {
+        ...options,
+        body: {
+          appId: resolveAppId(input.appId, this.appId),
+          effectiveAt: input.effectiveAt,
+          memberSubjectId: input.memberSubjectId,
+          reason: input.reason,
+          roles: input.roles ?? [],
+        },
+        responseSchema: organizationMembershipResultSchema,
+      },
+    )
+  }
+
+  mutateOrganizationMembership(
+    input: MutateOrganizationMembershipInput,
+    options: SubKitMutationOptions,
+  ): Promise<OrganizationMembershipResult> {
+    return this.http.patch(
+      `/api/server/organizations/${encodeURIComponent(input.organizationSubjectId)}/memberships`,
+      {
+        ...options,
+        body: { ...input, appId: resolveAppId(input.appId, this.appId) },
+        responseSchema: organizationMembershipResultSchema,
+      },
+    )
   }
 
   upsertSubject(

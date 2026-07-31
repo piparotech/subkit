@@ -11,7 +11,13 @@ const capacityResultSchema = z.object({
 })
 const reservationResultSchema = capacityResultSchema.extend({ reservationId: z.string() })
 const allocationResultSchema = capacityResultSchema.extend({ allocationId: z.string() })
-const poolResultSchema = capacityResultSchema.extend({ poolId: z.string() })
+const poolResultSchema = capacityResultSchema.extend({
+  decision: z.enum(['applied', 'rejected', 'scheduled']).optional(),
+  poolId: z.string(),
+  reason: z
+    .enum(['effective_date_required', 'policy_forbidden', 'usage_exceeds_capacity'])
+    .optional(),
+})
 const poolCapacityPreviewSchema = capacityResultSchema.extend({
   decision: z.enum(['apply_immediately', 'schedule_at_renewal', 'reject']),
   effectiveAt: z.coerce.date().nullable(),
@@ -82,6 +88,7 @@ export interface PreviewPoolCapacityInput {
 export type UpdatePoolInput =
   | { action: 'suspend'; poolId: string; reason: string }
   | { action: 'resume'; poolId: string; reason: string }
+  | { action: 'apply_scheduled_capacity'; poolId: string; reason: string }
   | {
       action: 'change_capacity'
       effectiveAt?: Date
@@ -260,6 +267,7 @@ function serializePoolUpdate(
   input:
     | { action: 'suspend'; reason: string }
     | { action: 'resume'; reason: string }
+    | { action: 'apply_scheduled_capacity'; reason: string }
     | {
         action: 'change_capacity'
         effectiveAt?: Date

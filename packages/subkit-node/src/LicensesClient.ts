@@ -13,12 +13,24 @@ import {
 import type { HttpClient } from './HttpClient.js'
 import type { SubKitMutationOptions, SubKitRequestOptions } from './requestOptions.js'
 
+const contractLifecycleActionSchema = z.enum([
+  'renew',
+  'resume',
+  'revert_non_renewal',
+  'revoke',
+  'schedule_non_renewal',
+  'suspend',
+])
 const contractLifecyclePreviewSchema = z.object({
-  action: z.enum(['suspend', 'resume', 'revoke']),
+  action: contractLifecycleActionSchema,
   affectedAllocationCount: z.number(),
   affectedEntitlements: z.array(z.string()),
+  afterAutoRenews: z.boolean(),
   afterState: z.string(),
+  afterTermEnd: z.string().nullable(),
+  beforeAutoRenews: z.boolean(),
   beforeState: z.string(),
+  beforeTermEnd: z.string().nullable(),
   contractNumber: z.string().nullable(),
   externalContractId: z.string(),
   sourceId: z.string(),
@@ -38,16 +50,22 @@ export interface ListLicensesInput {
   state?: 'pending' | 'active' | 'suspended' | 'expired' | 'revoked'
 }
 
+export type ContractLifecycleAction = z.infer<typeof contractLifecycleActionSchema>
+
 export interface ContractLifecyclePreviewInput {
-  action: 'suspend' | 'resume' | 'revoke'
+  action: ContractLifecycleAction
   appId?: string
+  newTermEnd?: Date
   sourceId: string
 }
 
 export interface ContractLifecycleApplyInput {
-  action: 'suspend' | 'resume' | 'revoke'
+  action: ContractLifecycleAction
   appId?: string
+  expectedAutoRenews?: boolean
   expectedState: string
+  expectedTermEnd?: Date | null
+  newTermEnd?: Date
   reason: string
   sourceId: string
 }
@@ -115,7 +133,11 @@ export class LicensesClient {
   ): Promise<ContractLifecyclePreview> {
     return this.http.post(`/api/server/contracts/${encodeURIComponent(input.sourceId)}/lifecycle`, {
       ...options,
-      body: { action: input.action, appId: resolveAppId(input.appId, this.appId) },
+      body: {
+        action: input.action,
+        appId: resolveAppId(input.appId, this.appId),
+        newTermEnd: input.newTermEnd?.toISOString(),
+      },
       responseSchema: contractLifecyclePreviewSchema,
     })
   }
@@ -131,7 +153,10 @@ export class LicensesClient {
         body: {
           action: input.action,
           appId: resolveAppId(input.appId, this.appId),
+          expectedAutoRenews: input.expectedAutoRenews,
           expectedState: input.expectedState,
+          expectedTermEnd: input.expectedTermEnd?.toISOString() ?? input.expectedTermEnd,
+          newTermEnd: input.newTermEnd?.toISOString(),
           reason: input.reason,
         },
         responseSchema: contractLifecycleApplySchema,

@@ -4,6 +4,7 @@ export type { ServerDeviceActivation } from './DevicesClient.js'
 export type { OperatorContext } from './HttpClient.js'
 export { SubKitApiError, isSubKitApiError } from './errors.js'
 export type {
+  ContractLifecycleAction,
   ContractLifecycleApplyInput,
   ContractLifecyclePreview,
   ContractLifecyclePreviewInput,
@@ -29,10 +30,17 @@ export type {
   UpdateAllocationInput,
   UpdatePoolInput,
 } from './AccessClient.js'
-export type { ContractResult, CreateContractInput } from './ContractsClient.js'
 export type {
+  ChangeContractLicenseeInput,
+  ContractLicenseeResult,
+  ContractResult,
+  CreateContractInput,
+} from './ContractsClient.js'
+export type {
+  AddSubjectAliasInput,
   CreateBillingAccountInput,
   CustomerRecord,
+  SubjectAliasResult,
   UpsertSubjectInput,
 } from './CustomersClient.js'
 export type { PaymentResult, RecordPaymentInput } from './PaymentsClient.js'

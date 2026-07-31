@@ -8,7 +8,22 @@ const contractResultSchema = z.object({
   poolIds: z.array(z.string()),
 })
 
+const contractLicenseeResultSchema = z.object({
+  currentLicenseeId: z.string(),
+  previousLicenseeId: z.string(),
+  relationshipId: z.string(),
+})
+
 export type ContractResult = z.infer<typeof contractResultSchema>
+export type ContractLicenseeResult = z.infer<typeof contractLicenseeResultSchema>
+
+export interface ChangeContractLicenseeInput {
+  appId?: string
+  effectiveAt: Date
+  licenseeSubjectId: string
+  reason: string
+  sourceId: string
+}
 
 export interface CreateContractInput {
   appId?: string
@@ -37,6 +52,22 @@ export class ContractsClient {
   constructor(options: ContractsClientOptions) {
     this.appId = options.appId
     this.http = options.http
+  }
+
+  changeLicensee(
+    input: ChangeContractLicenseeInput,
+    options: SubKitMutationOptions,
+  ): Promise<ContractLicenseeResult> {
+    const { sourceId, ...body } = input
+    return this.http.patch(`/api/server/contracts/${encodeURIComponent(sourceId)}/licensee`, {
+      ...options,
+      body: {
+        ...body,
+        appId: resolveAppId(input.appId, this.appId),
+        effectiveAt: input.effectiveAt.toISOString(),
+      },
+      responseSchema: contractLicenseeResultSchema,
+    })
   }
 
   create(input: CreateContractInput, options: SubKitMutationOptions): Promise<ContractResult> {

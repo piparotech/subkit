@@ -34,6 +34,16 @@ const access = await subkit.entitlements.check({
 
 Use an app-scoped `sk_srv_…` key carrying only the required capabilities. Every mutation needs a stable idempotency key and non-empty audit reason. Treat `allowed: false` as a normal domain result.
 
+Previous opaque App User identities can be linked through
+`subkit.customers.addSubjectAlias(...)`. Alias values remain app-scoped identity
+data and are represented only by a short hash suffix in Audit/Lifecycle evidence.
+
+Contract lifecycle Preview/Apply is available through `subkit.licenses`. In
+addition to suspend/resume/revoke, finite contracts support `renew`,
+`schedule_non_renewal`, and `revert_non_renewal`. Apply the preview's state,
+auto-renew, and term-end guards; scheduling non-renewal never ends current
+access before the term end.
+
 ## Documentation
 
 - [Node backend guide](https://subkit.piparo.tech/docs/node/overview/)

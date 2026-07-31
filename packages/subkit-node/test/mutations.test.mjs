@@ -13,7 +13,7 @@ test('typed customer, contract, and access clients send scoped idempotent reques
       method: init.method,
       url,
     })
-    return Response.json(responseFor(url, init.method))
+    return Response.json(responseFor(url, init.method, init.body))
   }
   const subkit = new SubKit({
     apiBaseUrl: 'https://subkit.example.com/',
@@ -35,6 +35,31 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     { externalId: 'trainer-1', kind: 'app_user', reason: 'sync trainer identity' },
     { idempotencyKey: 'subject-1' },
   )
+  await subkit.customers.addSubjectAlias(
+    { alias: 'trainer-previous-1', reason: 'link previous identity', subjectId: subject.id },
+    { idempotencyKey: 'subject-alias-1' },
+  )
+  const membership = await subkit.customers.startOrganizationMembership(
+    {
+      effectiveAt: new Date('2027-01-01T00:00:00Z'),
+      memberSubjectId: subject.id,
+      organizationSubjectId: 'club-subject-1',
+      reason: 'add trainer to club roster',
+      roles: ['trainer'],
+    },
+    { idempotencyKey: 'organization-membership-1' },
+  )
+  await subkit.customers.mutateOrganizationMembership(
+    {
+      action: 'assign_role',
+      effectiveAt: new Date('2027-02-01T00:00:00Z'),
+      membershipId: membership.membershipId,
+      organizationSubjectId: 'club-subject-1',
+      reason: 'promote trainer to club admin',
+      role: 'admin',
+    },
+    { idempotencyKey: 'organization-membership-role-1' },
+  )
   const account = await subkit.customers.createBillingAccount(
     { displayName: 'FC Example', kind: 'organization', reason: 'onboard club payer' },
     { idempotencyKey: 'account-1' },
@@ -49,6 +74,15 @@ test('typed customer, contract, and access clients send scoped idempotent reques
       termStart: new Date('2027-01-01T00:00:00Z'),
     },
     { idempotencyKey: 'contract-1' },
+  )
+  await subkit.contracts.changeLicensee(
+    {
+      effectiveAt: new Date('2028-01-01T00:00:00Z'),
+      licenseeSubjectId: 'club-subject-2',
+      reason: 'transfer club license',
+      sourceId: contract.accessSourceId,
+    },
+    { idempotencyKey: 'contract-licensee-1' },
   )
   await subkit.payments.record(
     {
@@ -129,6 +163,14 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     },
     { idempotencyKey: 'capacity-1' },
   )
+  await subkit.access.updatePool(
+    {
+      action: 'apply_scheduled_capacity',
+      poolId: 'pool-1',
+      reason: 'renewal effective',
+    },
+    { idempotencyKey: 'capacity-apply-1' },
+  )
   await subkit.access.revokeReservation(
     { reason: 'cancelled', reservationId: 'reservation/a b' },
     { idempotencyKey: 'revoke-reservation-1' },
@@ -158,15 +200,19 @@ test('typed customer, contract, and access clients send scoped idempotent reques
     { idempotencyKey: 'manual-1' },
   )
 
-  assert.equal(requests.length, 20)
+  assert.equal(requests.length, 25)
   assert.deepEqual(
     requests.map(({ method, url }) => [method, new URL(url).pathname]),
     [
       ['POST', '/api/server/entitlements/check'],
       ['POST', '/api/server/customer-info'],
       ['POST', '/api/server/subjects/upsert'],
+      ['POST', '/api/server/subjects/subject-1/aliases'],
+      ['POST', '/api/server/organizations/club-subject-1/memberships'],
+      ['PATCH', '/api/server/organizations/club-subject-1/memberships'],
       ['POST', '/api/server/billing-accounts'],
       ['POST', '/api/server/contracts'],
+      ['PATCH', '/api/server/contracts/source-1/licensee'],
       ['POST', '/api/server/payments'],
       ['PATCH', '/api/server/plan-versions/version%2Fa%20b'],
       ['POST', '/api/server/free-enrollments'],
@@ -176,6 +222,7 @@ test('typed customer, contract, and access clients send scoped idempotent reques
       ['POST', '/api/server/access-pools/pool%2Fa%20b/allocations'],
       ['PATCH', '/api/server/access-allocations/allocation%2Fa%20b'],
       ['POST', '/api/server/access-pools/pool-1'],
+      ['PATCH', '/api/server/access-pools/pool-1'],
       ['PATCH', '/api/server/access-pools/pool-1'],
       ['DELETE', '/api/server/access-reservations/reservation%2Fa%20b'],
       ['POST', '/api/server/devices'],
@@ -200,26 +247,35 @@ test('typed customer, contract, and access clients send scoped idempotent reques
   assert.equal(requests[0].body.accessContext, 'sk_ctx_v1.signed.production')
   assert.equal(requests[1].body.accessContext, 'sk_ctx_v1.signed.production')
   assert.equal(requests[2].body.appId, 'smartcoach')
-  assert.equal(requests[4].body.appId, 'smartcoach')
-  assert.equal(requests[4].body.licenseeSubjectId, 'club-subject-1')
-  assert.equal(requests[4].body.termStart, '2027-01-01T00:00:00.000Z')
-  assert.equal(requests[5].body.appId, 'smartcoach')
-  assert.equal(requests[5].body.occurredAt, '2027-01-02T00:00:00.000Z')
-  assert.equal(requests[6].body.reason, 'superseded')
+  assert.equal(requests[3].body.appId, 'smartcoach')
+  assert.equal(requests[3].body.alias, 'trainer-previous-1')
+  assert.equal(requests[4].body.effectiveAt, '2027-01-01T00:00:00.000Z')
+  assert.deepEqual(requests[4].body.roles, ['trainer'])
+  assert.equal(requests[5].body.action, 'assign_role')
+  assert.equal(requests[5].body.role, 'admin')
   assert.equal(requests[7].body.appId, 'smartcoach')
+  assert.equal(requests[7].body.licenseeSubjectId, 'club-subject-1')
+  assert.equal(requests[7].body.termStart, '2027-01-01T00:00:00.000Z')
   assert.equal(requests[8].body.appId, 'smartcoach')
-  assert.equal(requests[10].body.appId, 'smartcoach')
-  assert.equal(requests[13].body.effectiveAt, '2028-01-01T00:00:00.000Z')
-  assert.equal(requests[14].body.effectiveAt, '2028-01-01T00:00:00.000Z')
-  assert.equal(requests[15].body.reason, 'cancelled')
-  assert.equal(requests[16].body.appId, 'smartcoach')
-  assert.equal(requests[17].body.reason, 'support revoke')
-  assert.equal(requests[18].body.beneficiarySubjectId, 'subject-1')
-  assert.equal(requests[19].body.appId, 'smartcoach')
-  assert.equal(requests[19].body.validFrom, '2027-02-01T00:00:00.000Z')
+  assert.equal(requests[8].body.effectiveAt, '2028-01-01T00:00:00.000Z')
+  assert.equal(requests[9].body.appId, 'smartcoach')
+  assert.equal(requests[9].body.occurredAt, '2027-01-02T00:00:00.000Z')
+  assert.equal(requests[10].body.reason, 'superseded')
+  assert.equal(requests[11].body.appId, 'smartcoach')
+  assert.equal(requests[12].body.appId, 'smartcoach')
+  assert.equal(requests[14].body.appId, 'smartcoach')
+  assert.equal(requests[17].body.effectiveAt, '2028-01-01T00:00:00.000Z')
+  assert.equal(requests[18].body.effectiveAt, '2028-01-01T00:00:00.000Z')
+  assert.equal(requests[19].body.reason, 'renewal effective')
+  assert.equal(requests[20].body.reason, 'cancelled')
+  assert.equal(requests[21].body.appId, 'smartcoach')
+  assert.equal(requests[22].body.reason, 'support revoke')
+  assert.equal(requests[23].body.beneficiarySubjectId, 'subject-1')
+  assert.equal(requests[24].body.appId, 'smartcoach')
+  assert.equal(requests[24].body.validFrom, '2027-02-01T00:00:00.000Z')
 })
 
-function responseFor(url, method) {
+function responseFor(url, method, body) {
   const path = new URL(url).pathname
   if (path === '/api/server/entitlements/check') {
     return {
@@ -242,8 +298,21 @@ function responseFor(url, method) {
     }
   }
   if (path === '/api/server/subjects/upsert') return { id: 'subject-1', status: 'active' }
+  if (path === '/api/server/subjects/subject-1/aliases') {
+    return { aliasId: 'subject-1:alias:opaque', subjectId: 'subject-1' }
+  }
+  if (path === '/api/server/organizations/club-subject-1/memberships') {
+    return { membershipId: 'membership-1', roleIds: ['membership-role-1'], status: 'active' }
+  }
   if (path === '/api/server/billing-accounts') return { id: 'account-1', status: 'active' }
   if (path === '/api/server/contracts') return { accessSourceId: 'source-1', poolIds: ['pool-1'] }
+  if (path === '/api/server/contracts/source-1/licensee') {
+    return {
+      currentLicenseeId: 'club-subject-2',
+      previousLicenseeId: 'club-subject-1',
+      relationshipId: 'licensee-relationship-2',
+    }
+  }
   if (path === '/api/server/payments') {
     return {
       accessSourceId: 'source-1',
@@ -297,7 +366,13 @@ function responseFor(url, method) {
       reason: 'allowed',
     }
   }
-  if (path === '/api/server/access-pools/pool-1') return capacity({ poolId: 'pool-1' })
+  if (path === '/api/server/access-pools/pool-1') {
+    const parsed = body == null ? null : JSON.parse(body)
+    return capacity({
+      ...(parsed?.action === 'change_capacity' ? { decision: 'scheduled' } : {}),
+      poolId: 'pool-1',
+    })
+  }
   if (path === '/api/server/devices') return { devices: [] }
   if (path.startsWith('/api/server/devices/') && method === 'DELETE') {
     return {
