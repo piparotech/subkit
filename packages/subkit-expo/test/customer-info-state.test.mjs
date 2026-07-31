@@ -28,11 +28,12 @@ function createIapAdapter() {
 }
 
 function createCustomerInfo(appUserId, entitlementActive) {
+  const verifiedAt = new Date().toISOString()
   return {
     accessContext: null,
     appId: 'app_123',
     appUserId,
-    checkedAt: '2026-07-01T00:00:00.000Z',
+    checkedAt: verifiedAt,
     entitlements: {
       pro: {
         active: entitlementActive,
@@ -41,9 +42,9 @@ function createCustomerInfo(appUserId, entitlementActive) {
         expiresAt: null,
         productIdentifier: 'pro_monthly',
         source: 'apple',
-        startsAt: '2026-07-01T00:00:00.000Z',
+        startsAt: verifiedAt,
         status: entitlementActive ? 'active' : 'expired',
-        verifiedAt: '2026-07-01T00:00:00.000Z',
+        verifiedAt,
       },
     },
     freshness: 'fresh',
