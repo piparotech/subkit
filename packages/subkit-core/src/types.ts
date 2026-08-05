@@ -315,6 +315,20 @@ export interface PurchaseSyncResult {
   verificationStatus: VerificationStatus
 }
 
+/**
+ * Durable pending contract (ADR 008 / 009): returned when the reconcile job
+ * did not reach a terminal state within the bounded wait. The SDK persists
+ * `reconcileId` and resumes by polling `GET /api/runtime/iap/reconcile/:id`.
+ */
+export interface PurchaseSyncPending {
+  checkedAt: string
+  reconcileId: string
+  status: 'pending'
+}
+
+/** The interactive reconcile response: terminal result or durable pending. */
+export type PurchaseSyncResponse = PurchaseSyncResult | PurchaseSyncPending
+
 export type PurchaseResult =
   | { status: 'cancelled' }
   | { purchaseId: string; status: 'pending' }
@@ -337,6 +351,11 @@ export interface QueuedPurchase {
   identityGeneration: number
   installationId: string
   lastError?: string
+  /**
+   * The durable reconcile job id (ADR 008/009). Persisted on 202 so a lost
+   * response or app restart resumes by polling instead of re-sending receipts.
+   */
+  reconcileId?: string
   linkedPurchaseToken?: string
   orderId?: string
   originalTransactionId?: string

@@ -131,6 +131,13 @@ export function createStoredPurchaseQueueStore(
         updatedAt: now(),
       }))
     },
+    async attachReconcileId(id, reconcileId) {
+      await updateItem(options.storage, key, id, (item) => ({
+        ...item,
+        reconcileId,
+        updatedAt: now(),
+      }))
+    },
   }
 }
 
@@ -262,6 +269,7 @@ function parsePurchaseQueueItem(value: unknown): PurchaseQueueItem | null {
     quantity: readNumber(value, 'quantity'),
     rawPurchase: value.rawPurchase,
     receipt: readString(value, 'receipt'),
+    reconcileId: readString(value, 'reconcileId'),
     status,
     store,
     transactionId: readString(value, 'transactionId'),

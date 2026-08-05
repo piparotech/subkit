@@ -1,6 +1,7 @@
 import type {
   PurchaseOwnershipConflict,
   PurchaseSyncReason,
+  PurchaseSyncResponse,
   PurchaseSyncResult,
   RejectedPurchase,
   StoreIdentityHints,
@@ -103,33 +104,93 @@ export function createPurchaseSyncCoordinator(
     binding: { appUserId: string; identityGeneration: number; installationId: string },
   ): Promise<PurchaseSyncResult> {
     const pending = await options.queue.listPending(binding)
-    const purchases = pending.map((item) =>
-      normalizePurchaseForReconcile(queueItemToPurchase(item)),
-    )
+    const toResume = pending.filter((item) => item.reconcileId != null)
+    const toPost = pending.filter((item) => item.reconcileId == null)
 
-    const result = await options.runtime.reconcile({
-      accessContext: options.accessContext?.(),
-      appUserId: binding.appUserId,
-      installationId: binding.installationId,
-      platform: options.platform,
-      purchases,
-      reason,
-      sessionId: options.sessionId(),
-      storeIdentities: options.storeIdentityHints(),
-    })
+    let result: PurchaseSyncResponse | null = null
+
+    // Items already bound to a durable job resume by polling (no re-send of
+    // receipts); the rest are POSTed as one batch. Each job is the durable
+    // unit; polling is idempotent and crash-safe (ADR 008/009).
+    if (toPost.length > 0) {
+      const purchases = toPost.map((item) =>
+        normalizePurchaseForReconcile(queueItemToPurchase(item)),
+      )
+      const posted = await options.runtime.reconcile({
+        accessContext: undefined,
+        appUserId: binding.appUserId,
+        installationId: binding.installationId,
+        platform: options.platform,
+        purchases,
+        reason,
+        sessionId: options.sessionId(),
+        storeIdentities: options.storeIdentityHints(),
+      })
+      if (isPendingReconcile(posted)) {
+        // Persist the reconcile id the instant the 202 arrives so a crash or
+        // lost response resumes by polling, never by re-sending receipts.
+        for (const item of toPost) {
+          await options.queue.attachReconcileId(item.id, posted.reconcileId)
+        }
+      }
+      result = posted
+    } else if (toResume.length > 0 && toResume[0].reconcileId != null) {
+      // Resume an in-flight durable job from the first bound item.
+      result = await pollWithBoundedWait(toResume[0].reconcileId)
+    } else {
+      // No pending items for this binding: refresh via an empty reconcile so
+      // customer-info/freshness semantics and the call pattern are unchanged.
+      result = await options.runtime.reconcile({
+        accessContext: undefined,
+        appUserId: binding.appUserId,
+        installationId: binding.installationId,
+        platform: options.platform,
+        purchases: [],
+        reason,
+        sessionId: options.sessionId(),
+        storeIdentities: options.storeIdentityHints(),
+      })
+    }
+
+    if (result == null || isPendingReconcile(result)) {
+      // The job is still running (bounded wait exhausted). The queue retains
+      // reconcileId and the next sync trigger resumes polling; cached
+      // customer-info keeps the UX stable. Return an empty terminal so the
+      // caller does not surface a misleading grant before the worker finishes.
+      return {
+        acceptedPurchases: [],
+        checkedAt: new Date().toISOString(),
+        conflicts: [],
+        customerInfo: {
+          accessContext: null,
+          appId: options.appUserId() ?? '',
+          appUserId: '',
+          checkedAt: new Date().toISOString(),
+          entitlements: {},
+          freshness: 'stale' as const,
+          purchases: [],
+          unclaimedPurchases: [],
+        },
+        finishableTransactions: [],
+        rejectedPurchases: [],
+        verificationStatus: 'failed',
+      }
+    }
+
     await assertBindingIsCurrent(binding)
+    const terminalResult = result as PurchaseSyncResult
 
-    for (const rejected of result.rejectedPurchases) {
+    for (const rejected of terminalResult.rejectedPurchases) {
       const item = findQueueItemForRejectedPurchase(pending, rejected)
       if (item != null) await options.queue.markRejected(item.id, rejected.message)
     }
 
-    for (const conflict of result.conflicts) {
+    for (const conflict of terminalResult.conflicts) {
       const item = findQueueItemForOwnershipConflict(pending, conflict)
       if (item != null) await options.queue.markRejected(item.id, conflict.reason)
     }
 
-    for (const transaction of result.finishableTransactions) {
+    for (const transaction of terminalResult.finishableTransactions) {
       const item = pending.find((candidate) => candidate.id === transaction.purchaseId)
       if (item == null) continue
       await options.queue.markVerified(item.id)
@@ -149,7 +210,29 @@ export function createPurchaseSyncCoordinator(
       }
     }
 
-    return result
+    return terminalResult
+  }
+
+  // Bounded wait for a durable job to reach a terminal state (2s/4s/8s/16s
+  // backoff, ~30s total). On exhaustion the caller keeps the queue id and
+  // resumes on the next sync trigger; the job itself is never lost.
+  async function pollWithBoundedWait(reconcileId: string): Promise<PurchaseSyncResponse> {
+    const delays = [2_000, 4_000, 8_000, 16_000]
+    for (const delay of delays) {
+      const outcome = await options.runtime.pollReconcile(reconcileId)
+      if (!isPendingReconcile(outcome)) return outcome
+      await new Promise((resolve) => setTimeout(resolve, delay))
+    }
+    const final = await options.runtime.pollReconcile(reconcileId)
+    if (!isPendingReconcile(final)) return final
+    return { checkedAt: new Date().toISOString(), reconcileId, status: 'pending' }
+  }
+
+
+  function isPendingReconcile(
+    response: PurchaseSyncResponse | null,
+  ): response is Extract<PurchaseSyncResponse, { status: 'pending' }> {
+    return response != null && 'status' in response && response.status === 'pending'
   }
 
   async function currentQueueBinding(appUserId: string) {

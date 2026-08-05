@@ -20,6 +20,8 @@ export interface PurchaseQueueStore {
     purchases: readonly SubKitIapPurchase[],
     binding: PurchaseQueueBinding,
   ): Promise<PurchaseQueueItem[]>
+  /** Persist the durable reconcile id once a 202 is received (crash-safe resume). */
+  attachReconcileId(id: string, reconcileId: string): Promise<void>
   listPending(binding: PurchaseQueueBinding): Promise<PurchaseQueueItem[]>
   markFailed(id: string, error: string): Promise<void>
   markFinished(id: string): Promise<void>
@@ -37,7 +39,7 @@ export function buildPurchaseQueueItem(
 ): PurchaseQueueItem {
   return {
     anonymousId: undefined,
-    attempts: existing?.attempts ?? 0,
+    attempts: existing?.status === 'failed' ? 0 : (existing?.attempts ?? 0),
     createdAt: existing?.createdAt ?? timestamp,
     environment: purchase.environment,
     id: createPurchaseQueueId(purchase),
@@ -55,6 +57,7 @@ export function buildPurchaseQueueItem(
     quantity: purchase.quantity,
     rawPurchase: purchase.raw,
     receipt: purchase.receipt,
+    reconcileId: existing?.reconcileId,
     status: existing?.status === 'finished' ? 'finished' : 'pending',
     store: purchase.store,
     transactionId: purchase.transactionId,
@@ -130,6 +133,11 @@ export function createMemoryPurchaseQueueStore(
       const item = items.get(id)
       if (item == null) return
       items.set(id, { ...item, status: 'verified', updatedAt: now() })
+    },
+    async attachReconcileId(id, reconcileId) {
+      const item = items.get(id)
+      if (item == null) return
+      items.set(id, { ...item, reconcileId, updatedAt: now() })
     },
   }
 }

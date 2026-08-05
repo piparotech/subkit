@@ -3,6 +3,7 @@ import {
   type IapReconcileRequest,
   type NormalizedStorePurchase,
   type PurchaseSyncReason,
+  type PurchaseSyncResponse,
   type PurchaseSyncResult,
   type RuntimeDeviceActivationResult,
   type RuntimeOfferingsResponse,
@@ -11,6 +12,7 @@ import {
   customerInfoSchema,
   iapReconcileResponseSchema,
   isRetryableSubKitErrorCode,
+  purchaseSyncResponseSchema,
   runtimeDeviceActivationResultSchema,
   runtimeOfferingsResponseSchema,
   subKitApiErrorResponseSchema,
@@ -20,6 +22,7 @@ import type { SubKitIapPurchase } from './types.js'
 
 export interface SubKitRuntimeClientOptions {
   apiBaseUrl: string
+  requestTimeoutMs?: number
   sdkKey: string | (() => Promise<string>)
 }
 
@@ -52,6 +55,7 @@ export class SubKitRuntimeClient {
   constructor(options: SubKitRuntimeClientOptions) {
     this.apiBaseUrl = options.apiBaseUrl.replace(/\/$/, '')
     this.sdkKey = options.sdkKey
+    this.requestTimeoutMs = options.requestTimeoutMs ?? 10_000
   }
 
   async getCustomerInfo(
@@ -119,7 +123,7 @@ export class SubKitRuntimeClient {
     reason: PurchaseSyncReason
     sessionId: string
     storeIdentities?: StoreIdentityHints
-  }): Promise<PurchaseSyncResult> {
+  }): Promise<PurchaseSyncResponse> {
     const request: IapReconcileRequest = {
       accessContext: input.accessContext,
       appUserId: input.appUserId,
@@ -130,21 +134,52 @@ export class SubKitRuntimeClient {
       sessionId: input.sessionId,
       storeIdentities: input.storeIdentities,
     }
-    const response = await this.post('/api/runtime/iap/reconcile', request)
-    return iapReconcileResponseSchema.parse(response)
+    const response = await this.post('/api/runtime/iap/reconcile', request, { signal: true })
+    return purchaseSyncResponseSchema.parse(response)
   }
 
-  private async post(path: string, payload: unknown): Promise<unknown> {
+  /** Polls the durable reconcile job (ADR 008/009) until terminal or pending. */
+  async pollReconcile(reconcileId: string, signal?: AbortSignal): Promise<PurchaseSyncResponse> {
+    const response = await this.get(`/api/runtime/iap/reconcile/${encodeURIComponent(reconcileId)}`, signal)
+    return purchaseSyncResponseSchema.parse(response)
+  }
+
+  private async post(
+    path: string,
+    payload: unknown,
+    options: { signal?: boolean } = {},
+  ): Promise<unknown> {
+    const controller = options.signal ? new AbortController() : undefined
+    const timeout = controller
+      ? setTimeout(() => controller.abort(), this.requestTimeoutMs)
+      : undefined
+    try {
+      return await this.request('POST', path, { body: payload, signal: controller?.signal })
+    } finally {
+      if (timeout != null) clearTimeout(timeout)
+    }
+  }
+
+  private async get(path: string, signal?: AbortSignal): Promise<unknown> {
+    return this.request('GET', path, { signal })
+  }
+
+  private async request(
+    method: 'GET' | 'POST',
+    path: string,
+    options: { body?: unknown; signal?: AbortSignal },
+  ): Promise<unknown> {
     const sdkKey = typeof this.sdkKey === 'string' ? this.sdkKey : await this.sdkKey()
     let response: Response
     try {
       response = await fetch(`${this.apiBaseUrl}${path}`, {
-        body: JSON.stringify(payload),
+        body: options.body == null ? undefined : JSON.stringify(options.body),
         headers: {
           authorization: `Bearer ${sdkKey}`,
           'content-type': 'application/json',
         },
-        method: 'POST',
+        method,
+        signal: options.signal,
       })
     } catch {
       throw new SubKitRuntimeError({
@@ -161,6 +196,8 @@ export class SubKitRuntimeClient {
 
     return body
   }
+
+  private readonly requestTimeoutMs: number
 }
 
 export function normalizePurchaseForReconcile(
