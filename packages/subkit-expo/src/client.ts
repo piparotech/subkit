@@ -140,7 +140,10 @@ export class SubKitRuntimeClient {
 
   /** Polls the durable reconcile job (ADR 008/009) until terminal or pending. */
   async pollReconcile(reconcileId: string, signal?: AbortSignal): Promise<PurchaseSyncResponse> {
-    const response = await this.get(`/api/runtime/iap/reconcile/${encodeURIComponent(reconcileId)}`, signal)
+    const response = await this.get(
+      `/api/runtime/iap/reconcile/${encodeURIComponent(reconcileId)}`,
+      signal,
+    )
     return purchaseSyncResponseSchema.parse(response)
   }
 

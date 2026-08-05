@@ -228,7 +228,6 @@ export function createPurchaseSyncCoordinator(
     return { checkedAt: new Date().toISOString(), reconcileId, status: 'pending' }
   }
 
-
   function isPendingReconcile(
     response: PurchaseSyncResponse | null,
   ): response is Extract<PurchaseSyncResponse, { status: 'pending' }> {
