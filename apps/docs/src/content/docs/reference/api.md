@@ -33,17 +33,18 @@ Runtime requests use a public app-bound `sk_sdk_…` key. The caller cannot sele
 an app or Store environment; the key resolves the app and verified provider
 evidence resolves the environment.
 
-| Endpoint                          | Purpose                                   |
-| --------------------------------- | ----------------------------------------- |
-| `/api/runtime/offerings`          | Runtime packages and current offering     |
-| `/api/runtime/customer-info`      | Effective entitlements and access context |
-| `/api/runtime/entitlements/check` | One fail-closed entitlement decision      |
-| `/api/runtime/iap/reconcile`      | Provider-verified purchase reconciliation |
-| `/api/runtime/devices/list`       | Installation/device activation state      |
-| `/api/runtime/devices/claim`      | Claim an eligible activation              |
-| `/api/runtime/devices/renew`      | Renew the current activation lease        |
-| `/api/runtime/devices/replace`    | Replace an activation within policy       |
-| `/api/runtime/devices/revoke`     | Revoke a selected activation              |
+| Endpoint                                  | Purpose                                                    |
+| ----------------------------------------- | ---------------------------------------------------------- |
+| `/api/runtime/offerings`                  | Runtime packages and current offering                      |
+| `/api/runtime/customer-info`              | Effective entitlements and access context                  |
+| `/api/runtime/entitlements/check`         | One fail-closed entitlement decision                       |
+| `/api/runtime/iap/reconcile`              | Provider-verified purchase reconciliation (202 + job poll) |
+| `/api/runtime/iap/reconcile/$reconcileId` | Poll a durable reconcile job (pending/result, stable id)   |
+| `/api/runtime/devices/list`               | Installation/device activation state                       |
+| `/api/runtime/devices/claim`              | Claim an eligible activation                               |
+| `/api/runtime/devices/renew`              | Renew the current activation lease                         |
+| `/api/runtime/devices/replace`            | Replace an activation within policy                        |
+| `/api/runtime/devices/revoke`             | Revoke a selected activation                               |
 
 Only provider verification followed by a `granted` Effective Access decision
 unlocks a mobile feature. A successful purchase transport response or one raw

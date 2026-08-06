@@ -354,6 +354,19 @@ export const iapReconcileResponseSchema = z.strictObject({
   verificationStatus: verificationStatusSchema,
 })
 
+/** Durable pending contract (ADR 008/009). */
+export const iapReconcilePendingSchema = z.strictObject({
+  checkedAt: z.string().min(1),
+  reconcileId: z.string().min(1),
+  status: z.literal('pending'),
+})
+
+/** The SDK accepts either the terminal result or the durable pending contract. */
+export const purchaseSyncResponseSchema = z.union([
+  iapReconcileResponseSchema,
+  iapReconcilePendingSchema,
+])
+
 export const runtimeCustomerInfoRequestSchema = z.strictObject({
   accessContext: z.string().min(1).optional(),
   appUserId: z.string().min(1),
@@ -410,6 +423,8 @@ export type RuntimeOfferingsWithAppRequestInput = z.infer<
   typeof runtimeOfferingsWithAppRequestSchema
 >
 export type IapReconcileRequestInput = z.infer<typeof iapReconcileRequestSchema>
+export type PurchaseSyncPendingSchema = z.infer<typeof iapReconcilePendingSchema>
+export type PurchaseSyncResponseSchema = z.infer<typeof purchaseSyncResponseSchema>
 export type IapReconcileWithAppRequestInput = z.infer<typeof iapReconcileWithAppRequestSchema>
 export type RuntimeEntitlementCheckRequestInput = z.infer<
   typeof runtimeEntitlementCheckRequestSchema
