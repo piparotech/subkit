@@ -8,7 +8,11 @@ import type {
 } from '@piparotech/subkit-core'
 
 import type { SubKitExpoIapAdapter } from './adapter.js'
-import { type SubKitRuntimeClient, normalizePurchaseForReconcile } from './client.js'
+import {
+  type SubKitRuntimeClient,
+  SubKitRuntimeError,
+  normalizePurchaseForReconcile,
+} from './client.js'
 import type { PurchaseQueueItem, PurchaseQueueStore } from './queue.js'
 import type { SubKitIapPurchase } from './types.js'
 
@@ -109,11 +113,16 @@ export function createPurchaseSyncCoordinator(
 
     let result: PurchaseSyncResponse | null = null
 
-    // Items already bound to a durable job resume by polling (no re-send of
-    // receipts); the rest are POSTed as one batch. Each job is the durable
-    // unit; polling is idempotent and crash-safe (ADR 008/009).
-    if (toPost.length > 0) {
-      const purchases = toPost.map((item) =>
+    async function postItems(
+      items: PurchaseQueueItem[],
+      binding: {
+        appUserId: string
+        identityGeneration: number
+        installationId: string
+      },
+      reason: PurchaseSyncReason,
+    ): Promise<PurchaseSyncResponse> {
+      const purchases = items.map((item) =>
         normalizePurchaseForReconcile(queueItemToPurchase(item)),
       )
       const posted = await options.runtime.reconcile({
@@ -129,14 +138,41 @@ export function createPurchaseSyncCoordinator(
       if (isPendingReconcile(posted)) {
         // Persist the reconcile id the instant the 202 arrives so a crash or
         // lost response resumes by polling, never by re-sending receipts.
-        for (const item of toPost) {
+        for (const item of items) {
           await options.queue.attachReconcileId(item.id, posted.reconcileId)
         }
       }
-      result = posted
+      return posted
+    }
+
+    // Items already bound to a durable job resume by polling (no re-send of
+    // receipts); the rest are POSTed as one batch. Each job is the durable
+    // unit; polling is idempotent and crash-safe (ADR 008/009).
+    if (toPost.length > 0) {
+      result = await postItems(toPost, binding, reason)
     } else if (toResume.length > 0 && toResume[0].reconcileId != null) {
-      // Resume an in-flight durable job from the first bound item.
-      result = await pollWithBoundedWait(toResume[0].reconcileId)
+      const resumeJobId = toResume[0].reconcileId
+      let resumed = false
+      try {
+        // Resume an in-flight durable job from the first bound item.
+        result = await pollWithBoundedWait(resumeJobId)
+        resumed = true
+      } catch (error) {
+        if (!(error instanceof SubKitRuntimeError && error.code === 'not_found')) throw error
+      }
+      if (!resumed) {
+        // The job was retired (terminal + 30-day retention) or is unknown;
+        // `not_found` is non-retryable, so polling it forever would park the
+        // queue items behind a dead reconcile id. Clear the stale id and
+        // re-verify the items via a fresh POST (idempotent, no lost/duplicated
+        // work) instead of re-polling a permanently-pending job.
+        for (const item of toResume) {
+          if (item.reconcileId === resumeJobId) {
+            await options.queue.attachReconcileId(item.id, null)
+          }
+        }
+        result = await postItems(toResume, binding, reason)
+      }
     } else {
       // No pending items for this binding: refresh via an empty reconcile so
       // customer-info/freshness semantics and the call pattern are unchanged.
@@ -191,7 +227,19 @@ export function createPurchaseSyncCoordinator(
     }
 
     for (const transaction of terminalResult.finishableTransactions) {
-      const item = pending.find((candidate) => candidate.id === transaction.purchaseId)
+      // Primary match by the server-minted purchase id; fall back to the
+      // verified transaction id so a token-only Google purchase (client id is
+      // `google_play:token:<token>`, server id falls back to a generic) is
+      // still matched and finished — it must not be re-verified forever.
+      const item =
+        pending.find((candidate) => candidate.id === transaction.purchaseId) ??
+        (transaction.transactionId == null
+          ? undefined
+          : pending.find(
+              (candidate) =>
+                candidate.status === 'pending' &&
+                queueItemTransactionIdentifier(candidate) === transaction.transactionId,
+            ))
       if (item == null) continue
       await options.queue.markVerified(item.id)
       try {

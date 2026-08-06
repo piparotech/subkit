@@ -20,8 +20,8 @@ export interface PurchaseQueueStore {
     purchases: readonly SubKitIapPurchase[],
     binding: PurchaseQueueBinding,
   ): Promise<PurchaseQueueItem[]>
-  /** Persist the durable reconcile id once a 202 is received (crash-safe resume). */
-  attachReconcileId(id: string, reconcileId: string): Promise<void>
+  /** Persist the durable reconcile id once a 202 is received (crash-safe resume), or clear it (null) when the job is no longer pollable (404). */
+  attachReconcileId(id: string, reconcileId: string | null): Promise<void>
   listPending(binding: PurchaseQueueBinding): Promise<PurchaseQueueItem[]>
   markFailed(id: string, error: string): Promise<void>
   markFinished(id: string): Promise<void>

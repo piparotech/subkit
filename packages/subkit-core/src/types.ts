@@ -354,8 +354,9 @@ export interface QueuedPurchase {
   /**
    * The durable reconcile job id (ADR 008/009). Persisted on 202 so a lost
    * response or app restart resumes by polling instead of re-sending receipts.
+   * `null` clears a stale binding (e.g. after a 404 on a retired job).
    */
-  reconcileId?: string
+  reconcileId?: string | null
   linkedPurchaseToken?: string
   orderId?: string
   originalTransactionId?: string
