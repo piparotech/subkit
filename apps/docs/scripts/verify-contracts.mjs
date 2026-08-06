@@ -55,6 +55,7 @@ const documentedRoutes = new Set([
   '/api/runtime/devices/revoke',
   '/api/runtime/entitlements/check',
   '/api/runtime/iap/reconcile',
+  '/api/runtime/iap/reconcile/$reconcileId',
   '/api/runtime/offerings',
   '/api/server/access-allocations/$allocationId',
   '/api/server/access-pools/$poolId',
