@@ -7,7 +7,7 @@ Expo / React Native SDK for SubKit offerings, purchases, restore/sync, CustomerI
 Configure the private GitHub Packages registry, then install Expo with its required Core peer and the optional storage adapters your app uses:
 
 ```sh
-pnpm add @piparotech/subkit-core@^0.1.9 @piparotech/subkit-expo@^0.1.11
+pnpm add @piparotech/subkit-core@^0.1.10 @piparotech/subkit-expo@^0.1.12
 ```
 
 ## Minimal setup

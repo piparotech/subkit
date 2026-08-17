@@ -6,7 +6,7 @@ description: Install the SubKit Expo SDK, its core contract, and the expo-iap na
 ## Packages
 
 ```sh
-pnpm add @piparotech/subkit-core@^0.1.9 @piparotech/subkit-expo@^0.1.11
+pnpm add @piparotech/subkit-core@^0.1.10 @piparotech/subkit-expo@^0.1.12
 ```
 
 Install the matching core contract explicitly. The Expo SDK imports its runtime

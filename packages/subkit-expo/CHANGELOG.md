@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.12 - client repository split
+
+- Release the Expo client from the dedicated consumer repository.
+- Accept the nullable and forward-compatible React Native AppState surface.
+
 ## 0.1.11 - published
 
 - Add `client.getAccess()` and `client.hasAccess()`.

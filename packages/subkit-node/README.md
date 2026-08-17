@@ -9,7 +9,7 @@ Never ship a SubKit Server API Key in mobile, browser, Expo, or other untrusted 
 Configure the private GitHub Packages registry, then install Node with its required Core peer:
 
 ```sh
-pnpm add @piparotech/subkit-core@^0.1.9 @piparotech/subkit-node@^0.1.9
+pnpm add @piparotech/subkit-core@^0.1.10 @piparotech/subkit-node@^0.1.10
 ```
 
 ## Minimal setup

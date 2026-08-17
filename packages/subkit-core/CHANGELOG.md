@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.10 - client repository split
+
+- Release the shared contracts from the dedicated consumer repository without service, database, worker, or infrastructure source.
+
 ## 0.1.9 - published
 
 - Add the impossible-state-safe `EntitlementAccessDecision` contract.

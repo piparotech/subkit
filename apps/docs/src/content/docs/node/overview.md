@@ -10,7 +10,7 @@ Never ship this key in mobile apps, web clients, or Expo bundles.
 ## Install and configure
 
 ```sh
-pnpm add @piparotech/subkit-core@^0.1.9 @piparotech/subkit-node@^0.1.9
+pnpm add @piparotech/subkit-core@^0.1.10 @piparotech/subkit-node@^0.1.10
 ```
 
 ```ts compile
