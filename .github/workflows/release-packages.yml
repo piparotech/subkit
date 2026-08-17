@@ -1,0 +1,178 @@
+name: release packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      dist_tag:
+        description: npm distribution tag
+        required: true
+        default: latest
+        type: string
+      verify_existing:
+        description: Verify the already-published manifest versions without publishing
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: subkit-package-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      DIST_TAG: ${{ inputs.dist_tag }}
+      NPM_CONFIG_STORE_DIR: /tmp/subkit-pnpm-store
+      NPM_CONFIG_USERCONFIG: /tmp/subkit-release.npmrc
+      VERIFY_EXISTING: ${{ inputs.verify_existing }}
+    steps:
+      - name: Require trusted main branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_SHA" = "${{ github.sha }}"
+
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Verify checked-out revision
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 10.28.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.12.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate release input
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$VERIFY_EXISTING" in
+            true|false) ;;
+            *) echo "Invalid verify_existing input: $VERIFY_EXISTING" >&2; exit 1;;
+          esac
+          case "$DIST_TAG" in
+            ''|*[!a-z0-9._-]*|[0-9]*|.*|-*)
+              echo "Invalid npm distribution tag: $DIST_TAG" >&2
+              exit 1
+              ;;
+          esac
+          node -e "if (/^v?[0-9]+(?:\\.[0-9]+){0,2}(?:[-+].*)?$/.test(process.env.DIST_TAG)) process.exit(1)" || {
+            echo "Distribution tag must not be a semantic version: $DIST_TAG" >&2
+            exit 1
+          }
+
+      - name: Validate package tarballs and clean consumers
+        run: pnpm packages:verify
+
+      - name: Pack release tarballs
+        if: ${{ inputs.verify_existing != true }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .release
+          mkdir .release
+          pnpm --filter @piparotech/subkit-core pack --pack-destination .release
+          pnpm --filter @piparotech/subkit-node pack --pack-destination .release
+          pnpm --filter @piparotech/subkit-expo pack --pack-destination .release
+
+      - name: Configure isolated GitHub Packages authentication
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f "$NPM_CONFIG_USERCONFIG"
+          install -m 0600 /dev/null "$NPM_CONFIG_USERCONFIG"
+          cat >"$NPM_CONFIG_USERCONFIG" <<'EOF'
+          @piparotech:registry=https://npm.pkg.github.com/
+          //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+          EOF
+          test "$(stat -c '%a' "$NPM_CONFIG_USERCONFIG")" = 600
+          test "$(grep -Fc '_authToken=${NODE_AUTH_TOKEN}' "$NPM_CONFIG_USERCONFIG")" = 1
+
+      - name: Refuse existing package versions
+        if: ${{ inputs.verify_existing != true }}
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          registry='https://npm.pkg.github.com/'
+          for manifest in packages/subkit-core/package.json packages/subkit-node/package.json packages/subkit-expo/package.json; do
+            name="$(node -p "require('./$manifest').name")"
+            version="$(node -p "require('./$manifest').version")"
+            error_file="$(mktemp)"
+            if npm view "$name@$version" version --registry="$registry" >/dev/null 2>"$error_file"; then
+              echo "$name@$version already exists; bump versions before release" >&2
+              rm -f "$error_file"
+              exit 1
+            fi
+            if ! grep -Eq 'E404|404 Not Found' "$error_file"; then
+              echo "Could not prove $name@$version is absent; refusing to publish" >&2
+              cat "$error_file" >&2
+              rm -f "$error_file"
+              exit 1
+            fi
+            rm -f "$error_file"
+          done
+
+      - name: Publish Core support package
+        if: ${{ inputs.verify_existing != true }}
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: npm publish "$(find .release -name 'piparotech-subkit-core-*.tgz' -print -quit)" --registry=https://npm.pkg.github.com/ --tag "$DIST_TAG"
+
+      - name: Publish Node SDK
+        if: ${{ inputs.verify_existing != true }}
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: npm publish "$(find .release -name 'piparotech-subkit-node-*.tgz' -print -quit)" --registry=https://npm.pkg.github.com/ --tag "$DIST_TAG"
+
+      - name: Publish Expo SDK
+        if: ${{ inputs.verify_existing != true }}
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        run: npm publish "$(find .release -name 'piparotech-subkit-expo-*.tgz' -print -quit)" --registry=https://npm.pkg.github.com/ --tag "$DIST_TAG"
+
+      - name: Verify published package metadata
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          registry='https://npm.pkg.github.com/'
+          for manifest in packages/subkit-core/package.json packages/subkit-node/package.json packages/subkit-expo/package.json; do
+            name="$(node -p "require('./$manifest').name")"
+            version="$(node -p "require('./$manifest').version")"
+            test "$(npm view "$name@$version" version --registry="$registry")" = "$version"
+            test -n "$(npm view "$name@$version" dist.integrity --registry="$registry")"
+          done
+
+      - name: Install exact published versions in a clean consumer
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+          SUBKIT_NPM_REGISTRY: https://npm.pkg.github.com/
+        run: pnpm packages:verify:registry
+
+      - name: Remove isolated npm authentication
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          rm -f "$NPM_CONFIG_USERCONFIG"
+          rm -rf .release

@@ -4,9 +4,14 @@
   "type": "module",
   "description": "Node.js backend SDK for querying SubKit.",
   "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/piparotech/subkit.git",
+    "directory": "packages/subkit-node"
+  },
   "publishConfig": {
     "access": "restricted",
-    "registry": "https://git.piparo.tech/api/packages/piparo.tech/npm/"
+    "registry": "https://npm.pkg.github.com/"
   },
   "exports": {
     ".": {

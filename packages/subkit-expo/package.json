@@ -5,9 +5,14 @@
   "sideEffects": false,
   "description": "SubKit Expo IAP SDK with automatic purchase sync.",
   "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/piparotech/subkit.git",
+    "directory": "packages/subkit-expo"
+  },
   "publishConfig": {
     "access": "restricted",
-    "registry": "https://git.piparo.tech/api/packages/piparo.tech/npm/"
+    "registry": "https://npm.pkg.github.com/"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

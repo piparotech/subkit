@@ -10,11 +10,11 @@ const temporary = mkdtempSync(join(tmpdir(), 'subkit-registry-consumer-'))
 const registry = process.env.SUBKIT_NPM_REGISTRY
 const token = process.env.NODE_AUTH_TOKEN
 
-if (registry !== 'https://git.piparo.tech/api/packages/piparo.tech/npm/') {
-  throw new Error('SUBKIT_NPM_REGISTRY must be the piparo.tech Forgejo npm registry')
+if (registry !== 'https://npm.pkg.github.com/') {
+  throw new Error('SUBKIT_NPM_REGISTRY must be the GitHub Packages npm registry')
 }
 if (token == null || token.length === 0) {
-  throw new Error('NODE_AUTH_TOKEN is required for the Forgejo registry consumer')
+  throw new Error('NODE_AUTH_TOKEN is required for the GitHub Packages registry consumer')
 }
 
 const versions = {
@@ -26,7 +26,7 @@ const versions = {
 try {
   writeFileSync(
     join(temporary, '.npmrc'),
-    `@piparotech:registry=${registry}\n//git.piparo.tech/api/packages/piparo.tech/npm/:_authToken=\${NODE_AUTH_TOKEN}\n`,
+    `@piparotech:registry=${registry}\n//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}\n`,
     { mode: 0o600 },
   )
   writeFileSync(
@@ -44,7 +44,7 @@ try {
           'react-native': '0.85.3',
           'react-native-mmkv': '4.1.2',
         },
-        name: 'subkit-forgejo-registry-consumer',
+        name: 'subkit-github-registry-consumer',
         private: true,
         type: 'module',
       },
@@ -90,7 +90,7 @@ for (const subpath of [
     }
   }
   console.log(
-    `Verified Forgejo registry consumer for Core ${versions.core}, Node ${versions.node}, and Expo ${versions.expo}.`,
+    `Verified GitHub Packages consumer for Core ${versions.core}, Node ${versions.node}, and Expo ${versions.expo}.`,
   )
 } finally {
   rmSync(temporary, { force: true, recursive: true })

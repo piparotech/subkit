@@ -79,11 +79,14 @@ try {
   for (const directory of packageDirectories) {
     const packageJson = readPackageJson(directory)
     if (packageJson.private === true) throw new Error(`${packageJson.name} is still private`)
-    if (
-      packageJson.publishConfig?.registry !==
-      'https://git.piparo.tech/api/packages/piparo.tech/npm/'
-    ) {
+    if (packageJson.publishConfig?.registry !== 'https://npm.pkg.github.com/') {
       throw new Error(`${packageJson.name} has an unexpected publish registry`)
+    }
+    if (packageJson.repository?.url !== 'git+https://github.com/piparotech/subkit.git') {
+      throw new Error(`${packageJson.name} has an unexpected source repository`)
+    }
+    if (packageJson.repository?.directory !== directory) {
+      throw new Error(`${packageJson.name} has an unexpected repository directory`)
     }
   }
 
