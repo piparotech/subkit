@@ -41,7 +41,7 @@ export class SubKit {
       operator: options.operator,
       secretKey: options.secretKey,
       timeoutMs: options.timeoutMs ?? 10_000,
-      userAgent: options.userAgent ?? '@piparotech/subkit-node/0.1.8',
+      userAgent: options.userAgent ?? '@piparotech/subkit-node/0.1.9',
     })
 
     this.access = new AccessClient({ appId: options.appId, http })

@@ -16,8 +16,8 @@ export const nimbusConfig = defineNimbusConfig({
       attrs: { rel: 'icon', type: 'image/png', href: '/docs/favicon.png' },
     },
   ],
-  github: 'https://git.piparo.tech/piparo.tech/subkit',
-  editPattern: 'https://git.piparo.tech/piparo.tech/subkit/_edit/main/apps/docs/{path}',
+  github: 'https://github.com/piparotech/subkit',
+  editPattern: 'https://github.com/piparotech/subkit/edit/main/apps/docs/{path}',
   sidebar: {
     items: [
       {

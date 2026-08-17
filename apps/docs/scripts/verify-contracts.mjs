@@ -1,10 +1,8 @@
 import { readFile } from 'node:fs/promises'
-import { basename, join, resolve } from 'node:path'
-
-import { walkFiles } from './docs-output-lib.mjs'
+import { join, resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '../../..')
-const routeRoot = join(root, 'src/routes')
+const contentRoot = join(root, 'apps/docs/src/content/docs')
 const errors = []
 
 async function requireExports(moduleName, sourcePath, names) {
@@ -46,7 +44,7 @@ await requireExports('@piparotech/subkit-expo', join(root, 'packages/subkit-expo
   'useSubKitOfferings',
 ])
 
-const documentedRoutes = new Set([
+const expectedDocumentedRoutes = new Set([
   '/api/runtime/customer-info',
   '/api/runtime/devices/claim',
   '/api/runtime/devices/list',
@@ -88,20 +86,19 @@ const documentedRoutes = new Set([
   '/api/server/subjects/upsert',
 ])
 
-const actualRoutes = new Set()
-for (const path of await walkFiles(routeRoot)) {
-  if (!basename(path).startsWith('api.runtime.') && !basename(path).startsWith('api.server.'))
-    continue
-  const source = await readFile(path, 'utf8')
-  const match = source.match(/createFileRoute\(\s*'([^']+)'\s*,?\s*\)/u)
-  if (match?.[1] != null) actualRoutes.add(match[1])
-}
+const apiReference = await readFile(join(contentRoot, 'reference/api.md'), 'utf8')
+const documentedRoutes = new Set(
+  [...apiReference.matchAll(/`(\/api\/(?:runtime|server)\/[^`]+)`/gu)]
+    .map((match) => match[1].replaceAll(/:([A-Za-z][A-Za-z0-9]*)/gu, '$$$1'))
+    .filter((route) => !route.endsWith('/**')),
+)
 
-for (const route of documentedRoutes) {
-  if (!actualRoutes.has(route)) errors.push(`Documented route does not exist: ${route}`)
+for (const route of expectedDocumentedRoutes) {
+  if (!documentedRoutes.has(route)) errors.push(`Public API reference is missing route: ${route}`)
 }
-for (const route of actualRoutes) {
-  if (!documentedRoutes.has(route)) errors.push(`Public route is missing from docs: ${route}`)
+for (const route of documentedRoutes) {
+  if (!expectedDocumentedRoutes.has(route))
+    errors.push(`Public API reference has an unknown route: ${route}`)
 }
 
 if (errors.length > 0) {
@@ -110,6 +107,6 @@ if (errors.length > 0) {
   process.exitCode = 1
 } else {
   console.log(
-    `Verified ${documentedRoutes.size} HTTP routes and documented Core, Node, and Expo exports.`,
+    `Verified ${expectedDocumentedRoutes.size} documented HTTP routes and Core, Node, and Expo exports.`,
   )
 }

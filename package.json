@@ -1,0 +1,44 @@
+{
+  "name": "subkit-clients",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=24.12.0",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "build": "pnpm packages:build && pnpm docs:build",
+    "packages:build": "pnpm --filter @piparotech/subkit-core build && pnpm --filter @piparotech/subkit-node build && pnpm --filter @piparotech/subkit-expo build",
+    "packages:test": "pnpm --filter @piparotech/subkit-core test && pnpm --filter @piparotech/subkit-node test && pnpm --filter @piparotech/subkit-expo test",
+    "packages:verify": "node scripts/test-package-manifest-version.mjs && node scripts/check-package-release.mjs",
+    "packages:verify:registry": "node scripts/check-registry-package-consumer.mjs",
+    "docs:dev": "pnpm --filter @piparotech/subkit-docs dev",
+    "docs:build": "pnpm --filter @piparotech/subkit-docs build",
+    "docs:preview": "pnpm --filter @piparotech/subkit-docs preview",
+    "docs:check": "pnpm --filter @piparotech/subkit-docs check",
+    "docs:lint": "pnpm --filter @piparotech/subkit-docs lint",
+    "docs:verify": "pnpm --filter @piparotech/subkit-docs verify",
+    "check-format": "prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "pnpm packages:build && pnpm docs:check",
+    "test": "pnpm packages:test",
+    "check": "pnpm check-format && pnpm typecheck && pnpm test && pnpm packages:verify && pnpm docs:lint && pnpm docs:build && pnpm docs:verify"
+  },
+  "devDependencies": {
+    "@trivago/prettier-plugin-sort-imports": "^6.0.2",
+    "@types/node": "^24.12.3",
+    "@types/react": "^19.2.17",
+    "prettier": "^3.9.4",
+    "prettier-plugin-tailwindcss": "^0.8.0",
+    "typescript": "~6.0.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "nanoid@3.3.17": "3.3.18",
+      "react-native": "0.86.0",
+      "sharp": "0.35.3"
+    }
+  }
+}

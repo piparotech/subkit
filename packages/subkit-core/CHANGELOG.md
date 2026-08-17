@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.9 — prepared, not published
+## 0.1.9 - published
 
 - Add the impossible-state-safe `EntitlementAccessDecision` contract.
 - Add `resolveEntitlementAccess()` and `isEntitlementAccessGranted()`.

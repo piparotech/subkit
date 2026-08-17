@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.11 — prepared, not published
+## 0.1.11 - published
 
 - Add `client.getAccess()` and `client.hasAccess()`.
 - Add `useSubKitAccess()` and fail-closed `useSubKitHasAccess()`.

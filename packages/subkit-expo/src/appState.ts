@@ -1,4 +1,4 @@
-import { AppState, type AppStateStatus } from 'react-native'
+import { AppState } from 'react-native'
 
 export type SubKitAppState = 'active' | 'background' | 'inactive' | 'unknown'
 
@@ -64,7 +64,7 @@ export function createSubKitAppStateSync(options: SubKitAppStateSyncOptions): {
   }
 }
 
-function normalizeReactNativeAppState(state: AppStateStatus): SubKitAppState {
+function normalizeReactNativeAppState(state: string | null | undefined): SubKitAppState {
   if (state === 'active') return 'active'
   if (state === 'background') return 'background'
   if (state === 'inactive') return 'inactive'

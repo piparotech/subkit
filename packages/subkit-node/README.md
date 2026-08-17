@@ -6,7 +6,7 @@ Never ship a SubKit Server API Key in mobile, browser, Expo, or other untrusted 
 
 ## Install
 
-Configure the private piparo.tech Forgejo registry, then install Node with its required Core peer:
+Configure the private GitHub Packages registry, then install Node with its required Core peer:
 
 ```sh
 pnpm add @piparotech/subkit-core@^0.1.9 @piparotech/subkit-node@^0.1.9
