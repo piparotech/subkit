@@ -58,7 +58,6 @@ jobs:
         with:
           node-version: 24.12.0
           registry-url: https://registry.npmjs.org
-          package-manager-cache: false
 
       - name: Require trusted-publishing npm CLI
         run: |
@@ -117,7 +116,7 @@ jobs:
         env:
           SUBKIT_NPM_REGISTRY: https://registry.npmjs.org/
           SUBKIT_RELEASE_PACKAGE: ${{ steps.release.outputs.package_slug }}
-        run: pnpm packages:verify:registry
+        run: env -u NODE_AUTH_TOKEN pnpm packages:verify:registry
 
       - name: Remove release artifacts
         if: ${{ always() }}
