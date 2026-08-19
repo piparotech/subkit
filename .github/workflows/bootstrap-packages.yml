@@ -127,12 +127,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          verification_cache="$(mktemp -d)"
+          trap 'rm -rf "$verification_cache"' EXIT
           for attempt in 1 2 3 4 5; do
-            published="$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version --registry=https://registry.npmjs.org/ 2>/dev/null || true)"
-            integrity="$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" dist.integrity --registry=https://registry.npmjs.org/ 2>/dev/null || true)"
+            published="$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version --registry=https://registry.npmjs.org/ --cache="$verification_cache" --prefer-online 2>/dev/null || true)"
+            integrity="$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" dist.integrity --registry=https://registry.npmjs.org/ --cache="$verification_cache" --prefer-online 2>/dev/null || true)"
             if [ "$published" = "$PACKAGE_VERSION" ] && [ -n "$integrity" ]; then
               exit 0
             fi
+            rm -rf "$verification_cache"
+            mkdir "$verification_cache"
             sleep $((attempt * 3))
           done
           echo "Public npm metadata did not converge for $PACKAGE_NAME@$PACKAGE_VERSION" >&2

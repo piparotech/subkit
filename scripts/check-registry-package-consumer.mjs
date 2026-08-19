@@ -63,7 +63,12 @@ if (releasePackage === 'expo') {
 }
 
 try {
-  writeFileSync(join(temporary, '.npmrc'), `registry=${registry}\n`, { mode: 0o600 })
+  const userConfiguration = join(temporary, 'npmrc')
+  writeFileSync(
+    userConfiguration,
+    `registry=${registry}\n@piparotech:registry=${registry}\nalways-auth=false\n`,
+    { mode: 0o600 },
+  )
   writeFileSync(
     join(temporary, 'package.json'),
     `${JSON.stringify(
@@ -79,8 +84,14 @@ try {
   )
   writeFileSync(join(temporary, 'consumer.mjs'), `${imports.join('\n')}\n`)
 
-  const environment = { ...process.env }
+  const environment = {
+    ...process.env,
+    HOME: temporary,
+    NPM_CONFIG_GLOBALCONFIG: join(temporary, 'global-npmrc'),
+    NPM_CONFIG_USERCONFIG: userConfiguration,
+  }
   delete environment.NODE_AUTH_TOKEN
+  delete environment.npm_config_userconfig
   execFileSync('pnpm', ['install', '--ignore-workspace', '--frozen-lockfile=false'], {
     cwd: temporary,
     env: environment,
