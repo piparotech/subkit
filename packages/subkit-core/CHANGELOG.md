@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.11 - trusted publishing verification
+
+- Verify the permanent token-free npm trusted-publishing release path.
+
 ## 0.1.10 - client repository split
 
 - Release the shared contracts from the dedicated consumer repository without service, database, worker, or infrastructure source.
