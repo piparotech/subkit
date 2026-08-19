@@ -12,12 +12,14 @@ if (process.env.NODE_AUTH_TOKEN != null) {
 
 const packagePath = encodeURIComponent(packageName)
 const url = `https://registry.npmjs.org/${packagePath}`
-const response = await fetch(url, {
-  headers: {
-    accept: 'application/json',
-    'cache-control': 'no-cache',
-  },
-})
+const fetchPackument = (accept) =>
+  fetch(url, {
+    headers: {
+      accept,
+      'cache-control': 'no-cache',
+    },
+  })
+const response = await fetchPackument('application/json')
 
 if (expectedState === 'absent') {
   if (response.status === 404) {
@@ -47,5 +49,22 @@ if (
   !metadata.dist.tarball.startsWith('https://registry.npmjs.org/')
 ) {
   throw new Error(`Public npm metadata is incomplete for ${packageName}@${packageVersion}`)
+}
+const installationResponse = await fetchPackument('application/vnd.npm.install-v1+json')
+if (!installationResponse.ok) {
+  throw new Error(
+    `Public npm install metadata returned HTTP ${installationResponse.status} for ${packageName}@${packageVersion}`,
+  )
+}
+const installationPackument = await installationResponse.json()
+const installationMetadata = installationPackument?.versions?.[packageVersion]
+if (
+  installationPackument?.name !== packageName ||
+  installationMetadata?.name !== packageName ||
+  installationMetadata?.version !== packageVersion ||
+  installationMetadata?.dist?.integrity !== metadata.dist.integrity ||
+  installationMetadata?.dist?.tarball !== metadata.dist.tarball
+) {
+  throw new Error(`Public npm install metadata is incomplete for ${packageName}@${packageVersion}`)
 }
 console.log(`Verified public npm metadata for ${packageName}@${packageVersion}.`)

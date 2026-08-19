@@ -103,12 +103,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for attempt in 1 2 3 4 5; do
+          for attempt in {1..20}; do
             if env -u NODE_AUTH_TOKEN node scripts/check-public-package-version.mjs \
               "$PACKAGE_NAME" "$PACKAGE_VERSION" present; then
               exit 0
             fi
-            sleep $((attempt * 3))
+            sleep 15
           done
           echo "Public npm metadata did not converge for $PACKAGE_NAME@$PACKAGE_VERSION" >&2
           exit 1
