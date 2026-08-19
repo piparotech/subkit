@@ -27,15 +27,6 @@ Packages publish publicly to npmjs.org from `.github/workflows/release-packages.
 - `subkit-node-vX.Y.Z`
 - `subkit-expo-vX.Y.Z`
 
-The workflow rejects tags whose version does not match the selected package or whose commit is not contained in `main`. It builds and publishes only the tagged package through npm trusted publishing, then installs the exact public version in an anonymous clean consumer.
+The workflow rejects tags whose version does not match the selected package or whose commit is not contained in `main`. It builds and publishes only the tagged package through npm trusted publishing, verifies both public npm metadata representations, then installs the exact public version in an anonymous clean consumer.
 
-### First npmjs publication
-
-Trusted publishing can only be attached after a package exists on npmjs.org. Bootstrap each package once from `main` with the temporary `.github/workflows/bootstrap-packages.yml` workflow and the short-lived `NPM_BOOTSTRAP_TOKEN` repository secret. The token must be granular, restricted to the `piparotech` npm organization, permitted to publish public packages, allowed to bypass 2FA, and expire as soon as practical. The bootstrap workflow deliberately has no OIDC permission so npm uses only the explicit one-time token.
-
-After all three packages exist:
-
-1. Configure each npm package's trusted publisher as GitHub Actions, organization `piparotech`, repository `subkit`, workflow `release-packages.yml`, allowed action `npm publish`.
-2. Delete the `NPM_BOOTSTRAP_TOKEN` GitHub secret and revoke the npm token.
-3. Delete `bootstrap-packages.yml` from `main`.
-4. Use component tags on `main` for every later release.
+Each npm package trusts only GitHub Actions from organization `piparotech`, repository `subkit`, workflow `release-packages.yml`, with the `npm publish` action. Releases require no npm token or repository secret.
