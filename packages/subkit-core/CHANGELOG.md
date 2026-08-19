@@ -1,12 +1,16 @@
 # Changelog
 
-## 0.1.12 - trusted publishing verification
+## 0.1.13 - trusted publishing verification
 
 - Verify the permanent token-free npm trusted-publishing release path.
 
+## 0.1.12 - unpublished
+
+- Reserved by an immutable component-tag attempt whose release tests inherited setup-node authentication; no npm version was published.
+
 ## 0.1.11 - unpublished
 
-- Reserved by the first immutable component-tag attempt; no npm version was published.
+- Reserved by an immutable component-tag attempt whose absence guard rejected an existing package name; no npm version was published.
 
 ## 0.1.10 - client repository split
 
