@@ -18,6 +18,8 @@ function run(expectedState, responses) {
       };
     };
   `
+  const environment = { ...process.env }
+  delete environment.NODE_AUTH_TOKEN
   return spawnSync(
     process.execPath,
     [
@@ -28,7 +30,7 @@ function run(expectedState, responses) {
       '1.2.3',
       expectedState,
     ],
-    { cwd: root, encoding: 'utf8' },
+    { cwd: root, encoding: 'utf8', env: environment },
   )
 }
 
@@ -69,4 +71,14 @@ test('rejects an existing version', () => {
 test('accepts an entirely absent package', () => {
   const result = run('absent', [{ status: 404, body: { error: 'Not found' } }])
   assert.equal(result.status, 0, result.stderr)
+})
+
+test('rejects public metadata checks that receive registry credentials', () => {
+  const result = spawnSync(process.execPath, [script, '@piparotech/example', '1.2.3', 'absent'], {
+    cwd: root,
+    encoding: 'utf8',
+    env: { ...process.env, NODE_AUTH_TOKEN: 'sentinel' },
+  })
+  assert.notEqual(result.status, 0)
+  assert.match(result.stderr, /must not receive NODE_AUTH_TOKEN/u)
 })
