@@ -4,7 +4,7 @@ Shared platform-neutral SubKit schemas, DTOs, error contracts, and types used by
 
 ## Install
 
-Configure the private GitHub Packages registry, then install Core with the SDK that consumes it:
+Install Core from the public npm registry with the SDK that consumes it:
 
 ```sh
 pnpm add @piparotech/subkit-core @piparotech/subkit-node

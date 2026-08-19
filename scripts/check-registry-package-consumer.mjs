@@ -8,13 +8,16 @@ import { readPackageVersion } from './package-manifest-version.mjs'
 const root = resolve(import.meta.dirname, '..')
 const temporary = mkdtempSync(join(tmpdir(), 'subkit-registry-consumer-'))
 const registry = process.env.SUBKIT_NPM_REGISTRY
-const token = process.env.NODE_AUTH_TOKEN
+const releasePackage = process.env.SUBKIT_RELEASE_PACKAGE
 
-if (registry !== 'https://npm.pkg.github.com/') {
-  throw new Error('SUBKIT_NPM_REGISTRY must be the GitHub Packages npm registry')
+if (registry !== 'https://registry.npmjs.org/') {
+  throw new Error('SUBKIT_NPM_REGISTRY must be the public npm registry')
 }
-if (token == null || token.length === 0) {
-  throw new Error('NODE_AUTH_TOKEN is required for the GitHub Packages registry consumer')
+if (!['core', 'node', 'expo'].includes(releasePackage)) {
+  throw new Error('SUBKIT_RELEASE_PACKAGE must be core, node, or expo')
+}
+if (process.env.NODE_AUTH_TOKEN != null) {
+  throw new Error('Public npm registry verification must not receive NODE_AUTH_TOKEN')
 }
 
 const versions = {
@@ -23,43 +26,32 @@ const versions = {
   node: readPackageVersion(root, 'packages/subkit-node'),
 }
 
-try {
-  writeFileSync(
-    join(temporary, '.npmrc'),
-    `@piparotech:registry=${registry}\n//npm.pkg.github.com/:_authToken=\${NODE_AUTH_TOKEN}\n`,
-    { mode: 0o600 },
-  )
-  writeFileSync(
-    join(temporary, 'package.json'),
-    `${JSON.stringify(
-      {
-        dependencies: {
-          '@piparotech/subkit-core': versions.core,
-          '@piparotech/subkit-expo': versions.expo,
-          '@piparotech/subkit-node': versions.node,
-          '@react-native-async-storage/async-storage': '3.1.1',
-          'expo-iap': '4.3.1',
-          'expo-secure-store': '15.0.8',
-          react: '19.2.3',
-          'react-native': '0.85.3',
-          'react-native-mmkv': '4.1.2',
-        },
-        name: 'subkit-github-registry-consumer',
-        private: true,
-        type: 'module',
-      },
-      null,
-      2,
-    )}\n`,
-  )
-  writeFileSync(
-    join(temporary, 'consumer.mjs'),
-    `import { customerInfoSchema } from '@piparotech/subkit-core'
-import { SubKit } from '@piparotech/subkit-node'
+const dependencies = {
+  '@piparotech/subkit-core': versions.core,
+}
+const imports = [
+  `import { customerInfoSchema } from '@piparotech/subkit-core'`,
+  `if (typeof customerInfoSchema.parse !== 'function') throw new Error('core schema unavailable')`,
+]
 
-if (typeof customerInfoSchema.parse !== 'function') throw new Error('core schema unavailable')
-if (typeof SubKit !== 'function') throw new Error('node client unavailable')
-for (const subpath of [
+if (releasePackage === 'node') {
+  dependencies['@piparotech/subkit-node'] = versions.node
+  imports.push(
+    `import { SubKit } from '@piparotech/subkit-node'`,
+    `if (typeof SubKit !== 'function') throw new Error('node client unavailable')`,
+  )
+}
+if (releasePackage === 'expo') {
+  Object.assign(dependencies, {
+    '@piparotech/subkit-expo': versions.expo,
+    '@react-native-async-storage/async-storage': '3.1.1',
+    'expo-iap': '4.3.1',
+    'expo-secure-store': '15.0.8',
+    react: '19.2.3',
+    'react-native': '0.85.3',
+    'react-native-mmkv': '4.1.2',
+  })
+  imports.push(`for (const subpath of [
   '@piparotech/subkit-expo',
   '@piparotech/subkit-expo/expo-iap',
   '@piparotech/subkit-expo/expo-secure-store',
@@ -67,21 +59,43 @@ for (const subpath of [
   '@piparotech/subkit-expo/async-storage',
 ]) {
   if (!import.meta.resolve(subpath).startsWith('file:')) throw new Error('unresolved ' + subpath)
+}`)
 }
-`,
-  )
 
+try {
+  writeFileSync(join(temporary, '.npmrc'), `registry=${registry}\n`, { mode: 0o600 })
+  writeFileSync(
+    join(temporary, 'package.json'),
+    `${JSON.stringify(
+      {
+        dependencies,
+        name: `subkit-${releasePackage}-public-registry-consumer`,
+        private: true,
+        type: 'module',
+      },
+      null,
+      2,
+    )}\n`,
+  )
+  writeFileSync(join(temporary, 'consumer.mjs'), `${imports.join('\n')}\n`)
+
+  const environment = { ...process.env }
+  delete environment.NODE_AUTH_TOKEN
   execFileSync('pnpm', ['install', '--ignore-workspace', '--frozen-lockfile=false'], {
     cwd: temporary,
-    env: process.env,
+    env: environment,
     stdio: 'inherit',
   })
-  execFileSync('node', ['consumer.mjs'], { cwd: temporary, stdio: 'inherit' })
-  for (const [name, expected] of [
-    ['@piparotech/subkit-core', versions.core],
-    ['@piparotech/subkit-node', versions.node],
-    ['@piparotech/subkit-expo', versions.expo],
-  ]) {
+  execFileSync('node', ['consumer.mjs'], { cwd: temporary, env: environment, stdio: 'inherit' })
+
+  const expectedPackages = [['@piparotech/subkit-core', versions.core]]
+  if (releasePackage === 'node') {
+    expectedPackages.push(['@piparotech/subkit-node', versions.node])
+  }
+  if (releasePackage === 'expo') {
+    expectedPackages.push(['@piparotech/subkit-expo', versions.expo])
+  }
+  for (const [name, expected] of expectedPackages) {
     const installed = JSON.parse(
       readFileSync(join(temporary, 'node_modules', ...name.split('/'), 'package.json'), 'utf8'),
     )
@@ -89,9 +103,7 @@ for (const subpath of [
       throw new Error(`Unexpected installed package identity for ${name}`)
     }
   }
-  console.log(
-    `Verified GitHub Packages consumer for Core ${versions.core}, Node ${versions.node}, and Expo ${versions.expo}.`,
-  )
+  console.log(`Verified anonymous npm consumer for ${releasePackage}.`)
 } finally {
   rmSync(temporary, { force: true, recursive: true })
 }

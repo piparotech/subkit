@@ -1,22 +1,30 @@
 name: release packages
 
 on:
+  push:
+    tags:
+      - 'subkit-core-v*'
+      - 'subkit-node-v*'
+      - 'subkit-expo-v*'
   workflow_dispatch:
     inputs:
+      package:
+        description: Package to bootstrap on npmjs before trusted publishing is configured
+        required: true
+        type: choice
+        options:
+          - core
+          - node
+          - expo
       dist_tag:
         description: npm distribution tag
         required: true
         default: latest
         type: string
-      verify_existing:
-        description: Verify the already-published manifest versions without publishing
-        required: true
-        default: false
-        type: boolean
 
 permissions:
   contents: read
-  packages: write
+  id-token: write
 
 concurrency:
   group: subkit-package-release
@@ -26,48 +34,56 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     env:
-      DIST_TAG: ${{ inputs.dist_tag }}
+      DIST_TAG: ${{ inputs.dist_tag || 'latest' }}
       NPM_CONFIG_STORE_DIR: /tmp/subkit-pnpm-store
-      NPM_CONFIG_USERCONFIG: /tmp/subkit-release.npmrc
-      VERIFY_EXISTING: ${{ inputs.verify_existing }}
     steps:
-      - name: Require trusted main branch
-        shell: bash
-        run: |
-          set -euo pipefail
-          test "$GITHUB_REF" = refs/heads/main
-          test "$GITHUB_SHA" = "${{ github.sha }}"
-
-      - name: Check out repository
+      - name: Check out release revision
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify checked-out revision
-        shell: bash
-        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
-        with:
-          version: 10.28.0
-
-      - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
-        with:
-          node-version: 24.12.0
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Validate release input
+      - name: Resolve release package
+        id: release
+        env:
+          DISPATCH_PACKAGE: ${{ inputs.package }}
         shell: bash
         run: |
           set -euo pipefail
-          case "$VERIFY_EXISTING" in
-            true|false) ;;
-            *) echo "Invalid verify_existing input: $VERIFY_EXISTING" >&2; exit 1;;
-          esac
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            release_tag="$GITHUB_REF_NAME"
+            release_commit="$(git rev-list -n 1 "$GITHUB_REF")"
+          else
+            test "$GITHUB_EVENT_NAME" = workflow_dispatch
+            test "$GITHUB_REF" = refs/heads/main
+            case "$DISPATCH_PACKAGE" in
+              core) directory=packages/subkit-core ;;
+              node) directory=packages/subkit-node ;;
+              expo) directory=packages/subkit-expo ;;
+              *) echo "Unsupported bootstrap package: $DISPATCH_PACKAGE" >&2; exit 1 ;;
+            esac
+            version="$(node -p "require('./$directory/package.json').version")"
+            release_tag="subkit-$DISPATCH_PACKAGE-v$version"
+            release_commit="$(git rev-parse HEAD)"
+          fi
+
+          test "$(git rev-parse HEAD)" = "$release_commit"
+          node scripts/resolve-package-release-tag.mjs "$release_tag" >> "$GITHUB_OUTPUT"
+          printf 'release_tag=%s\nrelease_commit=%s\n' "$release_tag" "$release_commit" >> "$GITHUB_OUTPUT"
+
+      - name: Require release commit on main
+        env:
+          RELEASE_COMMIT: ${{ steps.release.outputs.release_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$RELEASE_COMMIT" origin/main
+
+      - name: Validate distribution tag
+        shell: bash
+        run: |
+          set -euo pipefail
           case "$DIST_TAG" in
             ''|*[!a-z0-9._-]*|[0-9]*|.*|-*)
               echo "Invalid npm distribution tag: $DIST_TAG" >&2
@@ -79,100 +95,102 @@ jobs:
             exit 1
           }
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1
+        with:
+          version: 10.28.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24.12.0
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Require trusted-publishing npm CLI
+        run: |
+          npm install --global npm@11.11.0
+          test "$(npm --version)" = 11.11.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Validate package tarballs and clean consumers
         run: pnpm packages:verify
 
-      - name: Pack release tarballs
-        if: ${{ inputs.verify_existing != true }}
+      - name: Pack selected release
+        env:
+          PACKAGE_NAME: ${{ steps.release.outputs.package_name }}
         shell: bash
         run: |
           set -euo pipefail
           rm -rf .release
           mkdir .release
-          pnpm --filter @piparotech/subkit-core pack --pack-destination .release
-          pnpm --filter @piparotech/subkit-node pack --pack-destination .release
-          pnpm --filter @piparotech/subkit-expo pack --pack-destination .release
+          pnpm --filter "$PACKAGE_NAME" pack --pack-destination .release
+          archive="$(find .release -maxdepth 1 -name '*.tgz' -print -quit)"
+          test -n "$archive"
+          test "$(find .release -maxdepth 1 -name '*.tgz' | wc -l | tr -d ' ')" = 1
+          printf 'archive=%s\n' "$archive" >> "$GITHUB_ENV"
 
-      - name: Configure isolated GitHub Packages authentication
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -f "$NPM_CONFIG_USERCONFIG"
-          install -m 0600 /dev/null "$NPM_CONFIG_USERCONFIG"
-          cat >"$NPM_CONFIG_USERCONFIG" <<'EOF'
-          @piparotech:registry=https://npm.pkg.github.com/
-          //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
-          EOF
-          test "$(stat -c '%a' "$NPM_CONFIG_USERCONFIG")" = 600
-          test "$(grep -Fc '_authToken=${NODE_AUTH_TOKEN}' "$NPM_CONFIG_USERCONFIG")" = 1
-
-      - name: Refuse existing package versions
-        if: ${{ inputs.verify_existing != true }}
+      - name: Refuse existing npm version
         env:
-          NODE_AUTH_TOKEN: ${{ github.token }}
+          PACKAGE_NAME: ${{ steps.release.outputs.package_name }}
+          PACKAGE_VERSION: ${{ steps.release.outputs.package_version }}
         shell: bash
         run: |
           set -euo pipefail
-          registry='https://npm.pkg.github.com/'
-          for manifest in packages/subkit-core/package.json packages/subkit-node/package.json packages/subkit-expo/package.json; do
-            name="$(node -p "require('./$manifest').name")"
-            version="$(node -p "require('./$manifest').version")"
-            error_file="$(mktemp)"
-            if npm view "$name@$version" version --registry="$registry" >/dev/null 2>"$error_file"; then
-              echo "$name@$version already exists; bump versions before release" >&2
-              rm -f "$error_file"
-              exit 1
-            fi
-            if ! grep -Eq 'E404|404 Not Found' "$error_file"; then
-              echo "Could not prove $name@$version is absent; refusing to publish" >&2
-              cat "$error_file" >&2
-              rm -f "$error_file"
-              exit 1
-            fi
+          error_file="$(mktemp)"
+          if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version --registry=https://registry.npmjs.org/ >/dev/null 2>"$error_file"; then
+            echo "$PACKAGE_NAME@$PACKAGE_VERSION already exists; bump the package version before tagging" >&2
             rm -f "$error_file"
-          done
+            exit 1
+          fi
+          if ! grep -Eq 'E404|404 Not Found' "$error_file"; then
+            echo "Could not prove $PACKAGE_NAME@$PACKAGE_VERSION is absent; refusing to publish" >&2
+            cat "$error_file" >&2
+            rm -f "$error_file"
+            exit 1
+          fi
+          rm -f "$error_file"
 
-      - name: Publish Core support package
-        if: ${{ inputs.verify_existing != true }}
-        env:
-          NODE_AUTH_TOKEN: ${{ github.token }}
-        run: npm publish "$(find .release -name 'piparotech-subkit-core-*.tgz' -print -quit)" --registry=https://npm.pkg.github.com/ --tag "$DIST_TAG"
+      - name: Publish through npm trusted publishing
+        if: ${{ github.event_name == 'push' }}
+        run: npm publish "$archive" --access public --tag "$DIST_TAG"
 
-      - name: Publish Node SDK
-        if: ${{ inputs.verify_existing != true }}
+      - name: Bootstrap first npm publication
+        if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
-          NODE_AUTH_TOKEN: ${{ github.token }}
-        run: npm publish "$(find .release -name 'piparotech-subkit-node-*.tgz' -print -quit)" --registry=https://npm.pkg.github.com/ --tag "$DIST_TAG"
-
-      - name: Publish Expo SDK
-        if: ${{ inputs.verify_existing != true }}
-        env:
-          NODE_AUTH_TOKEN: ${{ github.token }}
-        run: npm publish "$(find .release -name 'piparotech-subkit-expo-*.tgz' -print -quit)" --registry=https://npm.pkg.github.com/ --tag "$DIST_TAG"
-
-      - name: Verify published package metadata
-        env:
-          NODE_AUTH_TOKEN: ${{ github.token }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_BOOTSTRAP_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
-          registry='https://npm.pkg.github.com/'
-          for manifest in packages/subkit-core/package.json packages/subkit-node/package.json packages/subkit-expo/package.json; do
-            name="$(node -p "require('./$manifest').name")"
-            version="$(node -p "require('./$manifest').version")"
-            test "$(npm view "$name@$version" version --registry="$registry")" = "$version"
-            test -n "$(npm view "$name@$version" dist.integrity --registry="$registry")"
-          done
+          test -n "$NODE_AUTH_TOKEN"
+          npm publish "$archive" --access public --tag "$DIST_TAG" --provenance
 
-      - name: Install exact published versions in a clean consumer
+      - name: Verify public npm metadata
         env:
-          NODE_AUTH_TOKEN: ${{ github.token }}
-          SUBKIT_NPM_REGISTRY: https://npm.pkg.github.com/
+          PACKAGE_NAME: ${{ steps.release.outputs.package_name }}
+          PACKAGE_VERSION: ${{ steps.release.outputs.package_version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            published="$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version --registry=https://registry.npmjs.org/ 2>/dev/null || true)"
+            integrity="$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" dist.integrity --registry=https://registry.npmjs.org/ 2>/dev/null || true)"
+            if [ "$published" = "$PACKAGE_VERSION" ] && [ -n "$integrity" ]; then
+              exit 0
+            fi
+            sleep $((attempt * 3))
+          done
+          echo "Public npm metadata did not converge for $PACKAGE_NAME@$PACKAGE_VERSION" >&2
+          exit 1
+
+      - name: Install exact public version in an anonymous clean consumer
+        env:
+          SUBKIT_NPM_REGISTRY: https://registry.npmjs.org/
+          SUBKIT_RELEASE_PACKAGE: ${{ steps.release.outputs.package_slug }}
         run: pnpm packages:verify:registry
 
-      - name: Remove isolated npm authentication
+      - name: Remove release artifacts
         if: ${{ always() }}
-        shell: bash
-        run: |
-          rm -f "$NPM_CONFIG_USERCONFIG"
-          rm -rf .release
+        run: rm -rf .release
