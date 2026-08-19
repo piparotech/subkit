@@ -118,7 +118,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$NODE_AUTH_TOKEN"
-          npm publish "$archive" --access public --tag latest --provenance
+          npm publish "$archive" --access public --tag latest
 
       - name: Verify public npm metadata
         env:
