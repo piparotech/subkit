@@ -26,10 +26,18 @@ if (expectedState === 'absent') {
     console.log(`Verified ${packageName}@${packageVersion} is absent from public npm.`)
     process.exit(0)
   }
-  if (response.ok) {
+  if (!response.ok) {
+    throw new Error(`Could not prove package absence: public npm returned HTTP ${response.status}`)
+  }
+  const packument = await response.json()
+  if (packument?.name !== packageName || typeof packument?.versions !== 'object') {
+    throw new Error(`Could not prove package absence: public npm metadata is invalid`)
+  }
+  if (packument.versions[packageVersion] != null) {
     throw new Error(`${packageName}@${packageVersion} already exists; publication is forbidden`)
   }
-  throw new Error(`Could not prove package absence: public npm returned HTTP ${response.status}`)
+  console.log(`Verified ${packageName}@${packageVersion} is absent from public npm.`)
+  process.exit(0)
 }
 
 if (!response.ok) {
