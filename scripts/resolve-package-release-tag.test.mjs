@@ -7,7 +7,7 @@ const root = resolve(import.meta.dirname, '..')
 const script = resolve(root, 'scripts/resolve-package-release-tag.mjs')
 
 const expected = new Map([
-  ['subkit-core-v0.1.11', '@piparotech/subkit-core'],
+  ['subkit-core-v0.1.12', '@piparotech/subkit-core'],
   ['subkit-node-v0.1.10', '@piparotech/subkit-node'],
   ['subkit-expo-v0.1.12', '@piparotech/subkit-expo'],
 ])

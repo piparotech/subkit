@@ -1,6 +1,6 @@
 {
   "name": "@piparotech/subkit-core",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "type": "module",
   "description": "Shared backend API contracts for SubKit.",
   "license": "UNLICENSED",
