@@ -89,22 +89,9 @@ jobs:
         env:
           PACKAGE_NAME: ${{ steps.release.outputs.package_name }}
           PACKAGE_VERSION: ${{ steps.release.outputs.package_version }}
-        shell: bash
         run: |
-          set -euo pipefail
-          error_file="$(mktemp)"
-          if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version --registry=https://registry.npmjs.org/ >/dev/null 2>"$error_file"; then
-            echo "$PACKAGE_NAME@$PACKAGE_VERSION already exists; bump the package version before tagging" >&2
-            rm -f "$error_file"
-            exit 1
-          fi
-          if ! grep -Eq 'E404|404 Not Found' "$error_file"; then
-            echo "Could not prove $PACKAGE_NAME@$PACKAGE_VERSION is absent; refusing to publish" >&2
-            cat "$error_file" >&2
-            rm -f "$error_file"
-            exit 1
-          fi
-          rm -f "$error_file"
+          env -u NODE_AUTH_TOKEN node scripts/check-public-package-version.mjs \
+            "$PACKAGE_NAME" "$PACKAGE_VERSION" absent
 
       - name: Publish through npm trusted publishing
         run: npm publish "$archive" --access public --tag "$DIST_TAG"
@@ -117,9 +104,8 @@ jobs:
         run: |
           set -euo pipefail
           for attempt in 1 2 3 4 5; do
-            published="$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version --registry=https://registry.npmjs.org/ 2>/dev/null || true)"
-            integrity="$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" dist.integrity --registry=https://registry.npmjs.org/ 2>/dev/null || true)"
-            if [ "$published" = "$PACKAGE_VERSION" ] && [ -n "$integrity" ]; then
+            if env -u NODE_AUTH_TOKEN node scripts/check-public-package-version.mjs \
+              "$PACKAGE_NAME" "$PACKAGE_VERSION" present; then
               exit 0
             fi
             sleep $((attempt * 3))

@@ -89,14 +89,36 @@ try {
     HOME: temporary,
     NPM_CONFIG_GLOBALCONFIG: join(temporary, 'global-npmrc'),
     NPM_CONFIG_USERCONFIG: userConfiguration,
+    PNPM_HOME: join(temporary, 'pnpm-home'),
   }
   delete environment.NODE_AUTH_TOKEN
   delete environment.npm_config_userconfig
-  execFileSync('pnpm', ['install', '--ignore-workspace', '--frozen-lockfile=false'], {
-    cwd: temporary,
-    env: environment,
-    stdio: 'inherit',
-  })
+
+  let installed = false
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    try {
+      execFileSync(
+        'pnpm',
+        [
+          'install',
+          '--ignore-workspace',
+          '--frozen-lockfile=false',
+          `--store-dir=${join(temporary, `pnpm-store-${attempt}`)}`,
+        ],
+        { cwd: temporary, env: environment, stdio: 'inherit' },
+      )
+      installed = true
+      break
+    } catch (error) {
+      if (attempt === 5) {
+        throw error
+      }
+      await new Promise((resolveDelay) => setTimeout(resolveDelay, attempt * 3_000))
+    }
+  }
+  if (!installed) {
+    throw new Error(`Could not install ${releasePackage} from public npm`)
+  }
   execFileSync('node', ['consumer.mjs'], { cwd: temporary, env: environment, stdio: 'inherit' })
 
   const expectedPackages = [['@piparotech/subkit-core', versions.core]]

@@ -94,22 +94,9 @@ jobs:
         env:
           PACKAGE_NAME: ${{ steps.release.outputs.package_name }}
           PACKAGE_VERSION: ${{ steps.release.outputs.package_version }}
-        shell: bash
         run: |
-          set -euo pipefail
-          error_file="$(mktemp)"
-          if npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version --registry=https://registry.npmjs.org/ >/dev/null 2>"$error_file"; then
-            echo "$PACKAGE_NAME@$PACKAGE_VERSION already exists; bootstrap is no longer allowed" >&2
-            rm -f "$error_file"
-            exit 1
-          fi
-          if ! grep -Eq 'E404|404 Not Found' "$error_file"; then
-            echo "Could not prove $PACKAGE_NAME@$PACKAGE_VERSION is absent; refusing to publish" >&2
-            cat "$error_file" >&2
-            rm -f "$error_file"
-            exit 1
-          fi
-          rm -f "$error_file"
+          env -u NODE_AUTH_TOKEN node scripts/check-public-package-version.mjs \
+            "$PACKAGE_NAME" "$PACKAGE_VERSION" absent
 
       - name: Publish first npm version
         env:
@@ -127,16 +114,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          verification_cache="$(mktemp -d)"
-          trap 'rm -rf "$verification_cache"' EXIT
           for attempt in 1 2 3 4 5; do
-            published="$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" version --registry=https://registry.npmjs.org/ --cache="$verification_cache" --prefer-online 2>/dev/null || true)"
-            integrity="$(npm view "$PACKAGE_NAME@$PACKAGE_VERSION" dist.integrity --registry=https://registry.npmjs.org/ --cache="$verification_cache" --prefer-online 2>/dev/null || true)"
-            if [ "$published" = "$PACKAGE_VERSION" ] && [ -n "$integrity" ]; then
+            if env -u NODE_AUTH_TOKEN node scripts/check-public-package-version.mjs \
+              "$PACKAGE_NAME" "$PACKAGE_VERSION" present; then
               exit 0
             fi
-            rm -rf "$verification_cache"
-            mkdir "$verification_cache"
             sleep $((attempt * 3))
           done
           echo "Public npm metadata did not converge for $PACKAGE_NAME@$PACKAGE_VERSION" >&2
