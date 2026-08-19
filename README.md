@@ -31,10 +31,11 @@ The workflow rejects tags whose version does not match the selected package or w
 
 ### First npmjs publication
 
-Trusted publishing can only be attached after a package exists on npmjs.org. Bootstrap each package once from `main` with the workflow's manual dispatch and the short-lived `NPM_BOOTSTRAP_TOKEN` repository secret. The token must be granular, restricted to the `piparotech` npm organization, permitted to publish public packages, allowed to bypass 2FA, and expire as soon as practical.
+Trusted publishing can only be attached after a package exists on npmjs.org. Bootstrap each package once from `main` with the temporary `.github/workflows/bootstrap-packages.yml` workflow and the short-lived `NPM_BOOTSTRAP_TOKEN` repository secret. The token must be granular, restricted to the `piparotech` npm organization, permitted to publish public packages, allowed to bypass 2FA, and expire as soon as practical. The bootstrap workflow deliberately has no OIDC permission so npm uses only the explicit one-time token.
 
 After all three packages exist:
 
 1. Configure each npm package's trusted publisher as GitHub Actions, organization `piparotech`, repository `subkit`, workflow `release-packages.yml`, allowed action `npm publish`.
 2. Delete the `NPM_BOOTSTRAP_TOKEN` GitHub secret and revoke the npm token.
-3. Use component tags on `main` for every later release; do not use the manual bootstrap dispatch again.
+3. Delete `bootstrap-packages.yml` from `main`.
+4. Use component tags on `main` for every later release.
