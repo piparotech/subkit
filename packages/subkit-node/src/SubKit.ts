@@ -1,4 +1,6 @@
 import { AccessClient } from './AccessClient.js'
+import { BillingClient } from './BillingClient.js'
+import { CheckoutClient } from './CheckoutClient.js'
 import { ContractsClient } from './ContractsClient.js'
 import { CustomersClient } from './CustomersClient.js'
 import { DevicesClient } from './DevicesClient.js'
@@ -25,6 +27,8 @@ export interface SubKitOptions {
 
 export class SubKit {
   readonly access: AccessClient
+  readonly billing: BillingClient
+  readonly checkout: CheckoutClient
   readonly contracts: ContractsClient
   readonly customers: CustomersClient
   readonly devices: DevicesClient
@@ -45,6 +49,8 @@ export class SubKit {
     })
 
     this.access = new AccessClient({ appId: options.appId, http })
+    this.billing = new BillingClient({ appId: options.appId, http })
+    this.checkout = new CheckoutClient({ appId: options.appId, http })
     this.contracts = new ContractsClient({ appId: options.appId, http })
     this.customers = new CustomersClient({ appId: options.appId, http })
     this.devices = new DevicesClient({ appId: options.appId, http })

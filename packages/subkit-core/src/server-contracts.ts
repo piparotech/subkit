@@ -304,9 +304,7 @@ export const serverDirectBillingReturnTargetSchema = z
   .min(1)
   .max(64)
   .regex(/^[a-z][a-z0-9_-]*$/)
-export type ServerDirectBillingReturnTarget = z.infer<
-  typeof serverDirectBillingReturnTargetSchema
->
+export type ServerDirectBillingReturnTarget = z.infer<typeof serverDirectBillingReturnTargetSchema>
 
 export const serverDirectBillingStatusSchema = z.enum([
   'none',

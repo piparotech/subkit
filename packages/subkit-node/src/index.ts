@@ -1,5 +1,10 @@
 export { SubKit } from './SubKit.js'
 export type { SubKitOptions } from './SubKit.js'
+export type {
+  CreateBillingPortalSessionInput,
+  GetDirectBillingSummaryInput,
+} from './BillingClient.js'
+export type { CreateDirectCheckoutSessionInput } from './CheckoutClient.js'
 export type { ServerDeviceActivation } from './DevicesClient.js'
 export type { OperatorContext } from './HttpClient.js'
 export { SubKitApiError, isSubKitApiError } from './errors.js'
@@ -50,11 +55,19 @@ export type {
 } from './ProductsClient.js'
 export type { SubKitMutationOptions, SubKitRequestOptions } from './requestOptions.js'
 export type {
+  ServerBillingPortalSessionRequest,
+  ServerBillingPortalSessionResponse,
   ServerContractPlanVersion,
   ServerContractPlanVersionsResponse,
   ServerCustomerEntitlement,
   ServerCustomerInfoRequest,
   ServerCustomerInfoResponse,
+  ServerDirectBillingStatus,
+  ServerDirectBillingSummary,
+  ServerDirectBillingSummaryRequest,
+  ServerDirectBillingSummaryResponse,
+  ServerDirectCheckoutSessionRequest,
+  ServerDirectCheckoutSessionResponse,
   ServerEntitlementCheckReason,
   ServerEntitlementCheckRequest,
   ServerEntitlementCheckResponse,
