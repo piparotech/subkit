@@ -29,7 +29,7 @@ export class CheckoutClient {
     input: CreateDirectCheckoutSessionInput,
     options: SubKitMutationOptions,
   ): Promise<ServerDirectCheckoutSessionResponse> {
-    return this.http.post('/api/server/direct-billing/checkout-session', {
+    return this.http.post('/api/server/direct-checkout/sessions', {
       ...options,
       body: {
         appId: resolveAppId(input.appId, this.appId),

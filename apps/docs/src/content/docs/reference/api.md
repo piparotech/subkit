@@ -105,8 +105,8 @@ Server requests use an app-scoped `sk_srv_…` key with the listed capability.
 | `/api/server/devices/budget-reset`                             | `access:write`            |
 | `/api/server/plan-versions/:planVersionId`                     | `catalog:write`           |
 | `/api/server/sdk-keys`                                         | `sdk_keys:write`          |
-| `/api/server/direct-billing/checkout-session`                  | `direct_billing:write`    |
-| `/api/server/direct-billing/portal-session`                    | `direct_billing:write`    |
+| `/api/server/direct-checkout/sessions`                         | `direct_billing:write`    |
+| `/api/server/billing-portal/sessions`                          | `direct_billing:write`    |
 
 There is no direct grant-write endpoint. Mutations create or change verified
 sources, pools, reservations, allocations, or device activations; grants remain
@@ -122,13 +122,13 @@ creates the Individual Billing Account from the authenticated active app-user
 Subject. The public client contract does not accept an account ID, email, or
 display name for this selection.
 
-| Endpoint                                      | Purpose                                                   |
-| --------------------------------------------- | --------------------------------------------------------- |
-| `/api/server/direct-billing/checkout-session` | Create a hosted checkout session from an Offering/package |
-| `/api/server/direct-billing/portal-session`   | Create a hosted billing portal session                    |
-| `/api/server/direct-billing/summary`          | Read the canonical direct billing summary                 |
+| Endpoint                               | Purpose                                                   |
+| -------------------------------------- | --------------------------------------------------------- |
+| `/api/server/direct-checkout/sessions` | Create a hosted checkout session from an Offering/package |
+| `/api/server/billing-portal/sessions`  | Create a hosted billing portal session                    |
+| `/api/server/direct-billing/summary`   | Read the canonical direct billing summary                 |
 
-`POST /api/server/direct-billing/checkout-session` accepts
+`POST /api/server/direct-checkout/sessions` accepts
 `offeringIdentifier` and `packageIdentifier`, plus `subjectId` and an optional
 allowlisted `returnTarget`. It does **not** accept a Billing Account ID, amount,
 currency, Stripe Product/Price IDs, payment-method data, or caller-controlled

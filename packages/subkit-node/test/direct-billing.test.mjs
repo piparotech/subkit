@@ -49,8 +49,8 @@ test('direct billing clients send app-bound Subject requests without billing acc
   assert.deepEqual(
     requests.map(({ method, url }) => [method, new URL(url).pathname]),
     [
-      ['POST', '/api/server/direct-billing/checkout-session'],
-      ['POST', '/api/server/direct-billing/portal-session'],
+      ['POST', '/api/server/direct-checkout/sessions'],
+      ['POST', '/api/server/billing-portal/sessions'],
       ['POST', '/api/server/direct-billing/summary'],
     ],
   )
@@ -77,14 +77,14 @@ test('direct billing clients send app-bound Subject requests without billing acc
 })
 
 function responseFor(path) {
-  if (path === '/api/server/direct-billing/checkout-session') {
+  if (path === '/api/server/direct-checkout/sessions') {
     return {
       checkoutIntentId: 'checkout-intent:opaque_123',
       redirectUrl: 'https://billing.example.test/checkout/short-lived-token',
       redirectUrlExpiresAt: '2027-01-01T00:15:00.000Z',
     }
   }
-  if (path === '/api/server/direct-billing/portal-session') {
+  if (path === '/api/server/billing-portal/sessions') {
     return {
       portalIntentId: 'billing-portal:opaque_123',
       redirectUrl: 'https://billing.example.test/portal/short-lived-token',

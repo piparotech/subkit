@@ -35,7 +35,7 @@ export class BillingClient {
     input: CreateBillingPortalSessionInput,
     options: SubKitMutationOptions,
   ): Promise<ServerBillingPortalSessionResponse> {
-    return this.http.post('/api/server/direct-billing/portal-session', {
+    return this.http.post('/api/server/billing-portal/sessions', {
       ...options,
       body: {
         appId: resolveAppId(input.appId, this.appId),
