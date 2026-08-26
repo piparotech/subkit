@@ -10,7 +10,7 @@ Never ship this key in mobile apps, web clients, or Expo bundles.
 ## Install and configure
 
 ```sh
-pnpm add @piparotech/subkit-core@^0.1.10 @piparotech/subkit-node@^0.1.10
+pnpm add @piparotech/subkit-core@^0.1.11 @piparotech/subkit-node@^0.1.11
 ```
 
 ```ts compile
@@ -40,6 +40,45 @@ Every mutation requires:
 
 Exact retries reuse the same idempotency key and the same audit reason. They are
 safe only for the same logical mutation; conflicting evidence fails closed.
+
+## Hosted direct billing
+
+Direct billing is selected from the published catalog and remains bound to the
+app, billing account, and beneficiary Subject. The Node SDK does not accept
+amounts, currencies, Stripe Product/Price IDs, payment methods, or arbitrary
+success/cancel URLs. `returnTarget` is a server-configured allowlist key.
+
+```ts compile
+const checkout = await subkit.checkout.createSession(
+  {
+    billingAccountId: 'billing_account_123',
+    offeringIdentifier: 'default',
+    packageIdentifier: 'monthly',
+    reason: 'start selected direct billing checkout',
+    returnTarget: 'billing_settings',
+    subjectId: 'subject_123',
+  },
+  { idempotencyKey: 'checkout:subject_123:monthly' },
+)
+
+const portal = await subkit.billing.createPortalSession(
+  {
+    billingAccountId: 'billing_account_123',
+    reason: 'open billing settings',
+    subjectId: 'subject_123',
+  },
+  { idempotencyKey: 'portal:subject_123' },
+)
+
+const summary = await subkit.billing.getSummary({
+  billingAccountId: 'billing_account_123',
+  subjectId: 'subject_123',
+})
+```
+
+Checkout and portal return only opaque intent IDs and short-lived redirect URLs
+with expiry. The summary exposes canonical plan, period, amount/currency,
+cancellation, and status fields without provider IDs or payment-method data.
 
 ## Customers and access subjects
 

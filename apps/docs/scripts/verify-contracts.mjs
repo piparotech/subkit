@@ -22,6 +22,12 @@ await requireExports('@piparotech/subkit-core', join(root, 'packages/subkit-core
   'resolveEntitlementAccess',
   'iapReconcileRequestSchema',
   'runtimeOfferingsResponseSchema',
+  'serverBillingPortalSessionRequestSchema',
+  'serverBillingPortalSessionResponseSchema',
+  'serverDirectBillingSummaryRequestSchema',
+  'serverDirectBillingSummaryResponseSchema',
+  'serverDirectCheckoutSessionRequestSchema',
+  'serverDirectCheckoutSessionResponseSchema',
   'subKitApiErrorResponseSchema',
 ])
 await requireExports('@piparotech/subkit-node', join(root, 'packages/subkit-node/src/index.ts'), [
@@ -69,6 +75,9 @@ const expectedDocumentedRoutes = new Set([
   '/api/server/customer-info',
   '/api/server/devices',
   '/api/server/devices/$activationId',
+  '/api/server/direct-billing/checkout-session',
+  '/api/server/direct-billing/portal-session',
+  '/api/server/direct-billing/summary',
   '/api/server/devices/budget-reset',
   '/api/server/entitlements/check',
   '/api/server/free-enrollments',

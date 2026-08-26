@@ -76,6 +76,7 @@ Server requests use an app-scoped `sk_srv_…` key with the listed capability.
 | `/api/server/licenses/:sourceId`     | `access:read`  |
 | `/api/server/access-pools/:poolId`   | `access:read`  |
 | `/api/server/devices`                | `access:read`  |
+| `/api/server/direct-billing/summary` | `billing:read` |
 
 `allowed: false` is a normal domain response, not an HTTP error.
 
@@ -104,10 +105,55 @@ Server requests use an app-scoped `sk_srv_…` key with the listed capability.
 | `/api/server/devices/budget-reset`                             | `access:write`            |
 | `/api/server/plan-versions/:planVersionId`                     | `catalog:write`           |
 | `/api/server/sdk-keys`                                         | `sdk_keys:write`          |
+| `/api/server/direct-billing/checkout-session`                  | `billing:write`           |
+| `/api/server/direct-billing/portal-session`                    | `billing:write`           |
 
 There is no direct grant-write endpoint. Mutations create or change verified
 sources, pools, reservations, allocations, or device activations; grants remain
 derived.
+
+### Hosted direct billing
+
+The direct billing surface is for trusted server code. It accepts app-bound
+ownership references and published catalog selections, then returns only
+service-owned opaque intents and short-lived redirects.
+
+| Endpoint                                      | Purpose                                                   |
+| --------------------------------------------- | --------------------------------------------------------- |
+| `/api/server/direct-billing/checkout-session` | Create a hosted checkout session from an Offering/package |
+| `/api/server/direct-billing/portal-session`   | Create a hosted billing portal session                    |
+| `/api/server/direct-billing/summary`          | Read the canonical direct billing summary                 |
+
+`POST /api/server/direct-billing/checkout-session` accepts
+`offeringIdentifier` and `packageIdentifier`, plus `subjectId`,
+`billingAccountId`, and an optional allowlisted `returnTarget`. It does **not**
+accept amount, currency, Stripe Product/Price IDs, payment-method data, or
+caller-controlled success/cancel URLs. The service resolves those values from
+its app configuration and published catalog.
+
+```json
+{
+  "appId": "app_123",
+  "billingAccountId": "billing_account_123",
+  "offeringIdentifier": "default",
+  "packageIdentifier": "monthly",
+  "reason": "start selected direct billing checkout",
+  "returnTarget": "billing_settings",
+  "subjectId": "subject_123"
+}
+```
+
+Checkout and portal responses contain an opaque intent ID, a short-lived
+`redirectUrl`, and `redirectUrlExpiresAt`. They never contain provider IDs,
+client secrets, or payment-method details. The summary response contains only
+canonical catalog, amount/currency, period, cancellation, and status fields.
+The normative Zod contracts are exported by `@piparotech/subkit-core` as
+`serverDirectCheckoutSessionRequestSchema`,
+`serverDirectCheckoutSessionResponseSchema`,
+`serverBillingPortalSessionRequestSchema`,
+`serverBillingPortalSessionResponseSchema`,
+`serverDirectBillingSummaryRequestSchema`, and
+`serverDirectBillingSummaryResponseSchema`.
 
 ### Link a previous Subject identity
 

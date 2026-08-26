@@ -66,6 +66,7 @@ export type {
   ServerDirectBillingSummary,
   ServerDirectBillingSummaryRequest,
   ServerDirectBillingSummaryResponse,
+  ServerDirectBillingReturnTarget,
   ServerDirectCheckoutSessionRequest,
   ServerDirectCheckoutSessionResponse,
   ServerEntitlementCheckReason,

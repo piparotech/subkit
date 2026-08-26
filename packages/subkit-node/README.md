@@ -1,6 +1,6 @@
 # @piparotech/subkit-node
 
-Node.js SDK for trusted backend access to SubKit customers, products, offerings, contracts, payments, capacity, reservations, allocations, devices, and entitlements.
+Node.js SDK for trusted backend access to SubKit customers, products, offerings, contracts, payments, capacity, reservations, allocations, devices, entitlements, and direct billing.
 
 Never ship a SubKit Server API Key in mobile, browser, Expo, or other untrusted code.
 
@@ -9,7 +9,7 @@ Never ship a SubKit Server API Key in mobile, browser, Expo, or other untrusted 
 Configure the private GitHub Packages registry, then install Node with its required Core peer:
 
 ```sh
-pnpm add @piparotech/subkit-core@^0.1.10 @piparotech/subkit-node@^0.1.10
+pnpm add @piparotech/subkit-core@^0.1.11 @piparotech/subkit-node@^0.1.11
 ```
 
 ## Minimal setup
@@ -33,6 +33,47 @@ const access = await subkit.entitlements.check({
 ```
 
 Use an app-scoped `sk_srv_…` key carrying only the required capabilities. Every mutation needs a stable idempotency key and non-empty audit reason. Treat `allowed: false` as a normal domain result.
+
+## Direct billing
+
+Direct billing is intentionally catalog- and ownership-driven. The checkout
+request selects an existing Offering/package and includes the app, billing
+account, and beneficiary Subject. The server resolves pricing, currency,
+provider configuration, payment methods, and redirect URLs; the SDK accepts no
+amount, currency, provider Product/Price ID, payment-method data, or arbitrary
+success/cancel URL.
+
+```ts
+const checkout = await subkit.checkout.createSession(
+  {
+    billingAccountId: 'billing_account_123',
+    offeringIdentifier: 'default',
+    packageIdentifier: 'monthly',
+    reason: 'start selected direct billing checkout',
+    returnTarget: 'billing_settings',
+    subjectId: 'subject_123',
+  },
+  { idempotencyKey: 'checkout:subject_123:monthly' },
+)
+
+const portal = await subkit.billing.createPortalSession(
+  {
+    billingAccountId: 'billing_account_123',
+    reason: 'open billing settings',
+    subjectId: 'subject_123',
+  },
+  { idempotencyKey: 'portal:subject_123' },
+)
+
+const summary = await subkit.billing.getSummary({
+  billingAccountId: 'billing_account_123',
+  subjectId: 'subject_123',
+})
+```
+
+Checkout and portal responses contain only opaque intent IDs and short-lived
+redirect URLs with their expiry. The summary contains canonical billing terms
+and status, not provider IDs or payment-method details.
 
 Previous opaque App User identities can be linked through
 `subkit.customers.addSubjectAlias(...)`. Alias values remain app-scoped identity

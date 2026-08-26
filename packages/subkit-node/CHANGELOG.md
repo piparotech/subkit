@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.11 - direct billing client surface
+
+- Add `checkout.createSession()` for offering/package-driven hosted direct checkout.
+- Add `billing.createPortalSession()` and `billing.getSummary()` with opaque redirects and canonical summary fields.
+
 ## 0.1.10 - client repository split
 
 - Release the Node client from the dedicated consumer repository.

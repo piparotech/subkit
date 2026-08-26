@@ -14,6 +14,23 @@ pnpm add @piparotech/subkit-core @piparotech/subkit-expo
 
 Node and Expo declare Core as a required compatible peer dependency. Do not install mismatched versions.
 
+## Direct billing contracts
+
+Core also exports the provider-neutral direct billing contracts used by trusted
+server integrations:
+
+- `serverDirectCheckoutSessionRequestSchema` and
+  `serverDirectCheckoutSessionResponseSchema`
+- `serverBillingPortalSessionRequestSchema` and
+  `serverBillingPortalSessionResponseSchema`
+- `serverDirectBillingSummaryRequestSchema` and
+  `serverDirectBillingSummaryResponseSchema`
+
+Checkout input selects a published offering/package and binds the request to an
+app, billing account, and subject. Return navigation uses an app-configured
+`returnTarget` key, never a caller-supplied URL. The contracts intentionally do
+not expose provider IDs, payment-method data, or client secrets.
+
 ## Effective Access contract
 
 Core exports `resolveEntitlementAccess(customerInfo, entitlementKey)` and the
