@@ -39,7 +39,6 @@ export class BillingClient {
       ...options,
       body: {
         appId: resolveAppId(input.appId, this.appId),
-        billingAccountId: input.billingAccountId,
         reason: input.reason,
         ...(input.returnTarget == null ? {} : { returnTarget: input.returnTarget }),
         subjectId: input.subjectId,
@@ -56,7 +55,6 @@ export class BillingClient {
       ...options,
       body: {
         appId: resolveAppId(input.appId, this.appId),
-        billingAccountId: input.billingAccountId,
         subjectId: input.subjectId,
       },
       responseSchema: serverDirectBillingSummaryResponseSchema,

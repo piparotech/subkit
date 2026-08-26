@@ -33,7 +33,6 @@ export class CheckoutClient {
       ...options,
       body: {
         appId: resolveAppId(input.appId, this.appId),
-        billingAccountId: input.billingAccountId,
         offeringIdentifier: input.offeringIdentifier,
         packageIdentifier: input.packageIdentifier,
         reason: input.reason,

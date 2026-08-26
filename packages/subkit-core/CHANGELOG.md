@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased - direct billing contract correction
+
+- Resolve first-slice Individual Billing Account selection server-side from the authenticated active app-user Subject; direct billing requests no longer accept a Billing Account ID, email, or display name.
+- Require HTTPS redirects, ISO dates/durations, uppercase currency codes, canonical provider-state statuses, and SubKit-owned prefixed intent IDs.
+- Use `direct_billing:read` and `direct_billing:write` as the direct billing capabilities.
+
 ## 0.1.11 - direct billing contracts
 
 - Add provider-neutral contracts for hosted direct checkout, billing portal sessions, and canonical direct billing summaries.

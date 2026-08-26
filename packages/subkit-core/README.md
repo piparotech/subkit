@@ -27,9 +27,13 @@ server integrations:
   `serverDirectBillingSummaryResponseSchema`
 
 Checkout input selects a published offering/package and binds the request to an
-app, billing account, and subject. Return navigation uses an app-configured
-`returnTarget` key, never a caller-supplied URL. The contracts intentionally do
-not expose provider IDs, payment-method data, or client secrets.
+app and Subject. For the first Individual slice, the service resolves or
+creates the Individual Billing Account from the authenticated active app-user
+Subject; the public contract accepts no Billing Account ID, email, or display
+name for that selection. Return navigation uses an app-configured
+`returnTarget` key, never a caller-supplied URL. Redirects are HTTPS-only and
+intent IDs are SubKit-owned prefixed values. The contracts intentionally do not
+expose provider IDs, payment-method data, or client secrets.
 
 ## Effective Access contract
 

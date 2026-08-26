@@ -306,16 +306,29 @@ export const serverDirectBillingReturnTargetSchema = z
   .regex(/^[a-z][a-z0-9_-]*$/)
 export type ServerDirectBillingReturnTarget = z.infer<typeof serverDirectBillingReturnTargetSchema>
 
+/**
+ * Provider lifecycle states are exposed as a normalized read-only view. The
+ * service maps provider events to these canonical values at its integration
+ * boundary; callers must not treat them as commands or provider API inputs.
+ */
 export const serverDirectBillingStatusSchema = z.enum([
   'none',
   'pending',
   'trialing',
   'active',
   'past_due',
-  'canceled',
+  'paused',
   'unpaid',
+  'canceled',
+  'incomplete',
+  'incomplete_expired',
 ])
 export type ServerDirectBillingStatus = z.infer<typeof serverDirectBillingStatusSchema>
+
+const serverDirectBillingHttpsUrlSchema = z.url({ protocol: /^https$/ })
+const serverDirectCheckoutIntentIdSchema = z.string().regex(/^checkout-intent:[A-Za-z0-9_-]+$/)
+const serverDirectPortalIntentIdSchema = z.string().regex(/^billing-portal:[A-Za-z0-9_-]+$/)
+const serverDirectBillingCurrencyCodeSchema = z.string().regex(/^[A-Z]{3}$/)
 
 /**
  * Canonical direct-billing read model. It deliberately contains catalog and
@@ -324,12 +337,12 @@ export type ServerDirectBillingStatus = z.infer<typeof serverDirectBillingStatus
  */
 export const serverDirectBillingSummarySchema = z.strictObject({
   amountMicros: z.number().int().nonnegative().nullable(),
-  billingPeriodIso: z.string().min(1).nullable(),
+  billingPeriodIso: z.iso.duration().nullable(),
   cancelAtPeriodEnd: z.boolean(),
-  currencyCode: z.string().length(3).nullable(),
-  currentPeriodEnd: z.string().min(1).nullable(),
-  currentPeriodStart: z.string().min(1).nullable(),
-  nextBillingAt: z.string().min(1).nullable(),
+  currencyCode: serverDirectBillingCurrencyCodeSchema.nullable(),
+  currentPeriodEnd: z.iso.datetime().nullable(),
+  currentPeriodStart: z.iso.datetime().nullable(),
+  nextBillingAt: z.iso.datetime().nullable(),
   offeringIdentifier: z.string().min(1).nullable(),
   packageIdentifier: z.string().min(1).nullable(),
   planKey: z.string().min(1).nullable(),
@@ -340,12 +353,13 @@ export type ServerDirectBillingSummary = z.infer<typeof serverDirectBillingSumma
 
 /**
  * Create a hosted checkout session from an already-published Offering and
- * package. The server resolves price, currency, provider Product/Price IDs,
- * payment methods, and success/cancel URLs from app configuration.
+ * package. The service resolves the Individual Billing Account from the
+ * authenticated active app-user Subject, then resolves price, currency,
+ * provider Product/Price IDs, payment methods, and redirect URLs from app
+ * configuration.
  */
 export const serverDirectCheckoutSessionRequestSchema = z.strictObject({
   appId: z.string().min(1),
-  billingAccountId: z.string().min(1),
   offeringIdentifier: z.string().min(1),
   packageIdentifier: z.string().min(1),
   reason: z.string().trim().min(1),
@@ -358,12 +372,13 @@ export type ServerDirectCheckoutSessionRequest = z.infer<
 
 /**
  * The checkout redirect and identifier are intentionally opaque and
- * short-lived. They are not Stripe Checkout Session IDs or client secrets.
+ * short-lived. They are SubKit-owned intent IDs, not Stripe Checkout Session
+ * IDs or client secrets.
  */
 export const serverDirectCheckoutSessionResponseSchema = z.strictObject({
-  checkoutIntentId: z.string().min(1),
-  redirectUrl: z.url(),
-  redirectUrlExpiresAt: z.string().min(1),
+  checkoutIntentId: serverDirectCheckoutIntentIdSchema,
+  redirectUrl: serverDirectBillingHttpsUrlSchema,
+  redirectUrlExpiresAt: z.iso.datetime(),
 })
 export type ServerDirectCheckoutSessionResponse = z.infer<
   typeof serverDirectCheckoutSessionResponseSchema
@@ -371,7 +386,6 @@ export type ServerDirectCheckoutSessionResponse = z.infer<
 
 export const serverBillingPortalSessionRequestSchema = z.strictObject({
   appId: z.string().min(1),
-  billingAccountId: z.string().min(1),
   reason: z.string().trim().min(1),
   returnTarget: serverDirectBillingReturnTargetSchema.optional(),
   subjectId: z.string().min(1),
@@ -382,9 +396,9 @@ export type ServerBillingPortalSessionRequest = z.infer<
 
 /** The portal intent ID and redirect are opaque service-owned values. */
 export const serverBillingPortalSessionResponseSchema = z.strictObject({
-  portalIntentId: z.string().min(1),
-  redirectUrl: z.url(),
-  redirectUrlExpiresAt: z.string().min(1),
+  portalIntentId: serverDirectPortalIntentIdSchema,
+  redirectUrl: serverDirectBillingHttpsUrlSchema,
+  redirectUrlExpiresAt: z.iso.datetime(),
 })
 export type ServerBillingPortalSessionResponse = z.infer<
   typeof serverBillingPortalSessionResponseSchema
@@ -392,7 +406,6 @@ export type ServerBillingPortalSessionResponse = z.infer<
 
 export const serverDirectBillingSummaryRequestSchema = z.strictObject({
   appId: z.string().min(1),
-  billingAccountId: z.string().min(1),
   subjectId: z.string().min(1),
 })
 export type ServerDirectBillingSummaryRequest = z.infer<

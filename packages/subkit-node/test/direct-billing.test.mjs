@@ -3,7 +3,7 @@ import test from 'node:test'
 
 import { SubKit } from '../dist/index.js'
 
-test('direct billing clients send app-bound catalog and ownership references', async () => {
+test('direct billing clients send app-bound Subject requests without billing account IDs', async () => {
   const requests = []
   const fetch = async (input, init) => {
     const url = String(input)
@@ -24,7 +24,6 @@ test('direct billing clients send app-bound catalog and ownership references', a
 
   const checkout = await subkit.checkout.createSession(
     {
-      billingAccountId: 'billing_account_123',
       offeringIdentifier: 'default',
       packageIdentifier: 'monthly',
       reason: 'start selected direct billing checkout',
@@ -35,19 +34,17 @@ test('direct billing clients send app-bound catalog and ownership references', a
   )
   const portal = await subkit.billing.createPortalSession(
     {
-      billingAccountId: 'billing_account_123',
       reason: 'open billing settings',
       subjectId: 'subject_123',
     },
     { idempotencyKey: 'portal:subject_123' },
   )
   const summary = await subkit.billing.getSummary({
-    billingAccountId: 'billing_account_123',
     subjectId: 'subject_123',
   })
 
-  assert.equal(checkout.checkoutIntentId, 'checkout_intent_opaque')
-  assert.equal(portal.portalIntentId, 'portal_intent_opaque')
+  assert.equal(checkout.checkoutIntentId, 'checkout-intent:opaque_123')
+  assert.equal(portal.portalIntentId, 'billing-portal:opaque_123')
   assert.equal(summary.status, 'active')
   assert.deepEqual(
     requests.map(({ method, url }) => [method, new URL(url).pathname]),
@@ -59,7 +56,6 @@ test('direct billing clients send app-bound catalog and ownership references', a
   )
   assert.deepEqual(requests[0].body, {
     appId: 'app_123',
-    billingAccountId: 'billing_account_123',
     offeringIdentifier: 'default',
     packageIdentifier: 'monthly',
     reason: 'start selected direct billing checkout',
@@ -68,13 +64,11 @@ test('direct billing clients send app-bound catalog and ownership references', a
   })
   assert.deepEqual(requests[1].body, {
     appId: 'app_123',
-    billingAccountId: 'billing_account_123',
     reason: 'open billing settings',
     subjectId: 'subject_123',
   })
   assert.deepEqual(requests[2].body, {
     appId: 'app_123',
-    billingAccountId: 'billing_account_123',
     subjectId: 'subject_123',
   })
   assert.equal(requests[0].headers.get('idempotency-key'), 'checkout:subject_123:monthly')
@@ -85,14 +79,14 @@ test('direct billing clients send app-bound catalog and ownership references', a
 function responseFor(path) {
   if (path === '/api/server/direct-billing/checkout-session') {
     return {
-      checkoutIntentId: 'checkout_intent_opaque',
+      checkoutIntentId: 'checkout-intent:opaque_123',
       redirectUrl: 'https://billing.example.test/checkout/short-lived-token',
       redirectUrlExpiresAt: '2027-01-01T00:15:00.000Z',
     }
   }
   if (path === '/api/server/direct-billing/portal-session') {
     return {
-      portalIntentId: 'portal_intent_opaque',
+      portalIntentId: 'billing-portal:opaque_123',
       redirectUrl: 'https://billing.example.test/portal/short-lived-token',
       redirectUrlExpiresAt: '2027-01-01T00:15:00.000Z',
     }

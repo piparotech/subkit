@@ -36,17 +36,18 @@ Use an app-scoped `sk_srv_…` key carrying only the required capabilities. Ever
 
 ## Direct billing
 
-Direct billing is intentionally catalog- and ownership-driven. The checkout
-request selects an existing Offering/package and includes the app, billing
-account, and beneficiary Subject. The server resolves pricing, currency,
-provider configuration, payment methods, and redirect URLs; the SDK accepts no
-amount, currency, provider Product/Price ID, payment-method data, or arbitrary
-success/cancel URL.
+Direct billing is intentionally catalog- and Subject-driven. The checkout
+request selects an existing Offering/package and includes the app and
+beneficiary Subject. For the first Individual slice, the service resolves or
+creates the Individual Billing Account from the authenticated active app-user
+Subject; the SDK accepts no Billing Account ID, email, or display name for
+that selection. The server resolves pricing, currency, provider configuration,
+payment methods, and redirect URLs; the SDK accepts no amount, currency,
+provider Product/Price ID, payment-method data, or arbitrary success/cancel URL.
 
 ```ts
 const checkout = await subkit.checkout.createSession(
   {
-    billingAccountId: 'billing_account_123',
     offeringIdentifier: 'default',
     packageIdentifier: 'monthly',
     reason: 'start selected direct billing checkout',
@@ -58,7 +59,6 @@ const checkout = await subkit.checkout.createSession(
 
 const portal = await subkit.billing.createPortalSession(
   {
-    billingAccountId: 'billing_account_123',
     reason: 'open billing settings',
     subjectId: 'subject_123',
   },
@@ -66,14 +66,14 @@ const portal = await subkit.billing.createPortalSession(
 )
 
 const summary = await subkit.billing.getSummary({
-  billingAccountId: 'billing_account_123',
   subjectId: 'subject_123',
 })
 ```
 
-Checkout and portal responses contain only opaque intent IDs and short-lived
-redirect URLs with their expiry. The summary contains canonical billing terms
-and status, not provider IDs or payment-method details.
+Checkout and portal responses contain only SubKit-owned prefixed intent IDs
+and short-lived HTTPS redirect URLs with ISO datetime expiry. The summary
+contains canonical billing terms and normalized provider-state status, not
+provider IDs or payment-method details.
 
 Previous opaque App User identities can be linked through
 `subkit.customers.addSubjectAlias(...)`. Alias values remain app-scoped identity

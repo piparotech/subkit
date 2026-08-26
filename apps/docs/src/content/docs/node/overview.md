@@ -44,14 +44,16 @@ safe only for the same logical mutation; conflicting evidence fails closed.
 ## Hosted direct billing
 
 Direct billing is selected from the published catalog and remains bound to the
-app, billing account, and beneficiary Subject. The Node SDK does not accept
-amounts, currencies, Stripe Product/Price IDs, payment methods, or arbitrary
-success/cancel URLs. `returnTarget` is a server-configured allowlist key.
+app and beneficiary Subject. For the first Individual slice, the service
+resolves or creates the Individual Billing Account from the authenticated
+active app-user Subject; the Node SDK does not accept a Billing Account ID,
+email, or display name for that selection. It also does not accept amounts, currencies,
+Stripe Product/Price IDs, payment methods, or arbitrary success/cancel URLs.
+`returnTarget` is a server-configured allowlist key.
 
 ```ts compile
 const checkout = await subkit.checkout.createSession(
   {
-    billingAccountId: 'billing_account_123',
     offeringIdentifier: 'default',
     packageIdentifier: 'monthly',
     reason: 'start selected direct billing checkout',
@@ -63,7 +65,6 @@ const checkout = await subkit.checkout.createSession(
 
 const portal = await subkit.billing.createPortalSession(
   {
-    billingAccountId: 'billing_account_123',
     reason: 'open billing settings',
     subjectId: 'subject_123',
   },
@@ -71,14 +72,15 @@ const portal = await subkit.billing.createPortalSession(
 )
 
 const summary = await subkit.billing.getSummary({
-  billingAccountId: 'billing_account_123',
   subjectId: 'subject_123',
 })
 ```
 
-Checkout and portal return only opaque intent IDs and short-lived redirect URLs
-with expiry. The summary exposes canonical plan, period, amount/currency,
-cancellation, and status fields without provider IDs or payment-method data.
+Checkout and portal return only SubKit-owned intent IDs (`checkout-intent:` or
+`billing-portal:`) and short-lived HTTPS redirect URLs with ISO datetime
+expiry. The summary exposes canonical plan, period, amount/currency,
+cancellation, and normalized provider-state status fields without provider IDs
+or payment-method data.
 
 ## Customers and access subjects
 
