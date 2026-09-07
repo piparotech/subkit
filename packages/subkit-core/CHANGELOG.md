@@ -1,15 +1,26 @@
 # Changelog
 
-## Unreleased - direct billing contract correction
+## 0.1.14 - guest and direct billing contracts
 
 - Resolve first-slice Individual Billing Account selection server-side from the authenticated active app-user Subject; direct billing requests no longer accept a Billing Account ID, email, or display name.
 - Require HTTPS redirects, ISO dates/durations, uppercase currency codes, canonical provider-state statuses, and SubKit-owned prefixed intent IDs.
 - Use `direct_billing:read` and `direct_billing:write` as the direct billing capabilities.
 
-## 0.1.11 - direct billing contracts
-
 - Add provider-neutral contracts for hosted direct checkout, billing portal sessions, and canonical direct billing summaries.
 - Keep direct billing requests app-bound and offering/package-driven; exclude provider identifiers, payment methods, client secrets, and caller-controlled URLs.
+- Add public offering, browser-bound guest purchase, verified account association and exact-source access status contracts.
+
+## 0.1.13 - trusted publishing verification
+
+- Verify the permanent token-free npm trusted-publishing release path.
+
+## 0.1.12 - unpublished
+
+- Reserved by an immutable component-tag attempt whose release tests inherited setup-node authentication; no npm version was published.
+
+## 0.1.11 - unpublished
+
+- Reserved by an immutable component-tag attempt whose absence guard rejected an existing package name; no npm version was published.
 
 ## 0.1.10 - client repository split
 
