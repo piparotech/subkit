@@ -292,3 +292,168 @@ export const serverContractPlanVersionsResponseSchema = z.object({
 export type ServerContractPlanVersionsResponse = z.infer<
   typeof serverContractPlanVersionsResponseSchema
 >
+
+/**
+ * A server-configured key for selecting a safe return route. This is never a
+ * URL or path supplied by the caller; the service resolves it through its
+ * allowlist for the app.
+ */
+export const serverDirectBillingReturnTargetSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .regex(/^[a-z][a-z0-9_-]*$/)
+export type ServerDirectBillingReturnTarget = z.infer<typeof serverDirectBillingReturnTargetSchema>
+
+/**
+ * Provider lifecycle states are exposed as a normalized read-only view. The
+ * service maps provider events to these canonical values at its integration
+ * boundary; callers must not treat them as commands or provider API inputs.
+ */
+export const serverDirectBillingStatusSchema = z.enum([
+  'none',
+  'pending',
+  'trialing',
+  'active',
+  'past_due',
+  'paused',
+  'unpaid',
+  'canceled',
+  'incomplete',
+  'incomplete_expired',
+])
+export type ServerDirectBillingStatus = z.infer<typeof serverDirectBillingStatusSchema>
+
+const serverDirectBillingHttpsUrlSchema = z.url({ protocol: /^https$/ })
+const serverDirectCheckoutIntentIdSchema = z.string().regex(/^checkout-intent:[A-Za-z0-9_-]+$/)
+const serverDirectPortalIntentIdSchema = z.string().regex(/^billing-portal:[A-Za-z0-9_-]+$/)
+const serverDirectBillingCurrencyCodeSchema = z.string().regex(/^[A-Z]{3}$/)
+
+/**
+ * Canonical direct-billing read model. It deliberately contains catalog and
+ * billing terms only; provider identifiers, payment-method details, and
+ * client secrets are not part of the public contract.
+ */
+export const serverDirectBillingSummarySchema = z.strictObject({
+  environment: z.enum(['sandbox', 'production']),
+  amountMicros: z.number().int().nonnegative().nullable(),
+  billingPeriodIso: z.iso.duration().nullable(),
+  cancelAtPeriodEnd: z.boolean(),
+  currencyCode: serverDirectBillingCurrencyCodeSchema.nullable(),
+  currentPeriodEnd: z.iso.datetime().nullable(),
+  currentPeriodStart: z.iso.datetime().nullable(),
+  nextBillingAt: z.iso.datetime().nullable(),
+  offeringIdentifier: z.string().min(1).nullable(),
+  packageIdentifier: z.string().min(1).nullable(),
+  planKey: z.string().min(1).nullable(),
+  planLabel: z.string().min(1).nullable(),
+  status: serverDirectBillingStatusSchema,
+})
+export type ServerDirectBillingSummary = z.infer<typeof serverDirectBillingSummarySchema>
+
+/**
+ * Create a hosted checkout session from an already-published Offering and
+ * package. The service resolves the Individual Billing Account from the
+ * authenticated active app-user Subject, then resolves price, currency,
+ * provider Product/Price IDs, payment methods, and redirect URLs from app
+ * configuration.
+ */
+export const serverDirectCheckoutSessionRequestSchema = z.strictObject({
+  appId: z.string().min(1),
+  offeringIdentifier: z.string().min(1),
+  packageIdentifier: z.string().min(1),
+  reason: z.string().trim().min(1),
+  returnTarget: serverDirectBillingReturnTargetSchema.optional(),
+  subjectId: z.string().min(1),
+})
+export type ServerDirectCheckoutSessionRequest = z.infer<
+  typeof serverDirectCheckoutSessionRequestSchema
+>
+
+/**
+ * The checkout redirect and identifier are intentionally opaque and
+ * short-lived. They are SubKit-owned intent IDs, not Stripe Checkout Session
+ * IDs or client secrets.
+ */
+export const serverDirectCheckoutSessionResponseSchema = z.strictObject({
+  checkoutIntentId: serverDirectCheckoutIntentIdSchema,
+  redirectUrl: serverDirectBillingHttpsUrlSchema,
+  redirectUrlExpiresAt: z.iso.datetime(),
+})
+export type ServerDirectCheckoutSessionResponse = z.infer<
+  typeof serverDirectCheckoutSessionResponseSchema
+>
+
+export const serverBillingPortalSessionRequestSchema = z.strictObject({
+  appId: z.string().min(1),
+  reason: z.string().trim().min(1),
+  returnTarget: serverDirectBillingReturnTargetSchema.optional(),
+  subjectId: z.string().min(1),
+})
+export type ServerBillingPortalSessionRequest = z.infer<
+  typeof serverBillingPortalSessionRequestSchema
+>
+
+/** The portal intent ID and redirect are opaque service-owned values. */
+export const serverBillingPortalSessionResponseSchema = z.strictObject({
+  portalIntentId: serverDirectPortalIntentIdSchema,
+  redirectUrl: serverDirectBillingHttpsUrlSchema,
+  redirectUrlExpiresAt: z.iso.datetime(),
+})
+export type ServerBillingPortalSessionResponse = z.infer<
+  typeof serverBillingPortalSessionResponseSchema
+>
+
+export const serverDirectCheckoutStatusRequestSchema = z.strictObject({
+  appId: z.string().min(1),
+  subjectId: z.string().min(1),
+  checkoutIntentId: serverDirectCheckoutIntentIdSchema,
+  entitlement: z.string().min(1),
+})
+export type ServerDirectCheckoutStatusRequest = z.infer<
+  typeof serverDirectCheckoutStatusRequestSchema
+>
+
+export const serverDirectCheckoutStatusResponseSchema = z
+  .strictObject({
+    checkoutIntentId: serverDirectCheckoutIntentIdSchema,
+    environment: z.enum(['sandbox', 'production']),
+    status: z.enum(['created', 'pending', 'completed', 'canceled', 'expired', 'failed']),
+    accessReady: z.boolean(),
+    expiresAt: z.iso.datetime(),
+    completedAt: z.iso.datetime().nullable(),
+    source: z
+      .strictObject({
+        state: z.enum(['pending', 'active', 'suspended', 'expired', 'revoked', 'rejected']),
+        verificationState: z.enum(['pending', 'verified', 'failed']),
+        validFrom: z.iso.datetime(),
+        validUntil: z.iso.datetime().nullable(),
+      })
+      .nullable(),
+  })
+  .refine(
+    (value) =>
+      !value.accessReady ||
+      (value.status === 'completed' &&
+        value.completedAt !== null &&
+        value.source?.state === 'active' &&
+        value.source.verificationState === 'verified'),
+    { message: 'Ready purchase requires completed checkout and verified active source' },
+  )
+export type ServerDirectCheckoutStatusResponse = z.infer<
+  typeof serverDirectCheckoutStatusResponseSchema
+>
+
+export const serverDirectBillingSummaryRequestSchema = z.strictObject({
+  appId: z.string().min(1),
+  subjectId: z.string().min(1),
+})
+export type ServerDirectBillingSummaryRequest = z.infer<
+  typeof serverDirectBillingSummaryRequestSchema
+>
+
+export const serverDirectBillingSummaryResponseSchema = serverDirectBillingSummarySchema
+export type ServerDirectBillingSummaryResponse = z.infer<
+  typeof serverDirectBillingSummaryResponseSchema
+>

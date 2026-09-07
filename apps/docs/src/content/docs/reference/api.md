@@ -65,17 +65,18 @@ for diagnostics and advanced recovery UI.
 
 Server requests use an app-scoped `sk_srv_…` key with the listed capability.
 
-| Endpoint                             | Capability     |
-| ------------------------------------ | -------------- |
-| `/api/server/offerings`              | `catalog:read` |
-| `/api/server/products`               | `catalog:read` |
-| `/api/server/contract-plan-versions` | `catalog:read` |
-| `/api/server/customer-info`          | `access:read`  |
-| `/api/server/entitlements/check`     | `access:read`  |
-| `/api/server/licenses`               | `access:read`  |
-| `/api/server/licenses/:sourceId`     | `access:read`  |
-| `/api/server/access-pools/:poolId`   | `access:read`  |
-| `/api/server/devices`                | `access:read`  |
+| Endpoint                             | Capability            |
+| ------------------------------------ | --------------------- |
+| `/api/server/offerings`              | `catalog:read`        |
+| `/api/server/products`               | `catalog:read`        |
+| `/api/server/contract-plan-versions` | `catalog:read`        |
+| `/api/server/customer-info`          | `access:read`         |
+| `/api/server/entitlements/check`     | `access:read`         |
+| `/api/server/licenses`               | `access:read`         |
+| `/api/server/licenses/:sourceId`     | `access:read`         |
+| `/api/server/access-pools/:poolId`   | `access:read`         |
+| `/api/server/devices`                | `access:read`         |
+| `/api/server/direct-billing/summary` | `direct_billing:read` |
 
 `allowed: false` is a normal domain response, not an HTTP error.
 
@@ -104,10 +105,62 @@ Server requests use an app-scoped `sk_srv_…` key with the listed capability.
 | `/api/server/devices/budget-reset`                             | `access:write`            |
 | `/api/server/plan-versions/:planVersionId`                     | `catalog:write`           |
 | `/api/server/sdk-keys`                                         | `sdk_keys:write`          |
+| `/api/server/direct-checkout/sessions`                         | `direct_billing:write`    |
+| `/api/server/billing-portal/sessions`                          | `direct_billing:write`    |
 
 There is no direct grant-write endpoint. Mutations create or change verified
 sources, pools, reservations, allocations, or device activations; grants remain
 derived.
+
+### Hosted direct billing
+
+The direct billing surface is for trusted server code. It accepts an app-bound
+Subject identity and published catalog selections, then returns only
+service-owned opaque intents and short-lived redirects. For the first
+Individual slice, the service owns Billing Account selection: it resolves or
+creates the Individual Billing Account from the authenticated active app-user
+Subject. The public client contract does not accept an account ID, email, or
+display name for this selection.
+
+| Endpoint                               | Purpose                                                   |
+| -------------------------------------- | --------------------------------------------------------- |
+| `/api/server/direct-checkout/sessions` | Create a hosted checkout session from an Offering/package |
+| `/api/server/billing-portal/sessions`  | Create a hosted billing portal session                    |
+| `/api/server/direct-billing/summary`   | Read the canonical direct billing summary                 |
+
+`POST /api/server/direct-checkout/sessions` accepts
+`offeringIdentifier` and `packageIdentifier`, plus `subjectId` and an optional
+allowlisted `returnTarget`. It does **not** accept a Billing Account ID, amount,
+currency, Stripe Product/Price IDs, payment-method data, or caller-controlled
+success/cancel URLs. The service resolves the Individual Billing Account from
+the authenticated active app-user Subject, then resolves the remaining values
+from its app configuration and published catalog.
+
+```json
+{
+  "appId": "app_123",
+  "offeringIdentifier": "default",
+  "packageIdentifier": "monthly",
+  "reason": "start selected direct billing checkout",
+  "returnTarget": "billing_settings",
+  "subjectId": "subject_123"
+}
+```
+
+Checkout and portal responses contain a SubKit-owned intent ID with the
+`checkout-intent:` or `billing-portal:` prefix, a short-lived HTTPS
+`redirectUrl`, and an ISO datetime `redirectUrlExpiresAt`. They never contain
+provider IDs, client secrets, or payment-method details. The summary response
+contains only canonical catalog, amount/currency, period, cancellation, and
+provider-state status fields. Status values are normalized at the service's
+provider integration boundary; they are not provider commands. The normative
+Zod contracts are exported by `@piparotech/subkit-core` as
+`serverDirectCheckoutSessionRequestSchema`,
+`serverDirectCheckoutSessionResponseSchema`,
+`serverBillingPortalSessionRequestSchema`,
+`serverBillingPortalSessionResponseSchema`,
+`serverDirectBillingSummaryRequestSchema`, and
+`serverDirectBillingSummaryResponseSchema`.
 
 ### Link a previous Subject identity
 

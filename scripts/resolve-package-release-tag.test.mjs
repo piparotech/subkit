@@ -1,16 +1,20 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import test from 'node:test'
 
 const root = resolve(import.meta.dirname, '..')
 const script = resolve(root, 'scripts/resolve-package-release-tag.mjs')
 
-const expected = new Map([
-  ['subkit-core-v0.1.13', '@piparotech/subkit-core'],
-  ['subkit-node-v0.1.10', '@piparotech/subkit-node'],
-  ['subkit-expo-v0.1.12', '@piparotech/subkit-expo'],
-])
+const expected = new Map(
+  ['subkit-core', 'subkit-node', 'subkit-expo'].map((component) => {
+    const manifest = JSON.parse(
+      readFileSync(resolve(root, 'packages', component, 'package.json'), 'utf8'),
+    )
+    return [`${component}-v${manifest.version}`, manifest.name]
+  }),
+)
 
 for (const [tag, packageName] of expected) {
   test(`resolves ${tag}`, () => {
