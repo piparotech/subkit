@@ -18,7 +18,7 @@ export const serverDirectCheckoutOfferingResponseSchema = z
           label: z.string().min(1),
           amountMicros: z.number().int().nonnegative(),
           currencyCode: z.string().regex(/^[A-Z]{3}$/),
-          billingPeriodIso: z.string().min(1),
+          billingPeriodIso: z.iso.duration(),
         })
         .strict(),
     ),
