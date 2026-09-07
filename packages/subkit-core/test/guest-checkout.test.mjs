@@ -26,5 +26,7 @@ test('guest checkout selects a published tariff without account authority or raw
     assert.equal(schema.safeParse({ ...request, [field]: 'untrusted' }).success, false, field)
   }
   assert.equal(schema.safeParse({ ...request, purchaseReference: 'guessable' }).success, false)
-  assert.equal(schema.safeParse({ ...request, returnTarget: '' }).success, false)
+  for (const returnTarget of ['', 'https://example.com', '/purchase', 'buy?next=evil']) {
+    assert.equal(schema.safeParse({ ...request, returnTarget }).success, false, returnTarget)
+  }
 })

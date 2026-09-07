@@ -7,7 +7,12 @@ export const serverGuestCheckoutSessionRequestSchema = z
     purchaseReference: z.string().uuid(),
     offeringIdentifier: z.string().trim().min(1).max(200),
     packageIdentifier: z.string().trim().min(1).max(200),
-    returnTarget: z.string().trim().min(1).max(64),
+    returnTarget: z
+      .string()
+      .trim()
+      .min(1)
+      .max(64)
+      .regex(/^[a-z][a-z0-9_-]*$/),
     reason: z.string().trim().min(1).max(500),
   })
   .strict()
