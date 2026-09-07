@@ -336,6 +336,7 @@ const serverDirectBillingCurrencyCodeSchema = z.string().regex(/^[A-Z]{3}$/)
  * client secrets are not part of the public contract.
  */
 export const serverDirectBillingSummarySchema = z.strictObject({
+  environment: z.enum(['sandbox', 'production']),
   amountMicros: z.number().int().nonnegative().nullable(),
   billingPeriodIso: z.iso.duration().nullable(),
   cancelAtPeriodEnd: z.boolean(),
@@ -402,6 +403,46 @@ export const serverBillingPortalSessionResponseSchema = z.strictObject({
 })
 export type ServerBillingPortalSessionResponse = z.infer<
   typeof serverBillingPortalSessionResponseSchema
+>
+
+export const serverDirectCheckoutStatusRequestSchema = z.strictObject({
+  appId: z.string().min(1),
+  subjectId: z.string().min(1),
+  checkoutIntentId: serverDirectCheckoutIntentIdSchema,
+  entitlement: z.string().min(1),
+})
+export type ServerDirectCheckoutStatusRequest = z.infer<
+  typeof serverDirectCheckoutStatusRequestSchema
+>
+
+export const serverDirectCheckoutStatusResponseSchema = z
+  .strictObject({
+    checkoutIntentId: serverDirectCheckoutIntentIdSchema,
+    environment: z.enum(['sandbox', 'production']),
+    status: z.enum(['created', 'pending', 'completed', 'canceled', 'expired', 'failed']),
+    accessReady: z.boolean(),
+    expiresAt: z.iso.datetime(),
+    completedAt: z.iso.datetime().nullable(),
+    source: z
+      .strictObject({
+        state: z.enum(['pending', 'active', 'suspended', 'expired', 'revoked', 'rejected']),
+        verificationState: z.enum(['pending', 'verified', 'failed']),
+        validFrom: z.iso.datetime(),
+        validUntil: z.iso.datetime().nullable(),
+      })
+      .nullable(),
+  })
+  .refine(
+    (value) =>
+      !value.accessReady ||
+      (value.status === 'completed' &&
+        value.completedAt !== null &&
+        value.source?.state === 'active' &&
+        value.source.verificationState === 'verified'),
+    { message: 'Ready purchase requires completed checkout and verified active source' },
+  )
+export type ServerDirectCheckoutStatusResponse = z.infer<
+  typeof serverDirectCheckoutStatusResponseSchema
 >
 
 export const serverDirectBillingSummaryRequestSchema = z.strictObject({

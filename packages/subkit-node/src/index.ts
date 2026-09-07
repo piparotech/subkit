@@ -4,7 +4,11 @@ export type {
   CreateBillingPortalSessionInput,
   GetDirectBillingSummaryInput,
 } from './BillingClient.js'
-export type { CreateDirectCheckoutSessionInput } from './CheckoutClient.js'
+export type {
+  CreateDirectCheckoutSessionInput,
+  GetDirectCheckoutStatusInput,
+  GetDirectCheckoutOfferingInput,
+} from './CheckoutClient.js'
 export type { ServerDeviceActivation } from './DevicesClient.js'
 export type { OperatorContext } from './HttpClient.js'
 export { SubKitApiError, isSubKitApiError } from './errors.js'

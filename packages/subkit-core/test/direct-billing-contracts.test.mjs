@@ -21,6 +21,7 @@ const validCheckoutRequest = {
 }
 
 const validSummary = {
+  environment: 'sandbox',
   amountMicros: 1200000,
   billingPeriodIso: 'P1M',
   cancelAtPeriodEnd: false,

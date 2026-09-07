@@ -104,6 +104,7 @@ function responseFor(path) {
       packageIdentifier: 'monthly',
       planKey: 'pro_monthly',
       planLabel: 'Pro monthly',
+      environment: 'sandbox',
       status: 'active',
     }
   }

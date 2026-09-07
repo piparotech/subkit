@@ -89,6 +89,8 @@ export {
   serverDirectCheckoutSessionResponseSchema,
 } from './server-contracts.js'
 export * from './server-contracts.js'
+export * from './checkout-offering.js'
+export * from './guest-checkout.js'
 export type {
   CustomerDeviceAccess,
   CustomerEntitlement,
