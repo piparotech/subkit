@@ -44,8 +44,11 @@ safe only for the same logical mutation; conflicting evidence fails closed.
 ## Checkout offering without a buyer
 
 `subkit.checkout.getOffering({ offeringIdentifier: 'default' })` reads checkout
-package labels, amounts, currencies and billing periods without a customer or
-Subject. It requires an app-scoped server key with `direct_billing:read`; the
+package labels, amounts, currencies, billing periods, `audience`
+(`individual` or `organization`), entitlement rules and individual named pools
+without a customer or Subject. Each pool retains its key, nullable capacity
+(`null` means unbounded), entitlement keys and reservation policy. Pools are
+not summed: applications interpret their own catalog keys. It requires an app-scoped server key with `direct_billing:read`; the
 key selects the environment. Keep the key on your backend and expose only the
 returned tariff data to a public purchase page. The SDK rejects unexpected
 fields, duplicate package identifiers and mismatched offering responses.
@@ -81,6 +84,25 @@ The server key selects the environment. Require the expected environment in your
 application and do not reopen terminal or expired checkouts. These methods need
 the matching guest service routes and access worker deployment; installing this
 SDK does not provision those services or create an identity-provider session.
+
+## Organization guest purchases
+
+Organization-audience packages use a separate organization Billing Account.
+After verifying payment, browser possession and the buyer's independent identity,
+call `subkit.checkout.associateOrganizationGuestPurchase` with `purchaseReference`,
+`subjectId`, `organizationName`, `reason` and mutation options containing the
+idempotency key. The service binds a new organization licensee for that exact
+purchase; it never establishes an application login or creates an application
+team or club.
+
+`subkit.checkout.getOrganizationGuestAccess({ purchaseReference, subjectId })`
+reads the exact organization purchase with current owner authorization. Until
+verified access is ready it returns `accessReady: false` and no pools. Once the
+worker has projected the licensee and pools, each named pool exposes its own
+`capacity`, `used`, `reserved` and `entitlementKeys`. Do not add unrelated pool
+capacities or interpret billing ownership as a personal seat allocation.
+These organization methods are currently enabled for sandbox purchases only;
+production rollout remains separately gated.
 
 ## Hosted direct billing
 

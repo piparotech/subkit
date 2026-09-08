@@ -192,7 +192,7 @@ export const customerInfoSchema = z.strictObject({
   unclaimedPurchases: z.array(customerUnclaimedPurchaseSchema),
 })
 
-const runtimePlanEntitlementSchema = z.strictObject({
+export const runtimePlanEntitlementSchema = z.strictObject({
   durationIso: z.string().nullable(),
   grantMode: z.enum(['while_source_active', 'lifetime', 'fixed_duration']),
   key: z.string().min(1),
@@ -208,7 +208,7 @@ const runtimePlanOfferSchema = z.strictObject({
   priceCurrencyCode: z.string().length(3).nullable(),
 })
 
-const runtimePlanPoolSchema = z.strictObject({
+export const runtimePlanPoolSchema = z.strictObject({
   capacity: z.number().int().positive().nullable(),
   capacityChangePolicy: z.enum(['immediate', 'renewal_only', 'forbidden']),
   entitlementKeys: z.array(z.string().min(1)),

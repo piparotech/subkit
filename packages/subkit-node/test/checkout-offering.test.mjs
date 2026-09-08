@@ -10,6 +10,9 @@ test('offering read sends no buyer subject and validates exact public projection
     identifier: 'default',
     packages: [
       {
+        audience: 'individual',
+        pools: [],
+        entitlements: [],
         identifier: 'annual',
         label: 'Annual',
         amountMicros: 49990000,
