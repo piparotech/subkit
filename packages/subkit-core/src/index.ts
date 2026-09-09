@@ -91,6 +91,7 @@ export {
   serverDirectCheckoutSessionResponseSchema,
 } from './server-contracts.js'
 export * from './server-contracts.js'
+export * from './server-grant-context.js'
 export * from './checkout-offering.js'
 export * from './organization-checkout.js'
 export * from './guest-checkout.js'

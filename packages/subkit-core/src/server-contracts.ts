@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { serverGrantContextSchema } from './server-grant-context.js'
 
 export const serverGrantStatusSchema = z.enum(['active', 'suspended', 'expired', 'revoked'])
 export type ServerGrantStatus = z.infer<typeof serverGrantStatusSchema>
@@ -22,6 +23,12 @@ export const serverEntitlementCheckRequestSchema = z.object({
 export type ServerEntitlementCheckRequest = z.infer<typeof serverEntitlementCheckRequestSchema>
 
 export const serverGrantSchema = z.object({
+  effective: z.boolean(),
+  context: serverGrantContextSchema,
+  accessSourceId: z.string().min(1),
+  allocationId: z.string().nullable(),
+  store: z.enum(['apple_app_store', 'google_play']).nullable(),
+  storeProductId: z.string().nullable(),
   entitlement: z.string().min(1),
   expiresAt: z.string().nullable(),
   id: z.string().min(1),

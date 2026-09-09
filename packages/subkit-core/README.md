@@ -35,6 +35,24 @@ name for that selection. Return navigation uses an app-configured
 intent IDs are SubKit-owned prefixed values. The contracts intentionally do not
 expose provider IDs, payment-method data, or client secrets.
 
+## Authenticated server grant context
+
+`serverEntitlementCheckResponseSchema` preserves every grant for the requested
+app/user/entitlement. Each grant contains its canonical `effective` decision,
+source and allocation IDs, nullable store binding, and `context` validated by
+`serverGrantContextSchema`. Store names use `apple_app_store` and `google_play`.
+`context.billing` distinguishes verified store billing, direct subscription
+status/financial state and contract terms; absent data is null, not inferred.
+Period ends are not renewal dates. Organization subject IDs identify the
+licensee, not the payer or an automatic club membership. Application backends
+may add their own club mapping without changing SubKit's access decision.
+
+These details belong to the authenticated Server API (`access:read`). The
+public Runtime entitlement endpoint does not expose this expanded context.
+No provider transaction IDs, payment methods or provider payloads are included.
+Consumers must update service and Core artifacts together; no legacy defaults
+are supplied for missing fields.
+
 ## Effective Access contract
 
 Core exports `resolveEntitlementAccess(customerInfo, entitlementKey)` and the
