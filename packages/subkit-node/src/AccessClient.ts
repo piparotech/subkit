@@ -1,8 +1,12 @@
 import { z } from 'zod'
 
 import {
+  type ServerReservationPreviewRequest,
+  type ServerReservationPreviewResponse,
   type ServerReservationReadRequest,
   type ServerReservationReadResponse,
+  serverReservationPreviewRequestSchema,
+  serverReservationPreviewResponseSchema,
   serverReservationReadRequestSchema,
   serverReservationReadResponseSchema,
 } from '@piparotech/subkit-core'
@@ -105,6 +109,9 @@ export type UpdatePoolInput =
     }
 
 export type GetReservationInput = Omit<ServerReservationReadRequest, 'appId'> & { appId?: string }
+export type PreviewReservationInput = Omit<ServerReservationPreviewRequest, 'appId'> & {
+  appId?: string
+}
 
 export interface RevokeReservationInput {
   reason: string
@@ -211,6 +218,24 @@ export class AccessClient {
         ),
       },
     )
+  }
+
+  previewReservation(
+    input: PreviewReservationInput,
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerReservationPreviewResponse> {
+    const request = serverReservationPreviewRequestSchema.parse({
+      ...input,
+      appId: resolveAppId(input.appId, this.appId),
+    })
+    return this.http.post('/api/server/access-reservations/preview', {
+      ...options,
+      body: request,
+      responseSchema: serverReservationPreviewResponseSchema.refine(
+        (result) => result.appId === request.appId && result.subjectId === request.subjectId,
+        { message: 'Reservation preview does not match the requested app and recipient' },
+      ),
+    })
   }
 
   claim(input: ClaimReservationInput, options: SubKitMutationOptions): Promise<AllocationResult> {

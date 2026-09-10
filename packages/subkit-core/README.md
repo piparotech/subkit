@@ -80,6 +80,18 @@ information. Application backends must independently bind the reservation to
 an authenticated invitation and verify the claiming Subject before committing
 membership. `pending` is not proof that a concurrent claim failed.
 
+`serverReservationPreviewRequestSchema` and `serverReservationPreviewResponseSchema`
+add a token-holder preview scoped to the authenticated recipient Subject. The
+request contains only the token's SHA-256 hash, app and Subject. The response
+includes canonical reservation evidence, product label, pinned plan version,
+pool key and entitlement keys. It echoes app/recipient and rejects mismatched
+assignment or claimant. No token or invitee-reference hash is returned.
+
+Unassigned full tokens remain bearer invitations; an optional hashed recipient
+hint is metadata, not verified email ownership. Application club invitations
+still require their own address/membership authorization. Preview does not
+reserve new capacity, activate access or prove a later claim will succeed.
+
 ## Effective Access contract
 
 Core exports `resolveEntitlementAccess(customerInfo, entitlementKey)` and the

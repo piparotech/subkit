@@ -222,6 +222,23 @@ const allocation = await subkit.access.claim(
 Invitation tokens stay outside SubKit — send the opaque token to the invitee and
 submit only its hash.
 
+### Preview before explicit activation
+
+An authenticated application backend can call
+`subkit.access.previewReservation({ claimTokenHash: hash(inviteToken), subjectId: subject.id })`
+with `access:read`. The hash stays in a POST body, not a URL. The service checks
+app/tenant/environment and an active app-user Subject before disclosure. Wrong
+assignment or another claimant is indistinguishable from a missing token.
+The SDK validates the echoed app/recipient and nested reservation evidence.
+
+The response provides the canonical product label, pinned plan version, pool key,
+entitlement keys and reservation snapshot, not payer information or token hashes.
+Persist its exact reservation/source/pool and authenticated recipient before
+explicit activation. Preview makes no write and cannot guarantee later access.
+An unassigned full token is a bearer invitation; optional invitee-reference hashes
+are metadata, not verified email or club membership authorization. Application
+club codes and promotion codes remain separate acquisition mechanisms.
+
 ### Recover an uncertain reservation claim
 
 Persist the returned reservation ID in your application before delivering the

@@ -114,6 +114,23 @@ trigger a replacement reservation or different claim key after an uncertain
 write. The new read requires a matching service deployment and Core artifact;
 SDK availability alone does not make it reachable.
 
+### Preview a full invitation token
+
+Use `subkit.access.previewReservation({ claimTokenHash, subjectId })` only on
+an authenticated backend, deriving `subjectId` from its session. The POST body
+keeps the SHA-256 token hash out of URLs. `access:read` and matching
+app/tenant/environment scope are required. Missing tokens, foreign recipients
+and claims by another Subject are not disclosed. The SDK validates echoed
+app/recipient and the nested reservation binding.
+
+The response contains the current product label, pinned plan version, pool key,
+entitlement keys and canonical reservation snapshot. Persist the reviewed
+reservation/source/pool and authenticated recipient before a separate explicit
+claim. Do not treat preview or allocation state as effective access. Unassigned
+full tokens are bearer invitations; optional invitee-reference metadata is not
+verified email ownership or application club membership. This API requires a
+matching service deployment; mobile clients must not call the Server API.
+
 ## Documentation
 
 - [Node backend guide](https://subkit.piparo.tech/docs/node/overview/)

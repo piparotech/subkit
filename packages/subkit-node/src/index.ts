@@ -32,6 +32,7 @@ export type {
   PoolCapacityPreview,
   PoolResult,
   PreviewPoolCapacityInput,
+  PreviewReservationInput,
   PromotionRedemptionResult,
   RedeemPromotionCodeInput,
   ReservationResult,
