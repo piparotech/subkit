@@ -37,3 +37,20 @@ export const serverReservationClaimResponseSchema = z.discriminatedUnion('status
     .strict(),
 ])
 export type ServerReservationClaimResponse = z.infer<typeof serverReservationClaimResponseSchema>
+
+/** Read only the outcome of this exact request and idempotency key. */
+export const serverReservationClaimStatusRequestSchema = serverReservationClaimRequestSchema.extend(
+  {
+    idempotencyKey: z.string().min(8).max(200),
+  },
+)
+export type ServerReservationClaimStatusRequest = z.infer<
+  typeof serverReservationClaimStatusRequestSchema
+>
+export const serverReservationClaimStatusResponseSchema = z.union([
+  serverReservationClaimResponseSchema,
+  z.object({ ...identity, status: z.literal('pending') }).strict(),
+])
+export type ServerReservationClaimStatusResponse = z.infer<
+  typeof serverReservationClaimStatusResponseSchema
+>

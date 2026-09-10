@@ -86,6 +86,13 @@ and audit reason. It returns an identity-bound claimed allocation or durable typ
 rejection, not capacity usage. New result/audit/claim commit together. Retry the
 same payload/key after uncertainty; do not infer effective access from completion.
 
+`POST /api/server/access-reservations/claim/status` requires `access:read` and
+the exact original claim body plus `idempotencyKey`. It performs no mutation and
+returns the original claimed/rejected result or `pending`. Tenant, app, source
+environment, reviewed identity and full request hash are checked. Missing or
+historical processing/failed journals remain uncertain. Token hash and key stay
+in the POST body, are not returned, and all responses use `Cache-Control: no-store`.
+
 `POST /api/server/access-reservations/preview` requires `access:read` and accepts
 `{ appId, claimTokenHash, subjectId }` from an authenticated application backend.
 It returns a non-cacheable recipient-scoped reservation snapshot with product,

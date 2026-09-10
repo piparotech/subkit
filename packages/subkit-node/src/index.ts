@@ -24,6 +24,7 @@ export type {
   AllocateAccessInput,
   AllocationResult,
   ClaimReservationInput,
+  ReadReservationClaimInput,
   FreeEnrollmentInput,
   FreeEnrollmentResult,
   GetReservationInput,

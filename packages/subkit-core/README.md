@@ -99,6 +99,12 @@ refusal. It replaces the old capacity-only claim result. Replayed completion is
 not a new grant or evidence that the allocation remains effective. Service,
 Node SDK and application callers must adopt the new contract together.
 
+`serverReservationClaimStatusRequestSchema` adds the original idempotency key to
+that exact request. Its read-only response is the original claimed/rejected
+result or `pending`. Absence, processing and historical failed journals remain
+pending, never evidence for a replacement write. A reservation claimed by the
+same Subject is not proof that this particular operation completed.
+
 ## Effective Access contract
 
 Core exports `resolveEntitlementAccess(customerInfo, entitlementKey)` and the

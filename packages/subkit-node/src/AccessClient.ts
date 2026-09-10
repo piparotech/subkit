@@ -3,12 +3,16 @@ import { z } from 'zod'
 import {
   type ServerReservationClaimRequest,
   type ServerReservationClaimResponse,
+  type ServerReservationClaimStatusRequest,
+  type ServerReservationClaimStatusResponse,
   type ServerReservationPreviewRequest,
   type ServerReservationPreviewResponse,
   type ServerReservationReadRequest,
   type ServerReservationReadResponse,
   serverReservationClaimRequestSchema,
   serverReservationClaimResponseSchema,
+  serverReservationClaimStatusRequestSchema,
+  serverReservationClaimStatusResponseSchema,
   serverReservationPreviewRequestSchema,
   serverReservationPreviewResponseSchema,
   serverReservationReadRequestSchema,
@@ -74,6 +78,10 @@ export interface ReserveAccessInput {
 }
 
 export type ClaimReservationInput = Omit<ServerReservationClaimRequest, 'appId'> & {
+  appId?: string
+}
+
+export type ReadReservationClaimInput = Omit<ServerReservationClaimStatusRequest, 'appId'> & {
   appId?: string
 }
 
@@ -258,6 +266,29 @@ export class AccessClient {
           result.poolId === request.poolId &&
           result.accessSourceId === request.accessSourceId,
         { message: 'Reservation claim does not match the reviewed identity' },
+      ),
+    })
+  }
+
+  readReservationClaim(
+    input: ReadReservationClaimInput,
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerReservationClaimStatusResponse> {
+    const request = serverReservationClaimStatusRequestSchema.parse({
+      ...input,
+      appId: resolveAppId(input.appId, this.appId),
+    })
+    return this.http.post('/api/server/access-reservations/claim/status', {
+      ...options,
+      body: request,
+      responseSchema: serverReservationClaimStatusResponseSchema.refine(
+        (result) =>
+          result.appId === request.appId &&
+          result.subjectId === request.subjectId &&
+          result.reservationId === request.reservationId &&
+          result.poolId === request.poolId &&
+          result.accessSourceId === request.accessSourceId,
+        { message: 'Reservation claim status does not match the requested identity' },
       ),
     })
   }

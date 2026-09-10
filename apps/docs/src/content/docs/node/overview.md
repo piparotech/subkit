@@ -263,8 +263,14 @@ claim does not mean the allocation still grants access.
 ### Recover an uncertain reservation claim
 
 Persist the returned reservation ID in your application before delivering the
-invitation. To reconcile a lost claim response, call
-`subkit.access.getReservation({ reservationId: reservation.reservationId })`.
+invitation. Persist the original claim payload and idempotency key before
+activation. To reconcile a lost claim response, first call
+`subkit.access.readReservationClaim({ ...originalClaim, idempotencyKey })`.
+Only its exact completed journal proves this operation's claimed/rejected result.
+`pending` includes missing, processing and historical failed journals, and does
+not unlock a different operation. A claim by the same Subject could belong to
+another operation. Once this operation is confirmed, read current allocation
+state with `subkit.access.getReservation({ reservationId: reservation.reservationId })`.
 This requires `access:read` and a matching service/Core deployment. The SDK
 validates the returned app and reservation identity. The service returns a
 non-cacheable single-reservation snapshot; it never exposes tokens, token

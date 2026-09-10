@@ -143,6 +143,14 @@ request loss; old processing/failed journals require independent reconciliation.
 Effective access and application membership remain separate checks. Update all
 callers and service artifacts together; no token-only compatibility path exists.
 
+After response loss, `access.readReservationClaim({ ...originalRequest,
+idempotencyKey })` reads the exact operation with `access:read` and no mutation.
+The request hash includes the original reason and reviewed identity. Completed
+results replay unchanged; absent/processing/historical failed journals return
+`pending`. A claimed reservation alone does not identify the claiming operation.
+After confirmed completion use `getReservation` for current exact allocation
+state, then the canonical entitlement decision for current access.
+
 ## Documentation
 
 - [Node backend guide](https://subkit.piparo.tech/docs/node/overview/)
