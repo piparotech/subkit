@@ -1,4 +1,6 @@
 import {
+  type ServerGuestCheckoutResumeRequest,
+  serverGuestCheckoutResumeRequestSchema,
   type ServerDirectCheckoutResumeRequest,
   serverDirectCheckoutResumeRequestSchema,
   type ServerDirectCheckoutRecoveryRequest,
@@ -68,6 +70,19 @@ export class CheckoutClient {
       body: serverGuestCheckoutSessionRequestSchema.parse({
         ...input,
         appId: resolveAppId(input.appId, this.appId),
+      }),
+      responseSchema: serverDirectCheckoutSessionResponseSchema,
+    })
+  }
+
+  resumeGuestSession(
+    input: Omit<ServerGuestCheckoutResumeRequest, 'appId' | 'action'> & { appId?: string },
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerDirectCheckoutSessionResponse> {
+    return this.http.post('/api/server/guest-checkout/sessions', {
+      ...options,
+      body: serverGuestCheckoutResumeRequestSchema.parse({
+        ...input, action: 'resume', appId: resolveAppId(input.appId, this.appId),
       }),
       responseSchema: serverDirectCheckoutSessionResponseSchema,
     })
