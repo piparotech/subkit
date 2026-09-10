@@ -85,6 +85,23 @@ addition to suspend/resume/revoke, finite contracts support `renew`,
 auto-renew, and term-end guards; scheduling non-renewal never ends current
 access before the term end.
 
+## Reservation recovery
+
+`subkit.access.getReservation({ reservationId })` reads one reservation with
+`access:read`; an explicit `appId` may override the configured app. The SDK
+validates the response's app and reservation identity. The service returns
+`Cache-Control: no-store`, checks tenant/app/environment scope and exposes no
+token or invitee-reference hashes. Store/direct sources require a matching
+sandbox/production key; environment-neutral sources require a neutral key.
+
+A `claimed` result includes the exact allocation ID, current allocation state,
+claiming Subject and timestamp. Verify these against your authenticated,
+durably bound invitation. It is not proof of effective entitlement or current
+application membership. A `pending` result is only a snapshot and must not
+trigger a replacement reservation or different claim key after an uncertain
+write. The new read requires a matching service deployment and Core artifact;
+SDK availability alone does not make it reachable.
+
 ## Documentation
 
 - [Node backend guide](https://subkit.piparo.tech/docs/node/overview/)

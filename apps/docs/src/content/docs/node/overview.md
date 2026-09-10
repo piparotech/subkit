@@ -207,6 +207,29 @@ const allocation = await subkit.access.claim(
 Invitation tokens stay outside SubKit — send the opaque token to the invitee and
 submit only its hash.
 
+### Recover an uncertain reservation claim
+
+Persist the returned reservation ID in your application before delivering the
+invitation. To reconcile a lost claim response, call
+`subkit.access.getReservation({ reservationId: reservation.reservationId })`.
+This requires `access:read` and a matching service/Core deployment. The SDK
+validates the returned app and reservation identity. The service returns a
+non-cacheable single-reservation snapshot; it never exposes tokens, token
+hashes, invitee-reference hashes or an app-wide reservation list.
+
+For `state: 'claimed'`, `claim` contains the exact `allocationId`, current
+`allocationState`, `subjectId` and `claimedAt`. Verify the subject and your
+own durable invitation binding before reconciling application membership.
+Membership and effective entitlement must still be checked independently.
+An inactive allocation must not be treated as permission to create a new one.
+
+A pending reservation past its expiry is reported as `expired` using database
+time without a maintenance write. `pending` means only that no claim was
+visible in this snapshot, not that an in-flight request failed. Reuse the same
+logical claim and idempotency key; do not generate a replacement invitation
+from a negative read. Direct and Store sources require their matching
+sandbox/production key; environment-neutral sources require a neutral key.
+
 ## Record verified payment evidence
 
 A Contract creates a Source and Pools; it does not claim money moved. Record a

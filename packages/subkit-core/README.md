@@ -53,6 +53,21 @@ No provider transaction IDs, payment methods or provider payloads are included.
 Consumers must update service and Core artifacts together; no legacy defaults
 are supplied for missing fields.
 
+## Authenticated reservation recovery
+
+`serverReservationReadRequestSchema` and `serverReservationReadResponseSchema`
+define a single-reservation Server read. The response binds the app, reservation,
+source, pool and nullable assigned Subject. A claimed reservation includes its
+exact allocation ID, current allocation state, claiming Subject and claim time.
+Other states cannot carry a claim. Expired pending reservations are reported as
+expired at the database observation time without changing stored state.
+
+This is private recovery evidence, not an entitlement or invitee-authorization
+decision. It contains no claim token, token hash, invitee-reference hash or payer
+information. Application backends must independently bind the reservation to
+an authenticated invitation and verify the claiming Subject before committing
+membership. `pending` is not proof that a concurrent claim failed.
+
 ## Effective Access contract
 
 Core exports `resolveEntitlementAccess(customerInfo, entitlementKey)` and the

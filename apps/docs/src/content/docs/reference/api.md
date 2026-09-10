@@ -80,6 +80,15 @@ Server requests use an app-scoped `sk_srv_…` key with the listed capability.
 
 `allowed: false` is a normal domain response, not an HTTP error.
 
+`GET /api/server/access-reservations/:reservationId?appId=...` additionally
+provides an `access:read`-protected, non-cacheable reservation snapshot. It
+checks tenant, app and source environment and returns canonical state plus an
+exact claim/allocation reference when claimed. It does not expose token or
+invitee-reference hashes, authorize an invitee or grant entitlement. See
+`serverReservationReadRequestSchema`, `serverReservationReadResponseSchema`
+and the [reservation recovery guide](/docs/node/overview/#recover-an-uncertain-reservation-claim).
+The route requires a matching service deployment; it is not a Runtime API.
+
 ## Server API mutations
 
 | Endpoint                                                       | Capability                |

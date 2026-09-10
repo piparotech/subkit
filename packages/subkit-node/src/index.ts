@@ -26,6 +26,7 @@ export type {
   ClaimReservationInput,
   FreeEnrollmentInput,
   FreeEnrollmentResult,
+  GetReservationInput,
   ManualProvisionInput,
   MutationResult,
   PoolCapacityPreview,
@@ -88,4 +89,6 @@ export type {
   ServerProduct,
   ServerProductsRequest,
   ServerProductsResponse,
+  ServerReservationReadRequest,
+  ServerReservationReadResponse,
 } from '@piparotech/subkit-core'

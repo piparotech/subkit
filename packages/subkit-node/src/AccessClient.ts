@@ -1,5 +1,12 @@
 import { z } from 'zod'
 
+import {
+  type ServerReservationReadRequest,
+  type ServerReservationReadResponse,
+  serverReservationReadRequestSchema,
+  serverReservationReadResponseSchema,
+} from '@piparotech/subkit-core'
+
 import type { HttpClient } from './HttpClient.js'
 import type { SubKitMutationOptions, SubKitRequestOptions } from './requestOptions.js'
 
@@ -97,6 +104,8 @@ export type UpdatePoolInput =
       reason: string
     }
 
+export type GetReservationInput = Omit<ServerReservationReadRequest, 'appId'> & { appId?: string }
+
 export interface RevokeReservationInput {
   reason: string
   reservationId: string
@@ -180,6 +189,28 @@ export class AccessClient {
       body: { ...body, expiresAt: body.expiresAt?.toISOString() ?? body.expiresAt },
       responseSchema: reservationResultSchema,
     })
+  }
+
+  getReservation(
+    input: GetReservationInput,
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerReservationReadResponse> {
+    const request = serverReservationReadRequestSchema.parse({
+      ...input,
+      appId: resolveAppId(input.appId, this.appId),
+    })
+    const query = new URLSearchParams({ appId: request.appId })
+    return this.http.get(
+      `/api/server/access-reservations/${encodeURIComponent(request.reservationId)}?${query}`,
+      {
+        ...options,
+        responseSchema: serverReservationReadResponseSchema.refine(
+          (result) =>
+            result.appId === request.appId && result.reservationId === request.reservationId,
+          { message: 'Reservation response does not match the requested app and reservation' },
+        ),
+      },
+    )
   }
 
   claim(input: ClaimReservationInput, options: SubKitMutationOptions): Promise<AllocationResult> {
