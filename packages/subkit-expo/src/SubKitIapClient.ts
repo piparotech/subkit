@@ -604,7 +604,13 @@ function createSubKitClient(
           status: 'failed',
         }
       }
-      if (syncResult.acceptedPurchases.length === 0) {
+      const acceptedTransactions = syncResult.acceptedPurchases
+      const requestedTransactionAccepted = purchases.some((purchase) => {
+        if (purchase.store !== expectedStore || purchase.productId !== productId) return false
+        const transactionId = purchase.transactionId ?? purchase.originalTransactionId ?? purchase.orderId
+        return transactionId != null && acceptedTransactions.includes(transactionId)
+      })
+      if (!requestedTransactionAccepted) {
         return { purchaseId: productId, status: 'pending' }
       }
       return { customerInfo: syncResult.customerInfo, status: 'verified' }
