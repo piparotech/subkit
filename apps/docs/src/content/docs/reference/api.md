@@ -80,6 +80,12 @@ Server requests use an app-scoped `sk_srv_…` key with the listed capability.
 
 `allowed: false` is a normal domain response, not an HTTP error.
 
+`POST /api/server/access-reservations/claim` requires `access:write`, the reviewed
+`reservationId`, `poolId`, `accessSourceId`, app, authenticated Subject, token hash
+and audit reason. It returns an identity-bound claimed allocation or durable typed
+rejection, not capacity usage. New result/audit/claim commit together. Retry the
+same payload/key after uncertainty; do not infer effective access from completion.
+
 `POST /api/server/access-reservations/preview` requires `access:read` and accepts
 `{ appId, claimTokenHash, subjectId }` from an authenticated application backend.
 It returns a non-cacheable recipient-scoped reservation snapshot with product,

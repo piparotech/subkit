@@ -1,10 +1,14 @@
 import { z } from 'zod'
 
 import {
+  type ServerReservationClaimRequest,
+  type ServerReservationClaimResponse,
   type ServerReservationPreviewRequest,
   type ServerReservationPreviewResponse,
   type ServerReservationReadRequest,
   type ServerReservationReadResponse,
+  serverReservationClaimRequestSchema,
+  serverReservationClaimResponseSchema,
   serverReservationPreviewRequestSchema,
   serverReservationPreviewResponseSchema,
   serverReservationReadRequestSchema,
@@ -69,11 +73,8 @@ export interface ReserveAccessInput {
   subjectId?: string | null
 }
 
-export interface ClaimReservationInput {
+export type ClaimReservationInput = Omit<ServerReservationClaimRequest, 'appId'> & {
   appId?: string
-  claimTokenHash: string
-  reason: string
-  subjectId: string
 }
 
 export interface AllocateAccessInput {
@@ -238,11 +239,26 @@ export class AccessClient {
     })
   }
 
-  claim(input: ClaimReservationInput, options: SubKitMutationOptions): Promise<AllocationResult> {
+  claim(
+    input: ClaimReservationInput,
+    options: SubKitMutationOptions,
+  ): Promise<ServerReservationClaimResponse> {
+    const request = serverReservationClaimRequestSchema.parse({
+      ...input,
+      appId: resolveAppId(input.appId, this.appId),
+    })
     return this.http.post('/api/server/access-reservations/claim', {
       ...options,
-      body: { ...input, appId: resolveAppId(input.appId, this.appId) },
-      responseSchema: allocationResultSchema,
+      body: request,
+      responseSchema: serverReservationClaimResponseSchema.refine(
+        (result) =>
+          result.appId === request.appId &&
+          result.subjectId === request.subjectId &&
+          result.reservationId === request.reservationId &&
+          result.poolId === request.poolId &&
+          result.accessSourceId === request.accessSourceId,
+        { message: 'Reservation claim does not match the reviewed identity' },
+      ),
     })
   }
 

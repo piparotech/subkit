@@ -131,6 +131,18 @@ full tokens are bearer invitations; optional invitee-reference metadata is not
 verified email ownership or application club membership. This API requires a
 matching service deployment; mobile clients must not call the Server API.
 
+### Claim the reviewed reservation
+
+`access.claim` requires `reservationId`, `poolId` and `accessSourceId` from the
+reviewed preview alongside its token hash and authenticated Subject. This replaces
+the old token-only input and capacity-only response. Handle the exact echoed
+identity and `status: claimed`/`allocationId` or `status: rejected`/`rejection`.
+New claim, audit and completed idempotency result commit atomically. Technical
+failures do not become domain rejection. Reuse the original payload/key after
+request loss; old processing/failed journals require independent reconciliation.
+Effective access and application membership remain separate checks. Update all
+callers and service artifacts together; no token-only compatibility path exists.
+
 ## Documentation
 
 - [Node backend guide](https://subkit.piparo.tech/docs/node/overview/)

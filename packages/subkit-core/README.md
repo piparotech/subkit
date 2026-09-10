@@ -92,6 +92,13 @@ hint is metadata, not verified email ownership. Application club invitations
 still require their own address/membership authorization. Preview does not
 reserve new capacity, activate access or prove a later claim will succeed.
 
+`serverReservationClaimRequestSchema` requires the exact reviewed app/Subject,
+reservation, pool and source IDs plus token hash/reason. The strict claim response
+echoes this identity and discriminates claimed allocation from typed terminal
+refusal. It replaces the old capacity-only claim result. Replayed completion is
+not a new grant or evidence that the allocation remains effective. Service,
+Node SDK and application callers must adopt the new contract together.
+
 ## Effective Access contract
 
 Core exports `resolveEntitlementAccess(customerInfo, entitlementKey)` and the

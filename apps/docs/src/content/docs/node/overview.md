@@ -215,8 +215,15 @@ const reservation = await subkit.access.reserve(
   { idempotencyKey: 'invite:trainer_123' },
 )
 
+const preview = await subkit.access.previewReservation({
+  claimTokenHash: hash(inviteToken),
+  subjectId: subject.id,
+})
 const allocation = await subkit.access.claim(
   {
+    reservationId: preview.reservation.reservationId,
+    poolId: preview.reservation.poolId,
+    accessSourceId: preview.reservation.accessSourceId,
     claimTokenHash: hash(inviteToken),
     subjectId: subject.id,
     reason: 'trainer accepted invitation',
@@ -244,6 +251,14 @@ explicit activation. Preview makes no write and cannot guarantee later access.
 An unassigned full token is a bearer invitation; optional invitee-reference hashes
 are metadata, not verified email or club membership authorization. Application
 club codes and promotion codes remain separate acquisition mechanisms.
+
+Claim requires the exact reviewed reservation, pool and source IDs, not just a
+code. Handle `status: 'claimed'` with its exact allocation ID or a durable
+`status: 'rejected'` with `changed | expired | used | recipient_mismatch | unavailable`.
+Transport, authorization and journal conflicts remain errors, not terminal
+rejection evidence. The service commits new claim/audit/journal results together;
+repeat the original payload/key after an uncertain response. Even a completed
+claim does not mean the allocation still grants access.
 
 ### Recover an uncertain reservation claim
 
