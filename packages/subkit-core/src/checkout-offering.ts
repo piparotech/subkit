@@ -7,6 +7,7 @@ export const directCheckoutAudienceSchema = z.enum(['individual', 'organization'
 export const directCheckoutPackageSchema = z
   .strictObject({
     identifier: z.string().min(1),
+    selectionRevision: z.string().regex(/^[a-f0-9]{64}$/),
     label: z.string().min(1),
     amountMicros: z.number().int().nonnegative(),
     currencyCode: z.string().regex(/^[A-Z]{3}$/),
