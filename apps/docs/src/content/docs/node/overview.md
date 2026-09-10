@@ -41,6 +41,14 @@ Every mutation requires:
 Exact retries reuse the same idempotency key and the same audit reason. They are
 safe only for the same logical mutation; conflicting evidence fails closed.
 
+## Recover an authenticated checkout reference
+
+`subkit.checkout.recoverStatus({ subjectId, idempotencyKey, entitlement })` reads the existing authenticated checkout using its original creation idempotency key. Use the same app and environment-bound server client. The response is the normal exact checkout lifecycle, including `checkoutIntentId`; it contains no provider redirect URL. The method neither creates a checkout nor associates a guest purchase.
+
+The server requires `direct_billing:read` and matches tenant, app, environment, subject and key. Missing, foreign and ambiguous references are unavailable. A missing result is not proof that a previous request never took effect and must not automatically start a replacement purchase. Preserve the original operation/key while reconciling.
+
+This requires the matching service recovery implementation; older deployed services reject the alternative selector. There is no fallback to checkout creation. Local SDK compilation is not hosted recovery evidence.
+
 ## Checkout offering without a buyer
 
 `subkit.checkout.getOffering({ offeringIdentifier: 'default' })` reads checkout

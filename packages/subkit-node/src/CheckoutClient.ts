@@ -1,4 +1,6 @@
 import {
+  type ServerDirectCheckoutRecoveryRequest,
+  serverDirectCheckoutRecoveryRequestSchema,
   type ServerDirectCheckoutOfferingRequest,
   type ServerDirectCheckoutOfferingResponse,
   type ServerDirectCheckoutSessionRequest,
@@ -175,6 +177,21 @@ export class CheckoutClient {
         (status) => status.checkoutIntentId === body.checkoutIntentId,
         { message: 'Checkout status reference does not match the request' },
       ),
+    })
+  }
+
+  recoverStatus(
+    input: Omit<ServerDirectCheckoutRecoveryRequest, 'appId'> & { appId?: string },
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerDirectCheckoutStatusResponse> {
+    const body = serverDirectCheckoutRecoveryRequestSchema.parse({
+      ...input,
+      appId: resolveAppId(input.appId, this.appId),
+    })
+    return this.http.post('/api/server/direct-checkout/status', {
+      ...options,
+      body,
+      responseSchema: serverDirectCheckoutStatusResponseSchema,
     })
   }
 
