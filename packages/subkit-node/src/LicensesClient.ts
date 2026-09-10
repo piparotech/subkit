@@ -46,6 +46,8 @@ export interface ListLicensesInput {
   cursor?: string | null
   kind?: 'individual' | 'club'
   limit?: number
+  sortBy?: 'createdAt' | 'validUntil'
+  sortDirection?: 'asc' | 'desc'
   query?: string
   state?: 'pending' | 'active' | 'suspended' | 'expired' | 'revoked'
 }
@@ -99,6 +101,8 @@ export class LicensesClient {
         limit: input.limit,
         query: input.query,
         state: input.state,
+        sortBy: input.sortBy,
+        sortDirection: input.sortDirection,
       },
       responseSchema: serverLicenseListResponseSchema,
     })

@@ -157,7 +157,9 @@ export type ServerLicenseKind = z.infer<typeof serverLicenseKindSchema>
 
 export const serverLicenseListRequestSchema = z.object({
   appId: z.string().min(1),
-  cursor: z.string().min(1).nullable().optional(),
+  cursor: z.string().min(1).max(2000).nullable().optional(),
+  sortBy: z.enum(['createdAt', 'validUntil']).optional(),
+  sortDirection: z.enum(['asc', 'desc']).optional(),
   kind: z.enum(['individual', 'club']).optional(),
   limit: z.number().int().min(1).max(100).optional(),
   query: z.string().trim().min(1).max(200).optional(),
