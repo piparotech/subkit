@@ -35,6 +35,18 @@ name for that selection. Return navigation uses an app-configured
 intent IDs are SubKit-owned prefixed values. The contracts intentionally do not
 expose provider IDs, payment-method data, or client secrets.
 
+## Owned organization pool identity
+
+`serverOrganizationAccessResponseSchema` binds an organization guest purchase
+to its `appId`, requesting owner `subjectId` and purchase reference. Ready
+responses expose private `poolId` and `accessSourceId` alongside each named
+pool's capacity and entitlement mapping. Pool IDs and keys are unique, all
+pools belong to the same source, and pending responses expose no pools.
+Applications must check current ownership and durably bind these identifiers
+before requesting a reservation. Pool availability is not a reservation or
+personal entitlement. This extended contract requires matching service and
+Node/Core artifacts; organization purchases remain sandbox-only.
+
 ## Authenticated server grant context
 
 `serverEntitlementCheckResponseSchema` preserves every grant for the requested

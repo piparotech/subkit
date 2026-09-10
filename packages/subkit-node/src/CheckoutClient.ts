@@ -133,7 +133,10 @@ export class CheckoutClient {
       ...options,
       body,
       responseSchema: serverOrganizationAccessResponseSchema.refine(
-        (value) => value.purchaseReference === body.purchaseReference,
+        (value) =>
+          value.appId === body.appId &&
+          value.subjectId === body.subjectId &&
+          value.purchaseReference === body.purchaseReference,
         { message: 'Organization access does not match request' },
       ),
     })

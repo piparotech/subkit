@@ -99,8 +99,15 @@ team or club.
 reads the exact organization purchase with current owner authorization. Until
 verified access is ready it returns `accessReady: false` and no pools. Once the
 worker has projected the licensee and pools, each named pool exposes its own
-`capacity`, `used`, `reserved` and `entitlementKeys`. Do not add unrelated pool
-capacities or interpret billing ownership as a personal seat allocation.
+`poolId`, `accessSourceId`, `capacity`, `used`, `reserved` and `entitlementKeys`.
+The response echoes `appId` and the authenticated owner `subjectId`; the SDK
+checks both plus the requested purchase reference. Pool IDs are private Server
+API data for a later explicitly authorized reservation, not a capability by
+themselves. Resolve the pool by its configured key/entitlements, persist the
+purchase/source/pool binding before writes, and recheck current ownership.
+Do not add unrelated pool capacities or interpret billing ownership as a
+personal seat allocation. Availability is a snapshot; a reservation still
+requires canonical capacity and authorization checks at mutation time.
 These organization methods are currently enabled for sandbox purchases only;
 production rollout remains separately gated.
 

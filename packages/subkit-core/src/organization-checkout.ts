@@ -22,6 +22,8 @@ export const serverOrganizationAssociationResponseSchema =
   })
 
 export const organizationAccessPoolSchema = z.strictObject({
+  poolId: z.string().min(1),
+  accessSourceId: z.string().min(1),
   key: z.string().min(1),
   capacity: z.number().int().nonnegative().nullable(),
   used: z.number().int().nonnegative(),
@@ -31,6 +33,8 @@ export const organizationAccessPoolSchema = z.strictObject({
 
 export const serverOrganizationAccessResponseSchema = z
   .strictObject({
+    appId: z.string().min(1),
+    subjectId: z.string().min(1),
     purchaseReference: z.string().uuid(),
     checkoutIntentId: z.string().startsWith('checkout-intent:'),
     environment: z.enum(['sandbox', 'production']),
@@ -48,6 +52,23 @@ export const serverOrganizationAccessResponseSchema = z
     }
     if (new Set(value.pools.map((pool) => pool.key)).size !== value.pools.length) {
       context.addIssue({ code: 'custom', message: 'Duplicate access pool keys', path: ['pools'] })
+    }
+    if (new Set(value.pools.map((pool) => pool.poolId)).size !== value.pools.length) {
+      context.addIssue({ code: 'custom', message: 'Duplicate access pool IDs', path: ['pools'] })
+    }
+    if (new Set(value.pools.map((pool) => pool.accessSourceId)).size > 1) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Purchase pools must share one access source',
+        path: ['pools'],
+      })
+    }
+    if (value.accessReady && value.pools.length === 0) {
+      context.addIssue({
+        code: 'custom',
+        message: 'Ready access requires provisioned pools',
+        path: ['pools'],
+      })
     }
   })
 

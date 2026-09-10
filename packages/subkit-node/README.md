@@ -85,6 +85,18 @@ addition to suspend/resume/revoke, finite contracts support `renew`,
 auto-renew, and term-end guards; scheduling non-renewal never ends current
 access before the term end.
 
+## Organization pool selection
+
+`subkit.checkout.getOrganizationGuestAccess({ purchaseReference, subjectId })`
+reads only the exact purchase for its current authorized owner. The response
+includes `appId` and `subjectId`, which the SDK validates with the requested
+purchase reference. Ready responses provide each pool's `poolId`,
+`accessSourceId`, configured key, capacity and entitlement mapping; pending
+responses provide no pools. Persist the exact purchase/source/pool binding
+before a separately authorized reservation. These IDs do not authorize an
+invitee, create a personal entitlement or guarantee capacity at mutation time.
+Current service support remains sandbox-only and requires matching artifacts.
+
 ## Reservation recovery
 
 `subkit.access.getReservation({ reservationId })` reads one reservation with
