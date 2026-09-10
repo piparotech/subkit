@@ -1,4 +1,6 @@
 import {
+  type ServerDirectCheckoutResumeRequest,
+  serverDirectCheckoutResumeRequestSchema,
   type ServerDirectCheckoutRecoveryRequest,
   serverDirectCheckoutRecoveryRequestSchema,
   type ServerDirectCheckoutOfferingRequest,
@@ -192,6 +194,25 @@ export class CheckoutClient {
       ...options,
       body,
       responseSchema: serverDirectCheckoutStatusResponseSchema,
+    })
+  }
+
+  resumeSession(
+    input: Omit<ServerDirectCheckoutResumeRequest, 'appId' | 'action'> & { appId?: string },
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerDirectCheckoutSessionResponse> {
+    const body = serverDirectCheckoutResumeRequestSchema.parse({
+      ...input,
+      action: 'resume',
+      appId: resolveAppId(input.appId, this.appId),
+    })
+    return this.http.post('/api/server/direct-checkout/sessions', {
+      ...options,
+      body,
+      responseSchema: serverDirectCheckoutSessionResponseSchema.refine(
+        (session) => session.checkoutIntentId === body.checkoutIntentId,
+        { message: 'Resumed checkout reference does not match the request' },
+      ),
     })
   }
 

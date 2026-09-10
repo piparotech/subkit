@@ -49,6 +49,12 @@ The server requires `direct_billing:read` and matches tenant, app, environment, 
 
 This requires the matching service recovery implementation; older deployed services reject the alternative selector. There is no fallback to checkout creation. Local SDK compilation is not hosted recovery evidence.
 
+## Resume the original hosted checkout form
+
+`subkit.checkout.resumeSession({ subjectId, checkoutIntentId })` reads the original authenticated Stripe session using the same app/environment client. It requires `direct_billing:write` because the returned URL is a bearer capability. No checkout creation or idempotency-key fallback occurs. The service checks current provider state, exact account/customer/intent/price, one line item and unexpired open unpaid subscription checkout before returning the ordinary checkout redirect response. Guest checkouts are not accepted by this method.
+
+Keep the URL out of logs, storage, analytics and screenshots. Navigate only after an explicit same-origin account/session-checked action and preserve the local operation URL first. Missing, terminal, paid, mismatched or unavailable results require status recovery, never a replacement purchase. A session can complete between the read and navigation; Stripe remains authoritative and the return is not payment proof. Requires matching service deployment; local SDK compilation is not provider journey evidence.
+
 ## Checkout offering without a buyer
 
 `subkit.checkout.getOffering({ offeringIdentifier: 'default' })` reads checkout

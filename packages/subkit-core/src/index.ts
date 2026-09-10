@@ -98,6 +98,7 @@ export * from './checkout-offering.js'
 export * from './organization-checkout.js'
 export * from './guest-checkout.js'
 export * from './checkout-recovery.js'
+export * from './checkout-resume.js'
 export type {
   CustomerDeviceAccess,
   CustomerEntitlement,
