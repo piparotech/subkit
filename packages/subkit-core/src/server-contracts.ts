@@ -1,4 +1,5 @@
 import { z } from 'zod'
+
 import { serverGrantContextSchema } from './server-grant-context.js'
 
 export const serverGrantStatusSchema = z.enum(['active', 'suspended', 'expired', 'revoked'])
@@ -160,7 +161,7 @@ export const serverLicenseListRequestSchema = z.object({
   cursor: z.string().min(1).max(2000).nullable().optional(),
   sortBy: z.enum(['createdAt', 'validUntil']).optional(),
   sortDirection: z.enum(['asc', 'desc']).optional(),
-  kind: z.enum(['individual', 'club']).optional(),
+  licenseeKind: z.enum(['individual', 'organization']).optional(),
   limit: z.number().int().min(1).max(100).optional(),
   query: z.string().trim().min(1).max(200).optional(),
   state: z.enum(['pending', 'active', 'suspended', 'expired', 'revoked']).optional(),
@@ -169,10 +170,17 @@ export type ServerLicenseListRequest = z.infer<typeof serverLicenseListRequestSc
 
 export const serverLicenseSummarySchema = z.object({
   billingAccountName: z.string().nullable(),
-  capacityAvailable: z.number().nullable(),
-  capacityTotal: z.number().nullable(),
-  capacityUsed: z.number(),
-  category: z.enum(['individual', 'club']),
+  licenseeKind: z.enum(['individual', 'organization']),
+  pools: z.array(
+    z.object({
+      id: z.string(),
+      key: z.string(),
+      capacity: z.number().nullable(),
+      used: z.number(),
+      reserved: z.number(),
+      available: z.number().nullable(),
+    }),
+  ),
   createdAt: z.string(),
   kind: serverLicenseKindSchema,
   licenseeName: z.string(),

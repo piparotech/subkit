@@ -7,9 +7,21 @@ description: Read license pages in server order without reusing cursors across s
 const page = await subkit.licenses.list({
   sortBy: 'validUntil',
   sortDirection: 'asc',
-  kind: 'club',
+  licenseeKind: 'organization',
 })
 ```
+
+`licenseeKind` filters `individual` or `organization`, independently of the
+commerce source `kind` (`direct_subscription`, `contract`, and other sources).
+Organization classification follows the recorded licensee relationship, not the
+payer or product name. An ended organization relationship remains organizational;
+`licenseeName` uses the currently effective organization when available, otherwise
+the payer display name or source reference.
+
+Each summary exposes separate `pools` with `key`, `capacity`, `used`, `reserved`
+and `available`. Null capacity/availability denotes an unlimited pool. Select
+pools by your application's configured keys; do not sum unrelated capacity units.
+Application-specific labels belong to the consumer, not the SubKit contract.
 
 `sortBy` accepts `createdAt` and `validUntil`; `sortDirection` accepts `asc`
 and `desc`. Defaults are newest creation first. No-end licenses sort last when
