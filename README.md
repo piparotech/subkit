@@ -21,6 +21,14 @@ Public documentation lives in `apps/docs/src/content/docs/` and builds under `/d
 
 ## Releases
 
-Changesets manages independent Core, Node and Expo versions and their existing changelogs. Add consumer-facing notes with `pnpm changeset`; inspect them with `pnpm changeset:status`. Prepare a reviewed release with `pnpm release:version`.
+Changesets manages independent SDK versions and their existing changelogs. Add consumer-facing notes with `pnpm changeset`, validate them with `pnpm changeset:status`, and prepare a reviewed release with `pnpm release:version`. See [the release runbook](docs/releases.md).
 
-Packages publish privately to GitHub Packages from `.github/workflows/release-packages.yml`. The workflow verifies the release selection against its source commit, publishes only selected packages (Core before dependents), then installs all exact manifest versions in a clean consumer. See [the release runbook](docs/releases.md). Publication and component tags require explicit approval.
+Packages publish publicly to npmjs.org from `.github/workflows/release-packages.yml` when a component tag is pushed:
+
+- `subkit-core-vX.Y.Z`
+- `subkit-node-vX.Y.Z`
+- `subkit-expo-vX.Y.Z`
+
+The workflow rejects tags whose version does not match the selected package or whose commit is not contained in `main`. It verifies the Changesets release selection and required Core availability, then builds and publishes only the tagged package through npm trusted publishing, verifies both public npm metadata representations, then installs the exact public version in an anonymous clean consumer.
+
+Each npm package trusts only GitHub Actions from organization `piparotech`, repository `subkit`, workflow `release-packages.yml`, with the `npm publish` action. Releases require no npm token or repository secret.

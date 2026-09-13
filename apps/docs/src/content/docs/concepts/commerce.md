@@ -37,6 +37,10 @@ immutable. Exact retries are idempotent; conflicting amount, currency, payer, or
 source evidence fails closed. CPQ, invoice/tax calculation, and monetary seat
 proration stay in your external commercial system.
 
+Hosted direct billing starts from a published Offering/package, not caller
+supplied money or provider identifiers. The trusted server resolves the Stripe
+configuration and returns an opaque, short-lived checkout or portal redirect.
+
 ## Why normalize
 
 A store subscription and a club contract are different commerce causes for the

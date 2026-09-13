@@ -62,8 +62,8 @@ export async function selectRelease(root) {
       }
       if (
         !isDeepStrictEqual(after.publishConfig, before.publishConfig) ||
-        after.publishConfig.registry !== 'https://npm.pkg.github.com/' ||
-        after.publishConfig.access !== 'restricted'
+        after.publishConfig.registry !== 'https://registry.npmjs.org/' ||
+        after.publishConfig.access !== 'public'
       ) {
         throw new Error(`Registry/access changed for ${name}`)
       }

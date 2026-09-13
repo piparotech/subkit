@@ -41,13 +41,15 @@ requires device recovery.
 Tenant/app-scoped, capability-gated surface for trusted backends:
 
 - subjects and billing accounts,
-- contracts, normalized external payments, and manual provisions,
+- contracts, normalized external payments, manual provisions, and hosted direct billing,
 - reservations, claims, allocations, and pool/allocation lifecycle,
 - entitlement checks and customer info,
 - offerings and products.
 
 Every mutation requires an idempotency key, an audit reason, and the matching
-capability.
+capability. Direct checkout and portal session creation are app-bound and
+catalog-driven; they never accept caller-controlled provider IDs, payment
+methods, or redirect URLs.
 
 ## Error model
 

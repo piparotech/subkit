@@ -10,7 +10,7 @@ Never ship this key in mobile apps, web clients, or Expo bundles.
 ## Install and configure
 
 ```sh
-pnpm add @piparotech/subkit-core@^0.1.10 @piparotech/subkit-node@^0.1.10
+pnpm add @piparotech/subkit-core@^0.1.11 @piparotech/subkit-node@^0.1.11
 ```
 
 ```ts compile
@@ -40,6 +40,88 @@ Every mutation requires:
 
 Exact retries reuse the same idempotency key and the same audit reason. They are
 safe only for the same logical mutation; conflicting evidence fails closed.
+
+## Checkout offering without a buyer
+
+`subkit.checkout.getOffering({ offeringIdentifier: 'default' })` reads checkout
+package labels, amounts, currencies and billing periods without a customer or
+Subject. It requires an app-scoped server key with `direct_billing:read`; the
+key selects the environment. Keep the key on your backend and expose only the
+returned tariff data to a public purchase page. The SDK rejects unexpected
+fields, duplicate package identifiers and mismatched offering responses.
+
+This method does not create a checkout, authenticate a buyer or grant access.
+It requires the matching `/api/server/direct-checkout/offering` service route;
+SDK availability alone does not mean that route has been deployed.
+
+## Guest checkout and verified account association
+
+All guest methods are trusted-server APIs. Keep the server key private. Your
+application must bind a durable UUID `purchaseReference` to a secure browser
+session and select the offering, package and fixed return target server-side.
+Never accept a buyer-supplied Subject or use checkout email as identity proof.
+
+1. Call `subkit.checkout.createGuestSession` with the purchase reference,
+   offering/package identifiers, return target and audit reason. Supply an
+   `idempotencyKey` in the second argument. Reuse that reference and key for
+   retries of the same purchase, rather than preparing a new purchase.
+2. Call `subkit.checkout.getGuestStatus({ purchaseReference })` after return.
+   A Stripe redirect does not prove payment. `paymentVerified` reports the
+   service's verified payment state, not application access or authentication.
+3. Independently authenticate the buyer with your identity provider. Only then
+   call `subkit.checkout.associateGuestPurchase` with that verified `subjectId`,
+   purchase reference, audit reason and mutation idempotency key. The application
+   must still validate browser ownership of the purchase. Association can fail
+   when current identity or ownership no longer permits it, including on replay.
+4. Call `subkit.checkout.getStatus` with the exact checkout intent, verified
+   Subject and required entitlement. Wait for `accessReady: true`; successful
+   association alone does not mean the access worker has provisioned the grant.
+
+The server key selects the environment. Require the expected environment in your
+application and do not reopen terminal or expired checkouts. These methods need
+the matching guest service routes and access worker deployment; installing this
+SDK does not provision those services or create an identity-provider session.
+
+## Hosted direct billing
+
+Direct billing is selected from the published catalog and remains bound to the
+app and beneficiary Subject. For the first Individual slice, the service
+resolves or creates the Individual Billing Account from the authenticated
+active app-user Subject; the Node SDK does not accept a Billing Account ID,
+email, or display name for that selection. It also does not accept amounts, currencies,
+Stripe Product/Price IDs, payment methods, or arbitrary success/cancel URLs.
+`returnTarget` is a server-configured allowlist key.
+
+```ts compile
+const checkout = await subkit.checkout.createSession(
+  {
+    offeringIdentifier: 'default',
+    packageIdentifier: 'monthly',
+    reason: 'start selected direct billing checkout',
+    returnTarget: 'billing_settings',
+    subjectId: 'subject_123',
+  },
+  { idempotencyKey: 'checkout:subject_123:monthly' },
+)
+
+const portal = await subkit.billing.createPortalSession(
+  {
+    reason: 'open billing settings',
+    subjectId: 'subject_123',
+  },
+  { idempotencyKey: 'portal:subject_123' },
+)
+
+const summary = await subkit.billing.getSummary({
+  subjectId: 'subject_123',
+})
+```
+
+Checkout and portal return only SubKit-owned intent IDs (`checkout-intent:` or
+`billing-portal:`) and short-lived HTTPS redirect URLs with ISO datetime
+expiry. The summary exposes canonical plan, period, amount/currency,
+cancellation, and normalized provider-state status fields without provider IDs
+or payment-method data.
 
 ## Customers and access subjects
 

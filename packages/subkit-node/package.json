@@ -1,8 +1,8 @@
 {
   "name": "@piparotech/subkit-node",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "type": "module",
-  "description": "Node.js backend SDK for querying SubKit.",
+  "description": "Node.js backend SDK for trusted SubKit access and direct billing.",
   "license": "UNLICENSED",
   "repository": {
     "type": "git",
@@ -10,8 +10,8 @@
     "directory": "packages/subkit-node"
   },
   "publishConfig": {
-    "access": "restricted",
-    "registry": "https://npm.pkg.github.com/"
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {

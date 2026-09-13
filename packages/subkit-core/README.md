@@ -4,7 +4,7 @@ Shared platform-neutral SubKit schemas, DTOs, error contracts, and types used by
 
 ## Install
 
-Configure the private GitHub Packages registry, then install Core with the SDK that consumes it:
+Install Core from the public npm registry with the SDK that consumes it:
 
 ```sh
 pnpm add @piparotech/subkit-core @piparotech/subkit-node
@@ -13,6 +13,27 @@ pnpm add @piparotech/subkit-core @piparotech/subkit-expo
 ```
 
 Node and Expo declare Core as a required compatible peer dependency. Do not install mismatched versions.
+
+## Direct billing contracts
+
+Core also exports the provider-neutral direct billing contracts used by trusted
+server integrations:
+
+- `serverDirectCheckoutSessionRequestSchema` and
+  `serverDirectCheckoutSessionResponseSchema`
+- `serverBillingPortalSessionRequestSchema` and
+  `serverBillingPortalSessionResponseSchema`
+- `serverDirectBillingSummaryRequestSchema` and
+  `serverDirectBillingSummaryResponseSchema`
+
+Checkout input selects a published offering/package and binds the request to an
+app and Subject. For the first Individual slice, the service resolves or
+creates the Individual Billing Account from the authenticated active app-user
+Subject; the public contract accepts no Billing Account ID, email, or display
+name for that selection. Return navigation uses an app-configured
+`returnTarget` key, never a caller-supplied URL. Redirects are HTTPS-only and
+intent IDs are SubKit-owned prefixed values. The contracts intentionally do not
+expose provider IDs, payment-method data, or client secrets.
 
 ## Effective Access contract
 

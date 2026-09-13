@@ -79,8 +79,11 @@ try {
   for (const directory of packageDirectories) {
     const packageJson = readPackageJson(directory)
     if (packageJson.private === true) throw new Error(`${packageJson.name} is still private`)
-    if (packageJson.publishConfig?.registry !== 'https://npm.pkg.github.com/') {
+    if (packageJson.publishConfig?.registry !== 'https://registry.npmjs.org/') {
       throw new Error(`${packageJson.name} has an unexpected publish registry`)
+    }
+    if (packageJson.publishConfig?.access !== 'public') {
+      throw new Error(`${packageJson.name} must publish with public access`)
     }
     if (packageJson.repository?.url !== 'git+https://github.com/piparotech/subkit.git') {
       throw new Error(`${packageJson.name} has an unexpected source repository`)
