@@ -29,6 +29,10 @@ const capacityResultSchema = z.object({
   used: z.number(),
 })
 const reservationResultSchema = capacityResultSchema.extend({ reservationId: z.string() })
+const reservationCancellationSchema = z.object({
+  status: z.literal('cancelled'),
+  reservationId: z.string().nullable(),
+})
 const allocationResultSchema = capacityResultSchema.extend({ allocationId: z.string() })
 const poolResultSchema = capacityResultSchema.extend({
   decision: z.enum(['applied', 'rejected', 'scheduled']).optional(),
@@ -225,6 +229,20 @@ export class AccessClient {
             result.appId === request.appId && result.reservationId === request.reservationId,
           { message: 'Reservation response does not match the requested app and reservation' },
         ),
+      },
+    )
+  }
+
+  cancelReservationCreation(
+    input: { poolId: string; reason: string },
+    options: SubKitMutationOptions,
+  ): Promise<{ status: 'cancelled'; reservationId: string | null }> {
+    return this.http.delete(
+      `/api/server/access-pools/${encodeURIComponent(input.poolId)}/reservations`,
+      {
+        ...options,
+        body: { reason: input.reason },
+        responseSchema: reservationCancellationSchema,
       },
     )
   }
