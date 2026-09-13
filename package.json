@@ -24,9 +24,18 @@
     "format": "prettier --write .",
     "typecheck": "pnpm packages:build && pnpm docs:check",
     "test": "pnpm packages:test",
-    "check": "pnpm check-format && pnpm typecheck && pnpm test && pnpm packages:verify && pnpm docs:lint && pnpm docs:build && pnpm docs:verify"
+    "check": "pnpm changeset:status && pnpm test:release && pnpm check-format && pnpm typecheck && pnpm test && pnpm packages:verify && pnpm docs:lint && pnpm docs:build && pnpm docs:verify",
+    "changeset": "changeset",
+    "changeset:status": "node scripts/changeset-status.mjs",
+    "release:version": "node scripts/release-version.mjs",
+    "test:release": "node --test scripts/changesets.test.mjs"
   },
   "devDependencies": {
+    "@changesets/assemble-release-plan": "7.0.0",
+    "@changesets/cli": "3.0.2",
+    "@changesets/config": "4.0.0",
+    "@changesets/read": "1.0.1",
+    "@manypkg/get-packages": "3.1.0",
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.17",

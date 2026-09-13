@@ -42,6 +42,7 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Verify checked-out revision
         shell: bash
@@ -79,19 +80,8 @@ jobs:
             exit 1
           }
 
-      - name: Validate package tarballs and clean consumers
-        run: pnpm packages:verify
-
-      - name: Pack release tarballs
-        if: ${{ inputs.verify_existing != true }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          rm -rf .release
-          mkdir .release
-          pnpm --filter @piparotech/subkit-core pack --pack-destination .release
-          pnpm --filter @piparotech/subkit-node pack --pack-destination .release
-          pnpm --filter @piparotech/subkit-expo pack --pack-destination .release
+      - name: Validate exact release revision and clean consumers
+        run: pnpm check
 
       - name: Configure isolated GitHub Packages authentication
         shell: bash
@@ -106,63 +96,17 @@ jobs:
           test "$(stat -c '%a' "$NPM_CONFIG_USERCONFIG")" = 600
           test "$(grep -Fc '_authToken=${NODE_AUTH_TOKEN}' "$NPM_CONFIG_USERCONFIG")" = 1
 
-      - name: Refuse existing package versions
+      - name: Publish selected package versions
         if: ${{ inputs.verify_existing != true }}
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          registry='https://npm.pkg.github.com/'
-          for manifest in packages/subkit-core/package.json packages/subkit-node/package.json packages/subkit-expo/package.json; do
-            name="$(node -p "require('./$manifest').name")"
-            version="$(node -p "require('./$manifest').version")"
-            error_file="$(mktemp)"
-            if npm view "$name@$version" version --registry="$registry" >/dev/null 2>"$error_file"; then
-              echo "$name@$version already exists; bump versions before release" >&2
-              rm -f "$error_file"
-              exit 1
-            fi
-            if ! grep -Eq 'E404|404 Not Found' "$error_file"; then
-              echo "Could not prove $name@$version is absent; refusing to publish" >&2
-              cat "$error_file" >&2
-              rm -f "$error_file"
-              exit 1
-            fi
-            rm -f "$error_file"
-          done
+        run: node scripts/release-publish.mjs publish
 
-      - name: Publish Core support package
-        if: ${{ inputs.verify_existing != true }}
+      - name: Verify selected published versions without publishing
+        if: ${{ inputs.verify_existing == true }}
         env:
           NODE_AUTH_TOKEN: ${{ github.token }}
-        run: npm publish "$(find .release -name 'piparotech-subkit-core-*.tgz' -print -quit)" --registry=https://npm.pkg.github.com/ --tag "$DIST_TAG"
-
-      - name: Publish Node SDK
-        if: ${{ inputs.verify_existing != true }}
-        env:
-          NODE_AUTH_TOKEN: ${{ github.token }}
-        run: npm publish "$(find .release -name 'piparotech-subkit-node-*.tgz' -print -quit)" --registry=https://npm.pkg.github.com/ --tag "$DIST_TAG"
-
-      - name: Publish Expo SDK
-        if: ${{ inputs.verify_existing != true }}
-        env:
-          NODE_AUTH_TOKEN: ${{ github.token }}
-        run: npm publish "$(find .release -name 'piparotech-subkit-expo-*.tgz' -print -quit)" --registry=https://npm.pkg.github.com/ --tag "$DIST_TAG"
-
-      - name: Verify published package metadata
-        env:
-          NODE_AUTH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          registry='https://npm.pkg.github.com/'
-          for manifest in packages/subkit-core/package.json packages/subkit-node/package.json packages/subkit-expo/package.json; do
-            name="$(node -p "require('./$manifest').name")"
-            version="$(node -p "require('./$manifest').version")"
-            test "$(npm view "$name@$version" version --registry="$registry")" = "$version"
-            test -n "$(npm view "$name@$version" dist.integrity --registry="$registry")"
-          done
+        run: node scripts/release-publish.mjs verify
 
       - name: Install exact published versions in a clean consumer
         env:
