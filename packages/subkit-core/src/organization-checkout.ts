@@ -13,7 +13,7 @@ export const serverOrganizationPurchaseRequestSchema =
 
 export const serverOrganizationAssociationRequestSchema =
   serverGuestCheckoutAssociationRequestSchema.extend({
-    organizationName: z.string().trim().min(1).max(120),
+    organizationName: z.string().trim().min(1).max(120).optional(),
   })
 
 export const serverOrganizationAssociationResponseSchema =
@@ -71,6 +71,41 @@ export const serverOrganizationAccessResponseSchema = z
       })
     }
   })
+
+export const serverOrganizationSubscriptionResponseSchema = z
+  .strictObject({
+    appId: z.string().min(1),
+    subjectId: z.string().min(1),
+    purchaseReference: z.string().uuid(),
+    organizationSubjectId: z.string().min(1),
+    environment: z.enum(['sandbox', 'production']),
+    accessReady: z.boolean(),
+    subscription: z
+      .strictObject({
+        status: z.enum([
+          'pending',
+          'trialing',
+          'active',
+          'past_due',
+          'paused',
+          'unpaid',
+          'canceled',
+          'incomplete',
+          'incomplete_expired',
+        ]),
+        currentPeriodStart: z.iso.datetime(),
+        currentPeriodEnd: z.iso.datetime().nullable(),
+        cancelAtPeriodEnd: z.boolean(),
+      })
+      .nullable(),
+  })
+  .refine((value) => !value.accessReady || value.subscription !== null, {
+    message: 'Ready organization access requires subscription evidence',
+  })
+
+export type ServerOrganizationSubscriptionResponse = z.infer<
+  typeof serverOrganizationSubscriptionResponseSchema
+>
 
 export type ServerOrganizationPurchaseRequest = z.infer<
   typeof serverOrganizationPurchaseRequestSchema

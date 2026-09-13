@@ -1,28 +1,28 @@
 import {
-  type ServerGuestCheckoutResumeRequest,
-  serverGuestCheckoutResumeRequestSchema,
-  type ServerDirectCheckoutResumeRequest,
-  serverDirectCheckoutResumeRequestSchema,
-  type ServerDirectCheckoutRecoveryRequest,
-  serverDirectCheckoutRecoveryRequestSchema,
   type ServerDirectCheckoutOfferingRequest,
   type ServerDirectCheckoutOfferingResponse,
+  type ServerDirectCheckoutRecoveryRequest,
+  type ServerDirectCheckoutResumeRequest,
   type ServerDirectCheckoutSessionRequest,
   type ServerDirectCheckoutSessionResponse,
   type ServerDirectCheckoutStatusRequest,
   type ServerDirectCheckoutStatusResponse,
   type ServerGuestCheckoutAssociationRequest,
+  type ServerGuestCheckoutResumeRequest,
   type ServerGuestCheckoutSessionRequest,
   type ServerGuestCheckoutStatusRequest,
   type ServerOrganizationAssociationRequest,
   type ServerOrganizationPurchaseRequest,
   serverDirectCheckoutOfferingRequestSchema,
   serverDirectCheckoutOfferingResponseSchema,
+  serverDirectCheckoutRecoveryRequestSchema,
+  serverDirectCheckoutResumeRequestSchema,
   serverDirectCheckoutSessionResponseSchema,
   serverDirectCheckoutStatusRequestSchema,
   serverDirectCheckoutStatusResponseSchema,
   serverGuestCheckoutAssociationRequestSchema,
   serverGuestCheckoutAssociationResponseSchema,
+  serverGuestCheckoutResumeRequestSchema,
   serverGuestCheckoutSessionRequestSchema,
   serverGuestCheckoutStatusRequestSchema,
   serverGuestCheckoutStatusResponseSchema,
@@ -30,6 +30,7 @@ import {
   serverOrganizationAssociationRequestSchema,
   serverOrganizationAssociationResponseSchema,
   serverOrganizationPurchaseRequestSchema,
+  serverOrganizationSubscriptionResponseSchema,
 } from '@piparotech/subkit-core'
 
 import type { HttpClient } from './HttpClient.js'
@@ -82,7 +83,9 @@ export class CheckoutClient {
     return this.http.post('/api/server/guest-checkout/sessions', {
       ...options,
       body: serverGuestCheckoutResumeRequestSchema.parse({
-        ...input, action: 'resume', appId: resolveAppId(input.appId, this.appId),
+        ...input,
+        action: 'resume',
+        appId: resolveAppId(input.appId, this.appId),
       }),
       responseSchema: serverDirectCheckoutSessionResponseSchema,
     })
@@ -157,6 +160,27 @@ export class CheckoutClient {
           value.subjectId === body.subjectId &&
           value.purchaseReference === body.purchaseReference,
         { message: 'Organization access does not match request' },
+      ),
+    })
+  }
+
+  getOrganizationGuestSubscription(
+    input: Omit<ServerOrganizationPurchaseRequest, 'appId'> & { appId?: string },
+    options: SubKitRequestOptions = {},
+  ) {
+    const body = serverOrganizationPurchaseRequestSchema.parse({
+      ...input,
+      appId: resolveAppId(input.appId, this.appId),
+    })
+    return this.http.post('/api/server/guest-checkout/organization-subscription', {
+      ...options,
+      body,
+      responseSchema: serverOrganizationSubscriptionResponseSchema.refine(
+        (value) =>
+          value.appId === body.appId &&
+          value.subjectId === body.subjectId &&
+          value.purchaseReference === body.purchaseReference,
+        { message: 'Organization subscription does not match request' },
       ),
     })
   }
