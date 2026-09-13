@@ -512,6 +512,20 @@ export type ServerDirectCheckoutStatusResponse = z.infer<
   typeof serverDirectCheckoutStatusResponseSchema
 >
 
+export const serverBillingManagementRequestSchema = z.strictObject({
+  appId: z.string().min(1),
+  subjectId: z.string().min(1),
+})
+export type ServerBillingManagementRequest = z.infer<typeof serverBillingManagementRequestSchema>
+export const serverBillingManagementResponseSchema = z.strictObject({
+  appId: z.string().min(1),
+  subjectId: z.string().min(1),
+  environment: z.enum(['sandbox', 'production']),
+  checkedAt: z.iso.datetime(),
+  providers: z.array(z.enum(['stripe', 'apple', 'google'])),
+})
+export type ServerBillingManagementResponse = z.infer<typeof serverBillingManagementResponseSchema>
+
 export const serverDirectBillingSummaryRequestSchema = z.strictObject({
   appId: z.string().min(1),
   subjectId: z.string().min(1),

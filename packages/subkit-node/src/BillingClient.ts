@@ -1,4 +1,6 @@
 import {
+  type ServerBillingManagementResponse,
+  serverBillingManagementResponseSchema,
   type ServerBillingPortalSessionRequest,
   type ServerBillingPortalSessionResponse,
   type ServerDirectBillingSummary,
@@ -45,6 +47,22 @@ export class BillingClient {
       },
       responseSchema: serverBillingPortalSessionResponseSchema,
     })
+  }
+
+  async getManagement(
+    input: GetDirectBillingSummaryInput,
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerBillingManagementResponse> {
+    const appId = resolveAppId(input.appId, this.appId)
+    const result = await this.http.post('/api/server/billing/management', {
+      ...options,
+      body: { appId, subjectId: input.subjectId },
+      responseSchema: serverBillingManagementResponseSchema,
+    })
+    if (result.appId !== appId || result.subjectId !== input.subjectId) {
+      throw new Error('Billing management identity mismatch')
+    }
+    return result
   }
 
   getSummary(
