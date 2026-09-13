@@ -156,12 +156,59 @@ export const serverLicenseKindSchema = z.enum([
 ])
 export type ServerLicenseKind = z.infer<typeof serverLicenseKindSchema>
 
+export const serverLicenseeReferenceSchema = z.discriminatedUnion('state', [
+  z.object({
+    state: z.literal('assigned'),
+    subject: z.object({
+      id: z.string().min(1),
+      kind: z.enum(['app_user', 'organization', 'service_account', 'store_lineage']),
+      externalId: z.string().nullable(),
+    }),
+  }),
+  z.object({ state: z.literal('unassigned'), subject: z.null() }),
+  z.object({ state: z.literal('ambiguous'), subject: z.null() }),
+])
+export type ServerLicenseeReference = z.infer<typeof serverLicenseeReferenceSchema>
+
+// Broad searches must fail explicitly rather than truncate or paginate separate ID batches.
+export const serverLicenseeSubjectIdsSchema = z.array(z.string().min(1).max(500)).max(1000)
+
+export const serverSubjectReferenceSchema = z.object({
+  id: z.string().min(1),
+  kind: z.enum(['app_user', 'organization', 'service_account', 'store_lineage']),
+  externalId: z.string(),
+})
+export const serverSubjectLookupRequestSchema = z.object({
+  appId: z.string().min(1),
+  references: z
+    .array(
+      z.discriminatedUnion('by', [
+        z.object({ by: z.literal('id'), id: z.string().min(1).max(500) }),
+        z.object({
+          by: z.literal('externalId'),
+          kind: z.enum(['app_user', 'organization', 'service_account']),
+          externalId: z.string().min(1).max(500),
+        }),
+      ]),
+    )
+    .max(1000),
+})
+export const serverSubjectLookupResponseSchema = z.object({
+  subjects: z.array(serverSubjectReferenceSchema),
+})
+export type ServerSubjectLookupRequest = z.infer<typeof serverSubjectLookupRequestSchema>
+export type ServerSubjectLookupResponse = z.infer<typeof serverSubjectLookupResponseSchema>
+
 export const serverLicenseListRequestSchema = z.object({
   appId: z.string().min(1),
   cursor: z.string().min(1).max(2000).nullable().optional(),
-  sortBy: z.enum(['createdAt', 'validUntil']).optional(),
+  sortBy: z
+    .enum(['createdAt', 'validUntil', 'licenseeName', 'licenseeKind', 'productName', 'state'])
+    .optional(),
   sortDirection: z.enum(['asc', 'desc']).optional(),
   licenseeKind: z.enum(['individual', 'organization']).optional(),
+  licenseeSubjectIds: serverLicenseeSubjectIdsSchema.optional(),
+  queryScope: z.enum(['all', 'license']).optional(),
   limit: z.number().int().min(1).max(100).optional(),
   query: z.string().trim().min(1).max(200).optional(),
   state: z.enum(['pending', 'active', 'suspended', 'expired', 'revoked']).optional(),
@@ -169,6 +216,7 @@ export const serverLicenseListRequestSchema = z.object({
 export type ServerLicenseListRequest = z.infer<typeof serverLicenseListRequestSchema>
 
 export const serverLicenseSummarySchema = z.object({
+  licensee: serverLicenseeReferenceSchema,
   billingAccountName: z.string().nullable(),
   licenseeKind: z.enum(['individual', 'organization']),
   pools: z.array(
@@ -183,7 +231,7 @@ export const serverLicenseSummarySchema = z.object({
   ),
   createdAt: z.string(),
   kind: serverLicenseKindSchema,
-  licenseeName: z.string(),
+  licenseeName: z.string().nullable(),
   planVersionLabel: z.string(),
   productName: z.string(),
   sourceId: z.string(),
@@ -260,6 +308,8 @@ const serverLicensePaymentSchema = z.object({
 })
 
 export const serverLicenseDetailResponseSchema = z.object({
+  licensee: serverLicenseeReferenceSchema,
+  licenseeName: z.string().nullable(),
   allocations: z.array(serverLicenseAllocationSchema),
   billingAccountId: z.string().nullable(),
   billingAccountName: z.string().nullable(),
