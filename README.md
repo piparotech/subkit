@@ -21,4 +21,6 @@ Public documentation lives in `apps/docs/src/content/docs/` and builds under `/d
 
 ## Releases
 
-Packages publish privately to GitHub Packages from `.github/workflows/release-packages.yml`. The workflow publishes Core first, followed by Node and Expo, then installs the exact released versions in a clean consumer.
+Changesets manages independent Core, Node and Expo versions and their existing changelogs. Add consumer-facing notes with `pnpm changeset`; inspect them with `pnpm changeset:status`. Prepare a reviewed release with `pnpm release:version`.
+
+Packages publish privately to GitHub Packages from `.github/workflows/release-packages.yml`. The workflow verifies the release selection against its source commit, publishes only selected packages (Core before dependents), then installs all exact manifest versions in a clean consumer. See [the release runbook](docs/releases.md). Publication and component tags require explicit approval.

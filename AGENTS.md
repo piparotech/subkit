@@ -27,6 +27,21 @@ When a client contract requires server work, change the client contract here and
 - Avoid type assertions. Use guards, narrowing, unions, or constrained generics.
 - Keep public package exports and documentation synchronized.
 
+## Changesets and releases
+
+- Before changing consumer-facing SDK behavior or preparing a release, read [`.changeset/README.md`](.changeset/README.md) and [`docs/releases.md`](docs/releases.md).
+- Include a `.changeset/<descriptive-name>.md` with every consumer-visible feature, fix, export or contract change. Write concise English release notes describing consumer impact. Agents may write the Markdown directly instead of using the interactive `pnpm changeset` command.
+- Select the affected `@piparotech/subkit-core`, `@piparotech/subkit-node` and/or `@piparotech/subkit-expo` packages. Versions are independent; do not introduce fixed/linked version groups. Private docs and workspace-root packages are not release targets.
+- Use `patch` for fixes and `minor` for features. While on 0.x, incompatible changes need at least `minor`, an explicit **BREAKING** note and migration instructions. A move to 1.0 requires a separate decision. Review actual Core peer-dependent bumps; do not suppress them with experimental options.
+- Pure docs, tests, formatting or internal refactoring without consumer impact need no changeset. Do not create artificial empty changesets for CI. In the handoff, name the changeset or explain why none is needed.
+- Before handoff, run `pnpm changeset:status` and the relevant project gates (`pnpm check` for release readiness). The status script validates all present changesets without a Git-base comparison. Raw `changeset status --since HEAD` is not an equivalent validator.
+- Adding notes is implementation work; consuming them and bumping real versions requires an explicit release request. Use `pnpm release:version` from a clean, reviewed and committed worktree; never manually bump package versions or rewrite existing historical changelog sections.
+- Release preparation writes `release-plan.json`. Commit the reviewed version/changelog/lockfile/plan changes together as one non-merge release commit directly after its recorded source SHA, only when commits are authorized. Do not mix implementation changes into that commit or hand-edit the selection to bypass checks. Rebase/squash changes to the parent require regenerating the release record.
+- Use only the existing manual GitHub release workflow after explicit publication approval. Never add or run a competing `changeset publish` path. Preserve GitHub Packages restricted access, exact-SHA checks, component tag conventions and clean-consumer verification.
+- Changesets `type: none` entries are not publish targets. Unchanged SDKs must be consumed at their existing registry versions, not republished from newly packed workspace manifests.
+- After any ambiguous publish failure, inspect all exact target versions before another mutation. Never republish an existing version or automatically retry a partial release; follow the forward-only recovery runbook. Tags, pushes and remote actions require their own applicable authorization.
+- Document required API capabilities, minimum versions and coordinated rollout order. Do not copy private service code, customer information, credentials or internal operator details into SDK changesets or public documentation.
+
 ## Git
 
 - Commit only when explicitly requested.
