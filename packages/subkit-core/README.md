@@ -35,6 +35,76 @@ name for that selection. Return navigation uses an app-configured
 intent IDs are SubKit-owned prefixed values. The contracts intentionally do not
 expose provider IDs, payment-method data, or client secrets.
 
+## Owned organization pool identity
+
+`serverOrganizationAccessResponseSchema` binds an organization guest purchase
+to its `appId`, requesting owner `subjectId` and purchase reference. Ready
+responses expose private `poolId` and `accessSourceId` alongside each named
+pool's capacity and entitlement mapping. Pool IDs and keys are unique, all
+pools belong to the same source, and pending responses expose no pools.
+Applications must check current ownership and durably bind these identifiers
+before requesting a reservation. Pool availability is not a reservation or
+personal entitlement. This extended contract requires matching service and
+Node/Core artifacts; organization purchases remain sandbox-only.
+
+## Authenticated server grant context
+
+`serverEntitlementCheckResponseSchema` preserves every grant for the requested
+app/user/entitlement. Each grant contains its canonical `effective` decision,
+source and allocation IDs, nullable store binding, and `context` validated by
+`serverGrantContextSchema`. Store names use `apple_app_store` and `google_play`.
+`context.billing` distinguishes verified store billing, direct subscription
+status/financial state and contract terms; absent data is null, not inferred.
+Period ends are not renewal dates. Organization subject IDs identify the
+licensee, not the payer or an automatic club membership. Application backends
+may add their own club mapping without changing SubKit's access decision.
+
+These details belong to the authenticated Server API (`access:read`). The
+public Runtime entitlement endpoint does not expose this expanded context.
+No provider transaction IDs, payment methods or provider payloads are included.
+Consumers must update service and Core artifacts together; no legacy defaults
+are supplied for missing fields.
+
+## Authenticated reservation recovery
+
+`serverReservationReadRequestSchema` and `serverReservationReadResponseSchema`
+define a single-reservation Server read. The response binds the app, reservation,
+source, pool and nullable assigned Subject. A claimed reservation includes its
+exact allocation ID, current allocation state, claiming Subject and claim time.
+Other states cannot carry a claim. Expired pending reservations are reported as
+expired at the database observation time without changing stored state.
+
+This is private recovery evidence, not an entitlement or invitee-authorization
+decision. It contains no claim token, token hash, invitee-reference hash or payer
+information. Application backends must independently bind the reservation to
+an authenticated invitation and verify the claiming Subject before committing
+membership. `pending` is not proof that a concurrent claim failed.
+
+`serverReservationPreviewRequestSchema` and `serverReservationPreviewResponseSchema`
+add a token-holder preview scoped to the authenticated recipient Subject. The
+request contains only the token's SHA-256 hash, app and Subject. The response
+includes canonical reservation evidence, product label, pinned plan version,
+pool key and entitlement keys. It echoes app/recipient and rejects mismatched
+assignment or claimant. No token or invitee-reference hash is returned.
+
+Unassigned full tokens remain bearer invitations; an optional hashed recipient
+hint is metadata, not verified email ownership. Application club invitations
+still require their own address/membership authorization. Preview does not
+reserve new capacity, activate access or prove a later claim will succeed.
+
+`serverReservationClaimRequestSchema` requires the exact reviewed app/Subject,
+reservation, pool and source IDs plus token hash/reason. The strict claim response
+echoes this identity and discriminates claimed allocation from typed terminal
+refusal. It replaces the old capacity-only claim result. Replayed completion is
+not a new grant or evidence that the allocation remains effective. Service,
+Node SDK and application callers must adopt the new contract together.
+
+`serverReservationClaimStatusRequestSchema` adds the original idempotency key to
+that exact request. Its read-only response is the original claimed/rejected
+result or `pending`. Absence, processing and historical failed journals remain
+pending, never evidence for a replacement write. A reservation claimed by the
+same Subject is not proof that this particular operation completed.
+
 ## Effective Access contract
 
 Core exports `resolveEntitlementAccess(customerInfo, entitlementKey)` and the

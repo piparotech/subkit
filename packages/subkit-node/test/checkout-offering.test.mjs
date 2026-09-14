@@ -10,6 +10,10 @@ test('offering read sends no buyer subject and validates exact public projection
     identifier: 'default',
     packages: [
       {
+        selectionRevision: 'a'.repeat(64),
+        audience: 'individual',
+        pools: [],
+        entitlements: [],
         identifier: 'annual',
         label: 'Annual',
         amountMicros: 49990000,
@@ -45,6 +49,7 @@ test('offering read sends no buyer subject and validates exact public projection
   for (const invalid of [
     { ...valid, identifier: 'foreign' },
     { ...valid, customerId: 'private' },
+    { ...valid, packages: [{ ...valid.packages[0], selectionRevision: undefined }] },
     { ...valid, packages: [...valid.packages, ...valid.packages] },
     { ...valid, packages: [{ ...valid.packages[0], amountMicros: -1 }] },
   ]) {

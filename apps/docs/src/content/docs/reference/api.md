@@ -80,6 +80,37 @@ Server requests use an app-scoped `sk_srv_…` key with the listed capability.
 
 `allowed: false` is a normal domain response, not an HTTP error.
 
+`POST /api/server/access-reservations/claim` requires `access:write`, the reviewed
+`reservationId`, `poolId`, `accessSourceId`, app, authenticated Subject, token hash
+and audit reason. It returns an identity-bound claimed allocation or durable typed
+rejection, not capacity usage. New result/audit/claim commit together. Retry the
+same payload/key after uncertainty; do not infer effective access from completion.
+
+`POST /api/server/access-reservations/claim/status` requires `access:read` and
+the exact original claim body plus `idempotencyKey`. It performs no mutation and
+returns the original claimed/rejected result or `pending`. Tenant, app, source
+environment, reviewed identity and full request hash are checked. Missing or
+historical processing/failed journals remain uncertain. Token hash and key stay
+in the POST body, are not returned, and all responses use `Cache-Control: no-store`.
+
+`POST /api/server/access-reservations/preview` requires `access:read` and accepts
+`{ appId, claimTokenHash, subjectId }` from an authenticated application backend.
+It returns a non-cacheable recipient-scoped reservation snapshot with product,
+pinned plan, pool and entitlement labels. It rejects foreign assignment/claimant
+without disclosing the reservation. The token hash stays in the body and is never
+returned. No write, effective entitlement or application membership is implied;
+unassigned full tokens remain bearer invitations. See
+`subkit.access.previewReservation` and the [preview guide](/docs/node/overview/#preview-before-explicit-activation).
+
+`GET /api/server/access-reservations/:reservationId?appId=...` additionally
+provides an `access:read`-protected, non-cacheable reservation snapshot. It
+checks tenant, app and source environment and returns canonical state plus an
+exact claim/allocation reference when claimed. It does not expose token or
+invitee-reference hashes, authorize an invitee or grant entitlement. See
+`serverReservationReadRequestSchema`, `serverReservationReadResponseSchema`
+and the [reservation recovery guide](/docs/node/overview/#recover-an-uncertain-reservation-claim).
+The route requires a matching service deployment; it is not a Runtime API.
+
 ## Server API mutations
 
 | Endpoint                                                       | Capability                |

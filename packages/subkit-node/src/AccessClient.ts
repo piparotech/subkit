@@ -1,5 +1,24 @@
 import { z } from 'zod'
 
+import {
+  type ServerReservationClaimRequest,
+  type ServerReservationClaimResponse,
+  type ServerReservationClaimStatusRequest,
+  type ServerReservationClaimStatusResponse,
+  type ServerReservationPreviewRequest,
+  type ServerReservationPreviewResponse,
+  type ServerReservationReadRequest,
+  type ServerReservationReadResponse,
+  serverReservationClaimRequestSchema,
+  serverReservationClaimResponseSchema,
+  serverReservationClaimStatusRequestSchema,
+  serverReservationClaimStatusResponseSchema,
+  serverReservationPreviewRequestSchema,
+  serverReservationPreviewResponseSchema,
+  serverReservationReadRequestSchema,
+  serverReservationReadResponseSchema,
+} from '@piparotech/subkit-core'
+
 import type { HttpClient } from './HttpClient.js'
 import type { SubKitMutationOptions, SubKitRequestOptions } from './requestOptions.js'
 
@@ -10,6 +29,10 @@ const capacityResultSchema = z.object({
   used: z.number(),
 })
 const reservationResultSchema = capacityResultSchema.extend({ reservationId: z.string() })
+const reservationCancellationSchema = z.object({
+  status: z.literal('cancelled'),
+  reservationId: z.string().nullable(),
+})
 const allocationResultSchema = capacityResultSchema.extend({ allocationId: z.string() })
 const poolResultSchema = capacityResultSchema.extend({
   decision: z.enum(['applied', 'rejected', 'scheduled']).optional(),
@@ -58,11 +81,12 @@ export interface ReserveAccessInput {
   subjectId?: string | null
 }
 
-export interface ClaimReservationInput {
+export type ClaimReservationInput = Omit<ServerReservationClaimRequest, 'appId'> & {
   appId?: string
-  claimTokenHash: string
-  reason: string
-  subjectId: string
+}
+
+export type ReadReservationClaimInput = Omit<ServerReservationClaimStatusRequest, 'appId'> & {
+  appId?: string
 }
 
 export interface AllocateAccessInput {
@@ -96,6 +120,11 @@ export type UpdatePoolInput =
       poolId: string
       reason: string
     }
+
+export type GetReservationInput = Omit<ServerReservationReadRequest, 'appId'> & { appId?: string }
+export type PreviewReservationInput = Omit<ServerReservationPreviewRequest, 'appId'> & {
+  appId?: string
+}
 
 export interface RevokeReservationInput {
   reason: string
@@ -182,11 +211,103 @@ export class AccessClient {
     })
   }
 
-  claim(input: ClaimReservationInput, options: SubKitMutationOptions): Promise<AllocationResult> {
+  getReservation(
+    input: GetReservationInput,
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerReservationReadResponse> {
+    const request = serverReservationReadRequestSchema.parse({
+      ...input,
+      appId: resolveAppId(input.appId, this.appId),
+    })
+    const query = new URLSearchParams({ appId: request.appId })
+    return this.http.get(
+      `/api/server/access-reservations/${encodeURIComponent(request.reservationId)}?${query}`,
+      {
+        ...options,
+        responseSchema: serverReservationReadResponseSchema.refine(
+          (result) =>
+            result.appId === request.appId && result.reservationId === request.reservationId,
+          { message: 'Reservation response does not match the requested app and reservation' },
+        ),
+      },
+    )
+  }
+
+  cancelReservationCreation(
+    input: { poolId: string; reason: string },
+    options: SubKitMutationOptions,
+  ): Promise<{ status: 'cancelled'; reservationId: string | null }> {
+    return this.http.delete(
+      `/api/server/access-pools/${encodeURIComponent(input.poolId)}/reservations`,
+      {
+        ...options,
+        body: { reason: input.reason },
+        responseSchema: reservationCancellationSchema,
+      },
+    )
+  }
+
+  previewReservation(
+    input: PreviewReservationInput,
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerReservationPreviewResponse> {
+    const request = serverReservationPreviewRequestSchema.parse({
+      ...input,
+      appId: resolveAppId(input.appId, this.appId),
+    })
+    return this.http.post('/api/server/access-reservations/preview', {
+      ...options,
+      body: request,
+      responseSchema: serverReservationPreviewResponseSchema.refine(
+        (result) => result.appId === request.appId && result.subjectId === request.subjectId,
+        { message: 'Reservation preview does not match the requested app and recipient' },
+      ),
+    })
+  }
+
+  claim(
+    input: ClaimReservationInput,
+    options: SubKitMutationOptions,
+  ): Promise<ServerReservationClaimResponse> {
+    const request = serverReservationClaimRequestSchema.parse({
+      ...input,
+      appId: resolveAppId(input.appId, this.appId),
+    })
     return this.http.post('/api/server/access-reservations/claim', {
       ...options,
-      body: { ...input, appId: resolveAppId(input.appId, this.appId) },
-      responseSchema: allocationResultSchema,
+      body: request,
+      responseSchema: serverReservationClaimResponseSchema.refine(
+        (result) =>
+          result.appId === request.appId &&
+          result.subjectId === request.subjectId &&
+          result.reservationId === request.reservationId &&
+          result.poolId === request.poolId &&
+          result.accessSourceId === request.accessSourceId,
+        { message: 'Reservation claim does not match the reviewed identity' },
+      ),
+    })
+  }
+
+  readReservationClaim(
+    input: ReadReservationClaimInput,
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerReservationClaimStatusResponse> {
+    const request = serverReservationClaimStatusRequestSchema.parse({
+      ...input,
+      appId: resolveAppId(input.appId, this.appId),
+    })
+    return this.http.post('/api/server/access-reservations/claim/status', {
+      ...options,
+      body: request,
+      responseSchema: serverReservationClaimStatusResponseSchema.refine(
+        (result) =>
+          result.appId === request.appId &&
+          result.subjectId === request.subjectId &&
+          result.reservationId === request.reservationId &&
+          result.poolId === request.poolId &&
+          result.accessSourceId === request.accessSourceId,
+        { message: 'Reservation claim status does not match the requested identity' },
+      ),
     })
   }
 

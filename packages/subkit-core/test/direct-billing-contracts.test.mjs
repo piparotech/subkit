@@ -21,6 +21,7 @@ const validCheckoutRequest = {
 }
 
 const validSummary = {
+  accountContext: 'a'.repeat(64),
   environment: 'sandbox',
   amountMicros: 1200000,
   billingPeriodIso: 'P1M',
@@ -39,6 +40,7 @@ const validSummary = {
 test('direct billing requests are app-bound and Subject-driven', () => {
   const checkout = serverDirectCheckoutSessionRequestSchema.parse(validCheckoutRequest)
   const portal = serverBillingPortalSessionRequestSchema.parse({
+    accountContext: 'a'.repeat(64),
     appId: 'app_123',
     reason: 'open billing settings',
     subjectId: 'subject_123',
@@ -59,6 +61,7 @@ test('direct billing requests are app-bound and Subject-driven', () => {
   )
   assert.throws(() =>
     serverBillingPortalSessionRequestSchema.parse({
+      accountContext: 'a'.repeat(64),
       appId: 'app_123',
       billingAccountId: 'account_123',
       reason: 'open billing settings',

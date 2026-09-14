@@ -173,6 +173,9 @@ declare global {
   function showNothingToRestore(): void
   function showPurchaseFailedMessage(): void
   function showPurchasePendingMessage(): void
+  function showPurchaseRecovery(error: SubKitSerializableError): void
+  function showRestorePending(): void
+  function showRestoreRecovery(result: import('@piparotech/subkit-core').PurchaseSyncResult): void
   function showPurchaseUnavailableMessage(message: string): void
   function showRestorePrompt(): void
   function showRetryablePurchaseError(message: string): void

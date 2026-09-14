@@ -44,9 +44,13 @@ export type ContractLifecycleResult = z.infer<typeof contractLifecycleApplySchem
 export interface ListLicensesInput {
   appId?: string
   cursor?: string | null
-  kind?: 'individual' | 'club'
+  licenseeKind?: 'individual' | 'organization'
+  licenseeSubjectIds?: string[]
   limit?: number
+  sortBy?: 'createdAt' | 'validUntil' | 'licenseeName' | 'licenseeKind' | 'productName' | 'state'
+  sortDirection?: 'asc' | 'desc'
   query?: string
+  queryScope?: 'all' | 'license'
   state?: 'pending' | 'active' | 'suspended' | 'expired' | 'revoked'
 }
 
@@ -95,10 +99,14 @@ export class LicensesClient {
       body: {
         appId: resolveAppId(input.appId, this.appId),
         cursor: input.cursor,
-        kind: input.kind,
+        licenseeKind: input.licenseeKind,
+        licenseeSubjectIds: input.licenseeSubjectIds,
         limit: input.limit,
         query: input.query,
+        queryScope: input.queryScope,
         state: input.state,
+        sortBy: input.sortBy,
+        sortDirection: input.sortDirection,
       },
       responseSchema: serverLicenseListResponseSchema,
     })

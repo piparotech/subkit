@@ -36,7 +36,15 @@ import { client } from '@piparotech/subkit-expo'
 const PRO = 'pro'
 
 async function restoreAndCheckAccess() {
-  await client.restorePurchases()
+  const result = await client.restorePurchases()
+  if (result == null) {
+    showRestorePending()
+    return
+  }
+  if (result.conflicts.length > 0 || result.rejectedPurchases.length > 0) {
+    showRestoreRecovery(result)
+    return
+  }
 
   const access = await client.getAccess(PRO)
   if (access.state === 'granted') unlockPaidAccess()
@@ -46,8 +54,11 @@ async function restoreAndCheckAccess() {
 ```
 
 `restorePurchases()` calls the native restore API, then forces a
-`manual_restore` sync and returns the `PurchaseSyncResult` (or `null` when
-there was nothing to reconcile).
+`manual_restore` sync and returns the `PurchaseSyncResult`. `null` means no
+terminal result is available, including when a durable reconcile job is still
+running. It does not mean there was nothing to restore. Keep the pending UI
+and resume with `syncPurchases({ force: true, reason: 'queue_retry' })`.
+Fetching CustomerInfo alone does not drain the purchase queue.
 
 ## Manual sync
 

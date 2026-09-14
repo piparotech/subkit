@@ -58,6 +58,10 @@ async function buySelectedPackage(packageIdentifier: string) {
       }
 
       case 'failed': {
+        if (result.error.metadata?.purchaseMayHaveCompleted === true) {
+          showPurchaseRecovery(result.error)
+          return
+        }
         if (result.error.retryable) {
           showRetryablePurchaseError(result.error.message)
         } else {
@@ -81,7 +85,9 @@ async function buySelectedPackage(packageIdentifier: string) {
   purchase for a different product does not grant your entitlement.
 - **`pending`** — the common outcome with the Expo IAP adapter. Entitlement
   confirmation happens through SubKit sync (automatic, foreground, or a later
-  `getAccess()`). Show a confirming state.
+  `syncPurchases({ force: true, reason: 'queue_retry' })`). Show a confirming
+  state and block repeat purchase. `getAccess()` reads access but does not
+  resume queued receipts.
 - **`cancelled`** — user intent, not an error. Store-sheet cancellations are
   detected from the native error and normalized to this status.
 - **`failed`** — an expected domain failure. Known codes include:
@@ -91,6 +97,13 @@ async function buySelectedPackage(packageIdentifier: string) {
   | `missing_identity`    | No `appUserId` — identify before purchasing                                      | no        |
   | `product_unavailable` | Package unknown, no store product for this platform, or no eligible Google offer | no        |
   | `store_unavailable`   | Native store error without a specific code                                       | yes       |
+
+A terminal verification rejection can happen after a Store charge. Such failures
+carry `error.metadata.purchaseMayHaveCompleted: true`; keep the purchase
+blocked and offer reconciliation or support instead of another purchase.
+Ownership conflicts include `error.metadata.resolution`. After a native Store
+response, transport exceptions during reconciliation return `pending`, never
+`cancelled` or a safe-to-retry purchase failure.
 
 ## Throws still happen
 

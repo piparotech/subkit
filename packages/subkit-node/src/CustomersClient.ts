@@ -3,7 +3,10 @@ import { z } from 'zod'
 import {
   type ServerCustomerInfoRequest,
   type ServerCustomerInfoResponse,
+  type ServerSubjectLookupRequest,
+  type ServerSubjectLookupResponse,
   serverCustomerInfoResponseSchema,
+  serverSubjectLookupResponseSchema,
 } from '@piparotech/subkit-core'
 
 import type { HttpClient } from './HttpClient.js'
@@ -135,6 +138,17 @@ export class CustomersClient {
         responseSchema: organizationMembershipResultSchema,
       },
     )
+  }
+
+  lookupSubjects(
+    input: Omit<ServerSubjectLookupRequest, 'appId'> & { appId?: string },
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerSubjectLookupResponse> {
+    return this.http.post('/api/server/subjects/lookup', {
+      ...options,
+      body: { ...input, appId: resolveAppId(input.appId, this.appId) },
+      responseSchema: serverSubjectLookupResponseSchema,
+    })
   }
 
   upsertSubject(

@@ -106,7 +106,8 @@ export function createPurchaseSyncCoordinator(
   async function drainQueue(
     reason: PurchaseSyncReason,
     binding: { appUserId: string; identityGeneration: number; installationId: string },
-  ): Promise<PurchaseSyncResult> {
+  ): Promise<PurchaseSyncResult | null> {
+    await assertBindingIsCurrent(binding)
     const pending = await options.queue.listPending(binding)
     const toResume = pending.filter((item) => item.reconcileId != null)
     const toPost = pending.filter((item) => item.reconcileId == null)
@@ -171,7 +172,11 @@ export function createPurchaseSyncCoordinator(
             await options.queue.attachReconcileId(item.id, null)
           }
         }
-        result = await postItems(toResume, binding, reason)
+        result = await postItems(
+          toResume.filter((item) => item.reconcileId === resumeJobId),
+          binding,
+          reason,
+        )
       }
     } else {
       // No pending items for this binding: refresh via an empty reconcile so
@@ -188,33 +193,10 @@ export function createPurchaseSyncCoordinator(
       })
     }
 
-    if (result == null || isPendingReconcile(result)) {
-      // The job is still running (bounded wait exhausted). The queue retains
-      // reconcileId and the next sync trigger resumes polling; cached
-      // customer-info keeps the UX stable. Return an empty terminal so the
-      // caller does not surface a misleading grant before the worker finishes.
-      return {
-        acceptedPurchases: [],
-        checkedAt: new Date().toISOString(),
-        conflicts: [],
-        customerInfo: {
-          accessContext: null,
-          appId: options.appUserId() ?? '',
-          appUserId: '',
-          checkedAt: new Date().toISOString(),
-          entitlements: {},
-          freshness: 'stale' as const,
-          purchases: [],
-          unclaimedPurchases: [],
-        },
-        finishableTransactions: [],
-        rejectedPurchases: [],
-        verificationStatus: 'failed',
-      }
-    }
-
     await assertBindingIsCurrent(binding)
-    const terminalResult = result as PurchaseSyncResult
+    // A durable job is not a failed verification and cannot replace the current identity.
+    if (result == null || isPendingReconcile(result)) return null
+    const terminalResult = result
 
     for (const rejected of terminalResult.rejectedPurchases) {
       const item = findQueueItemForRejectedPurchase(pending, rejected)

@@ -1,23 +1,36 @@
 import {
   type ServerDirectCheckoutOfferingRequest,
   type ServerDirectCheckoutOfferingResponse,
+  type ServerDirectCheckoutRecoveryRequest,
+  type ServerDirectCheckoutResumeRequest,
   type ServerDirectCheckoutSessionRequest,
   type ServerDirectCheckoutSessionResponse,
   type ServerDirectCheckoutStatusRequest,
   type ServerDirectCheckoutStatusResponse,
   type ServerGuestCheckoutAssociationRequest,
+  type ServerGuestCheckoutResumeRequest,
   type ServerGuestCheckoutSessionRequest,
   type ServerGuestCheckoutStatusRequest,
+  type ServerOrganizationAssociationRequest,
+  type ServerOrganizationPurchaseRequest,
   serverDirectCheckoutOfferingRequestSchema,
   serverDirectCheckoutOfferingResponseSchema,
+  serverDirectCheckoutRecoveryRequestSchema,
+  serverDirectCheckoutResumeRequestSchema,
   serverDirectCheckoutSessionResponseSchema,
   serverDirectCheckoutStatusRequestSchema,
   serverDirectCheckoutStatusResponseSchema,
   serverGuestCheckoutAssociationRequestSchema,
   serverGuestCheckoutAssociationResponseSchema,
+  serverGuestCheckoutResumeRequestSchema,
   serverGuestCheckoutSessionRequestSchema,
   serverGuestCheckoutStatusRequestSchema,
   serverGuestCheckoutStatusResponseSchema,
+  serverOrganizationAccessResponseSchema,
+  serverOrganizationAssociationRequestSchema,
+  serverOrganizationAssociationResponseSchema,
+  serverOrganizationPurchaseRequestSchema,
+  serverOrganizationSubscriptionResponseSchema,
 } from '@piparotech/subkit-core'
 
 import type { HttpClient } from './HttpClient.js'
@@ -63,6 +76,21 @@ export class CheckoutClient {
     })
   }
 
+  resumeGuestSession(
+    input: Omit<ServerGuestCheckoutResumeRequest, 'appId' | 'action'> & { appId?: string },
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerDirectCheckoutSessionResponse> {
+    return this.http.post('/api/server/guest-checkout/sessions', {
+      ...options,
+      body: serverGuestCheckoutResumeRequestSchema.parse({
+        ...input,
+        action: 'resume',
+        appId: resolveAppId(input.appId, this.appId),
+      }),
+      responseSchema: serverDirectCheckoutSessionResponseSchema,
+    })
+  }
+
   getGuestStatus(
     input: Omit<ServerGuestCheckoutStatusRequest, 'appId'> & { appId?: string },
     options: SubKitRequestOptions = {},
@@ -92,6 +120,67 @@ export class CheckoutClient {
         (value) =>
           value.subjectId === body.subjectId && value.purchaseReference === body.purchaseReference,
         { message: 'Guest association does not match request' },
+      ),
+    })
+  }
+
+  associateOrganizationGuestPurchase(
+    input: Omit<ServerOrganizationAssociationRequest, 'appId'> & { appId?: string },
+    options: SubKitMutationOptions,
+  ) {
+    const body = serverOrganizationAssociationRequestSchema.parse({
+      ...input,
+      appId: resolveAppId(input.appId, this.appId),
+    })
+    return this.http.post('/api/server/guest-checkout/organization-associate', {
+      ...options,
+      body,
+      responseSchema: serverOrganizationAssociationResponseSchema.refine(
+        (value) =>
+          value.subjectId === body.subjectId && value.purchaseReference === body.purchaseReference,
+        { message: 'Organization association does not match request' },
+      ),
+    })
+  }
+
+  getOrganizationGuestAccess(
+    input: Omit<ServerOrganizationPurchaseRequest, 'appId'> & { appId?: string },
+    options: SubKitRequestOptions = {},
+  ) {
+    const body = serverOrganizationPurchaseRequestSchema.parse({
+      ...input,
+      appId: resolveAppId(input.appId, this.appId),
+    })
+    return this.http.post('/api/server/guest-checkout/organization-access', {
+      ...options,
+      body,
+      responseSchema: serverOrganizationAccessResponseSchema.refine(
+        (value) =>
+          value.appId === body.appId &&
+          value.subjectId === body.subjectId &&
+          value.purchaseReference === body.purchaseReference,
+        { message: 'Organization access does not match request' },
+      ),
+    })
+  }
+
+  getOrganizationGuestSubscription(
+    input: Omit<ServerOrganizationPurchaseRequest, 'appId'> & { appId?: string },
+    options: SubKitRequestOptions = {},
+  ) {
+    const body = serverOrganizationPurchaseRequestSchema.parse({
+      ...input,
+      appId: resolveAppId(input.appId, this.appId),
+    })
+    return this.http.post('/api/server/guest-checkout/organization-subscription', {
+      ...options,
+      body,
+      responseSchema: serverOrganizationSubscriptionResponseSchema.refine(
+        (value) =>
+          value.appId === body.appId &&
+          value.subjectId === body.subjectId &&
+          value.purchaseReference === body.purchaseReference,
+        { message: 'Organization subscription does not match request' },
       ),
     })
   }
@@ -128,6 +217,40 @@ export class CheckoutClient {
       responseSchema: serverDirectCheckoutStatusResponseSchema.refine(
         (status) => status.checkoutIntentId === body.checkoutIntentId,
         { message: 'Checkout status reference does not match the request' },
+      ),
+    })
+  }
+
+  recoverStatus(
+    input: Omit<ServerDirectCheckoutRecoveryRequest, 'appId'> & { appId?: string },
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerDirectCheckoutStatusResponse> {
+    const body = serverDirectCheckoutRecoveryRequestSchema.parse({
+      ...input,
+      appId: resolveAppId(input.appId, this.appId),
+    })
+    return this.http.post('/api/server/direct-checkout/status', {
+      ...options,
+      body,
+      responseSchema: serverDirectCheckoutStatusResponseSchema,
+    })
+  }
+
+  resumeSession(
+    input: Omit<ServerDirectCheckoutResumeRequest, 'appId' | 'action'> & { appId?: string },
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerDirectCheckoutSessionResponse> {
+    const body = serverDirectCheckoutResumeRequestSchema.parse({
+      ...input,
+      action: 'resume',
+      appId: resolveAppId(input.appId, this.appId),
+    })
+    return this.http.post('/api/server/direct-checkout/sessions', {
+      ...options,
+      body,
+      responseSchema: serverDirectCheckoutSessionResponseSchema.refine(
+        (session) => session.checkoutIntentId === body.checkoutIntentId,
+        { message: 'Resumed checkout reference does not match the request' },
       ),
     })
   }

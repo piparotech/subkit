@@ -60,6 +60,8 @@ export {
   runtimeOfferingsRequestSchema,
   runtimeOfferingsWithAppRequestSchema,
   runtimeOfferingsResponseSchema,
+  runtimePlanEntitlementSchema,
+  runtimePlanPoolSchema,
   storeEnvironmentSchema,
   storeIdentityHintsSchema,
   storeNameSchema,
@@ -89,8 +91,15 @@ export {
   serverDirectCheckoutSessionResponseSchema,
 } from './server-contracts.js'
 export * from './server-contracts.js'
+export * from './server-grant-context.js'
+export * from './server-reservations.js'
+export * from './server-reservation-preview.js'
+export * from './server-reservation-claim.js'
 export * from './checkout-offering.js'
+export * from './organization-checkout.js'
 export * from './guest-checkout.js'
+export * from './checkout-recovery.js'
+export * from './checkout-resume.js'
 export type {
   CustomerDeviceAccess,
   CustomerEntitlement,

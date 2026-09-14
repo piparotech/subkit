@@ -34,6 +34,7 @@ test('direct billing clients send app-bound Subject requests without billing acc
   )
   const portal = await subkit.billing.createPortalSession(
     {
+      accountContext: 'a'.repeat(64),
       reason: 'open billing settings',
       subjectId: 'subject_123',
     },
@@ -63,6 +64,7 @@ test('direct billing clients send app-bound Subject requests without billing acc
     subjectId: 'subject_123',
   })
   assert.deepEqual(requests[1].body, {
+    accountContext: 'a'.repeat(64),
     appId: 'app_123',
     reason: 'open billing settings',
     subjectId: 'subject_123',
@@ -93,6 +95,7 @@ function responseFor(path) {
   }
   if (path === '/api/server/direct-billing/summary') {
     return {
+      accountContext: 'a'.repeat(64),
       amountMicros: 1200000,
       billingPeriodIso: 'P1M',
       cancelAtPeriodEnd: false,

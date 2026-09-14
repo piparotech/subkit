@@ -3,9 +3,8 @@ title: Node.js backend
 description: Drive SubKit commerce and access from trusted server code — customers, contracts, payments, seats, entitlement checks, idempotency, and errors.
 ---
 
-The `@piparotech/subkit-node` SDK is for trusted server-to-server code only. It
-carries a scoped server key (`sk_srv_…`) that can mutate commerce and access.
-Never ship this key in mobile apps, web clients, or Expo bundles.
+Use `@piparotech/subkit-node` only on trusted backends. Never ship its scoped
+`sk_srv_…` key in web, mobile or Expo bundles.
 
 ## Install and configure
 
@@ -26,71 +25,90 @@ const subkit = new SubKit({
 })
 ```
 
-Use a SubKit-issued `sk_srv_…` server secret scoped to the target app and the
-capabilities you need. SubKit stores only its hash; there is no global
-environment key.
+Scope the key to the app and required capabilities. SubKit stores its hash;
+there is no global environment key.
 
 ## The mutation contract
 
-Every mutation requires:
+Mutations require a capability, explicit **idempotency key** and audited **reason**.
+Exact retries retain key, reason and payload; conflicting evidence fails closed.
 
-- an explicit **idempotency key**,
-- an operator **reason** (recorded in the immutable audit log),
-- the required **capability** on the key.
+## Recover an authenticated checkout reference
 
-Exact retries reuse the same idempotency key and the same audit reason. They are
-safe only for the same logical mutation; conflicting evidence fails closed.
+`subkit.checkout.recoverStatus({ subjectId, idempotencyKey, entitlement })` requires
+`direct_billing:read` and the matching service route. It returns the original
+checkout lifecycle and `checkoutIntentId`, not a redirect or a new purchase.
+Tenant, app, environment, subject and creation key must match. Missing, foreign
+or ambiguous results do not prove failure: retain the original operation/key;
+never fall back to creation.
+
+## Resume the original hosted checkout form
+
+`subkit.checkout.resumeSession({ subjectId, checkoutIntentId })` requires
+`direct_billing:write` and a matching service deployment. It reads, never creates,
+the original authenticated checkout in the same app/environment. The service
+verifies account/customer/intent/price, one line item and current unexpired,
+open, unpaid subscription state. This method excludes guest checkouts.
+
+The URL is a bearer capability: keep it out of logs, storage, analytics and
+screenshots. Navigate only after explicit same-origin and current-session checks;
+preserve the local operation first. Unavailable or terminal results require
+status recovery, not a replacement purchase. Return navigation is not payment proof.
 
 ## Checkout offering without a buyer
 
-`subkit.checkout.getOffering({ offeringIdentifier: 'default' })` reads checkout
-package labels, amounts, currencies and billing periods without a customer or
-Subject. It requires an app-scoped server key with `direct_billing:read`; the
-key selects the environment. Keep the key on your backend and expose only the
-returned tariff data to a public purchase page. The SDK rejects unexpected
-fields, duplicate package identifiers and mismatched offering responses.
-
-This method does not create a checkout, authenticate a buyer or grant access.
-It requires the matching `/api/server/direct-checkout/offering` service route;
-SDK availability alone does not mean that route has been deployed.
+`subkit.checkout.getOffering({ offeringIdentifier: 'default' })` needs an
+app/environment-scoped `direct_billing:read` key and the matching
+`/api/server/direct-checkout/offering` route. It returns package labels,
+amounts/currencies, periods, audience, entitlements and named pools without a
+buyer. Keep each pool's key, capacity (`null` is unbounded), entitlements and
+reservation policy separate. Expose tariff data, never the backend key.
+The SDK rejects unexpected fields, duplicate packages and mismatched responses.
+This read neither authenticates, starts checkout nor grants access.
 
 ## Guest checkout and verified account association
 
-All guest methods are trusted-server APIs. Keep the server key private. Your
-application must bind a durable UUID `purchaseReference` to a secure browser
-session and select the offering, package and fixed return target server-side.
-Never accept a buyer-supplied Subject or use checkout email as identity proof.
+Keep guest APIs and keys server-side. Bind a durable UUID `purchaseReference`
+to a secure browser session; select the offering, package and allowlisted return
+target server-side. The app must check the key-selected environment.
 
-1. Call `subkit.checkout.createGuestSession` with the purchase reference,
-   offering/package identifiers, return target and audit reason. Supply an
-   `idempotencyKey` in the second argument. Reuse that reference and key for
-   retries of the same purchase, rather than preparing a new purchase.
-2. Call `subkit.checkout.getGuestStatus({ purchaseReference })` after return.
-   A Stripe redirect does not prove payment. `paymentVerified` reports the
-   service's verified payment state, not application access or authentication.
-3. Independently authenticate the buyer with your identity provider. Only then
-   call `subkit.checkout.associateGuestPurchase` with that verified `subjectId`,
-   purchase reference, audit reason and mutation idempotency key. The application
-   must still validate browser ownership of the purchase. Association can fail
-   when current identity or ownership no longer permits it, including on replay.
-4. Call `subkit.checkout.getStatus` with the exact checkout intent, verified
-   Subject and required entitlement. Wait for `accessReady: true`; successful
-   association alone does not mean the access worker has provisioned the grant.
+1. `createGuestSession`: send the reference, offering/package, reviewed
+   `selectionRevision`, return target and reason; pass the original
+   `idempotencyKey` in mutation options. Preserve both identities on retry.
+2. `getGuestStatus({ purchaseReference })`: `paymentVerified` means verified
+   payment, not login or access. A redirect proves none of these.
+3. Independently authenticate and explicitly confirm the buyer, then call
+   `associateGuestPurchase` with verified `subjectId`, reference, reason and key.
+   Recheck browser possession/current ownership on every attempt. Checkout email
+   or a buyer-supplied Subject is not identity evidence.
+4. `getStatus`: use the exact intent, verified Subject and entitlement; wait for
+   `accessReady: true`, not merely successful association.
 
-The server key selects the environment. Require the expected environment in your
-application and do not reopen terminal or expired checkouts. These methods need
-the matching guest service routes and access worker deployment; installing this
-SDK does not provision those services or create an identity-provider session.
+Matching guest routes and the access worker must be deployed. Do not reopen
+terminal/expired checkouts or substitute SDK installation for hosted acceptance.
+
+## Organization guest purchases
+
+Organization purchases have a separate Billing Account. After verified payment,
+browser possession and independent identity, `associateOrganizationGuestPurchase`
+accepts `purchaseReference`, `subjectId`, `organizationName`, `reason` and an
+idempotency key. It binds the purchase's licensee, not an app login, team or club.
+
+`getOrganizationGuestAccess({ purchaseReference, subjectId })` rechecks ownership.
+Before worker projection: `accessReady: false`, no pools. Afterwards each pool
+has `poolId`, `accessSourceId`, `capacity`, `used`, `reserved`, `entitlementKeys`.
+The SDK validates echoed app, subject and purchase identity. Persist the exact
+purchase/source/pool binding before writes and reauthorize at reservation time.
+Pool IDs are private data, not capabilities; availability is a snapshot. Never
+sum unrelated pools or equate billing ownership with a personal seat.
+Organization methods remain sandbox-only; production rollout is separately gated.
 
 ## Hosted direct billing
 
-Direct billing is selected from the published catalog and remains bound to the
-app and beneficiary Subject. For the first Individual slice, the service
-resolves or creates the Individual Billing Account from the authenticated
-active app-user Subject; the Node SDK does not accept a Billing Account ID,
-email, or display name for that selection. It also does not accept amounts, currencies,
-Stripe Product/Price IDs, payment methods, or arbitrary success/cancel URLs.
-`returnTarget` is a server-configured allowlist key.
+The published catalog and authenticated active app-user select the app-bound
+Individual Billing Account. Callers cannot supply account IDs, email/name,
+amount/currency, provider Product/Price IDs, payment methods or arbitrary URLs.
+`returnTarget` selects a server allowlist entry.
 
 ```ts compile
 const checkout = await subkit.checkout.createSession(
@@ -104,24 +122,46 @@ const checkout = await subkit.checkout.createSession(
   { idempotencyKey: 'checkout:subject_123:monthly' },
 )
 
-const portal = await subkit.billing.createPortalSession(
-  {
-    reason: 'open billing settings',
-    subjectId: 'subject_123',
-  },
-  { idempotencyKey: 'portal:subject_123' },
-)
-
-const summary = await subkit.billing.getSummary({
-  subjectId: 'subject_123',
-})
+const management = await subkit.billing.getManagement({ subjectId: 'subject_123' })
+const summary = await subkit.billing.getSummary({ subjectId: 'subject_123' })
+if (
+  management.environment !== summary.environment ||
+  management.accountContext !== summary.accountContext
+) {
+  throw new Error('Billing account changed; reload the view')
+}
+const displayedAccountContext = management.accountContext
+if (displayedAccountContext !== null) {
+  const portal = await subkit.billing.createPortalSession(
+    {
+      accountContext: displayedAccountContext,
+      reason: 'open billing settings',
+      subjectId: 'subject_123',
+    },
+    { idempotencyKey: 'portal:subject_123:original-operation' },
+  )
+}
 ```
 
-Checkout and portal return only SubKit-owned intent IDs (`checkout-intent:` or
-`billing-portal:`) and short-lived HTTPS redirect URLs with ISO datetime
-expiry. The summary exposes canonical plan, period, amount/currency,
-cancellation, and normalized provider-state status fields without provider IDs
-or payment-method data.
+Redirect responses contain SubKit intent IDs (`checkout-intent:`/`billing-portal:`),
+short-lived HTTPS URLs and ISO expiry. Summaries contain plan, period,
+amount/currency, cancellation and normalized status, not provider IDs/payment data.
+
+### Account-bound management (unreleased breaking change)
+
+Retain the displayed `accountContext` for portal requests. Management and summary
+must agree on context and environment. It binds account, ownership period,
+mapping, app, subject, provider and environment, but never replaces authorization.
+Reject stale contexts; preserve the original key/context after uncertainty.
+Never fetch a replacement account on click or expand access-key capabilities.
+
+Selection is the first eligible personal account by creation time, then ID.
+Missing subscription/configuration cannot select another account. Owned-empty
+summary is `none` with context; no ownership means null context. Use separate
+app/environment `direct_billing:read/write` clients; management does not establish
+access or purchase eligibility. Deploy the matching service before consumer
+adoption. Historical context-free operations need an explicit transition, not
+replacement keys; compilation alone is not release acceptance.
 
 ## Customers and access subjects
 
@@ -144,8 +184,7 @@ const club = await subkit.customers.createBillingAccount(
 
 ## Contracts, seats, and payments
 
-Creating a contract provisions its verified access source and pools. It does not
-fabricate a charge — record payment evidence separately.
+Contracts provision verified Sources/Pools, not charges. Record payment separately.
 
 ```ts compile
 const contract = await subkit.contracts.create(
@@ -172,8 +211,15 @@ const reservation = await subkit.access.reserve(
   { idempotencyKey: 'invite:trainer_123' },
 )
 
+const preview = await subkit.access.previewReservation({
+  claimTokenHash: hash(inviteToken),
+  subjectId: subject.id,
+})
 const allocation = await subkit.access.claim(
   {
+    reservationId: preview.reservation.reservationId,
+    poolId: preview.reservation.poolId,
+    accessSourceId: preview.reservation.accessSourceId,
     claimTokenHash: hash(inviteToken),
     subjectId: subject.id,
     reason: 'trainer accepted invitation',
@@ -182,8 +228,42 @@ const allocation = await subkit.access.claim(
 )
 ```
 
-Invitation tokens stay outside SubKit — send the opaque token to the invitee and
-submit only its hash.
+Send the invitee the opaque token; SubKit receives only its hash.
+
+### Preview before explicit activation
+
+`previewReservation({ claimTokenHash: hash(inviteToken), subjectId: subject.id })`
+requires `access:read`, current app/tenant/environment and an active app-user.
+Send hashes in POST bodies, never URLs. Wrong assignment/claimant looks missing;
+the SDK validates echoed recipient and reservation evidence.
+
+Persist the returned reservation/source/pool and recipient before explicit claim.
+Preview exposes product/plan/pool/entitlement facts, not payer data or token hashes;
+it writes nothing and guarantees no later access. Unassigned tokens are bearer
+invitations. Invitee-reference hashes are metadata, not email/membership proof;
+app club/promotion codes remain separate.
+
+Claim needs the exact reviewed IDs. Handle `claimed` with allocation ID, or durable
+`rejected` with `changed | expired | used | recipient_mismatch | unavailable`.
+Transport/auth/journal errors are not terminal rejection. Claim/audit/journal
+commit together; uncertain retries retain payload/key. Recheck effective access.
+
+### Recover an uncertain reservation claim
+
+Persist reservation identity before delivery and claim payload/key before
+activation. `readReservationClaim({ ...originalClaim, idempotencyKey })` proves
+only this operation's completed journal. `pending` includes absent, processing
+and historical failed journals: it never permits replacement. The same Subject's
+claim may belong to another operation.
+
+Then `getReservation({ reservationId })` reads current allocation state with
+`access:read` and matching service/Core. Its non-cacheable snapshot validates
+app/reservation, exposes no token/hash/list, and reports claimed allocation ID,
+state, subject and timestamp. Verify durable invitation binding separately from
+membership/effective access; inactivity does not authorize a new allocation.
+Database-time expiry needs no write. A negative snapshot does not prove an
+in-flight request failed. Preserve original identity; use matching environment
+keys for Direct/Store and neutral keys for environment-neutral sources.
 
 ## Record verified payment evidence
 
@@ -208,9 +288,8 @@ await subkit.payments.record(
 )
 ```
 
-SubKit does not perform CPQ, invoicing, tax calculation, or monetary seat
-proration. Exact payment retries are idempotent; conflicting amount, currency,
-payer, Source, or external identity fails closed.
+No CPQ, invoicing, tax or monetary seat proration. Payment retries reject changed
+amount, currency, payer, Source or external identity.
 
 ## Enroll free access
 
@@ -229,9 +308,8 @@ const enrollment = await subkit.access.enrollFree(
 
 ## Redeem a promotion
 
-Promotion codes are distinct from invitation tokens. A promotion creates a
-commercial Source; an invitation only claims capacity already reserved from an
-existing Pool. SubKit hashes and safely stores the submitted code.
+Promotions create commercial Sources; invitations claim existing reserved
+capacity. SubKit stores promotion codes hashed.
 
 ```ts compile
 const promotion = await subkit.access.redeemPromotionCode(
@@ -246,8 +324,7 @@ const promotion = await subkit.access.redeemPromotionCode(
 
 ## Provision exceptional access
 
-Manual provision is a privileged, auditable exception for migration or support,
-not a shortcut around normal access derivation:
+Manual provision is an audited migration/support privilege, not an access bypass:
 
 ```ts compile
 const allocation = await subkit.access.manualProvision(
@@ -262,20 +339,16 @@ const allocation = await subkit.access.manualProvision(
 )
 ```
 
-All three flows still create the normal Source → Pool → Allocation → Grant path.
-They never write an entitlement directly.
+All three preserve Source → Pool → Allocation → Grant; none writes entitlements directly.
 
 ## Capacity changes
 
-Preview a capacity change before applying it. The preview evaluates current
-used/reserved quantities, effective date, renewal policy, cooldowns, and the
-published Plan Version. Apply only the operator-confirmed result with a new
-idempotency key and reason.
+Preview used/reserved capacity, effective date, renewal, cooldowns and pinned plan.
+Apply only the explicitly confirmed result with its own idempotency key/reason.
 
 ## Check an entitlement
 
-The app-scoped server key needs the `access:read` capability and a fixed Store
-environment. `allowed: false` remains a normal domain result.
+Use app-scoped `access:read` with a fixed Store environment; denial is a normal result.
 
 ```ts compile
 const result = await subkit.entitlements.check({ appUserId: 'user_123', entitlement: 'pro' })
@@ -287,8 +360,8 @@ if (!result.allowed) {
 
 ## Errors
 
-Domain denials (`allowed: false`) are normal results. Network, auth, invalid
-response, and non-2xx API responses throw `SubKitApiError`:
+Denials (`allowed: false`) are results. Network/auth/invalid/non-2xx responses
+throw `SubKitApiError`:
 
 ```ts compile
 import { isSubKitApiError } from '@piparotech/subkit-node'
@@ -303,10 +376,8 @@ try {
 }
 ```
 
-Sensitive values — bearer tokens, receipts, purchase tokens, raw store payloads
-— are never included in SDK errors. Retry only codes marked retryable in the
-[error reference](/docs/reference/errors/), using bounded backoff and the same
-idempotency key and audit reason for the same mutation.
+SDK errors omit tokens, receipts and raw store payloads. Use bounded backoff only
+for [retryable codes](/docs/reference/errors/); retain the mutation key and reason.
 
 ## Related
 

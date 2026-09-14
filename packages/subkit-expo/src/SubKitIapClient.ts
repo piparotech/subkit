@@ -556,8 +556,10 @@ function createSubKitClient(
     }
 
     await adapterBundle.iap.initConnection()
+    let storeRequestResolved = false
     try {
       const purchases = await adapterBundle.iap.requestPurchase(purchaseRequest)
+      storeRequestResolved = true
       let syncResult: PurchaseSyncResult | null = null
       for (const purchase of purchases) {
         syncResult = await processPurchaseEvent(purchase)
@@ -572,10 +574,53 @@ function createSubKitClient(
           status: 'failed',
         }
       }
-      return syncResult == null
-        ? { purchaseId: productId, status: 'pending' }
-        : { customerInfo: syncResult.customerInfo, status: 'verified' }
+      if (syncResult == null) return { purchaseId: productId, status: 'pending' }
+      const expectedStore = platform === 'ios' ? 'apple_app_store' : 'google_play'
+      const conflict = syncResult.conflicts.find(
+        (item) => item.store === expectedStore && item.storeProductId === productId,
+      )
+      if (conflict != null) {
+        return {
+          error: {
+            code: 'ownership_conflict',
+            message: 'This store purchase cannot be assigned automatically',
+            metadata: { purchaseMayHaveCompleted: true, resolution: conflict.resolution },
+            retryable: false,
+          },
+          status: 'failed',
+        }
+      }
+      const rejected = syncResult.rejectedPurchases.find(
+        (item) => item.store === expectedStore && item.storeProductId === productId,
+      )
+      if (rejected != null || syncResult.verificationStatus === 'failed') {
+        return {
+          error: {
+            code: rejected?.code ?? 'validation_failed',
+            message: 'The store purchase could not be verified',
+            metadata: { purchaseMayHaveCompleted: true },
+            retryable: false,
+          },
+          status: 'failed',
+        }
+      }
+      const acceptedTransactions = syncResult.acceptedPurchases
+      const requestedTransactionAccepted = purchases.some((purchase) => {
+        if (purchase.store !== expectedStore || purchase.productId !== productId) return false
+        const transactionId =
+          purchase.transactionId ?? purchase.originalTransactionId ?? purchase.orderId
+        return transactionId != null && acceptedTransactions.includes(transactionId)
+      })
+      if (!requestedTransactionAccepted) {
+        return { purchaseId: productId, status: 'pending' }
+      }
+      return { customerInfo: syncResult.customerInfo, status: 'verified' }
     } catch (error) {
+      // Once the Store returns, a verification/transport error must not invite another charge.
+      if (storeRequestResolved) {
+        logger?.warn('SubKit purchase requires reconciliation after Store response', error)
+        return { purchaseId: productId, status: 'pending' }
+      }
       return purchaseResultFromIapError(error)
     }
   }

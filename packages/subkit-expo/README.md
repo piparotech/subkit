@@ -39,6 +39,12 @@ Public adapters are available at:
 - `@piparotech/subkit-expo/mmkv`
 - `@piparotech/subkit-expo/async-storage`
 
+## Purchase and restore recovery
+
+A durable reconcile job that is still running returns `null` from restore/sync, not a failed verification or an empty restore. The last known CustomerInfo and identity remain unchanged. Resume with `syncPurchases({ force: true, reason: 'queue_retry' })`; fetching CustomerInfo alone does not drain the receipt queue.
+
+After the native Store returns a purchase, later transport or verification exceptions return `pending`. Do not offer another purchase. A terminal verification failure carries `error.metadata.purchaseMayHaveCompleted: true`; this means the Store purchase needs recovery or support, not that no charge occurred. Ownership conflicts include the server's `resolution` in error metadata. Neither terminal failures nor pending results grant access.
+
 ## Documentation
 
 - [Expo overview](https://subkit.piparo.tech/docs/expo/overview/)
