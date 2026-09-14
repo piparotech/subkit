@@ -147,17 +147,25 @@ const checkout = await subkit.checkout.createSession(
   { idempotencyKey: 'checkout:subject_123:monthly' },
 )
 
-const portal = await subkit.billing.createPortalSession(
-  {
-    reason: 'open billing settings',
-    subjectId: 'subject_123',
-  },
-  { idempotencyKey: 'portal:subject_123' },
-)
-
-const summary = await subkit.billing.getSummary({
-  subjectId: 'subject_123',
-})
+const management = await subkit.billing.getManagement({ subjectId: 'subject_123' })
+const summary = await subkit.billing.getSummary({ subjectId: 'subject_123' })
+if (
+  management.environment !== summary.environment ||
+  management.accountContext !== summary.accountContext
+) {
+  throw new Error('Billing account changed; reload the view')
+}
+const displayedAccountContext = management.accountContext
+if (displayedAccountContext !== null) {
+  const portal = await subkit.billing.createPortalSession(
+    {
+      accountContext: displayedAccountContext,
+      reason: 'open billing settings',
+      subjectId: 'subject_123',
+    },
+    { idempotencyKey: 'portal:subject_123:original-operation' },
+  )
+}
 ```
 
 Checkout and portal return only SubKit-owned intent IDs (`checkout-intent:` or
@@ -165,6 +173,30 @@ Checkout and portal return only SubKit-owned intent IDs (`checkout-intent:` or
 expiry. The summary exposes canonical plan, period, amount/currency,
 cancellation, and normalized provider-state status fields without provider IDs
 or payment-method data.
+
+### Account-bound management (unreleased breaking change)
+
+Portal requests require the opaque `accountContext` retained from the displayed
+view. Management and summary require the same nullable context. The service
+binds it to the selected account, current ownership period, mapping, app,
+subject, provider and environment; it never replaces current authorization.
+Do not fetch a replacement context on click and accidentally manage a different
+account. A stale context must be refused; preserve original context and operation
+key after an uncertain answer, never silently retry with a new key.
+
+The first eligible currently owned personal account is ordered by account
+creation time then account ID ascending. Missing subscription data or portal
+configuration must not choose another account. With ownership but no subscription,
+summary is `none` with a non-null context; without ownership the context is null.
+Use distinct app/environment `direct_billing:read/write` clients and independently
+read live/sandbox summaries. Compare their environment and context before display;
+do not infer access or purchase eligibility from management ownership.
+
+This requires a matching service contract before exact tested Core/Node artifacts
+and consumers roll out. Existing published package versions do not promise this
+unreleased contract. No unbound compatibility fallback or access-key expansion.
+Historical operations lacking the context need explicit transition handling,
+not a replacement key. SDK compilation alone is not service or release acceptance.
 
 ## Customers and access subjects
 

@@ -402,21 +402,29 @@ const serverDirectBillingCurrencyCodeSchema = z.string().regex(/^[A-Z]{3}$/)
  * billing terms only; provider identifiers, payment-method details, and
  * client secrets are not part of the public contract.
  */
-export const serverDirectBillingSummarySchema = z.strictObject({
-  environment: z.enum(['sandbox', 'production']),
-  amountMicros: z.number().int().nonnegative().nullable(),
-  billingPeriodIso: z.iso.duration().nullable(),
-  cancelAtPeriodEnd: z.boolean(),
-  currencyCode: serverDirectBillingCurrencyCodeSchema.nullable(),
-  currentPeriodEnd: z.iso.datetime().nullable(),
-  currentPeriodStart: z.iso.datetime().nullable(),
-  nextBillingAt: z.iso.datetime().nullable(),
-  offeringIdentifier: z.string().min(1).nullable(),
-  packageIdentifier: z.string().min(1).nullable(),
-  planKey: z.string().min(1).nullable(),
-  planLabel: z.string().min(1).nullable(),
-  status: serverDirectBillingStatusSchema,
-})
+export const serverBillingAccountContextSchema = z.string().regex(/^[a-f0-9]{64}$/)
+export type ServerBillingAccountContext = z.infer<typeof serverBillingAccountContextSchema>
+
+export const serverDirectBillingSummarySchema = z
+  .strictObject({
+    accountContext: serverBillingAccountContextSchema.nullable(),
+    environment: z.enum(['sandbox', 'production']),
+    amountMicros: z.number().int().nonnegative().nullable(),
+    billingPeriodIso: z.iso.duration().nullable(),
+    cancelAtPeriodEnd: z.boolean(),
+    currencyCode: serverDirectBillingCurrencyCodeSchema.nullable(),
+    currentPeriodEnd: z.iso.datetime().nullable(),
+    currentPeriodStart: z.iso.datetime().nullable(),
+    nextBillingAt: z.iso.datetime().nullable(),
+    offeringIdentifier: z.string().min(1).nullable(),
+    packageIdentifier: z.string().min(1).nullable(),
+    planKey: z.string().min(1).nullable(),
+    planLabel: z.string().min(1).nullable(),
+    status: serverDirectBillingStatusSchema,
+  })
+  .refine((value) => value.status === 'none' || value.accountContext !== null, {
+    message: 'Subscription details require an owned billing account context',
+  })
 export type ServerDirectBillingSummary = z.infer<typeof serverDirectBillingSummarySchema>
 
 /**
@@ -453,6 +461,7 @@ export type ServerDirectCheckoutSessionResponse = z.infer<
 >
 
 export const serverBillingPortalSessionRequestSchema = z.strictObject({
+  accountContext: serverBillingAccountContextSchema,
   appId: z.string().min(1),
   reason: z.string().trim().min(1),
   returnTarget: serverDirectBillingReturnTargetSchema.optional(),
@@ -517,13 +526,18 @@ export const serverBillingManagementRequestSchema = z.strictObject({
   subjectId: z.string().min(1),
 })
 export type ServerBillingManagementRequest = z.infer<typeof serverBillingManagementRequestSchema>
-export const serverBillingManagementResponseSchema = z.strictObject({
-  appId: z.string().min(1),
-  subjectId: z.string().min(1),
-  environment: z.enum(['sandbox', 'production']),
-  checkedAt: z.iso.datetime(),
-  providers: z.array(z.enum(['stripe', 'apple', 'google'])),
-})
+export const serverBillingManagementResponseSchema = z
+  .strictObject({
+    accountContext: serverBillingAccountContextSchema.nullable(),
+    appId: z.string().min(1),
+    subjectId: z.string().min(1),
+    environment: z.enum(['sandbox', 'production']),
+    checkedAt: z.iso.datetime(),
+    providers: z.array(z.enum(['stripe', 'apple', 'google'])),
+  })
+  .refine((value) => value.providers.includes('stripe') === (value.accountContext !== null), {
+    message: 'Stripe management requires exactly one selected billing account context',
+  })
 export type ServerBillingManagementResponse = z.infer<typeof serverBillingManagementResponseSchema>
 
 export const serverDirectBillingSummaryRequestSchema = z.strictObject({

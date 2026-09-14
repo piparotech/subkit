@@ -57,23 +57,60 @@ const checkout = await subkit.checkout.createSession(
   { idempotencyKey: 'checkout:subject_123:monthly' },
 )
 
-const portal = await subkit.billing.createPortalSession(
-  {
-    reason: 'open billing settings',
-    subjectId: 'subject_123',
-  },
-  { idempotencyKey: 'portal:subject_123' },
-)
+const management = await subkit.billing.getManagement({ subjectId: 'subject_123' })
+const summary = await subkit.billing.getSummary({ subjectId: 'subject_123' })
+if (
+  management.environment !== summary.environment ||
+  management.accountContext !== summary.accountContext
+) {
+  throw new Error('Billing account changed; reload the view')
+}
 
-const summary = await subkit.billing.getSummary({
-  subjectId: 'subject_123',
-})
+// Preserve this value with the displayed view, not a replacement read at click time.
+const displayedAccountContext = management.accountContext
+if (displayedAccountContext !== null) {
+  const portal = await subkit.billing.createPortalSession(
+    {
+      accountContext: displayedAccountContext,
+      reason: 'open billing settings',
+      subjectId: 'subject_123',
+    },
+    { idempotencyKey: 'portal:subject_123:original-operation' },
+  )
+}
 ```
 
 Checkout and portal responses contain only SubKit-owned prefixed intent IDs
 and short-lived HTTPS redirect URLs with ISO datetime expiry. The summary
 contains canonical billing terms and normalized provider-state status, not
 provider IDs or payment-method details.
+
+### Account-bound management contract (unreleased)
+
+**BREAKING:** portal creation requires `accountContext`; management and summary
+responses require a nullable `accountContext`. This opaque service-generated
+SHA-256 context binds the selected account, current ownership period, customer
+mapping, app, subject, provider and environment. It is not a credential or a
+caller-selected Billing Account ID. The service must reauthorize every call and
+refuse a stale context rather than silently selecting another account.
+
+Select the first currently authorized eligible personal account by account
+creation time ascending, then account ID ascending, separately per provider and
+environment. No account selection UI is required. An owned account without a
+subscription has `status: 'none'` and a non-null context; no selected account
+has a null context. Missing details or portal configuration must not switch to
+another account. Read sandbox and production through separately scoped clients;
+never duplicate one summary across environments. Match management and summary
+contexts before displaying details and retain the displayed context for the
+explicit portal action, including ambiguous retries with the original key.
+
+Management/summary need `direct_billing:read`; portal needs
+`direct_billing:write`, with dedicated app/environment credentials. Never widen
+an access key. Required release order: matching service contract and migration
+plan first, then exact tested Core/Node artifacts and updated consumers. Existing
+published versions do not promise this unreleased contract. No legacy unbound
+fallback; a historical request without this context cannot safely be replayed
+by inventing a new operation key. Release and deployed acceptance remain gated.
 
 Previous opaque App User identities can be linked through
 `subkit.customers.addSubjectAlias(...)`. Alias values remain app-scoped identity

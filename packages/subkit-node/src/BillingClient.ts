@@ -1,10 +1,10 @@
 import {
   type ServerBillingManagementResponse,
-  serverBillingManagementResponseSchema,
   type ServerBillingPortalSessionRequest,
   type ServerBillingPortalSessionResponse,
   type ServerDirectBillingSummary,
   type ServerDirectBillingSummaryRequest,
+  serverBillingManagementResponseSchema,
   serverBillingPortalSessionResponseSchema,
   serverDirectBillingSummaryResponseSchema,
 } from '@piparotech/subkit-core'
@@ -40,6 +40,7 @@ export class BillingClient {
     return this.http.post('/api/server/billing-portal/sessions', {
       ...options,
       body: {
+        accountContext: input.accountContext,
         appId: resolveAppId(input.appId, this.appId),
         reason: input.reason,
         ...(input.returnTarget == null ? {} : { returnTarget: input.returnTarget }),
