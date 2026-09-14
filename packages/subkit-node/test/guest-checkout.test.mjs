@@ -25,6 +25,7 @@ test('guest transport validates selection, status and exact association without 
     },
   })
   const selection = {
+    selectionRevision: 'a'.repeat(64),
     purchaseReference,
     offeringIdentifier: 'default',
     packageIdentifier: 'annual',
@@ -37,6 +38,8 @@ test('guest transport validates selection, status and exact association without 
   assert.equal(requests[0].headers.get('idempotency-key'), options.idempotencyKey)
   assert.deepEqual(requests[0].body, { ...selection, appId: 'app' })
   for (const extra of [
+    { selectionRevision: undefined },
+    { selectionRevision: 'invalid' },
     { subjectId: 'foreign' },
     { email: 'other@example.invalid' },
     { environment: 'production' },

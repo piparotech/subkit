@@ -56,14 +56,32 @@ test('organization purchase methods retain generic pools and bind responses to t
     ),
   )
   result = {
+    appId: 'app',
+    subjectId: 'verified-owner',
     purchaseReference,
     checkoutIntentId: 'checkout-intent:one',
     environment: 'sandbox',
     organizationSubjectId: 'org',
     accessReady: true,
     pools: [
-      { key: 'editors', capacity: 12, used: 2, reserved: 1, entitlementKeys: ['edit'] },
-      { key: 'viewers', capacity: null, used: 100, reserved: 0, entitlementKeys: ['view'] },
+      {
+        poolId: 'editors-pool',
+        accessSourceId: 'source',
+        key: 'editors',
+        capacity: 12,
+        used: 2,
+        reserved: 1,
+        entitlementKeys: ['edit'],
+      },
+      {
+        poolId: 'viewers-pool',
+        accessSourceId: 'source',
+        key: 'viewers',
+        capacity: null,
+        used: 100,
+        reserved: 0,
+        entitlementKeys: ['view'],
+      },
     ],
   }
   assert.deepEqual(
@@ -73,7 +91,17 @@ test('organization purchase methods retain generic pools and bind responses to t
     }),
     result,
   )
-  result = { ...result, purchaseReference: '00000000-0000-4000-8000-000000000002' }
+  const valid = result
+  for (const mismatch of [{ appId: 'foreign' }, { subjectId: 'foreign' }]) {
+    result = { ...valid, ...mismatch }
+    await assert.rejects(
+      client.checkout.getOrganizationGuestAccess({
+        purchaseReference,
+        subjectId: 'verified-owner',
+      }),
+    )
+  }
+  result = { ...valid, purchaseReference: '00000000-0000-4000-8000-000000000002' }
   await assert.rejects(
     client.checkout.getOrganizationGuestAccess({ purchaseReference, subjectId: 'verified-owner' }),
   )

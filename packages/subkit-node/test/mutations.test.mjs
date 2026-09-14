@@ -121,15 +121,18 @@ test('typed customer, contract, and access clients send scoped idempotent reques
   )
   await subkit.access.reserve(
     {
-      claimTokenHash: 'h'.repeat(64),
+      claimTokenHash: 'a'.repeat(64),
       poolId: contract.poolIds[0],
       reason: 'invite named trainer',
     },
     { idempotencyKey: 'reserve-1' },
   )
-  await subkit.access.claim(
+  const claim = await subkit.access.claim(
     {
-      claimTokenHash: 'h'.repeat(64),
+      claimTokenHash: 'a'.repeat(64),
+      reservationId: 'reservation-1',
+      poolId: contract.poolIds[0],
+      accessSourceId: contract.accessSourceId,
       reason: 'trainer accepted invitation',
       subjectId: subject.id,
     },
@@ -263,7 +266,24 @@ test('typed customer, contract, and access clients send scoped idempotent reques
   assert.equal(requests[10].body.reason, 'superseded')
   assert.equal(requests[11].body.appId, 'smartcoach')
   assert.equal(requests[12].body.appId, 'smartcoach')
-  assert.equal(requests[14].body.appId, 'smartcoach')
+  assert.deepEqual(requests[14].body, {
+    appId: 'smartcoach',
+    subjectId: subject.id,
+    reservationId: 'reservation-1',
+    poolId: contract.poolIds[0],
+    accessSourceId: contract.accessSourceId,
+    claimTokenHash: 'a'.repeat(64),
+    reason: 'trainer accepted invitation',
+  })
+  assert.deepEqual(claim, {
+    appId: 'smartcoach',
+    subjectId: subject.id,
+    reservationId: 'reservation-1',
+    poolId: contract.poolIds[0],
+    accessSourceId: contract.accessSourceId,
+    status: 'claimed',
+    allocationId: 'allocation-1',
+  })
   assert.equal(requests[17].body.effectiveAt, '2028-01-01T00:00:00.000Z')
   assert.equal(requests[18].body.effectiveAt, '2028-01-01T00:00:00.000Z')
   assert.equal(requests[19].body.reason, 'renewal effective')
@@ -349,7 +369,15 @@ function responseFor(url, method, body) {
   }
   if (path.endsWith('/reservations')) return capacity({ reservationId: 'reservation-1' })
   if (path === '/api/server/access-reservations/claim') {
-    return capacity({ allocationId: 'allocation-1' })
+    return {
+      appId: 'smartcoach',
+      subjectId: 'subject-1',
+      reservationId: 'reservation-1',
+      poolId: 'pool-1',
+      accessSourceId: 'source-1',
+      status: 'claimed',
+      allocationId: 'allocation-1',
+    }
   }
   if (path.endsWith('/allocations') || path === '/api/server/manual-provisions') {
     return capacity({ allocationId: 'allocation-2' })

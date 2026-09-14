@@ -5,6 +5,7 @@ import { serverGuestCheckoutSessionRequestSchema as schema } from '../dist/index
 
 test('guest checkout selects a published tariff without account authority or raw payment data', () => {
   const request = {
+    selectionRevision: 'a'.repeat(64),
     appId: 'app',
     purchaseReference: '945b91e5-d348-4da5-90f6-03fce428e391',
     offeringIdentifier: 'default',
@@ -13,6 +14,8 @@ test('guest checkout selects a published tariff without account authority or raw
     reason: 'Public license purchase',
   }
   assert.deepEqual(schema.parse(request), request)
+  assert.equal(schema.safeParse({ ...request, selectionRevision: undefined }).success, false)
+  assert.equal(schema.safeParse({ ...request, selectionRevision: 'invalid' }).success, false)
   for (const field of [
     'subjectId',
     'billingAccountId',
