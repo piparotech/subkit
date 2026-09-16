@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.14
+
+### Patch Changes
+
+- Updated dependencies [ef1595f]
+  - @piparotech/subkit-core@0.3.0
+
 ## 0.1.13
 
 ### Patch Changes
