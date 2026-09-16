@@ -33,6 +33,21 @@ export const serverGuestCheckoutAssociationRequestSchema = serverGuestCheckoutSt
   })
   .strict()
 
+/**
+ * Billing address exactly as Stripe collected it during Checkout. Every field is
+ * optional there, so an absent value stays null instead of being invented.
+ */
+export const stripeCollectedAddressSchema = z
+  .object({
+    line1: z.string().nullable(),
+    line2: z.string().nullable(),
+    city: z.string().nullable(),
+    postalCode: z.string().nullable(),
+    state: z.string().nullable(),
+    country: z.string().nullable(),
+  })
+  .strict()
+
 export const serverGuestCheckoutStatusResponseSchema = z
   .object({
     checkoutIntentId: z.string().startsWith('checkout-intent:'),
@@ -40,6 +55,14 @@ export const serverGuestCheckoutStatusResponseSchema = z
     status: z.enum(['created', 'pending', 'completed', 'canceled', 'expired', 'failed']),
     expiresAt: z.string().datetime(),
     paymentVerified: z.boolean(),
+    /**
+     * Payer identity Stripe collected. Both fields are optional on purpose: a
+     * client built against this version must still parse a response from a
+     * service that does not return them yet, so the contract change ships
+     * before the service emits it.
+     */
+    payerAddress: stripeCollectedAddressSchema.nullable().optional(),
+    payerEmail: z.string().nullable().optional(),
   })
   .strict()
   .refine((value) => !value.paymentVerified || value.status === 'completed', {
