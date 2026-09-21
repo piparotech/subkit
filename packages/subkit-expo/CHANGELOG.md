@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.15
+
+### Patch Changes
+
+- Updated dependencies [d71de6b]
+  - @piparotech/subkit-core@0.4.0
+
 ## 0.1.14
 
 ### Patch Changes

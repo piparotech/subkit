@@ -1,6 +1,6 @@
 {
   "name": "@piparotech/subkit-node",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "description": "Node.js backend SDK for trusted SubKit access and direct billing.",
   "license": "UNLICENSED",
