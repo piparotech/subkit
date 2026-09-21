@@ -59,6 +59,18 @@ test('guest transport validates selection, status and exact association without 
   assert.equal(requests[1].path, '/api/server/guest-checkout/status')
   response = { ...response, paymentVerified: true }
   await assert.rejects(client.checkout.getGuestStatus({ purchaseReference }))
+  for (const state of ['expired', 'completed', 'unavailable']) {
+    response = { checkoutIntentId: 'checkout-intent:fixture', state }
+    assert.deepEqual(
+      await client.checkout.expireGuestSession({ purchaseReference }, options),
+      response,
+    )
+    assert.equal(requests.at(-1).path, '/api/server/guest-checkout/sessions')
+    assert.deepEqual(requests.at(-1).body, { appId: 'app', action: 'expire', purchaseReference })
+    assert.equal(requests.at(-1).headers.get('idempotency-key'), options.idempotencyKey)
+  }
+  response = { checkoutIntentId: 'checkout-intent:fixture', state: 'pending' }
+  await assert.rejects(client.checkout.expireGuestSession({ purchaseReference }, options))
   const association = {
     purchaseReference,
     subjectId: 'verified-subject',

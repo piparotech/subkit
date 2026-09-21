@@ -8,6 +8,7 @@ import {
   type ServerDirectCheckoutStatusRequest,
   type ServerDirectCheckoutStatusResponse,
   type ServerGuestCheckoutAssociationRequest,
+  type ServerGuestCheckoutExpireRequest,
   type ServerGuestCheckoutResumeRequest,
   type ServerGuestCheckoutSessionRequest,
   type ServerGuestCheckoutStatusRequest,
@@ -22,6 +23,8 @@ import {
   serverDirectCheckoutStatusResponseSchema,
   serverGuestCheckoutAssociationRequestSchema,
   serverGuestCheckoutAssociationResponseSchema,
+  serverGuestCheckoutExpireRequestSchema,
+  serverGuestCheckoutExpireResponseSchema,
   serverGuestCheckoutResumeRequestSchema,
   serverGuestCheckoutSessionRequestSchema,
   serverGuestCheckoutStatusRequestSchema,
@@ -88,6 +91,21 @@ export class CheckoutClient {
         appId: resolveAppId(input.appId, this.appId),
       }),
       responseSchema: serverDirectCheckoutSessionResponseSchema,
+    })
+  }
+
+  expireGuestSession(
+    input: Omit<ServerGuestCheckoutExpireRequest, 'appId' | 'action'> & { appId?: string },
+    options: SubKitMutationOptions,
+  ) {
+    return this.http.post('/api/server/guest-checkout/sessions', {
+      ...options,
+      body: serverGuestCheckoutExpireRequestSchema.parse({
+        ...input,
+        action: 'expire',
+        appId: resolveAppId(input.appId, this.appId),
+      }),
+      responseSchema: serverGuestCheckoutExpireResponseSchema,
     })
   }
 
