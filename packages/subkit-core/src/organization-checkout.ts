@@ -4,6 +4,7 @@ import {
   serverGuestCheckoutAssociationRequestSchema,
   serverGuestCheckoutAssociationResponseSchema,
   serverGuestCheckoutStatusRequestSchema,
+  stripeCollectedAddressSchema,
 } from './guest-checkout.js'
 
 export const serverOrganizationPurchaseRequestSchema =
@@ -98,10 +99,48 @@ export const serverOrganizationSubscriptionResponseSchema = z
         cancelAtPeriodEnd: z.boolean(),
       })
       .nullable(),
+    /**
+     * Recurring price of the purchased package and the payer details Stripe
+     * collected at checkout. Optional so a client built against this version
+     * still parses a service that does not return them yet.
+     */
+    price: z
+      .strictObject({
+        amountMicros: z.number().int().nonnegative(),
+        currencyCode: z.string().regex(/^[A-Z]{3}$/),
+        billingPeriodIso: z.iso.duration().nullable(),
+      })
+      .nullable()
+      .optional(),
+    billing: z
+      .strictObject({
+        name: z.string().nullable(),
+        address: stripeCollectedAddressSchema.nullable(),
+      })
+      .nullable()
+      .optional(),
   })
   .refine((value) => !value.accessReady || value.subscription !== null, {
     message: 'Ready organization access requires subscription evidence',
   })
+
+/** Opens the provider billing portal for the organization purchase the subject owns. */
+export const serverOrganizationBillingPortalRequestSchema = serverOrganizationPurchaseRequestSchema
+  .extend({
+    reason: z.string().trim().min(1).max(500),
+    returnTarget: z
+      .string()
+      .trim()
+      .min(1)
+      .max(64)
+      .regex(/^[a-z][a-z0-9_-]*$/)
+      .optional(),
+  })
+  .strict()
+
+export type ServerOrganizationBillingPortalRequest = z.infer<
+  typeof serverOrganizationBillingPortalRequestSchema
+>
 
 export type ServerOrganizationSubscriptionResponse = z.infer<
   typeof serverOrganizationSubscriptionResponseSchema

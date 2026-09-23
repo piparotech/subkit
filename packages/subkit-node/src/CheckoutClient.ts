@@ -13,7 +13,9 @@ import {
   type ServerGuestCheckoutSessionRequest,
   type ServerGuestCheckoutStatusRequest,
   type ServerOrganizationAssociationRequest,
+  type ServerOrganizationBillingPortalRequest,
   type ServerOrganizationPurchaseRequest,
+  serverBillingPortalSessionResponseSchema,
   serverDirectCheckoutOfferingRequestSchema,
   serverDirectCheckoutOfferingResponseSchema,
   serverDirectCheckoutRecoveryRequestSchema,
@@ -32,6 +34,7 @@ import {
   serverOrganizationAccessResponseSchema,
   serverOrganizationAssociationRequestSchema,
   serverOrganizationAssociationResponseSchema,
+  serverOrganizationBillingPortalRequestSchema,
   serverOrganizationPurchaseRequestSchema,
   serverOrganizationSubscriptionResponseSchema,
 } from '@piparotech/subkit-core'
@@ -200,6 +203,21 @@ export class CheckoutClient {
           value.purchaseReference === body.purchaseReference,
         { message: 'Organization subscription does not match request' },
       ),
+    })
+  }
+
+  /** Requires a SubKit service that supports the organization billing portal. */
+  createOrganizationBillingPortalSession(
+    input: Omit<ServerOrganizationBillingPortalRequest, 'appId'> & { appId?: string },
+    options: SubKitMutationOptions,
+  ) {
+    return this.http.post('/api/server/guest-checkout/organization-billing-portal', {
+      ...options,
+      body: serverOrganizationBillingPortalRequestSchema.parse({
+        ...input,
+        appId: resolveAppId(input.appId, this.appId),
+      }),
+      responseSchema: serverBillingPortalSessionResponseSchema,
     })
   }
 

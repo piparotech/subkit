@@ -50,9 +50,9 @@ the original authenticated checkout in the same app/environment. The service
 verifies account/customer/intent/price, one line item and current unexpired,
 open, unpaid subscription state. This method excludes guest checkouts.
 
-The URL is a bearer capability: keep it out of logs, storage, analytics and
-screenshots. Navigate only after explicit same-origin and current-session checks;
-preserve the local operation first. Unavailable or terminal results require
+The URL is a bearer capability: keep it out of logs, storage and analytics.
+Navigate only after explicit same-origin and current-session checks; preserve
+the local operation first. Unavailable or terminal results require
 status recovery, not a replacement purchase. Return navigation is not payment proof.
 
 ## Checkout offering without a buyer
@@ -84,15 +84,15 @@ target server-side. The app must check the key-selected environment.
 4. `getStatus`: use the exact intent, verified Subject and entitlement; wait for
    `accessReady: true`, not merely successful association.
 
-Matching guest routes and the access worker must be deployed. Do not reopen
-terminal/expired checkouts or substitute SDK installation for hosted acceptance.
+Guest routes and the access worker must be deployed. Never reopen terminal
+checkouts or substitute SDK installation for hosted acceptance.
 
 ## Organization guest purchases
 
 Organization purchases have a separate Billing Account. After verified payment,
 browser possession and independent identity, `associateOrganizationGuestPurchase`
-accepts `purchaseReference`, `subjectId`, `organizationName`, `reason` and an
-idempotency key. It binds the purchase's licensee, not an app login, team or club.
+accepts `purchaseReference`, `subjectId`, `organizationName`, `reason` and a
+key. It binds the purchase's licensee, not an app login, team or club.
 
 `getOrganizationGuestAccess({ purchaseReference, subjectId })` rechecks ownership.
 Before worker projection: `accessReady: false`, no pools. Afterwards each pool
@@ -101,7 +101,9 @@ The SDK validates echoed app, subject and purchase identity. Persist the exact
 purchase/source/pool binding before writes and reauthorize at reservation time.
 Pool IDs are private data, not capabilities; availability is a snapshot. Never
 sum unrelated pools or equate billing ownership with a personal seat.
-Organization methods remain sandbox-only; production rollout is separately gated.
+`getOrganizationGuestSubscription` may add `price` and `billing`;
+`createOrganizationBillingPortalSession` opens the portal.
+Organization methods remain sandbox-only.
 
 ## Hosted direct billing
 

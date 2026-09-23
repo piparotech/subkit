@@ -15,6 +15,16 @@ export const serverGuestCheckoutSessionRequestSchema = z
       .max(64)
       .regex(/^[a-z][a-z0-9_-]*$/),
     reason: z.string().trim().min(1).max(500),
+    /**
+     * Language the hosted checkout should use, as a BCP 47 tag such as `de` or
+     * `en-GB`. A service older than this field rejects it, so send it only to a
+     * service that documents support. Unsupported languages fall back to the
+     * browser language.
+     */
+    locale: z
+      .string()
+      .regex(/^[a-z]{2,3}(-[A-Za-z0-9]{2,4})?$/)
+      .optional(),
   })
   .strict()
 
@@ -63,6 +73,8 @@ export const serverGuestCheckoutStatusResponseSchema = z
      */
     payerAddress: stripeCollectedAddressSchema.nullable().optional(),
     payerEmail: z.string().nullable().optional(),
+    /** Name the payer entered at checkout; a person or, for organizations, the organization. */
+    payerName: z.string().nullable().optional(),
   })
   .strict()
   .refine((value) => !value.paymentVerified || value.status === 'completed', {
