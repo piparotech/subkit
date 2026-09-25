@@ -53,12 +53,12 @@ async function restoreAndCheckAccess() {
 }
 ```
 
-`restorePurchases()` calls the native restore API, then forces a
-`manual_restore` sync and returns the `PurchaseSyncResult`. `null` means no
-terminal result is available, including when a durable reconcile job is still
-running. It does not mean there was nothing to restore. Keep the pending UI
-and resume with `syncPurchases({ force: true, reason: 'queue_retry' })`.
-Fetching CustomerInfo alone does not drain the purchase queue.
+`restorePurchases()` calls the native restore API and then syncs. `null` means
+no terminal result is available yet; keep the pending UI and retry with
+`syncPurchases({ force: true, reason: 'queue_retry' })`. Fetching CustomerInfo
+alone does not drain the queue. An empty sync refreshes valid Store access;
+restore and expired-context syncs reverify available finished transactions
+without finishing them again.
 
 ## Manual sync
 

@@ -5,6 +5,8 @@ import type { SubKitIapPurchase } from './types.js'
 export type QueueStatus = 'pending' | 'verified' | 'finish_failed' | 'finished' | 'failed'
 
 export interface PurchaseQueueItem extends QueuedPurchase {
+  /** A finished Store transaction being reverified without finishing it again. */
+  alreadyFinished?: boolean
   status: QueueStatus
 }
 
@@ -19,6 +21,7 @@ export interface PurchaseQueueStore {
   enqueueMany(
     purchases: readonly SubKitIapPurchase[],
     binding: PurchaseQueueBinding,
+    options?: { reverifyFinished?: boolean },
   ): Promise<PurchaseQueueItem[]>
   /** Persist the durable reconcile id once a 202 is received (crash-safe resume), or clear it (null) when the job is no longer pollable (404). */
   attachReconcileId(id: string, reconcileId: string | null): Promise<void>
@@ -36,16 +39,20 @@ export function buildPurchaseQueueItem(
   existing: PurchaseQueueItem | undefined,
   binding: PurchaseQueueBinding,
   timestamp: number,
+  options: { reverifyFinished?: boolean } = {},
 ): PurchaseQueueItem {
+  const restoringFinished = options.reverifyFinished === true && existing?.status === 'finished'
+  const previous = restoringFinished ? undefined : existing
   return {
+    alreadyFinished: restoringFinished || previous?.alreadyFinished === true,
     anonymousId: undefined,
-    attempts: existing?.status === 'failed' ? 0 : (existing?.attempts ?? 0),
-    createdAt: existing?.createdAt ?? timestamp,
+    attempts: previous?.status === 'failed' ? 0 : (previous?.attempts ?? 0),
+    createdAt: previous?.createdAt ?? timestamp,
     environment: purchase.environment,
     id: createPurchaseQueueId(purchase),
-    identityGeneration: existing?.identityGeneration ?? binding.identityGeneration,
-    installationId: existing?.installationId ?? binding.installationId,
-    lastError: existing?.lastError,
+    identityGeneration: previous?.identityGeneration ?? binding.identityGeneration,
+    installationId: previous?.installationId ?? binding.installationId,
+    lastError: previous?.lastError,
     linkedPurchaseToken: purchase.linkedPurchaseToken,
     orderId: purchase.orderId,
     originalTransactionId: purchase.originalTransactionId,
@@ -57,12 +64,12 @@ export function buildPurchaseQueueItem(
     quantity: purchase.quantity,
     rawPurchase: purchase.raw,
     receipt: purchase.receipt,
-    reconcileId: existing?.reconcileId,
-    status: existing?.status === 'finished' ? 'finished' : 'pending',
+    reconcileId: previous?.reconcileId,
+    status: previous?.status === 'finished' ? 'finished' : 'pending',
     store: purchase.store,
     transactionId: purchase.transactionId,
     updatedAt: timestamp,
-    userId: resolvePurchaseQueueUserId(existing, binding.appUserId),
+    userId: resolvePurchaseQueueUserId(previous, binding.appUserId),
   }
 }
 
@@ -86,9 +93,14 @@ export function createMemoryPurchaseQueueStore(
     async enqueue(purchase, binding) {
       return upsert(purchase, binding, now())
     },
-    async enqueueMany(purchases, binding) {
+    async enqueueMany(purchases, binding, options) {
       const timestamp = now()
-      return purchases.map((purchase) => upsert(purchase, binding, timestamp))
+      return purchases.map((purchase) => {
+        const id = createPurchaseQueueId(purchase)
+        const next = buildPurchaseQueueItem(purchase, items.get(id), binding, timestamp, options)
+        items.set(id, next)
+        return next
+      })
     },
     async listPending(binding) {
       const normalizedAppUserId = normalizeQueueAppUserId(binding.appUserId)

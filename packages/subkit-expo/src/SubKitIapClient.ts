@@ -238,8 +238,13 @@ function createSubKitClient(
     identity.identify(options.appUserId)
   }
 
+  function currentAccessContext(): string | undefined {
+    const context = customerInfo?.accessContext
+    return context != null && Date.parse(context.expiresAt) > Date.now() ? context.token : undefined
+  }
+
   const coordinator: PurchaseSyncCoordinator = createPurchaseSyncCoordinator({
-    accessContext: () => customerInfo?.accessContext?.token,
+    accessContext: currentAccessContext,
     appUserId: () => identity.appUserId,
     foregroundMinIntervalMs: iapOptions.foregroundMinIntervalMs,
     iap: adapterBundle.iap,
@@ -303,7 +308,26 @@ function createSubKitClient(
     const generation = identity.generation
     const result = await coordinator.syncPurchases(input)
     if (result == null) return null
-    const coordinated = await coordinateDeviceAccess(result, input.reason)
+    // An empty reconcile has no Store evidence, so the server cannot mint a new
+    // Store access context. Refresh the existing signed context before publishing
+    // its context-free CustomerInfo over a previously verified entitlement.
+    const contextToken = currentAccessContext()
+    const appUserId = identity.appUserId
+    const refreshed =
+      result.acceptedPurchases.length === 0 &&
+      contextToken != null &&
+      customerInfo?.appUserId === appUserId &&
+      appUserId != null
+        ? {
+            ...result,
+            customerInfo: await runtime.getCustomerInfo(
+              appUserId,
+              contextToken,
+              await deviceTokenStore.readDeviceAccessToken(),
+            ),
+          }
+        : result
+    const coordinated = await coordinateDeviceAccess(refreshed, input.reason)
     await setCustomerInfo(coordinated.customerInfo, true, generation)
     return coordinated
   }
@@ -418,7 +442,7 @@ function createSubKitClient(
         return setCustomerInfo(
           await runtime.getCustomerInfo(
             resolvedAppUserId,
-            customerInfo?.accessContext?.token,
+            currentAccessContext(),
             await deviceTokenStore.readDeviceAccessToken(),
           ),
           true,

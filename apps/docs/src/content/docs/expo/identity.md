@@ -29,9 +29,9 @@ If the user is already known at startup, pass `appUserId` directly to
 
 - **CustomerInfo cache** — persisted per app / install / hashed app-user
   identity. Switching users does not leak another user's cached access.
-- **Purchase queue** — a queued purchase stays bound to the app user that first
-  observed it, even across restarts and identity switches. One user's pending
-  purchases are never reconciled under another user.
+- **Purchase queue** — pending purchases stay with their first app user.
+  Finished transactions can be reverified for the current user during restore;
+  SubKit still checks ownership.
 
 ## Identity switches and logout
 

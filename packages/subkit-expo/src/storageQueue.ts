@@ -64,6 +64,7 @@ export function createStoredPurchaseQueueStore(
   async function enqueueItems(
     purchases: readonly SubKitIapPurchase[],
     binding: PurchaseQueueBinding,
+    enqueueOptions: { reverifyFinished?: boolean } = {},
   ): Promise<PurchaseQueueItem[]> {
     if (purchases.length === 0) return []
     let items = await readItems(options.storage, key)
@@ -72,7 +73,7 @@ export function createStoredPurchaseQueueStore(
     for (const purchase of purchases) {
       const id = createPurchaseQueueId(purchase)
       const existing = items.find((item) => item.id === id)
-      const next = buildPurchaseQueueItem(purchase, existing, binding, timestamp)
+      const next = buildPurchaseQueueItem(purchase, existing, binding, timestamp, enqueueOptions)
       items = upsertItem(items, next)
       enqueued.push(next)
     }
@@ -87,8 +88,8 @@ export function createStoredPurchaseQueueStore(
       if (item == null) throw new Error('Failed to enqueue purchase')
       return item
     },
-    async enqueueMany(purchases, binding) {
-      return enqueueItems(purchases, binding)
+    async enqueueMany(purchases, binding, enqueueOptions) {
+      return enqueueItems(purchases, binding, enqueueOptions)
     },
     async listPending(binding) {
       const items = await readItems(options.storage, key)
@@ -250,6 +251,7 @@ function parsePurchaseQueueItem(value: unknown): PurchaseQueueItem | null {
   }
 
   return {
+    alreadyFinished: value.alreadyFinished === true,
     anonymousId: readString(value, 'anonymousId'),
     attempts: Number.isFinite(attempts) ? attempts : 0,
     createdAt,
