@@ -1,11 +1,11 @@
 {
-  "baseCommit": "e0cebde5fcaa482f917c01f6f1bc9741d68ca927",
+  "baseCommit": "5989a6f6eb363d68953c4660ebfba4ad6c8ea299",
   "releases": [
     {
       "name": "@piparotech/subkit-expo",
       "type": "patch",
-      "oldVersion": "0.1.17",
-      "newVersion": "0.1.18"
+      "oldVersion": "0.1.18",
+      "newVersion": "0.1.19"
     }
   ]
 }
