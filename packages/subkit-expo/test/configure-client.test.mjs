@@ -5,8 +5,10 @@ import {
   client,
   configureSubKit,
   getConfiguredSubKitClient,
+  getSubKitAccessSnapshot,
   useSubKitOfferings,
 } from '../dist/index.js'
+import { createMemoryPurchaseQueueStore } from '../dist/queue.js'
 
 function createIapAdapter() {
   return createIapAdapterWithPurchases([])
@@ -58,6 +60,143 @@ test('configureSubKit installs the global client proxy target', async () => {
   assert.equal(getConfiguredSubKitClient(), configuredClient)
   assert.equal(client.stop, configuredClient.stop)
   client.stop()
+})
+
+test('empty sync retains verified access; expired context and restore recheck a finished purchase', async () => {
+  const previousFetch = globalThis.fetch
+  const originalNow = Date.now
+  const purchase = {
+    productId: 'pro_monthly',
+    raw: { source: 'storekit' },
+    store: 'apple_app_store',
+    transactionId: 'tx_restore_active',
+  }
+  const context = {
+    expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    token: 'signed-store-context',
+  }
+  const activeInfo = {
+    accessContext: context,
+    appId: 'app_123',
+    appUserId: 'user_restore',
+    checkedAt: new Date().toISOString(),
+    entitlements: {
+      pro: {
+        active: true,
+        entitlementKey: 'pro',
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        planKey: 'monthly',
+        productIdentifier: 'pro_monthly',
+        source: 'apple',
+        startsAt: new Date(Date.now() - 60 * 1000).toISOString(),
+        status: 'active',
+        verifiedAt: new Date().toISOString(),
+      },
+    },
+    freshness: 'fresh',
+    purchases: [],
+    unclaimedPurchases: [],
+  }
+  const emptyInfo = { ...activeInfo, accessContext: null, entitlements: {} }
+  const reconcileCounts = []
+  const customerInfoContexts = []
+  let finishCalls = 0
+  let restoreCalls = 0
+  globalThis.fetch = async (url, request) => {
+    const pathname = new URL(url).pathname
+    const body = JSON.parse(request.body)
+    if (pathname.endsWith('/customer-info')) {
+      customerInfoContexts.push(body.accessContext ?? null)
+      return Response.json(body.accessContext === context.token ? activeInfo : emptyInfo)
+    }
+    if (pathname.endsWith('/iap/reconcile')) {
+      const purchaseCount = body.purchases.length
+      reconcileCounts.push(purchaseCount)
+      return Response.json({
+        acceptedPurchases: purchaseCount > 0 ? [purchase.transactionId] : [],
+        checkedAt: new Date().toISOString(),
+        conflicts: [],
+        customerInfo: purchaseCount > 0 ? activeInfo : emptyInfo,
+        finishableTransactions:
+          purchaseCount > 0
+            ? [
+                {
+                  isConsumable: false,
+                  purchaseId: `apple_app_store:tx:${purchase.transactionId}`,
+                  store: 'apple_app_store',
+                  transactionId: purchase.transactionId,
+                },
+              ]
+            : [],
+        rejectedPurchases: [],
+        verificationStatus: purchaseCount > 0 ? 'verified' : 'failed',
+      })
+    }
+    throw new Error(`Unexpected request: ${pathname}`)
+  }
+
+  try {
+    const configuredClient = configureSubKit({
+      adapterBundle: {
+        iap: {
+          ...createIapAdapterWithPurchases([purchase]),
+          async finishTransaction() {
+            finishCalls += 1
+          },
+          async restorePurchases() {
+            restoreCalls += 1
+          },
+        },
+      },
+      appStateSource: {
+        getCurrentState: () => 'active',
+        subscribe: () => ({ remove() {} }),
+      },
+      autoStart: false,
+      customerInfoCache: {
+        async read() {
+          return null
+        },
+        async write() {},
+      },
+      installationId: 'install_restore',
+      platform: 'ios',
+      queue: createMemoryPurchaseQueueStore(),
+      sdkKey: 'runtime_public_key',
+    })
+
+    await configuredClient.identify('user_restore')
+    assert.equal(getSubKitAccessSnapshot('pro').state, 'granted')
+    assert.equal(finishCalls, 1)
+
+    await configuredClient.syncPurchases({ force: true, reason: 'foreground' })
+    assert.equal(getSubKitAccessSnapshot('pro').state, 'granted')
+    assert.deepEqual(customerInfoContexts, [null, context.token])
+
+    Date.now = () => originalNow() + 2 * 60 * 60 * 1000
+    await configuredClient.syncPurchases({ force: true, reason: 'foreground' })
+    Date.now = originalNow
+    assert.equal(getSubKitAccessSnapshot('pro').state, 'granted')
+    assert.deepEqual(reconcileCounts, [1, 0, 1])
+    assert.equal(finishCalls, 1)
+
+    const restored = await configuredClient.restorePurchases()
+    assert.equal(restored.customerInfo.entitlements.pro.active, true)
+    assert.equal(getSubKitAccessSnapshot('pro').state, 'granted')
+    assert.deepEqual(reconcileCounts, [1, 0, 1, 1])
+    assert.equal(restoreCalls, 1)
+    assert.equal(finishCalls, 1)
+
+    await configuredClient.reset()
+    await configuredClient.identify('user_restore')
+    assert.equal(getSubKitAccessSnapshot('pro').state, 'granted')
+    assert.deepEqual(reconcileCounts, [1, 0, 1, 1, 1])
+    assert.equal(finishCalls, 1)
+  } finally {
+    Date.now = originalNow
+    client.stop()
+    globalThis.fetch = previousFetch
+  }
 })
 
 test('default purchase queue survives client reconfiguration', async () => {

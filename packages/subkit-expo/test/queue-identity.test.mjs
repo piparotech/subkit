@@ -155,6 +155,46 @@ test('stored queue keeps the first associated app user when the same purchase is
   )
 })
 
+test('manual restore requeues a finished purchase for the current identity and persists its finish state', async () => {
+  const values = new Map()
+  const storage = {
+    async getItem(key) {
+      return values.get(key) ?? null
+    },
+    async removeItem(key) {
+      values.delete(key)
+    },
+    async setItem(key, value) {
+      values.set(key, value)
+    },
+  }
+  const queue = createStoredPurchaseQueueStore({ storage })
+  const originalBinding = {
+    appUserId: 'user_a',
+    identityGeneration: 1,
+    installationId: 'install_a',
+  }
+  const restoredBinding = {
+    appUserId: 'user_b',
+    identityGeneration: 2,
+    installationId: 'install_b',
+  }
+
+  await queue.enqueue(userAPurchase, originalBinding)
+  await queue.markFinished(createPurchaseQueueId(userAPurchase))
+  await queue.enqueueMany([userAPurchase], restoredBinding)
+  assert.deepEqual(await queue.listPending(restoredBinding), [])
+
+  await queue.enqueueMany([userAPurchase], restoredBinding, { reverifyFinished: true })
+  const resumedQueue = createStoredPurchaseQueueStore({ storage })
+  const [restored] = await resumedQueue.listPending(restoredBinding)
+  assert.equal(restored.status, 'pending')
+  assert.equal(restored.alreadyFinished, true)
+  assert.equal(restored.userId, 'user_b')
+  assert.equal(restored.rawPurchase.source, 'test')
+  assert.deepEqual(await resumedQueue.listPending(originalBinding), [])
+})
+
 test('queue entries never move to another identity generation or installation', async () => {
   const queue = createMemoryPurchaseQueueStore()
   await queue.enqueue(userAPurchase, {

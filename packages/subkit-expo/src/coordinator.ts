@@ -77,7 +77,9 @@ export function createPurchaseSyncCoordinator(
       const binding = await currentQueueBinding(appUserId)
       await options.iap.initConnection()
       const availablePurchases = await options.iap.getAvailablePurchases()
-      await options.queue.enqueueMany(availablePurchases, binding)
+      await options.queue.enqueueMany(availablePurchases, binding, {
+        reverifyFinished: input.reason === 'manual_restore' || options.accessContext?.() == null,
+      })
       const result = await drainQueue(input.reason, binding)
       if (input.reason === 'foreground') lastForegroundSyncAt = now
       return result
@@ -224,6 +226,10 @@ export function createPurchaseSyncCoordinator(
             ))
       if (item == null) continue
       await options.queue.markVerified(item.id)
+      if (item.alreadyFinished === true) {
+        await options.queue.markFinished(item.id)
+        continue
+      }
       try {
         await options.iap.finishTransaction({
           isConsumable: transaction.isConsumable,
