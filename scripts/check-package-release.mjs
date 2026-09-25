@@ -69,7 +69,7 @@ function writeConsumer(name, dependencies, source) {
     `${JSON.stringify({ dependencies, name, private: true, type: 'module' }, null, 2)}\n`,
   )
   writeFileSync(join(directory, 'consumer.mjs'), source)
-  run('pnpm', ['install', '--ignore-workspace', '--frozen-lockfile=false'], directory)
+  run('pnpm', ['install', '--ignore-workspace', '--no-frozen-lockfile'], directory)
   run('node', ['consumer.mjs'], directory)
 }
 

@@ -27,11 +27,13 @@ export async function setItemAsync(key, value) { values.set(key, value) }
 `
 
 const expoIapStub = `
+let availablePurchases = []
+export function setAvailablePurchasesForTest(purchases) { availablePurchases = purchases }
 export async function endConnection() {}
 export async function fetchProducts() { return [] }
 export async function finishTransaction() {}
 export async function getAppTransactionIOS() { return { environment: 'Production' } }
-export async function getAvailablePurchases() { return [] }
+export async function getAvailablePurchases() { return availablePurchases }
 export async function initConnection() { return true }
 export function purchaseErrorListener() { return { remove() {} } }
 export function purchaseUpdatedListener() { return { remove() {} } }

@@ -102,7 +102,7 @@ try {
         [
           'install',
           '--ignore-workspace',
-          '--frozen-lockfile=false',
+          '--no-frozen-lockfile',
           `--store-dir=${join(temporary, `pnpm-store-${attempt}`)}`,
         ],
         { cwd: temporary, env: environment, stdio: 'inherit' },
