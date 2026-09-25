@@ -165,12 +165,7 @@ function normalizeSubscriptionOffers(
 
 function normalizePurchase(purchase: Purchase): SubKitIapPurchase {
   return {
-    environment:
-      readStringProperty(purchase, 'environmentIOS') === 'production'
-        ? 'production'
-        : readStringProperty(purchase, 'environmentIOS') === 'sandbox'
-          ? 'sandbox'
-          : 'unknown',
+    environment: normalizeStoreEnvironment(readStringProperty(purchase, 'environmentIOS')),
     originalTransactionId:
       readStringProperty(purchase, 'originalTransactionIdentifierIOS') ?? undefined,
     ownershipType:
@@ -185,6 +180,17 @@ function normalizePurchase(purchase: Purchase): SubKitIapPurchase {
     store: purchase.store === 'google' ? 'google_play' : 'apple_app_store',
     transactionDate: purchase.transactionDate,
     transactionId: purchase.transactionId ?? undefined,
+  }
+}
+
+function normalizeStoreEnvironment(environment: string | null): SubKitIapPurchase['environment'] {
+  switch (environment?.toLowerCase()) {
+    case 'production':
+      return 'production'
+    case 'sandbox':
+      return 'sandbox'
+    default:
+      return 'unknown'
   }
 }
 
