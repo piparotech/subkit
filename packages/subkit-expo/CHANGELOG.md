@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.18
+
+### Patch Changes
+
+- e0cebde: Keep verified Store access when a sync finds no new transactions, and reverify previously finished purchases during restore or after the signed access context expires.
+
 ## 0.1.17
 
 ### Patch Changes
