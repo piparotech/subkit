@@ -1,23 +1,11 @@
 {
-  "baseCommit": "4ce1c4e65dc9be1240a01528899819a8e857e8e9",
+  "baseCommit": "b937808d980d36619eef78a6e2bdb7d2f92d4ab9",
   "releases": [
-    {
-      "name": "@piparotech/subkit-core",
-      "type": "minor",
-      "oldVersion": "0.4.0",
-      "newVersion": "0.5.0"
-    },
-    {
-      "name": "@piparotech/subkit-node",
-      "type": "minor",
-      "oldVersion": "0.3.0",
-      "newVersion": "0.4.0"
-    },
     {
       "name": "@piparotech/subkit-expo",
       "type": "patch",
-      "oldVersion": "0.1.15",
-      "newVersion": "0.1.16"
+      "oldVersion": "0.1.16",
+      "newVersion": "0.1.17"
     }
   ]
 }

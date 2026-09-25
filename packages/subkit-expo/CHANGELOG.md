@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.17
+
+### Patch Changes
+
+- 84b9915: Preserve StoreKit's Sandbox and Production environment values so TestFlight purchases are verified against the matching App Store Server API environment.
+
 ## 0.1.16
 
 ### Patch Changes
