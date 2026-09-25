@@ -30,8 +30,8 @@ device for Apple purchases, and store-side test configuration
 
 - The bound store product is not purchasable for this device/region/track.
 - The package has no store product for the current platform.
-- A configured Google offer is not returned as eligible by Play Billing — the
-  purchase fails closed instead of buying a different offer.
+- A Google offer is ineligible. Only an optional catalog trial can fall back to
+  its bound regular base plan; other offers fail closed.
 
 Never substitute a static price; fix the store configuration or binding. Check
 the product's store state in the SubKit console.

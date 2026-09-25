@@ -54,3 +54,9 @@ After the native Store returns a purchase, later transport or verification excep
 - [Effective access and offline behavior](https://subkit.piparo.tech/docs/expo/entitlements/)
 - [Migration from manual access checks](https://subkit.piparo.tech/docs/expo/migrating-effective-access/)
 - [Troubleshooting](https://subkit.piparo.tech/docs/expo/troubleshooting/)
+
+For custom IAP adapters, optional Google trial fallback requires
+`SubKitIapSubscriptionOffer.isBasePlan: true` from provider evidence, an exact
+`basePlanId`, and an offer token. The built-in adapter reads Google's absent
+promotional `offerId` for the matching token. Missing evidence fails closed;
+never infer a regular base plan from a display identifier alone.

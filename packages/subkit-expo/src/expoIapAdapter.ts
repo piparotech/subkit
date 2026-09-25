@@ -155,12 +155,30 @@ function normalizeSubscriptionOffers(
   if (product.type !== 'subs' || product.platform !== 'android') return undefined
   return product.subscriptionOffers.map((offer) => ({
     basePlanId: offer.basePlanIdAndroid ?? undefined,
+    isBasePlan: isGoogleBasePlan(product, offer.offerTokenAndroid, offer.basePlanIdAndroid),
     currency: offer.currency ?? undefined,
     displayPrice: offer.displayPrice,
     id: offer.id,
     offerToken: offer.offerTokenAndroid ?? undefined,
     price: offer.price,
   }))
+}
+
+function isGoogleBasePlan(
+  product: unknown,
+  token: string | null | undefined,
+  basePlanId: string | null | undefined,
+): boolean {
+  if (token == null || basePlanId == null || !isRecord(product)) return false
+  const details = product.subscriptionOfferDetailsAndroid
+  if (!Array.isArray(details)) return false
+  return details.some(
+    (detail: unknown) =>
+      isRecord(detail) &&
+      detail.offerToken === token &&
+      detail.basePlanId === basePlanId &&
+      detail.offerId == null,
+  )
 }
 
 function normalizePurchase(purchase: Purchase): SubKitIapPurchase {

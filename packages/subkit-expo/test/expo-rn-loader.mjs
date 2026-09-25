@@ -27,10 +27,12 @@ export async function setItemAsync(key, value) { values.set(key, value) }
 `
 
 const expoIapStub = `
+let availableProducts = []
+export function setAvailableProductsForTest(products) { availableProducts = products }
 let availablePurchases = []
 export function setAvailablePurchasesForTest(purchases) { availablePurchases = purchases }
 export async function endConnection() {}
-export async function fetchProducts() { return [] }
+export async function fetchProducts() { return availableProducts }
 export async function finishTransaction() {}
 export async function getAppTransactionIOS() { return { environment: 'Production' } }
 export async function getAvailablePurchases() { return availablePurchases }

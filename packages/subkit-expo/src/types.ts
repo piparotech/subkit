@@ -24,6 +24,8 @@ export interface SubKitIapProduct {
 }
 
 export interface SubKitIapSubscriptionOffer {
+  /** True only when Google reports no promotional offerId for this token. */
+  isBasePlan?: boolean
   basePlanId?: string
   currency?: string
   displayPrice?: string

@@ -112,12 +112,11 @@ Some native, network, or runtime failures throw instead of returning
 
 ## What the SDK resolves for you
 
-From the selected package, the SDK resolves the native product ID for the
-current platform and the applicable Google base-plan/offer token. If a
-configured Google offer is not currently returned as eligible by Play Billing,
-the purchase **fails closed** as `product_unavailable` instead of silently
-buying a different offer. Store identity hints (`appAccountToken`,
-`obfuscatedAccountId`) are attached automatically.
+The SDK resolves the package's native product ID and Google offer token. If an
+optional catalog trial is ineligible, it may use only the bound regular base
+plan and shows that Store price. Other offers **fail closed** as
+`product_unavailable`; no other base plan or promotion is substituted. Store
+identity hints (`appAccountToken`, `obfuscatedAccountId`) are attached.
 
 ## Consumables
 

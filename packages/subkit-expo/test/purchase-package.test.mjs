@@ -318,3 +318,56 @@ test('purchasePackage fails closed when configured Google offer is unavailable',
     restoreFetch()
   }
 })
+
+test('a subscription with an optional trial remains purchasable at its configured base-plan price', async () => {
+  const requests = []
+  const catalog = createOfferings({
+    basePlanId: 'weekly',
+    offerIds: ['freetrial-3d'],
+    productId: 'com.acme.premium',
+  })
+  catalog.all[0].packages[0].product.trial = { durationIso: 'P3D', eligibility: 'new_customers' }
+  const restoreFetch = installFetch(catalog)
+  try {
+    const configuredClient = configureAndroid(
+      createAdapter(
+        [
+          {
+            basePlanId: 'annual',
+            id: 'annual',
+            offerToken: 'wrong-plan',
+            displayPrice: '24,99 €',
+            price: 24.99,
+          },
+          {
+            basePlanId: 'weekly',
+            id: 'weekly',
+            isBasePlan: false,
+            offerToken: 'wrong-offer',
+            displayPrice: '1,99 €',
+            price: 1.99,
+          },
+          {
+            basePlanId: 'weekly',
+            id: 'weekly',
+            offerToken: 'base-token',
+            isBasePlan: true,
+            displayPrice: '3,99 €',
+            price: 3.99,
+            currency: 'EUR',
+          },
+        ],
+        requests,
+      ),
+    )
+    await configuredClient.getCustomerInfo()
+    const offerings = await configuredClient.getOfferings()
+    assert.equal(offerings.all[0].packages[0].storeProduct?.displayPrice, '3,99 €')
+    await configuredClient.purchasePackage('monthly')
+    assert.equal(requests.length, 1)
+    assert.equal(requests[0].offerToken, 'base-token')
+  } finally {
+    client.stop()
+    restoreFetch()
+  }
+})

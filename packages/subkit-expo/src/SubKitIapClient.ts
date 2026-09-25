@@ -551,6 +551,7 @@ function createSubKitClient(
 
     const offerToken = await resolveGoogleOfferToken({
       adapter: adapterBundle.iap,
+      allowBasePlanFallback: selected.product.trial != null,
       basePlanId: selected.product.storeProductIds.google?.basePlanId ?? null,
       offerIds: selected.product.storeProductIds.google?.offerIds ?? [],
       platform,
@@ -916,7 +917,12 @@ function resolveStoreProduct(
   if (platform === 'android' && item.product.kind === 'subscription') {
     const basePlanId = item.product.storeProductIds.google?.basePlanId ?? null
     const offerIds = item.product.storeProductIds.google?.offerIds ?? []
-    const offer = selectGoogleSubscriptionOffer(product, basePlanId, offerIds)
+    const offer = selectGoogleSubscriptionOffer(
+      product,
+      basePlanId,
+      offerIds,
+      item.product.trial != null,
+    )
     if (offer?.displayPrice == null || offer.displayPrice.trim() === '') return null
     return {
       currency: offer.currency ?? product.currency,
@@ -947,6 +953,7 @@ function storeProductId(
 
 async function resolveGoogleOfferToken(input: {
   adapter: SubKitExpoIapAdapter
+  allowBasePlanFallback: boolean
   basePlanId: string | null
   offerIds: readonly string[]
   platform: SubKitIapPlatform
@@ -960,7 +967,12 @@ async function resolveGoogleOfferToken(input: {
   })
   const product = products.find((candidate) => candidate.id === input.productId)
   if (product == null) return null
-  const offer = selectGoogleSubscriptionOffer(product, input.basePlanId, input.offerIds)
+  const offer = selectGoogleSubscriptionOffer(
+    product,
+    input.basePlanId,
+    input.offerIds,
+    input.allowBasePlanFallback,
+  )
   return offer?.offerToken ?? null
 }
 
@@ -968,6 +980,7 @@ function selectGoogleSubscriptionOffer(
   product: SubKitIapProduct,
   basePlanId: string | null,
   offerIds: readonly string[],
+  allowBasePlanFallback = false,
 ): NonNullable<SubKitIapProduct['subscriptionOffers']>[number] | undefined {
   const offers = product.subscriptionOffers ?? []
   const configuredOffer = offers.find(
@@ -976,7 +989,18 @@ function selectGoogleSubscriptionOffer(
       (basePlanId == null || offer.basePlanId == null || offer.basePlanId === basePlanId),
   )
   if (configuredOffer != null) return configuredOffer
-  if (offerIds.length > 0) return undefined
+  if (offerIds.length > 0) {
+    // A catalog trial is optional eligibility, not a separate subscription.
+    // Fall back only to the explicitly bound base plan, never another offer.
+    return allowBasePlanFallback && basePlanId != null
+      ? offers.find(
+          (offer) =>
+            offer.basePlanId === basePlanId &&
+            offer.isBasePlan === true &&
+            offer.offerToken != null,
+        )
+      : undefined
+  }
   return offers.find(
     (offer) =>
       (basePlanId == null || offer.basePlanId == null || offer.basePlanId === basePlanId) &&
