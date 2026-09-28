@@ -208,6 +208,11 @@ export const serverOrganizationInvitationListResponseSchema = z
           codeVersion: z.number().int().positive(),
           subjectId: identifier.nullable(),
           claimedBySubjectId: identifier.nullable(),
+          /** Canonical allocation of a claimed invitation and its current state. */
+          allocationId: identifier.nullable(),
+          allocationState: z
+            .enum(['pending', 'active', 'suspended', 'expired', 'revoked'])
+            .nullable(),
           recipientDisplay: invitationRecipientDisplaySchema.nullable(),
           reservedAt: z.iso.datetime(),
           expiresAt: z.iso.datetime(),

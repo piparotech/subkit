@@ -331,6 +331,8 @@ test('organization invitation pages carry display data but never a code', async 
     codeVersion: 1,
     subjectId: null,
     claimedBySubjectId: 'trainer',
+    allocationId: 'seat',
+    allocationState: 'revoked',
     recipientDisplay: null,
     reservedAt: '2026-09-27T00:00:00.000Z',
     expiresAt: '2026-10-11T00:00:00.000Z',
@@ -346,6 +348,8 @@ test('organization invitation pages carry display data but never a code', async 
   }
   assert.deepEqual(serverOrganizationInvitationListResponseSchema.parse(page), page)
   for (const change of [
+    { allocationState: 'gone' },
+    { allocationId: undefined },
     { code: 'CLUB-23AB CDEF' },
     { recipientDisplay: {} },
     { state: 'open' },

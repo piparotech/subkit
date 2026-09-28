@@ -374,6 +374,8 @@ const invitationPage = {
       codeVersion: 2,
       subjectId: null,
       claimedBySubjectId: null,
+      allocationId: null,
+      allocationState: null,
       recipientDisplay: { email: 'lea@example.invalid', name: 'Lea' },
       reservedAt: '2026-09-27T00:00:00.000Z',
       expiresAt: '2026-10-11T00:00:00.000Z',

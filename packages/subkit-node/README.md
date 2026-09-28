@@ -305,7 +305,8 @@ and refuse when none or several match. Usage is an observation, not a reservatio
 
 `invitations.listForOrganization({ organizationSubjectId, limit, cursor })` pages
 the organization's managed invitations newest first with state, expiry, code
-version and display data. It never returns codes.
+version and display data; claimed ones name their canonical `allocationId` and its
+current `allocationState`. It never returns codes.
 
 Required capabilities: format read/write use `catalog:read/write`; organization
 pools, preview and
