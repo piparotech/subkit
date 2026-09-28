@@ -280,6 +280,11 @@ const result = await subkit.invitations.claim(claimRequest, {
 })
 ```
 
+A preview of an invitation bound to the caller that is already used, expired or
+withdrawn fails with status 409; `invitationRejectionOf(error)` returns `used`,
+`expired` or `unavailable`. Wrong codes and other recipients fail
+indistinguishably, so codes cannot be probed.
+
 `preview.organizationSubjectId` names the source's current organization licensee
 (null when none), so your backend can map the code to its own team or club
 without storing invitation facts.

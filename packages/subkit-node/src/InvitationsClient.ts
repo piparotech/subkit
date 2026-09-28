@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
 import {
+  INVITATION_CLAIM_REJECTIONS,
+  type InvitationClaimRejection,
   type ServerInvitationClaimRequest,
   type ServerInvitationClaimStatusRequest,
   type ServerInvitationDeliveryRequest,
@@ -263,17 +265,36 @@ function parseInvitationInput<T>(schema: z.ZodType<T>, input: unknown): T {
   return result.data
 }
 
+const retryDetailsSchema = z.object({
+  retryAfterSeconds: z.number().int().min(1).max(3600),
+})
+const rejectionDetailsSchema = z.object({ rejection: z.enum(INVITATION_CLAIM_REJECTIONS) })
+
 function redactInvitationError(error: unknown): never {
-  const retry =
+  // Only typed, credential-free details survive; everything else may echo a code.
+  const details =
     error instanceof SubKitApiError && error.code === 'rate_limited'
-      ? z.object({ retryAfterSeconds: z.number().int().min(1).max(3600) }).safeParse(error.details)
-      : null
+      ? retryDetailsSchema.safeParse(error.details)
+      : error instanceof SubKitApiError && error.status === 409
+        ? rejectionDetailsSchema.safeParse(error.details)
+        : null
   throw new SubKitApiError({
     code: error instanceof SubKitApiError ? error.code : 'network',
     status: error instanceof SubKitApiError ? error.status : 0,
     message: 'SubKit invitation request failed',
-    details: retry?.success ? retry.data : undefined,
+    details: details?.success
+      ? 'rejection' in details.data
+        ? { rejection: details.data.rejection }
+        : { retryAfterSeconds: details.data.retryAfterSeconds }
+      : undefined,
   })
+}
+
+/** Why a bound invitation can no longer be used, or null for any other failure. */
+export function invitationRejectionOf(error: unknown): InvitationClaimRejection | null {
+  if (!(error instanceof SubKitApiError) || error.status !== 409) return null
+  const parsed = rejectionDetailsSchema.safeParse(error.details)
+  return parsed.success ? parsed.data.rejection : null
 }
 
 function sameReservation(left: ReservationIdentity, right: ReservationIdentity): boolean {

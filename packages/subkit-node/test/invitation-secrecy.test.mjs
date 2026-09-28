@@ -104,3 +104,49 @@ test('invitation validation does not echo unknown input fields into errors', asy
     },
   )
 })
+
+test('a bound terminal preview keeps only its typed rejection reason', async () => {
+  for (const rejection of ['expired', 'used', 'unavailable']) {
+    const response = Response.json(
+      {
+        error: {
+          code: 'invalid_request',
+          message: secret,
+          details: { rejection, code: secret },
+        },
+      },
+      { status: 409 },
+    )
+    await assert.rejects(
+      () => client(response).invitations.preview({ subjectId: 'subject', code: secret }),
+      (error) => {
+        assert.equal(error.code, 'invalid_request')
+        assert.equal(error.status, 409)
+        assert.deepEqual(error.details, { rejection })
+        assert.equal(errorContains(error, secret), false)
+        return true
+      },
+    )
+  }
+  const forged = Response.json(
+    { error: { code: 'invalid_request', message: 'x', details: { rejection: secret } } },
+    { status: 409 },
+  )
+  await assert.rejects(
+    () => client(forged).invitations.preview({ subjectId: 'subject', code: secret }),
+    (error) => {
+      assert.equal(error.details, undefined)
+      return true
+    },
+  )
+})
+
+test('invitationRejectionOf reads only typed 409 rejections', async () => {
+  const { invitationRejectionOf, SubKitApiError } = await import('../dist/index.js')
+  const error = (status, details) =>
+    new SubKitApiError({ code: 'invalid_request', status, message: 'x', details })
+  assert.equal(invitationRejectionOf(error(409, { rejection: 'used' })), 'used')
+  assert.equal(invitationRejectionOf(error(400, { rejection: 'used' })), null)
+  assert.equal(invitationRejectionOf(error(409, { rejection: 'changed' })), null)
+  assert.equal(invitationRejectionOf(new Error('used')), null)
+})

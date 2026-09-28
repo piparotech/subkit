@@ -1,4 +1,5 @@
 export { SubKit } from './SubKit.js'
+export { invitationRejectionOf } from './InvitationsClient.js'
 export type { SubKitOptions } from './SubKit.js'
 export type {
   ClaimInvitationInput,
