@@ -152,6 +152,19 @@ test('tag workflow retains public trusted publishing and adds Changesets selecti
   assert.doesNotMatch(workflow, /npm.pkg.github.com|packages: write|workflow_dispatch/)
 })
 
+test('tag workflow waits for the tarball of the published package name', () => {
+  const workflow = readFileSync(join(root, '.github/workflows/release-packages.yml'), 'utf8')
+  const [, url] = workflow.match(/tarball="(https:\/\/registry\.npmjs\.org\/[^"]+)"/) ?? []
+  assert.ok(url, 'tarball URL missing')
+  const resolved = url
+    .replaceAll('${PACKAGE_SLUG}', 'core')
+    .replaceAll('${PACKAGE_VERSION}', '0.6.0')
+  assert.equal(
+    resolved,
+    'https://registry.npmjs.org/@piparotech/subkit-core/-/subkit-core-0.6.0.tgz',
+  )
+})
+
 for (const target of ['core', 'node', 'expo']) {
   test(`component tag ${target} requires an actual Changesets release and correct Core`, async (t) => {
     const dir = fixture(t)

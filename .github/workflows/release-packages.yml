@@ -124,7 +124,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tarball="https://registry.npmjs.org/@piparotech/${PACKAGE_SLUG}/-/${PACKAGE_SLUG}-${PACKAGE_VERSION}.tgz"
+          tarball="https://registry.npmjs.org/@piparotech/subkit-${PACKAGE_SLUG}/-/subkit-${PACKAGE_SLUG}-${PACKAGE_VERSION}.tgz"
           for attempt in {1..40}; do
             status=$(curl --silent --show-error --location --output /dev/null --write-out '%{http_code}' "$tarball") || status=000
             if [ "$status" = 200 ]; then
@@ -132,7 +132,7 @@ jobs:
             fi
             sleep 15
           done
-          echo "Public npm tarball did not converge for $PACKAGE_SLUG@$PACKAGE_VERSION" >&2
+          echo "Public npm tarball did not converge for subkit-$PACKAGE_SLUG@$PACKAGE_VERSION" >&2
           exit 1
 
       - name: Install exact public version in an anonymous clean consumer
