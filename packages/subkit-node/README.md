@@ -188,6 +188,135 @@ results replay unchanged; absent/processing/historical failed journals return
 After confirmed completion use `getReservation` for current exact allocation
 state, then the canonical entitlement decision for current access.
 
+## Managed invitation codes (unreleased)
+
+`subkit.invitations` requires a matching service release. SDK publication alone
+never enables the API. Existing caller-generated reservation tokens remain
+supported. Managed codes claim canonical reservations, not promotions, login
+credentials or independent licenses.
+
+Configure one default format per app:
+
+```ts
+const current = await subkit.invitations.getFormat()
+await subkit.invitations.updateFormat(
+  {
+    expectedRevision: current.revision,
+    format: {
+      prefix: 'CLUB-',
+      randomLength: 8,
+      alphabet: 'unambiguous-uppercase',
+      groupSize: 4,
+    },
+    reason: 'Configure team invitation codes',
+  },
+  { idempotencyKey: formatOperationId },
+)
+```
+
+An unconfigured app returns revision zero and null format. Prefixes are optional
+uppercase ASCII labels ending in `-`, never access authority. The random body
+has 8 to 32 characters; grouping may be null. Issued formats are immutable, so
+changing settings does not invalidate existing invitations.
+
+Issue and deliver only after checking product administration rights:
+
+```ts
+const invitation = await subkit.invitations.issue(
+  {
+    poolId,
+    recipient: { kind: 'subject', subjectId: invitedSubjectId },
+    reason: 'Invite team member',
+  },
+  { idempotencyKey: issueOperationId },
+)
+```
+
+Add `recipientDisplay: { email, name }` to show the invitee in your management UI
+later. SubKit encrypts it separately from the matching fingerprint; it never
+authorizes a claim.
+
+For unregistered recipients, use `{ kind: 'reference', reference }`. Your backend
+must independently verify that reference against the signed-in identity before
+preview/claim. Never trust identity or reference fields supplied by a browser or
+mobile client. Treat references as sensitive; SubKit stores protected fingerprints,
+not a second email-verification authority.
+
+The response includes reservation/source/pool identity, reserved `quantity`,
+`codeVersion`, formatted `code`, immutable `format` and `formatRevision`, environment
+and finite UTC ISO expiry. The SDK checks issued quantity, initial code version
+and an explicitly requested expiry. A null environment denotes environmentless
+management scope, never production. Persist the original
+operation and identity before mail delivery. Retry an uncertain issue with the
+same payload/key, not a second reservation. Expiry is bounded by the source/pool
+and reservation policy. Neither resend nor rotation extends it.
+
+`getDelivery({ ...identity, expectedCodeVersion, reason }, { idempotencyKey })`
+returns the current pending credential through an audited, separately authorized
+POST. `rotateCode` takes the same inputs and replaces the code on that reservation;
+the old code becomes invalid. It preserves format, expiry and capacity and cannot
+reopen terminal invitations. Withdraw pending invitations through
+`access.revokeReservation`; claimed access is released through allocations.
+
+```ts
+const preview = await subkit.invitations.preview({
+  code: submittedCode,
+  subjectId: authenticatedSubjectId,
+  verifiedRecipientReference,
+})
+const claimRequest = {
+  appId: preview.appId,
+  subjectId: authenticatedSubjectId,
+  reservationId: preview.reservation.reservationId,
+  poolId: preview.reservation.poolId,
+  accessSourceId: preview.reservation.accessSourceId,
+  codeVersion: preview.codeVersion,
+  code: submittedCode,
+  verifiedRecipientReference,
+  reason: 'Recipient accepted reviewed invitation',
+}
+const result = await subkit.invitations.claim(claimRequest, {
+  idempotencyKey: claimOperationId,
+})
+```
+
+Persist the reviewed claim before sending it. After transport uncertainty,
+`getClaimStatus({ ...claimRequest, idempotencyKey: claimOperationId })` reads
+exactly that operation. Each result retains the reviewed `codeVersion`; the SDK
+rejects another version. A fully bound claim of an expired, already used or
+withdrawn invitation returns `status: 'rejected'` with `expired`, `used` or
+`unavailable`; that exact outcome is recoverable too. Wrong codes, versions or
+recipients fail without a receipt. `pending` is not failure. Resume local membership
+completion from the confirmed allocation, never reserve again, then refresh
+effective access. Historical success does not prove current entitlement.
+
+### Organization pools and invitation lists
+
+`access.listOrganizationPools({ organizationSubjectId, limit, cursor })` returns
+one page (default 50, maximum 100) of the pools held by the organization's current
+licensee, with `checkedAt`, UTC ISO validity and numeric usage. It never names a
+payer or member. Follow `nextCursor` until it is null before deciding; a partial
+page proves neither absence nor uniqueness. Pick a pool by your own explicit rule
+and refuse when none or several match. Usage is an observation, not a reservation.
+
+`invitations.listForOrganization({ organizationSubjectId, limit, cursor })` pages
+the organization's managed invitations newest first with state, expiry, code
+version and display data. It never returns codes.
+
+Required capabilities: format read/write use `catalog:read/write`; organization
+pools, preview and
+claim-status use `access:read`; claim/revoke use `access:write`. Issue/rotate need
+both `access:write` and `invitations:deliver`; delivery needs
+`invitations:deliver`; invitation lists need `access:read` and
+`invitations:deliver`. All enforce tenant/app/canonical source environment; no
+public SDK key is accepted. The new client refuses explicit app overrides that
+conflict with its configured app.
+
+Codes travel in POST bodies, are encrypted at rest and absent from ordinary
+reads. Keep codes and recipient references out of logs, URLs and analytics.
+Respect distributed attempt limits and `429` responses. A lost response must
+never trigger an automatic replacement operation.
+
 ## Documentation
 
 - [Node backend guide](https://subkit.piparo.tech/docs/node/overview/)

@@ -230,42 +230,41 @@ const allocation = await subkit.access.claim(
 )
 ```
 
-Send the invitee the opaque token; SubKit receives only its hash.
-
 ### Preview before explicit activation
 
-`previewReservation({ claimTokenHash: hash(inviteToken), subjectId: subject.id })`
-requires `access:read`, current app/tenant/environment and an active app-user.
-Send hashes in POST bodies, never URLs. Wrong assignment/claimant looks missing;
-the SDK validates echoed recipient and reservation evidence.
+Send the opaque token to the invitee; SubKit receives its hash in POST bodies,
+never URLs. `previewReservation` requires `access:read`, matching tenant/app/
+environment and an active app-user; wrong assignment/claimant looks missing.
+It returns validated product, pool and reservation facts, never payer/token data;
+read-only preview promises no access. Unassigned tokens are bearer invitations;
+legacy invitee-reference hashes are metadata, not verified identity.
 
-Persist the returned reservation/source/pool and recipient before explicit claim.
-Preview exposes product/plan/pool/entitlement facts, not payer data or token hashes;
-it writes nothing and guarantees no later access. Unassigned tokens are bearer
-invitations. Invitee-reference hashes are metadata, not email/membership proof;
-app club/promotion codes remain separate.
-
-Claim needs the exact reviewed IDs. Handle `claimed` with allocation ID, or durable
-`rejected` with `changed | expired | used | recipient_mismatch | unavailable`.
-Transport/auth/journal errors are not terminal rejection. Claim/audit/journal
-commit together; uncertain retries retain payload/key. Recheck effective access.
+Persist reservation/source/pool and recipient before explicit claim. Results are
+`claimed` with allocation ID or durable `rejected` (`changed`, `expired`, `used`,
+`recipient_mismatch`, `unavailable`). Claim/audit/journal commit together;
+transport/auth/journal errors are uncertainty, not rejection.
 
 ### Recover an uncertain reservation claim
 
-Persist reservation identity before delivery and claim payload/key before
-activation. `readReservationClaim({ ...originalClaim, idempotencyKey })` proves
-only this operation's completed journal. `pending` includes absent, processing
-and historical failed journals: it never permits replacement. The same Subject's
-claim may belong to another operation.
+Retain the original payload/key. `readReservationClaim({ ...originalClaim,
+idempotencyKey })` proves that operation only; `pending` includes absent,
+processing and historical failed journals, never permission to replace it.
+`getReservation({ reservationId })` separately reads current allocation identity,
+state, subject and claim time, with database-time expiry and no cache, token or
+list. It requires `access:read` and matching service/Core. A negative snapshot
+cannot disprove an in-flight write. Verify membership and current effective access
+separately; inactivity does not authorize another allocation. Direct/Store keys
+must match environment; neutral sources use neutral keys.
 
-Then `getReservation({ reservationId })` reads current allocation state with
-`access:read` and matching service/Core. Its non-cacheable snapshot validates
-app/reservation, exposes no token/hash/list, and reports claimed allocation ID,
-state, subject and timestamp. Verify durable invitation binding separately from
-membership/effective access; inactivity does not authorize a new allocation.
-Database-time expiry needs no write. A negative snapshot does not prove an
-in-flight request failed. Preserve original identity; use matching environment
-keys for Direct/Store and neutral keys for environment-neutral sources.
+### Managed codes (unreleased)
+
+`subkit.invitations` configures formats such as `CLUB-23AB CDEF`. `issue` binds a
+reservation to a subject or backend-verified reference; `preview`, `claim` and
+`getClaimStatus` keep reviewed identity. `getDelivery` resends; `rotateCode`
+replaces without extra capacity or expiry. Delivery needs `invitations:deliver`.
+`access.listOrganizationPools` and `invitations.listForOrganization` page a
+licensee's pools and invitations; read every page. Details: Node README. Deploy
+the matching service first; opaque tokens remain supported.
 
 ## Record verified payment evidence
 

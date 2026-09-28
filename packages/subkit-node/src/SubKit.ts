@@ -6,6 +6,7 @@ import { CustomersClient } from './CustomersClient.js'
 import { DevicesClient } from './DevicesClient.js'
 import { EntitlementsClient } from './EntitlementsClient.js'
 import { HttpClient, type OperatorContext } from './HttpClient.js'
+import { InvitationsClient } from './InvitationsClient.js'
 import { LicensesClient } from './LicensesClient.js'
 import { OfferingsClient } from './OfferingsClient.js'
 import { PaymentsClient } from './PaymentsClient.js'
@@ -33,6 +34,7 @@ export class SubKit {
   readonly customers: CustomersClient
   readonly devices: DevicesClient
   readonly entitlements: EntitlementsClient
+  readonly invitations: InvitationsClient
   readonly licenses: LicensesClient
   readonly offerings: OfferingsClient
   readonly payments: PaymentsClient
@@ -55,6 +57,7 @@ export class SubKit {
     this.customers = new CustomersClient({ appId: options.appId, http })
     this.devices = new DevicesClient({ appId: options.appId, http })
     this.entitlements = new EntitlementsClient({ appId: options.appId, http })
+    this.invitations = new InvitationsClient({ appId: options.appId, http })
     this.licenses = new LicensesClient({ appId: options.appId, http })
     this.offerings = new OfferingsClient({ appId: options.appId, http })
     this.payments = new PaymentsClient({ appId: options.appId, http })

@@ -61,7 +61,7 @@ function requireTarballDeclaration(path, declarationPath, names) {
   }
 }
 
-function writeConsumer(name, dependencies, source) {
+function writeConsumer(name, dependencies, source, types) {
   const directory = join(temporary, name)
   run('mkdir', ['-p', directory])
   writeFileSync(
@@ -71,6 +71,26 @@ function writeConsumer(name, dependencies, source) {
   writeFileSync(join(directory, 'consumer.mjs'), source)
   run('pnpm', ['install', '--ignore-workspace', '--no-frozen-lockfile'], directory)
   run('node', ['consumer.mjs'], directory)
+  if (types != null) {
+    writeFileSync(join(directory, 'consumer.ts'), types)
+    run(
+      'node',
+      [
+        join(root, 'node_modules/typescript/bin/tsc'),
+        '--noEmit',
+        '--strict',
+        '--module',
+        'NodeNext',
+        '--moduleResolution',
+        'NodeNext',
+        '--target',
+        'ES2022',
+        '--skipLibCheck',
+        'consumer.ts',
+      ],
+      directory,
+    )
+  }
 }
 
 try {
@@ -112,7 +132,13 @@ try {
   writeConsumer(
     'core-consumer',
     { '@piparotech/subkit-core': `file:${core.path}` },
-    `import { customerInfoSchema, resolveEntitlementAccess } from '@piparotech/subkit-core'\nif (typeof customerInfoSchema.parse !== 'function') throw new Error('core schema unavailable')\nif (typeof resolveEntitlementAccess !== 'function') throw new Error('effective access resolver unavailable')\n`,
+    `import { customerInfoSchema, resolveEntitlementAccess, invitationCodeFormatSchema, serverInvitationIssueRequestSchema, serverOrganizationPoolListResponseSchema } from '@piparotech/subkit-core'
+if (typeof customerInfoSchema.parse !== 'function') throw new Error('core schema unavailable')
+if (typeof resolveEntitlementAccess !== 'function') throw new Error('effective access resolver unavailable')
+invitationCodeFormatSchema.parse({ prefix: 'CLUB-', randomLength: 8, alphabet: 'unambiguous-uppercase', groupSize: 4 })
+if (serverInvitationIssueRequestSchema.safeParse({ appId: 'app', poolId: 'pool', reason: 'Invite' }).success) throw new Error('invitation recipient binding missing')
+if (typeof serverOrganizationPoolListResponseSchema.parse !== 'function') throw new Error('organization pool contract unavailable')
+`,
   )
 
   writeConsumer(
@@ -121,7 +147,43 @@ try {
       '@piparotech/subkit-core': `file:${core.path}`,
       '@piparotech/subkit-node': `file:${node.path}`,
     },
-    `import { SubKit } from '@piparotech/subkit-node'\nif (typeof SubKit !== 'function') throw new Error('node client unavailable')\n`,
+    `import { SubKit } from '@piparotech/subkit-node'
+if (typeof SubKit !== 'function') throw new Error('node client unavailable')
+let called = false
+const client = new SubKit({
+  appId: 'app', secretKey: 'sk_srv_fixture', apiBaseUrl: 'https://example.invalid',
+  fetch: async (url, init) => {
+    const body = JSON.parse(init.body)
+    if (!url.endsWith('/access-invitations') || body.appId !== 'app' || body.recipient.subjectId !== 'subject') throw new Error('invitation transport mismatch')
+    called = true
+    return Response.json({ appId: 'app', poolId: 'pool', reservationId: 'reservation', accessSourceId: 'source', environment: 'sandbox', codeVersion: 1, quantity: 1, formatRevision: 1, code: 'CLUB-23AB CDEF', format: { prefix: 'CLUB-', randomLength: 8, alphabet: 'unambiguous-uppercase', groupSize: 4 }, expiresAt: '2027-01-01T00:00:00.000Z' })
+  },
+})
+const invitation = await client.invitations.issue({ poolId: 'pool', recipient: { kind: 'subject', subjectId: 'subject' }, reason: 'Invite' }, { idempotencyKey: 'consumer-invitation' })
+if (!called || invitation.reservationId !== 'reservation') throw new Error('invitation consumer unavailable')
+`,
+    `import type { InvitationRecipient, ServerInvitationFormatResponse } from '@piparotech/subkit-core'
+import { SubKit, type IssueInvitationInput, type ServerInvitationDeliveryResponse, type ServerOrganizationInvitationListResponse, type ServerOrganizationPoolListResponse } from '@piparotech/subkit-node'
+const recipient: InvitationRecipient = { kind: 'subject', subjectId: 'subject' }
+const input: IssueInvitationInput = { poolId: 'pool', recipient, reason: 'Invite' }
+const client = new SubKit({ appId: 'app', secretKey: 'sk_srv_fixture', apiBaseUrl: 'https://example.invalid' })
+async function check() {
+  const delivery: ServerInvitationDeliveryResponse = await client.invitations.issue(input, { idempotencyKey: 'consumer-invitation' })
+  const quantity: number = delivery.quantity
+  const formatRevision: number = delivery.formatRevision
+  const current: ServerInvitationFormatResponse = await client.invitations.getFormat()
+  const pools: ServerOrganizationPoolListResponse = await client.access.listOrganizationPools({ organizationSubjectId: 'club' })
+  const invitations: ServerOrganizationInvitationListResponse = await client.invitations.listForOrganization({ organizationSubjectId: 'club', limit: 100 })
+  const next: string | null = pools.nextCursor
+  const display = invitations.items[0]?.recipientDisplay?.email
+  return [delivery.code, current.format?.prefix, quantity, formatRevision, next, display]
+}
+// @ts-expect-error Managed codes always require recipient binding.
+const unbound: IssueInvitationInput = { poolId: 'pool', reason: 'Invite' }
+// @ts-expect-error Mutations require the original operation key.
+client.invitations.issue(input)
+export { check, unbound }
+`,
   )
 
   requireTarballDeclaration(expo.path, 'dist/index.d.ts', [

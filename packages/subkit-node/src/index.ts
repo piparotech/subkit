@@ -1,6 +1,42 @@
 export { SubKit } from './SubKit.js'
 export type { SubKitOptions } from './SubKit.js'
 export type {
+  ClaimInvitationInput,
+  GetInvitationClaimStatusInput,
+  GetInvitationDeliveryInput,
+  GetInvitationFormatInput,
+  IssueInvitationInput,
+  ListOrganizationInvitationsInput,
+  PreviewInvitationInput,
+  RotateInvitationCodeInput,
+  UpdateInvitationFormatInput,
+} from './InvitationsClient.js'
+export type {
+  InvitationClaimRejection,
+  InvitationCodeFormat,
+  InvitationRecipient,
+  InvitationRecipientDisplay,
+  ServerInvitationClaimRequest,
+  ServerInvitationClaimResponse,
+  ServerInvitationClaimStatusRequest,
+  ServerInvitationClaimStatusResponse,
+  ServerInvitationDeliveryRequest,
+  ServerInvitationDeliveryResponse,
+  ServerInvitationFormatReadRequest,
+  ServerInvitationFormatResponse,
+  ServerInvitationFormatUpdateRequest,
+  ServerInvitationIssueRequest,
+  ServerInvitationIssueRequestInput,
+  ServerInvitationPreviewRequest,
+  ServerInvitationPreviewResponse,
+  ServerInvitationRotateRequest,
+  ServerOrganizationInvitationListRequest,
+  ServerOrganizationInvitationListResponse,
+  ServerOrganizationPool,
+  ServerOrganizationPoolListRequest,
+  ServerOrganizationPoolListResponse,
+} from '@piparotech/subkit-core'
+export type {
   CreateBillingPortalSessionInput,
   GetDirectBillingSummaryInput,
 } from './BillingClient.js'
@@ -28,6 +64,7 @@ export type {
   FreeEnrollmentInput,
   FreeEnrollmentResult,
   GetReservationInput,
+  ListOrganizationPoolsInput,
   ManualProvisionInput,
   MutationResult,
   PoolCapacityPreview,

@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
 import {
+  type ServerOrganizationPoolListRequest,
+  type ServerOrganizationPoolListResponse,
   type ServerReservationClaimRequest,
   type ServerReservationClaimResponse,
   type ServerReservationClaimStatusRequest,
@@ -9,6 +11,8 @@ import {
   type ServerReservationPreviewResponse,
   type ServerReservationReadRequest,
   type ServerReservationReadResponse,
+  serverOrganizationPoolListRequestSchema,
+  serverOrganizationPoolListResponseSchema,
   serverReservationClaimRequestSchema,
   serverReservationClaimResponseSchema,
   serverReservationClaimStatusRequestSchema,
@@ -126,6 +130,10 @@ export type PreviewReservationInput = Omit<ServerReservationPreviewRequest, 'app
   appId?: string
 }
 
+export type ListOrganizationPoolsInput = Omit<ServerOrganizationPoolListRequest, 'appId'> & {
+  appId?: string
+}
+
 export interface RevokeReservationInput {
   reason: string
   reservationId: string
@@ -228,6 +236,36 @@ export class AccessClient {
           (result) =>
             result.appId === request.appId && result.reservationId === request.reservationId,
           { message: 'Reservation response does not match the requested app and reservation' },
+        ),
+      },
+    )
+  }
+
+  /**
+   * One page of the pools an organization licensee holds. Follow `nextCursor` until it is
+   * null before deciding; a partial page never proves that a pool is absent or unique.
+   */
+  listOrganizationPools(
+    input: ListOrganizationPoolsInput,
+    options: SubKitRequestOptions = {},
+  ): Promise<ServerOrganizationPoolListResponse> {
+    const request = serverOrganizationPoolListRequestSchema.parse({
+      ...input,
+      appId: resolveAppId(input.appId, this.appId),
+    })
+    const query = new URLSearchParams({ appId: request.appId })
+    if (request.limit !== undefined) query.set('limit', String(request.limit))
+    if (request.cursor !== undefined) query.set('cursor', request.cursor)
+    return this.http.get(
+      `/api/server/organizations/${encodeURIComponent(request.organizationSubjectId)}/access-pools?${query}`,
+      {
+        ...options,
+        responseSchema: serverOrganizationPoolListResponseSchema.refine(
+          (result) =>
+            result.appId === request.appId &&
+            result.organizationSubjectId === request.organizationSubjectId &&
+            result.items.length <= (request.limit ?? 50),
+          { message: 'Organization pools do not match the requested app, organization and page' },
         ),
       },
     )
