@@ -57,6 +57,7 @@ const preview = {
   product: { id: 'product', name: 'Team access', planVersionId: 'version' },
   poolKey: 'seats',
   entitlementKeys: ['access'],
+  organizationSubjectId: 'club',
 }
 
 function fixture(response) {
@@ -488,4 +489,23 @@ test('organization invitation lists never accept codes and bind app, organizatio
       },
     )
   }
+})
+
+test('preview names the inviting organization licensee or explicitly none', async () => {
+  for (const organizationSubjectId of ['club', null]) {
+    const { client } = fixture({ ...preview, organizationSubjectId })
+    const result = await client.invitations.preview({
+      subjectId: 'trainer',
+      code: 'CLUB-23AB CDEF',
+    })
+    assert.equal(result.organizationSubjectId, organizationSubjectId)
+  }
+  const { organizationSubjectId: _omitted, ...missing } = preview
+  const { client } = fixture(missing)
+  await assert.rejects(
+    () => client.invitations.preview({ subjectId: 'trainer', code: 'CLUB-23AB CDEF' }),
+    {
+      code: 'validation_failed',
+    },
+  )
 })

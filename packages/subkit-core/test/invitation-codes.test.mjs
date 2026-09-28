@@ -153,8 +153,11 @@ test('preview is recipient-bound and cannot return another app or claimant', () 
     product: { id: 'product', name: 'Team access', planVersionId: 'plan-v1' },
     poolKey: 'seats',
     entitlementKeys: ['access'],
+    organizationSubjectId: 'club',
   }
   assert.deepEqual(response.parse(result), result)
+  assert.equal(response.safeParse({ ...result, organizationSubjectId: null }).success, true)
+  assert.equal(response.safeParse({ ...result, organizationSubjectId: undefined }).success, false)
   assert.equal(response.safeParse({ ...result, subjectId: 'other' }).success, false)
   assert.equal(response.safeParse({ ...result, appId: 'other' }).success, false)
   assert.equal(response.safeParse({ ...result, code: delivery.code }).success, false)

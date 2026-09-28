@@ -280,6 +280,10 @@ const result = await subkit.invitations.claim(claimRequest, {
 })
 ```
 
+`preview.organizationSubjectId` names the source's current organization licensee
+(null when none), so your backend can map the code to its own team or club
+without storing invitation facts.
+
 Persist the reviewed claim before sending it. After transport uncertainty,
 `getClaimStatus({ ...claimRequest, idempotencyKey: claimOperationId })` reads
 exactly that operation. Each result retains the reviewed `codeVersion`; the SDK

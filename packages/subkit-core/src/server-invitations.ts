@@ -123,7 +123,11 @@ export const serverInvitationPreviewRequestSchema = z
 export type ServerInvitationPreviewRequest = z.infer<typeof serverInvitationPreviewRequestSchema>
 
 export const serverInvitationPreviewResponseSchema = serverReservationPreviewResponseSchema
-  .safeExtend({ codeVersion: z.number().int().positive() })
+  .safeExtend({
+    codeVersion: z.number().int().positive(),
+    /** Current licensee of the reservation's source; null when none is effective. */
+    organizationSubjectId: identifier.nullable(),
+  })
   .refine(
     ({ reservation }) =>
       reservation.state === 'pending' &&
