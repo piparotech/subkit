@@ -65,18 +65,20 @@ for diagnostics and advanced recovery UI.
 
 Server requests use an app-scoped `sk_srv_…` key with the listed capability.
 
-| Endpoint                             | Capability            |
-| ------------------------------------ | --------------------- |
-| `/api/server/offerings`              | `catalog:read`        |
-| `/api/server/products`               | `catalog:read`        |
-| `/api/server/contract-plan-versions` | `catalog:read`        |
-| `/api/server/customer-info`          | `access:read`         |
-| `/api/server/entitlements/check`     | `access:read`         |
-| `/api/server/licenses`               | `access:read`         |
-| `/api/server/licenses/:sourceId`     | `access:read`         |
-| `/api/server/access-pools/:poolId`   | `access:read`         |
-| `/api/server/devices`                | `access:read`         |
-| `/api/server/direct-billing/summary` | `direct_billing:read` |
+| Endpoint                                          | Capability            |
+| ------------------------------------------------- | --------------------- |
+| `/api/server/offerings`                           | `catalog:read`        |
+| `/api/server/products`                            | `catalog:read`        |
+| `/api/server/contract-plan-versions`              | `catalog:read`        |
+| `/api/server/customer-info`                       | `access:read`         |
+| `/api/server/entitlements/check`                  | `access:read`         |
+| `/api/server/licenses`                            | `access:read`         |
+| `/api/server/licenses/:sourceId`                  | `access:read`         |
+| `/api/server/access-pools/:poolId`                | `access:read`         |
+| `/api/server/devices`                             | `access:read`         |
+| `/api/server/direct-billing/summary`              | `direct_billing:read` |
+| `/api/server/billing/by-app-reference/:reference` | `billing:read`        |
+| `/api/server/billing-documents/:documentId/file`  | `billing:read`        |
 
 `allowed: false` is a normal domain response, not an HTTP error.
 
@@ -138,6 +140,8 @@ The route requires a matching service deployment; it is not a Runtime API.
 | `/api/server/sdk-keys`                                         | `sdk_keys:write`          |
 | `/api/server/direct-checkout/sessions`                         | `direct_billing:write`    |
 | `/api/server/billing-portal/sessions`                          | `direct_billing:write`    |
+| `/api/server/mails`                                            | `mail:send`               |
+| `/api/server/mail-suppressions`                                | `mail:send`               |
 
 There is no direct grant-write endpoint. Mutations create or change verified
 sources, pools, reservations, allocations, or device activations; grants remain
@@ -286,6 +290,124 @@ revoke, or shorten current access. Reverting the schedule remains a separate
 lifecycle event. Renewal extends Contract and source-bound validity windows in
 one transaction and records operator audit plus `contract_renewed` evidence.
 The Node client exposes preview/apply through `subkit.licenses`.
+
+## Billing reads and mails
+
+An app's own service calls these routes with an app-scoped server key
+(`sk_srv_…`, one per app and environment). The key decides app and environment;
+`test` is the sandbox key, `live` the production key. A key of another app, a
+tenant-wide key, or a key without the capability gets `403`. Every answer
+carries `Cache-Control: no-store, private`. Amounts are gross minor units
+(cents), days are calendar days in Europe/Berlin. The capabilities are
+`billing:read` (group `billing`) and `mail:send` (group `mail`). These routes
+take no `reason`.
+
+### Read billing by app reference
+
+`GET /api/server/billing/by-app-reference/:reference?appId=...` requires
+`billing:read`. It returns the purchases, auto-renewal, and billing documents of
+one app reference, for example a license ID: a purchase whose `purchase.paid`
+event the app answered with this `reference`, a purchase whose checkout named it
+as `appReference` (an update year), the subscriptions of those purchases or
+answered with it, and the documents of all of them. Nothing of another app or
+environment is returned, and no name, address, or card. An unknown reference
+answers empty lists.
+
+```json
+{
+  "appReference": "LIC-1",
+  "purchases": [
+    {
+      "purchaseRef": "checkout-intent:…",
+      "amount": 3900,
+      "currency": "EUR",
+      "paidAt": "2026-11-10T23:30:00.000Z",
+      "provisionOn": "2026-11-25",
+      "state": "normal",
+      "subscriptionRef": "checkout-intent:…"
+    }
+  ],
+  "subscriptions": [
+    {
+      "subscriptionRef": "checkout-intent:…",
+      "status": "active",
+      "autoRenew": true,
+      "currentPeriodEnd": "2027-11-10T23:30:00.000Z"
+    }
+  ],
+  "documents": [
+    {
+      "id": "…",
+      "kind": "invoice",
+      "number": "RE-0042",
+      "amount": 3900,
+      "currency": "EUR",
+      "issuedOn": "2026-11-11",
+      "file": true
+    }
+  ]
+}
+```
+
+`state` is `normal`, `refunded`, `partially_refunded`, `dispute_pending`, or
+`dispute_lost`. `kind` is `invoice` or `creditNote`. `file` says whether the PDF
+is archived.
+
+### Download a billing document
+
+`GET /api/server/billing-documents/:documentId/file?appId=...` requires
+`billing:read`. It returns the archived PDF (`application/pdf`) as an attachment
+named after the document number. A document of another app or environment, an
+unknown one, or one without an archived file is `404`.
+
+### Send a mail
+
+`POST /api/server/mails` requires `mail:send` and the `Idempotency-Key` header
+(8 to 200 characters). The body follows the app's mail source:
+
+- `pack`: `{ appId, to, template, data, attachments? }`. `template` is a free
+  template of the app's pack. An occasion (`purchase.completed` and the other
+  money mails SubKit requests itself) and an unknown template are refused, and
+  `data` must render.
+- `app`: the finished mail `{ appId, to, subject, html, text, category, attachments? }`.
+  `subject` is one line of at most 200 characters, `html` and `text` are not
+  empty and at most 120 KiB together, and `category` is `transactional` or
+  `reminder`.
+
+A body of the other source is refused. A `reminder` carries the placeholder
+`https://unsubscribe.subkit.invalid/` in `html` and in `text`. SubKit replaces
+it when sending with the unsubscribe address and its token and sets
+`List-Unsubscribe` and `List-Unsubscribe-Post`. A reminder without the
+placeholder is refused, and a `transactional` mail is sent as given. SubKit
+rewrites nothing else.
+
+`attachments` are at most ten `{ filename, contentType, content }` with
+`content` as Base64, at most 256 KiB together after decoding.
+
+Answers, all `200`:
+
+- `{ "status": "queued", "jobId": "…" }`: the mail is in the queue.
+- `{ "status": "suppressed" }`: the address unsubscribed from reminders, and no
+  job is created. Transactional mails are never suppressed.
+
+The same key with the same body answers the same and queues nothing twice. With
+another body it is `409 idempotency_conflict`. At most ten mails per recipient
+and hour per app are accepted, counted once per key. The eleventh is
+`429 rate_limited` with `details.retryAfterSeconds`, and the same key may be
+retried later. A refused body is `400 validation_failed` with `details.reason`:
+`invalid_json`, `invalid_body`, `body_of_other_source`, `occasion`,
+`template_unknown`, `data_invalid`, `render_failed`,
+`unsubscribe_placeholder_missing`, or `attachments_too_large`. An app and
+environment without mail settings is `409 not_ready`.
+
+### Record an unsubscribe
+
+`POST /api/server/mail-suppressions` requires `mail:send`. The body is
+`{ appId, token, source }` with the token from the unsubscribe link of a
+reminder and `source` either `link` (the page) or `oneClick` (the
+`List-Unsubscribe-Post` request). It answers `200` with `{ "result": … }`:
+`unsubscribed` (also for a token used before), `expired`, or `unknown`. Only
+reminders stop; transactional mails keep arriving.
 
 ## Example
 
