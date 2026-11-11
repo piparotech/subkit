@@ -65,20 +65,20 @@ for diagnostics and advanced recovery UI.
 
 Server requests use an app-scoped `sk_srv_…` key with the listed capability.
 
-| Endpoint                             | Capability            |
-| ------------------------------------ | --------------------- |
-| `/api/server/offerings`              | `catalog:read`        |
-| `/api/server/products`               | `catalog:read`        |
-| `/api/server/contract-plan-versions` | `catalog:read`        |
-| `/api/server/customer-info`          | `access:read`         |
-| `/api/server/entitlements/check`     | `access:read`         |
-| `/api/server/licenses`               | `access:read`         |
-| `/api/server/licenses/:sourceId`     | `access:read`         |
-| `/api/server/access-pools/:poolId`   | `access:read`         |
-| `/api/server/devices`                | `access:read`         |
-| `/api/server/direct-billing/summary` | `direct_billing:read` |
-| `/api/server/billing/by-app-reference/:reference` | `billing:read` |
-| `/api/server/billing-documents/:documentId/file` | `billing:read` |
+| Endpoint                                          | Capability            |
+| ------------------------------------------------- | --------------------- |
+| `/api/server/offerings`                           | `catalog:read`        |
+| `/api/server/products`                            | `catalog:read`        |
+| `/api/server/contract-plan-versions`              | `catalog:read`        |
+| `/api/server/customer-info`                       | `access:read`         |
+| `/api/server/entitlements/check`                  | `access:read`         |
+| `/api/server/licenses`                            | `access:read`         |
+| `/api/server/licenses/:sourceId`                  | `access:read`         |
+| `/api/server/access-pools/:poolId`                | `access:read`         |
+| `/api/server/devices`                             | `access:read`         |
+| `/api/server/direct-billing/summary`              | `direct_billing:read` |
+| `/api/server/billing/by-app-reference/:reference` | `billing:read`        |
+| `/api/server/billing-documents/:documentId/file`  | `billing:read`        |
 
 `allowed: false` is a normal domain response, not an HTTP error.
 

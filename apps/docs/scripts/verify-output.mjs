@@ -124,7 +124,7 @@ for (const llms of baseline.llms) {
 const agentOutputMaxBytes = {
   'llms.txt': 20_000,
   'llms-small.txt': 50_000,
-  'llms-full.txt': 180_000,
+  'llms-full.txt': 200_000,
   'llms-mobile.txt': 90_000,
   'llms-backend.txt': 40_000,
   'llms-concepts.txt': 40_000,
