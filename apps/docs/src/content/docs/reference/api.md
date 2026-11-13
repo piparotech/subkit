@@ -77,6 +77,7 @@ Server requests use an app-scoped `sk_srv_…` key with the listed capability.
 | `/api/server/access-pools/:poolId`                | `access:read`         |
 | `/api/server/devices`                             | `access:read`         |
 | `/api/server/direct-billing/summary`              | `direct_billing:read` |
+| `/api/server/guest-checkout/status`               | `direct_billing:read` |
 | `/api/server/billing/by-app-reference/:reference` | `billing:read`        |
 | `/api/server/billing-documents/:documentId/file`  | `billing:read`        |
 
@@ -139,6 +140,7 @@ The route requires a matching service deployment; it is not a Runtime API.
 | `/api/server/plan-versions/:planVersionId`                     | `catalog:write`           |
 | `/api/server/sdk-keys`                                         | `sdk_keys:write`          |
 | `/api/server/direct-checkout/sessions`                         | `direct_billing:write`    |
+| `/api/server/guest-checkout/sessions`                          | `direct_billing:write`    |
 | `/api/server/billing-portal/sessions`                          | `direct_billing:write`    |
 | `/api/server/mails`                                            | `mail:send`               |
 | `/api/server/mail-suppressions`                                | `mail:send`               |
@@ -196,6 +198,51 @@ Zod contracts are exported by `@piparotech/subkit-core` as
 `serverBillingPortalSessionResponseSchema`,
 `serverDirectBillingSummaryRequestSchema`, and
 `serverDirectBillingSummaryResponseSchema`.
+
+### Guest checkout
+
+`POST /api/server/guest-checkout/sessions` requires `direct_billing:write` and
+the `Idempotency-Key` header. It opens a hosted checkout without a signed-in
+buyer for the reviewed `selectionRevision`, the `purchaseReference`, the
+offering and package, an allowlisted `returnTarget`, a `reason` and an optional
+`locale`; see the [Node.js backend guide](/docs/node/overview/#guest-checkout-and-verified-account-association).
+
+A one-time package of an individual plan also accepts five optional buyer
+fields. A subscription package refuses them with `400` before anything is
+written. A request without them behaves exactly as before.
+
+| Field             | Meaning                                                                                                                                                        |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `customerEmail`   | Address the checkout prefills and locks, at most 254 characters                                                                                                |
+| `consents`        | `immediateProvision` and `waiverConfirmed` as the buyer ticked them, and `textVersion` (1 to 64 characters) of the text shown                                  |
+| `appReference`    | The app's own reference, for example a license ID (1 to 64 characters); required for an update year                                                            |
+| `renewal`         | `true` adds auto-renewal to the purchase, or switches it on for an update year                                                                                 |
+| `renewalStartsOn` | `YYYY-MM-DD`, only with `renewal` for an update year: the first charge day if at least 48 hours ahead, otherwise the charge is at once; over 730 days is `400` |
+
+A missing consent does not refuse the purchase. SubKit stores the consents as
+sent, `false` included, and never assumes one. With both `immediateProvision`
+and `waiverConfirmed` true the purchase is delivered to the app right after the
+payment. Otherwise, also without `consents`, delivery waits 14 days after the
+payment, the withdrawal period: `purchase.paid` goes out on that day and
+`provisionOn` names it. The buyer fields belong to the purchase: a retry under
+the same `purchaseReference` with other values is `409`. An update year or a
+renewal for an `appReference` whose auto-renewal is running is
+`409 already_owned`.
+
+`POST /api/server/guest-checkout/status` requires `direct_billing:read` and
+takes `{ appId, purchaseReference }`. Besides `status`, `paymentVerified` and the
+payer fields, an app whose own service decides access receives two purchase
+fields; other apps never receive them, so an older client keeps parsing the
+answer:
+
+- `appReference`: the app's answer for the purchase, for example the license
+  ID, or else the `appReference` of its checkout; `null` while neither exists.
+- `provisionOn`: the day in Europe/Berlin the purchase is delivered, the payment
+  day with both consents and 14 days later without; `null` before the payment
+  is booked.
+
+The normative Zod contracts are `serverGuestCheckoutSessionRequestSchema` and
+`serverGuestCheckoutStatusResponseSchema` in `@piparotech/subkit-core`.
 
 ### Link a previous Subject identity
 

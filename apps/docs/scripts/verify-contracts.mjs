@@ -83,6 +83,8 @@ const expectedDocumentedRoutes = new Set([
   '/api/server/devices/budget-reset',
   '/api/server/entitlements/check',
   '/api/server/free-enrollments',
+  '/api/server/guest-checkout/sessions',
+  '/api/server/guest-checkout/status',
   '/api/server/licenses',
   '/api/server/licenses/$sourceId',
   '/api/server/mail-suppressions',
