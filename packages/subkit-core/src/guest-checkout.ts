@@ -25,6 +25,18 @@ export const serverGuestCheckoutSessionRequestSchema = z
       .string()
       .regex(/^[a-z]{2,3}(-[A-Za-z0-9]{2,4})?$/)
       .optional(),
+    customerEmail: z.email().max(254).optional(),
+    consents: z
+      .object({
+        immediateProvision: z.boolean(),
+        waiverConfirmed: z.boolean(),
+        textVersion: z.string().trim().min(1).max(64),
+      })
+      .strict()
+      .optional(),
+    appReference: z.string().trim().min(1).max(64).optional(),
+    renewal: z.boolean().optional(),
+    renewalStartsOn: z.iso.date().optional(),
   })
   .strict()
 
@@ -75,6 +87,8 @@ export const serverGuestCheckoutStatusResponseSchema = z
     payerEmail: z.string().nullable().optional(),
     /** Name the payer entered at checkout; a person or, for organizations, the organization. */
     payerName: z.string().nullable().optional(),
+    appReference: z.string().min(1).max(64).nullable().optional(),
+    provisionOn: z.iso.date().nullable().optional(),
   })
   .strict()
   .refine((value) => !value.paymentVerified || value.status === 'completed', {

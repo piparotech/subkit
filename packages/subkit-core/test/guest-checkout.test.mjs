@@ -87,3 +87,71 @@ test('guest checkout status carries the collected payer identity additively', ()
     assert.equal(statusSchema.safeParse(invalid).success, false)
   }
 })
+
+test('guest checkout accepts the buyer fields of a one-time purchase additively', () => {
+  const request = {
+    selectionRevision: 'a'.repeat(64),
+    appId: 'app',
+    purchaseReference: '945b91e5-d348-4da5-90f6-03fce428e391',
+    offeringIdentifier: 'default',
+    packageIdentifier: 'license',
+    returnTarget: 'buy',
+    reason: 'Public license purchase',
+  }
+  assert.deepEqual(schema.parse(request), request)
+
+  const withBuyer = {
+    ...request,
+    customerEmail: 'buyer@example.test',
+    consents: { immediateProvision: true, waiverConfirmed: false, textVersion: '2026-11-10' },
+    appReference: 'LIC-1',
+    renewal: true,
+    renewalStartsOn: '2027-11-10',
+  }
+  assert.deepEqual(schema.parse(withBuyer), withBuyer)
+  assert.equal(schema.parse(withBuyer).consents.waiverConfirmed, false)
+
+  for (const [field, value] of [
+    ['customerEmail', 'not-an-address'],
+    ['customerEmail', `${'a'.repeat(250)}@example.test`],
+    ['consents', { immediateProvision: true, waiverConfirmed: true }],
+    ['consents', { immediateProvision: 'yes', waiverConfirmed: true, textVersion: 'v1' }],
+    ['consents', { immediateProvision: true, waiverConfirmed: true, textVersion: '' }],
+    ['consents', { immediateProvision: true, waiverConfirmed: true, textVersion: 'v1', at: 1 }],
+    ['appReference', ''],
+    ['appReference', 'L'.repeat(65)],
+    ['renewal', 'true'],
+    ['renewalStartsOn', '2027-11-10T00:00:00.000Z'],
+    ['renewalStartsOn', '2027-13-01'],
+  ]) {
+    assert.equal(schema.safeParse({ ...request, [field]: value }).success, false, field)
+  }
+})
+
+test('guest checkout status carries the app reference and the provision day additively', () => {
+  const status = {
+    checkoutIntentId: 'checkout-intent:intent-a',
+    environment: 'production',
+    status: 'completed',
+    expiresAt: '2026-11-10T12:30:00.000Z',
+    paymentVerified: true,
+  }
+  assert.deepEqual(statusSchema.parse(status), status)
+
+  const withPurchase = { ...status, appReference: 'LIC-1', provisionOn: '2026-11-24' }
+  assert.deepEqual(statusSchema.parse(withPurchase), withPurchase)
+  assert.deepEqual(statusSchema.parse({ ...status, appReference: null, provisionOn: null }), {
+    ...status,
+    appReference: null,
+    provisionOn: null,
+  })
+
+  for (const invalid of [
+    { ...status, appReference: '' },
+    { ...status, appReference: 'L'.repeat(65) },
+    { ...status, provisionOn: '2026-11-24T00:00:00.000Z' },
+    { ...status, provisionOn: 20261124 },
+  ]) {
+    assert.equal(statusSchema.safeParse(invalid).success, false)
+  }
+})
