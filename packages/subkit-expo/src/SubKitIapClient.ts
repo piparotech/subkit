@@ -302,6 +302,29 @@ function createSubKitClient(
     return pending
   }
 
+  // An empty reconcile has no Store evidence, so the server cannot mint a new
+  // Store access context. Refresh the existing signed context before publishing
+  // its context-free CustomerInfo over a previously verified entitlement.
+  async function keepVerifiedAccessContext(
+    result: PurchaseSyncResult,
+  ): Promise<PurchaseSyncResult> {
+    const contextToken = currentAccessContext()
+    const appUserId = identity.appUserId
+    return result.acceptedPurchases.length === 0 &&
+      contextToken != null &&
+      customerInfo?.appUserId === appUserId &&
+      appUserId != null
+      ? {
+          ...result,
+          customerInfo: await runtime.getCustomerInfo(
+            appUserId,
+            contextToken,
+            await deviceTokenStore.readDeviceAccessToken(),
+          ),
+        }
+      : result
+  }
+
   async function internalSyncPurchases(
     input: SubKitSyncOptions,
   ): Promise<PurchaseSyncResult | null> {
@@ -309,25 +332,7 @@ function createSubKitClient(
     const generation = identity.generation
     const result = await coordinator.syncPurchases(input)
     if (result == null) return null
-    // An empty reconcile has no Store evidence, so the server cannot mint a new
-    // Store access context. Refresh the existing signed context before publishing
-    // its context-free CustomerInfo over a previously verified entitlement.
-    const contextToken = currentAccessContext()
-    const appUserId = identity.appUserId
-    const refreshed =
-      result.acceptedPurchases.length === 0 &&
-      contextToken != null &&
-      customerInfo?.appUserId === appUserId &&
-      appUserId != null
-        ? {
-            ...result,
-            customerInfo: await runtime.getCustomerInfo(
-              appUserId,
-              contextToken,
-              await deviceTokenStore.readDeviceAccessToken(),
-            ),
-          }
-        : result
+    const refreshed = await keepVerifiedAccessContext(result)
     const coordinated = await coordinateDeviceAccess(refreshed, input.reason)
     await setCustomerInfo(coordinated.customerInfo, true, generation)
     return coordinated
@@ -345,7 +350,8 @@ function createSubKitClient(
     const generation = identity.generation
     const result = await coordinator.handlePurchaseEvent(purchase)
     if (result == null) return null
-    const coordinated = await coordinateDeviceAccess(result, 'purchase_event')
+    const refreshed = await keepVerifiedAccessContext(result)
+    const coordinated = await coordinateDeviceAccess(refreshed, 'purchase_event')
     await setCustomerInfo(coordinated.customerInfo, true, generation)
     return coordinated
   }
