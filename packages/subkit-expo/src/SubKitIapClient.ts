@@ -50,6 +50,7 @@ import type {
   SubKitExpoIapConfig,
   SubKitIapPlatform,
   SubKitIapProduct,
+  SubKitIapProductQueryType,
   SubKitIapProductType,
   SubKitIapPurchase,
   SubKitInstallationIdInput,
@@ -869,11 +870,19 @@ async function resolveStoreProducts(input: {
     if (skus.length === 0) continue
     const fetched = await input.adapter.fetchProducts({
       skus: [...new Set(skus)],
-      type: productType,
+      type: storeProductQueryType(productType, input.platform),
     })
     for (const product of fetched) products.set(`${productType}:${product.id}`, product)
   }
   return projectOfferings(input.offerings, input.platform, products)
+}
+
+// StoreKit types non-renewing subscriptions as subs, so an in-app query on iOS drops them.
+function storeProductQueryType(
+  productType: SubKitIapProductType,
+  platform: SubKitIapPlatform,
+): SubKitIapProductQueryType {
+  return platform === 'ios' && productType === 'in-app' ? 'all' : productType
 }
 
 function projectOfferings(

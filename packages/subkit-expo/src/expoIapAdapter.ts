@@ -35,7 +35,7 @@ export function createExpoIapAdapter(): SubKitIapAdapterBundle {
     },
     async fetchProducts(input) {
       const products = await fetchProducts({ skus: input.skus, type: input.type })
-      return normalizeProducts(products ?? [], input.type)
+      return normalizeProducts(products ?? [], input.type === 'all' ? 'in-app' : input.type)
     },
     async finishTransaction(input) {
       if (!isExpoPurchase(input.purchase.raw)) {

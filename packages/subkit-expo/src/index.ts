@@ -75,6 +75,7 @@ export type {
   SubKitIapPlatform,
   SubKitIapProduct,
   SubKitInstallationIdInput,
+  SubKitIapProductQueryType,
   SubKitIapProductType,
   SubKitIapPurchase,
   SubKitIapStore,
