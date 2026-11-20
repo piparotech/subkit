@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.21
+
+### Patch Changes
+
+- 4b47e7a: `getOfferings` on iOS now finds the store product of a one-time package that App Store Connect sells as a non-renewing subscription. StoreKit reports those products as `subs`, so the previous `in-app` query left their package without a `storeProduct`, and a paywall that drops unpriced packages hid them. One-time packages on iOS are now queried with the `all` product type. Android keeps the `in-app` query.
+
+  Custom adapters receive the new `SubKitIapProductQueryType` (`'in-app' | 'subs' | 'all'`) in `fetchProducts` and must return matching products of either type for `all`. The bundled expo-iap adapter forwards `all` to expo-iap, which supports it.
+
+- 4dee2e8: A purchase that `purchasePackage` already verified no longer loses its access a moment later. expo-iap reports the same purchase through `purchaseUpdatedListener` too, and its replay ended in an empty reconcile without the signed access context, which overwrote the verified entitlement until the next restore or app start. Purchase events now refresh the existing access context after an empty reconcile, the same way `syncPurchases` already did. Fixes #6.
+- Updated dependencies [c2ad2e3]
+  - @piparotech/subkit-core@0.7.0
+
 ## 0.1.20
 
 ### Patch Changes
