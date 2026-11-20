@@ -7,6 +7,7 @@ import type {
 } from '@piparotech/subkit-core'
 
 export type SubKitIapProductType = 'in-app' | 'subs'
+export type SubKitIapProductQueryType = SubKitIapProductType | 'all'
 export type SubKitIapPlatform = 'ios' | 'android'
 export type SubKitIapStore = 'apple_app_store' | 'google_play'
 export type SubKitInstallationIdInput = string | (() => string | Promise<string>)

@@ -1,13 +1,16 @@
 import type {
   SubKitIapProduct,
-  SubKitIapProductType,
+  SubKitIapProductQueryType,
   SubKitIapPurchase,
   SubKitPurchaseRequest,
 } from './types.js'
 
 export interface SubKitExpoIapAdapter {
   endConnection?(): Promise<void>
-  fetchProducts(input: { skus: string[]; type: SubKitIapProductType }): Promise<SubKitIapProduct[]>
+  fetchProducts(input: {
+    skus: string[]
+    type: SubKitIapProductQueryType
+  }): Promise<SubKitIapProduct[]>
   finishTransaction(input: { isConsumable: boolean; purchase: SubKitIapPurchase }): Promise<void>
   getAvailablePurchases(): Promise<SubKitIapPurchase[]>
   initConnection(): Promise<boolean>
